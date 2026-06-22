@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+@import '@odovox/ui/tokens.css';
+@config '../tailwind.config.ts';
+
+/**
+ * shadcn/ui semantic variables, mapped onto Odovox brand tokens (tokens.css).
+ * Components reference these via the Tailwind config color names (bg-primary, etc.).
+ */
+:root {
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+
+  --card: var(--color-surface);
+  --card-foreground: var(--color-ink);
+
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-ink);
+
+  --primary: var(--color-lime);
+  --primary-foreground: var(--color-ink);
+
+  --secondary: var(--color-paper-warm);
+  --secondary-foreground: var(--color-ink);
+
+  --muted: var(--color-paper-warm);
+  --muted-foreground: var(--color-text-muted);
+
+  --accent: var(--color-lime-soft);
+  --accent-foreground: var(--color-ink);
+
+  --destructive: var(--color-danger);
+  --destructive-foreground: #ffffff;
+
+  --input: var(--color-border);
+  --ring: var(--color-ink);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}

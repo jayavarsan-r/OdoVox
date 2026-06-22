@@ -1,0 +1,65 @@
+/**
+ * Odovox design tokens — the single source of truth for color, radius, shadow,
+ * type, motion, and layout. Consumed by apps/web (and any future app) via the
+ * Tailwind preset so every surface shares the same scale.
+ */
+:root {
+  /* Brand */
+  --color-ink: #0a0a0a;
+  --color-ink-soft: #1a1a1a;
+  --color-paper: #fafafa;
+  --color-paper-warm: #f5f5f7;
+
+  /* Accents — soft, desaturated, dental-clinic friendly */
+  --color-lime: #d4f564; /* primary accent — Resume, active states */
+  --color-lime-soft: #e8f8b5;
+  --color-peach: #ffd4a3; /* warmth — patients, billing */
+  --color-peach-soft: #ffe8d1;
+  --color-sky: #bfe3ff; /* schedule, time */
+  --color-sky-soft: #dff1ff;
+  --color-sage: #c8e6c9; /* success, healthy */
+  --color-sage-soft: #e3f2e4;
+  --color-lavender: #e0d4ff; /* lab, special */
+  --color-lavender-soft: #efe9ff;
+
+  /* Semantic */
+  --color-text: var(--color-ink);
+  --color-text-muted: #6b7280;
+  --color-text-subtle: #9ca3af;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-danger: #dc2626;
+  --color-info: #2563eb;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-hero: 0 12px 40px rgba(0, 0, 0, 0.12);
+
+  /* Typography scale */
+  --font-display: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  /* Motion */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-slow: 400ms;
+
+  /* Layout (mobile-first) */
+  --max-width-mobile: 430px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}

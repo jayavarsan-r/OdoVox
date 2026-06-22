@@ -1,0 +1,41 @@
+{
+  "name": "odovox",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20 <21",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "verify": "turbo run lint typecheck test",
+    "db:generate": "pnpm --filter @odovox/db generate",
+    "db:migrate": "pnpm --filter @odovox/db migrate",
+    "db:seed": "pnpm --filter @odovox/db seed",
+    "db:studio": "pnpm --filter @odovox/db studio",
+    "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,css}\"",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@odovox/config": "workspace:*",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,cjs,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yaml,yml}": [
+      "prettier --write"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "//": "Root TS config. Each workspace package has its own tsconfig and runs `typecheck` independently via Turborepo. This root config exists for editor tooling and to centralize the base compiler options.",
+  "extends": "./packages/config/tsconfig-base.json",
+  "include": [],
+  "exclude": ["node_modules", "dist", ".next", ".turbo", "coverage"]
+}

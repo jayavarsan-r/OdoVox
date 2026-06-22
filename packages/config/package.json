@@ -1,0 +1,22 @@
+{
+  "name": "@odovox/config",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "eslint-base.cjs",
+    "tsconfig-base.json",
+    "prettier.config.cjs"
+  ],
+  "main": "eslint-base.cjs",
+  "dependencies": {
+    "@eslint/js": "^9.28.0",
+    "eslint": "^9.28.0",
+    "eslint-config-prettier": "^10.1.5",
+    "globals": "^16.2.0",
+    "typescript-eslint": "^8.34.0"
+  },
+  "peerDependencies": {
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  }
+}
