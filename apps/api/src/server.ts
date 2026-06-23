@@ -16,6 +16,8 @@ import { prismaPlugin } from './plugins/prisma.js';
 import { redisPlugin } from './plugins/redis.js';
 import { auditPlugin } from './plugins/audit.js';
 import { healthRoutes } from './routes/health.js';
+import { authRoutes } from './routes/auth.js';
+import { clinicRoutes } from './routes/clinics.js';
 
 // Load .env in non-production (repo root).
 if (process.env.NODE_ENV !== 'production') {
@@ -57,6 +59,8 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(auditPlugin);
 
   await app.register(healthRoutes);
+  await app.register(authRoutes);
+  await app.register(clinicRoutes);
 
   return app;
 }

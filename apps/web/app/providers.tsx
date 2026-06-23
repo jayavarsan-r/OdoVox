@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 
 /**
  * App-wide client providers. TanStack Query for server state; a CSS-variable-based
@@ -21,5 +22,10 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster position="top-center" richColors toastOptions={{ duration: 4000 }} />
+    </QueryClientProvider>
+  );
 }

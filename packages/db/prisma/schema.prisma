@@ -204,15 +204,17 @@ model Clinic {
 }
 
 model ClinicMember {
-  id                 String       @id @default(cuid())
-  clinicId           String
-  userId             String
-  role               MemberRole
-  qualification      String?
-  registrationNumber String?
-  specialization     String?
-  status             MemberStatus @default(PENDING)
-  joinedAt           DateTime     @default(now())
+  id                    String       @id @default(cuid())
+  clinicId              String
+  userId                String
+  role                  MemberRole
+  isAdmin               Boolean      @default(false)
+  qualification         String?
+  // AES-256-GCM ciphertext of the dental-council registration number (PII).
+  registrationNumberEnc String?
+  specialization        String?
+  status                MemberStatus @default(PENDING)
+  joinedAt              DateTime     @default(now())
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   deletedAt          DateTime?
@@ -233,6 +235,7 @@ model OtpRequest {
   expiresAt  DateTime
   verifiedAt DateTime?
   ip         String
+  userAgent  String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 

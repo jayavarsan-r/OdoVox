@@ -4,6 +4,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['@odovox/ui', '@odovox/types'],
+  // The shared @odovox/* packages ship TS sources that import with `.js` ESM specifiers
+  // (NodeNext style). Teach webpack to resolve those to the real `.ts` files.
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ...(config.resolve.extensionAlias ?? {}),
+      '.js': ['.ts', '.tsx', '.js'],
+      '.mjs': ['.mts', '.mjs'],
+    };
+    return config;
+  },
   images: {
     remotePatterns: [{ protocol: 'https', hostname: '**' }],
   },

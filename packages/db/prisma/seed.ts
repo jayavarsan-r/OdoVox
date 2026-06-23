@@ -73,9 +73,10 @@ async function main() {
       clinicId: clinic.id,
       userId: doctor.id,
       role: 'DOCTOR',
+      isAdmin: true,
       status: 'ACTIVE',
       qualification: 'BDS, MDS (Endodontics)',
-      registrationNumber: 'KA-DENT-12345',
+      registrationNumberEnc: encryptField('KA-DENT-12345'),
       specialization: 'Root Canal Therapy',
     },
   });

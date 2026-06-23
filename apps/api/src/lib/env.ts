@@ -40,8 +40,21 @@ export const EnvSchema = z.object({
     .refine((s) => base64ToBytes(s) === 32, 'PHI_ENCRYPTION_KEY must decode to exactly 32 bytes'),
   PHI_KEY_VERSION: z.coerce.number().int().min(1).default(1),
 
+  // OTP delivery. `mock` logs the code to the console (dev); `msg91` sends a real SMS.
+  OTP_PROVIDER: z.enum(['mock', 'msg91']).default('mock'),
+  MSG91_AUTH_KEY: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  MSG91_TEMPLATE_ID: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  MSG91_SENDER_ID: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+
   SENTRY_DSN: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
-});
+}).refine(
+  (env) => env.OTP_PROVIDER !== 'msg91' || (!!env.MSG91_AUTH_KEY && !!env.MSG91_TEMPLATE_ID),
+  {
+    message:
+      'MSG91_AUTH_KEY and MSG91_TEMPLATE_ID are required when OTP_PROVIDER=msg91',
+    path: ['OTP_PROVIDER'],
+  },
+);
 
 export type Env = z.infer<typeof EnvSchema>;
 

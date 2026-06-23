@@ -54,11 +54,37 @@ export const ClinicMemberResponse = z
     clinicId: z.string(),
     userId: z.string(),
     role: MemberRole,
+    isAdmin: z.boolean(),
     status: MemberStatus,
     qualification: z.string().nullable(),
-    registrationNumber: z.string().nullable(),
+    // The registration number is encrypted at rest and never returned to clients;
+    // we expose only whether one is on file.
+    hasRegistrationNumber: z.boolean(),
     specialization: z.string().nullable(),
     joinedAt: z.coerce.date(),
   })
   .merge(Timestamps);
 export type ClinicMemberResponse = z.infer<typeof ClinicMemberResponse>;
+
+/** Where the client should send the user after a successful OTP verification. */
+export const OnboardingNextStep = z.enum(['ROLE_SELECT', 'HOME']);
+export type OnboardingNextStep = z.infer<typeof OnboardingNextStep>;
+
+export const RequestOtpResponse = z.object({
+  expiresInSeconds: z.number().int(),
+  resendInSeconds: z.number().int(),
+});
+export type RequestOtpResponse = z.infer<typeof RequestOtpResponse>;
+
+export const VerifyOtpResponse = z.object({
+  accessToken: z.string(),
+  expiresIn: z.number().int(),
+  user: z.object({
+    id: z.string(),
+    phone: IndianPhone,
+    name: z.string().nullable(),
+  }),
+  activeMembership: ClinicMemberResponse.nullable(),
+  nextStep: OnboardingNextStep,
+});
+export type VerifyOtpResponse = z.infer<typeof VerifyOtpResponse>;

@@ -58,6 +58,7 @@ export function errorHandler(
       request.log.warn({ err: error.message, code: error.code }, 'handled error');
     }
     reply.status(error.statusCode).send({
+      ok: false,
       error: { code: error.code, message: error.message, details: error.details ?? undefined },
     });
     return;
@@ -67,6 +68,7 @@ export function errorHandler(
   const fastifyErr = error as FastifyError;
   if (fastifyErr.validation) {
     reply.status(400).send({
+      ok: false,
       error: { code: 'VALIDATION_ERROR', message: 'Request validation failed' },
     });
     return;
@@ -74,6 +76,7 @@ export function errorHandler(
 
   if (typeof fastifyErr.statusCode === 'number' && fastifyErr.statusCode < 500) {
     reply.status(fastifyErr.statusCode).send({
+      ok: false,
       error: { code: fastifyErr.code ?? 'ERROR', message: fastifyErr.message },
     });
     return;
@@ -82,6 +85,7 @@ export function errorHandler(
   // Unknown / 5xx — log fully, return opaque message.
   request.log.error({ err: error }, 'unhandled error');
   reply.status(500).send({
+    ok: false,
     error: {
       code: 'INTERNAL_ERROR',
       message: isProd ? 'Internal server error' : error.message,
