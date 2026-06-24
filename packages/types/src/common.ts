@@ -107,6 +107,8 @@ export const Gender = z.enum(['MALE', 'FEMALE', 'OTHER']);
 export type Gender = z.infer<typeof Gender>;
 
 export const VisitStatus = z.enum([
+  'SCHEDULED',
+  'CHECKED_IN',
   'WAITING',
   'IN_CHAIR',
   'CHECKOUT',
@@ -115,6 +117,23 @@ export const VisitStatus = z.enum([
   'NO_SHOW',
 ]);
 export type VisitStatus = z.infer<typeof VisitStatus>;
+
+export const RoomStatus = z.enum(['AVAILABLE', 'OCCUPIED', 'OFFLINE']);
+export type RoomStatus = z.infer<typeof RoomStatus>;
+
+export const QueueEventType = z.enum([
+  'CHECKED_IN',
+  'CALLED_IN',
+  'RETURNED_TO_QUEUE',
+  'CHECKOUT_STARTED',
+  'COMPLETED',
+  'CANCELLED',
+  'REASSIGNED',
+  'PRIORITY_CHANGED',
+  'DOCTOR_RECORDING',
+  'DOCTOR_RECORDING_DONE',
+]);
+export type QueueEventType = z.infer<typeof QueueEventType>;
 
 export const ConsultationStatus = z.enum(['PENDING_REVIEW', 'CONFIRMED', 'REJECTED']);
 export type ConsultationStatus = z.infer<typeof ConsultationStatus>;

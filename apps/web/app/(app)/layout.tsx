@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { api, ApiError } from '@/lib/api-client';
 import { useAuth, type SessionClinic, type SessionUser } from '@/lib/auth';
 import { canAccess, landingRoute, type Role } from '@/lib/rbac';
+import { useRealtime } from '@/lib/realtime/use-realtime';
 import type { ClinicMemberResponse } from '@odovox/types';
 
 interface MeResponse {
@@ -27,6 +28,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { activeMembership, setSession } = useAuth();
   const [ready, setReady] = useState(false);
+
+  // App-wide realtime: connects the queue socket once authed, keeps the store live, reconciles on
+  // focus, tears down on logout. Safe to call unconditionally — it no-ops until a session exists.
+  useRealtime();
 
   useEffect(() => {
     let cancelled = false;

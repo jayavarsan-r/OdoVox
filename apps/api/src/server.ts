@@ -15,6 +15,7 @@ import { jwtPlugin } from './plugins/jwt.js';
 import { prismaPlugin } from './plugins/prisma.js';
 import { redisPlugin } from './plugins/redis.js';
 import { auditPlugin } from './plugins/audit.js';
+import { socketPlugin } from './plugins/socket.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { clinicRoutes } from './routes/clinics.js';
@@ -24,6 +25,7 @@ import { mediaRoutes } from './routes/media.js';
 import { homeRoutes } from './routes/home.js';
 import { consultationRoutes } from './routes/consultations.js';
 import { dictateRoutes } from './routes/dictate.js';
+import { queueRoutes } from './routes/queue.js';
 import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
@@ -67,6 +69,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(prismaPlugin);
   await app.register(redisPlugin, { env });
   await app.register(auditPlugin);
+  await app.register(socketPlugin, { env });
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
@@ -77,6 +80,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(homeRoutes);
   await app.register(consultationRoutes);
   await app.register(dictateRoutes);
+  await app.register(queueRoutes);
 
   return app;
 }

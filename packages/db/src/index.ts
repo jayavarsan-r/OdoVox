@@ -13,6 +13,7 @@ export const CLINIC_SCOPED_MODELS = [
   'Room',
   'Patient',
   'Visit',
+  'QueueEvent',
   'Appointment',
   'LabPartner',
   'LabCase',

@@ -120,6 +120,123 @@ export async function joinReceptionist(
   return { accessToken: res.json().data.accessToken, userId: session.userId, phone: session.phone };
 }
 
+/** Sign up a second doctor and join an existing clinic; returns a clinic-scoped token. */
+export async function joinDoctor(
+  app: FastifyInstance,
+  joinCode: string,
+  name = 'Dr. Vikram Rao',
+): Promise<{ accessToken: string; userId: string; phone: string }> {
+  const session = await signIn(app);
+  const res = await app.inject({
+    method: 'POST',
+    url: '/clinics/join',
+    headers: authHeader(session.accessToken),
+    payload: {
+      joinCode,
+      name,
+      role: 'DOCTOR',
+      qualification: 'BDS',
+      registrationNumber: `KA-DENT-${Math.floor(Math.random() * 1e6)}`,
+      specialization: ['General'],
+    },
+  });
+  if (res.statusCode !== 200) throw new Error(`doctor join failed: ${res.statusCode} ${res.body}`);
+  return { accessToken: res.json().data.accessToken, userId: session.userId, phone: session.phone };
+}
+
+export interface SeededVisit {
+  id: string;
+  patientId: string;
+  lifecycleVersion: number;
+  status: string;
+  tokenNumber: number;
+}
+
+/** Create a visit in a given queue state for a patient assigned to a doctor (clinic-scoped). */
+export async function createVisit(
+  app: FastifyInstance,
+  clinicId: string,
+  opts: {
+    patientId: string;
+    doctorId: string;
+    assignedDoctorId?: string | null;
+    status?: 'SCHEDULED' | 'CHECKED_IN' | 'WAITING' | 'IN_CHAIR' | 'CHECKOUT';
+    priority?: number;
+    roomId?: string | null;
+  },
+): Promise<SeededVisit> {
+  return runWithContext({ clinicId, userId: opts.doctorId }, async () => {
+    const status = opts.status ?? 'WAITING';
+    const now = new Date();
+    const count = await app.prisma.visit.count({});
+    const v = await app.prisma.visit.create({
+      data: {
+        clinicId,
+        patientId: opts.patientId,
+        doctorId: opts.doctorId,
+        assignedDoctorId: opts.assignedDoctorId === undefined ? opts.doctorId : opts.assignedDoctorId,
+        roomId: opts.roomId ?? null,
+        status,
+        tokenNumber: count + 1,
+        priority: opts.priority ?? 0,
+        checkedInAt: status === 'SCHEDULED' ? null : now,
+        calledInAt: status === 'IN_CHAIR' || status === 'CHECKOUT' ? now : null,
+        startedAt: status === 'IN_CHAIR' ? now : null,
+      },
+    });
+    return { id: v.id, patientId: v.patientId, lifecycleVersion: v.lifecycleVersion, status: v.status, tokenNumber: v.tokenNumber };
+  });
+}
+
+/**
+ * Read a clinic-scoped model inside the right context. NOTE: the read must be AWAITED *inside* the
+ * `runWithContext` callback — a bare `() => prisma.x.findFirst()` returns a lazy PrismaPromise that
+ * runs after the context has exited, so the scope middleware would see no clinicId.
+ */
+export function reloadVisit(app: FastifyInstance, clinicId: string, id: string) {
+  return runWithContext({ clinicId }, async () => {
+    const v = await app.prisma.visit.findFirst({ where: { id } });
+    return v;
+  });
+}
+
+export function findQueueEvent(
+  app: FastifyInstance,
+  clinicId: string,
+  where: { visitId?: string; type?: string },
+) {
+  return runWithContext({ clinicId }, async () => {
+    const ev = await app.prisma.queueEvent.findFirst({ where, orderBy: { createdAt: 'desc' } });
+    return ev;
+  });
+}
+
+export function reloadRoom(app: FastifyInstance, clinicId: string, id: string) {
+  return runWithContext({ clinicId }, async () => {
+    const r = await app.prisma.room.findFirst({ where: { id } });
+    return r;
+  });
+}
+
+/** Create a room in a clinic (clinic-scoped). */
+export async function createRoom(
+  app: FastifyInstance,
+  clinicId: string,
+  over: { name?: string; number?: string; status?: 'AVAILABLE' | 'OCCUPIED' | 'OFFLINE' } = {},
+): Promise<string> {
+  return runWithContext({ clinicId, system: false }, async () => {
+    const r = await app.prisma.room.create({
+      data: {
+        clinicId,
+        name: over.name ?? 'Room A',
+        number: over.number ?? String(Math.floor(Math.random() * 90) + 10),
+        status: over.status ?? 'AVAILABLE',
+      },
+    });
+    return r.id;
+  });
+}
+
 export function sampleClinicInput(over: Partial<ClinicCreateInput> = {}): ClinicCreateInput {
   return ClinicCreateInput.parse({
     name: 'Smile Dental Care',

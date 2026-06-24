@@ -11,6 +11,7 @@ import { Recorder } from '@/components/voice/recorder';
 import { ProgressStrip } from '@/components/voice/progress-strip';
 import { VerificationCard } from '@/components/voice/verification-card';
 import { useConsultStore } from '@/lib/consult/store';
+import { NextUpHint } from '@/components/queue/next-up-hint';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
@@ -126,6 +127,9 @@ export default function ConsultDetailPage() {
           </div>
         ) : null}
       </main>
+
+      {/* Next-up hint (§6.3) — only while recording/processing, never over the verification sheet. */}
+      {isRecorder || isPipeline ? <NextUpHint /> : null}
 
       {/* Verification card — bottom sheet sliding up over a dimmed recorder. */}
       {isVerify ? (

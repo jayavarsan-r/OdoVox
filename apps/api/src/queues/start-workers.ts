@@ -14,6 +14,8 @@ import {
   enqueueExtractionJob,
 } from './index.js';
 import { publishConsultationEvent } from './events.js';
+import { broadcastToClinic } from '../lib/realtime/broadcast.js';
+import { clearRecording } from '../lib/realtime/recording.js';
 import { runSttJob, type ExtractionKind, type SttDeps, type SttJobData } from './stt-worker.js';
 import { runExtractionJob, type ExtractionDeps, type ExtractionJobData } from './extraction-worker.js';
 
@@ -61,6 +63,11 @@ export function startWorkers(app: FastifyInstance): { stop: () => Promise<void> 
       await publishConsultationEvent(app.redis, consultationId, event);
     },
     logger: app.log,
+    // Phase 4: pipeline settled → clear the "recording" set + tell the clinic's screens.
+    onPipelineSettled: async ({ clinicId, visitId, doctorId }) => {
+      await clearRecording(app.redis, clinicId, visitId);
+      broadcastToClinic(clinicId, { type: 'doctor.recording.stopped', payload: { visitId, doctorId } });
+    },
   };
 
   const sttWorker = new Worker<SttJobData>(

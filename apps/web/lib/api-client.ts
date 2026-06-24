@@ -47,7 +47,7 @@ function unwrap<T>(payload: unknown): T {
 let refreshInFlight: Promise<boolean> | null = null;
 
 /** Refresh the access token from the httpOnly cookie. Deduped across concurrent callers. */
-async function refreshAccessToken(): Promise<boolean> {
+export async function refreshAccessToken(): Promise<boolean> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {

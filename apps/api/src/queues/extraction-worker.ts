@@ -20,6 +20,8 @@ export interface ExtractionDeps {
   extractor: IClinicalExtractor;
   emit: (consultationId: string, event: ConsultationEvent) => void | Promise<void>;
   logger?: WorkerLogger;
+  /** Phase 4 cross-wire: pipeline settled (READY/FAILED) — clears the "recording" indicator. */
+  onPipelineSettled?: (info: { clinicId: string; visitId: string; doctorId: string }) => void | Promise<void>;
 }
 
 export interface ExtractionJobData {
@@ -104,6 +106,7 @@ export async function runExtractionJob(deps: ExtractionDeps, data: ExtractionJob
         blocking: safety.blockingErrors.length,
       });
       await deps.emit(consult.id, { type: 'READY', data: { structuredData } });
+      await deps.onPipelineSettled?.({ clinicId, visitId: consult.visitId, doctorId: consult.visit.doctorId });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       deps.logger?.error({ err, consultationId: consult.id }, 'Extraction job failed');
@@ -113,6 +116,7 @@ export async function runExtractionJob(deps: ExtractionDeps, data: ExtractionJob
       });
       await writeWorkerAudit(prisma, clinicId, 'EXTRACTION_FAILED', consult.id, { error: message });
       await deps.emit(consult.id, { type: 'FAILED', data: { stage: 'extraction', message } });
+      await deps.onPipelineSettled?.({ clinicId, visitId: consult.visitId, doctorId: consult.visit.doctorId });
       throw err;
     }
   });

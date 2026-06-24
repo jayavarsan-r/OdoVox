@@ -92,16 +92,17 @@ async function main() {
     },
   });
 
-  // --- Rooms ---------------------------------------------------------------
-  const existingRooms = await prisma.room.count({ where: { clinicId: clinic.id } });
-  if (existingRooms === 0) {
-    await prisma.room.createMany({
-      data: [
-        { clinicId: clinic.id, name: 'Operatory 1', number: '1' },
-        { clinicId: clinic.id, name: 'Operatory 2', number: '2' },
-      ],
-    });
-  }
+  // --- Rooms (stable ids so a re-seed is idempotent + referenceable below) --
+  const room1 = await prisma.room.upsert({
+    where: { id: `seed-room-${clinic.id}-1` },
+    update: {},
+    create: { id: `seed-room-${clinic.id}-1`, clinicId: clinic.id, name: 'Room 1', number: '1' },
+  });
+  await prisma.room.upsert({
+    where: { id: `seed-room-${clinic.id}-2` },
+    update: {},
+    create: { id: `seed-room-${clinic.id}-2`, clinicId: clinic.id, name: 'Room 2', number: '2' },
+  });
 
   // --- Patients (with encrypted PHI) --------------------------------------
   const patientSeed = [
@@ -242,6 +243,7 @@ async function main() {
   });
 
   // (1) CONFIRMED — RCT on 26, third sitting, Amoxicillin, review next week.
+  //     Visit sits in CHECKOUT: doctor confirmed, receptionist payment pending (demo bill below).
   const confirmedVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-rct` },
     update: {},
@@ -250,11 +252,30 @@ async function main() {
       clinicId: clinic.id,
       patientId: akhilesh.id,
       doctorId: doctor.id,
+      assignedDoctorId: doctor.id,
       status: 'CHECKOUT',
       tokenNumber: 1,
+      checkedInAt: new Date(Date.now() - 75 * 60 * 1000),
+      calledInAt: new Date(Date.now() - 60 * 60 * 1000),
+      checkoutStartedAt: new Date(Date.now() - 30 * 60 * 1000),
       startedAt: new Date(Date.now() - 60 * 60 * 1000),
       endedAt: new Date(Date.now() - 30 * 60 * 1000),
       chiefComplaint: 'Ongoing root canal, upper left',
+    },
+  });
+
+  // Demo bill for the checkout visit so the receptionist's "Take payment" shows an amount.
+  await prisma.bill.upsert({
+    where: { id: `seed-bill-${clinic.id}-rct` },
+    update: {},
+    create: {
+      id: `seed-bill-${clinic.id}-rct`,
+      visitId: confirmedVisit.id,
+      patientId: akhilesh.id,
+      items: [{ description: 'Root canal therapy — 26 (3 sittings)', amountPaise: 350000 }],
+      totalPaise: 350000,
+      paidPaise: 0,
+      status: 'PENDING',
     },
   });
 
@@ -294,6 +315,7 @@ async function main() {
   });
 
   // (2) PENDING_REVIEW — a filling on 46, waiting for the doctor's verification card.
+  //     Visit is IN_CHAIR in Room 1 — the live "now treating" patient on /consult.
   const pendingVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-pending` },
     update: {},
@@ -302,8 +324,12 @@ async function main() {
       clinicId: clinic.id,
       patientId: akhilesh.id,
       doctorId: doctor.id,
+      assignedDoctorId: doctor.id,
+      roomId: room1.id,
       status: 'IN_CHAIR',
       tokenNumber: 2,
+      checkedInAt: new Date(Date.now() - 20 * 60 * 1000),
+      calledInAt: new Date(Date.now() - 5 * 60 * 1000),
       startedAt: new Date(),
       chiefComplaint: 'Sensitivity, lower right',
     },
@@ -342,8 +368,63 @@ async function main() {
     },
   });
 
+  // (3) WAITING — Arjun Reddy checked in for a routine cleaning, in Dr. Asha's queue.
+  const arjun = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: 'PT-0002' },
+  });
+  const waitingVisit = await prisma.visit.upsert({
+    where: { id: `seed-visit-${clinic.id}-waiting` },
+    update: {},
+    create: {
+      id: `seed-visit-${clinic.id}-waiting`,
+      clinicId: clinic.id,
+      patientId: arjun.id,
+      doctorId: doctor.id,
+      assignedDoctorId: doctor.id,
+      status: 'WAITING',
+      tokenNumber: 3,
+      checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
+      chiefComplaint: 'Routine cleaning',
+    },
+  });
+
+  // --- Queue events (so a fresh DB shows a populated activity feed) ---------
+  const queueEventCount = await prisma.queueEvent.count({ where: { clinicId: clinic.id } });
+  if (queueEventCount === 0) {
+    await prisma.queueEvent.createMany({
+      data: [
+        {
+          clinicId: clinic.id,
+          visitId: waitingVisit.id,
+          patientId: arjun.id,
+          type: 'CHECKED_IN',
+          byUserId: receptionist.id,
+          createdAt: new Date(Date.now() - 8 * 60 * 1000),
+        },
+        {
+          clinicId: clinic.id,
+          visitId: pendingVisit.id,
+          patientId: akhilesh.id,
+          type: 'CALLED_IN',
+          byUserId: doctor.id,
+          metadata: { roomId: room1.id },
+          createdAt: new Date(Date.now() - 5 * 60 * 1000),
+        },
+        {
+          clinicId: clinic.id,
+          visitId: confirmedVisit.id,
+          patientId: akhilesh.id,
+          type: 'CHECKOUT_STARTED',
+          byUserId: doctor.id,
+          createdAt: new Date(Date.now() - 30 * 60 * 1000),
+        },
+      ],
+    });
+  }
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
+  console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);
   console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
   console.warn(`   Patients: ${patientSeed.length + 1} | Lab partner + 1 open case | 1 low-stock item`);
   console.warn('   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan');

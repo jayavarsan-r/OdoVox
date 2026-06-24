@@ -15,6 +15,9 @@ import {
   getConsultationEventsSince,
   publishConsultationEvent,
 } from '../queues/events.js';
+import { broadcastToClinic } from '../lib/realtime/broadcast.js';
+import { markRecording } from '../lib/realtime/recording.js';
+import { loadQueueVisit } from '../lib/queue/snapshot.js';
 
 const StartInput = z.object({ patientId: z.string().min(1), visitId: z.string().min(1).optional() });
 const PresignInput = z.object({
@@ -92,6 +95,14 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     await enqueueSttJob({ consultationId: consult.id, jobId: job.id });
     await publishConsultationEvent(fastify.redis, consult.id, { type: 'RECORDED' });
     await fastify.audit('CONSULTATION_PROCESS_ENQUEUED', 'Consultation', consult.id, { jobId: job.id });
+
+    // Phase 4 cross-wire: light the "Dr. X is recording" indicator on the clinic's screens. The
+    // matching `doctor.recording.stopped` fires from the extraction worker when the pipeline settles.
+    await markRecording(fastify.redis, consult.visit.clinicId, consult.visitId);
+    broadcastToClinic(consult.visit.clinicId, {
+      type: 'doctor.recording.started',
+      payload: { visitId: consult.visitId, doctorId: req.user!.id, patientName: consult.visit.patient.name },
+    });
     return ok({ jobId: job.id });
   });
 
@@ -181,6 +192,11 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     });
     // PDF generation stays lazy (GET /prescriptions/:id/pdf) — no enqueue here, so no orphan-job
     // risk, and the confirm never blocks on or fails because of PDF work.
+
+    // Phase 4 cross-wire (§3.3): the commit moved Visit → CHECKOUT. Broadcast it AFTER the
+    // transaction so the receptionist's "Ready for Checkout" section updates instantly.
+    const qVisit = await loadQueueVisit(prisma, req.clinicId!, consult.visitId);
+    if (qVisit) broadcastToClinic(req.clinicId!, { type: 'queue.visit.checkout', payload: qVisit });
     return ok(result);
   });
 

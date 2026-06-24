@@ -43,12 +43,36 @@ enum Gender {
 }
 
 enum VisitStatus {
-  WAITING
-  IN_CHAIR
-  CHECKOUT
+  SCHEDULED // appointment created, patient hasn't arrived
+  CHECKED_IN // receptionist marked arrival; in waiting area
+  WAITING // in active queue, assigned to a doctor
+  IN_CHAIR // currently being treated
+  CHECKOUT // doctor confirmed consultation; awaiting payment/prescription/scheduling
+  COMPLETED // fully done, patient left
+  CANCELLED // never showed or cancelled before start
+  NO_SHOW // didn't arrive within grace period (cron sets this; not in P4)
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  OFFLINE
+}
+
+// Audit-grade queue transition log (Phase 4). Separate from AuditLog because queue events
+// fire rapid-fire, are read continuously by the activity feed, and have a clinic-scoped
+// last-N access pattern. Every queue transition writes one of these AND broadcasts via WS.
+enum QueueEventType {
+  CHECKED_IN
+  CALLED_IN
+  RETURNED_TO_QUEUE
+  CHECKOUT_STARTED
   COMPLETED
   CANCELLED
-  NO_SHOW
+  REASSIGNED
+  PRIORITY_CHANGED
+  DOCTOR_RECORDING
+  DOCTOR_RECORDING_DONE
 }
 
 enum ConsultationStatus {
@@ -175,6 +199,8 @@ model User {
   auditLogs              AuditLog[]
   createdPatients        Patient[]           @relation("PatientCreatedBy")
   doctorVisits           Visit[]             @relation("VisitDoctor")
+  assignedVisits         Visit[]             @relation("VisitAssignedDoctor")
+  queueEvents            QueueEvent[]        @relation("QueueEventBy")
   confirmedConsultations Consultation[]      @relation("ConsultationConfirmedBy")
   rejectedConsultations  Consultation[]      @relation("ConsultationRejectedBy")
   consultationEdits      ConsultationEdit[]
@@ -217,6 +243,7 @@ model Clinic {
   rooms          Room[]
   patients       Patient[]
   visits         Visit[]
+  queueEvents    QueueEvent[]
   appointments   Appointment[]
   labPartners    LabPartner[]
   labCases       LabCase[]
@@ -311,12 +338,13 @@ model RefreshToken {
 // ===========================================================================
 
 model Room {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   clinicId  String
   name      String
   number    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    RoomStatus @default(AVAILABLE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   deletedAt DateTime?
 
   clinic Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
@@ -354,6 +382,7 @@ model Patient {
   clinic        Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   createdBy     User           @relation("PatientCreatedBy", fields: [createdById], references: [id])
   visits        Visit[]
+  queueEvents    QueueEvent[]
   treatmentPlans TreatmentPlan[]
   toothRecords  ToothRecord[]
   prescriptions Prescription[]
@@ -377,10 +406,21 @@ model Visit {
   clinicId       String
   patientId      String
   doctorId       String
+  // Which doctor's queue this visit currently sits in (multi-doctor clinics). Kept in sync
+  // with doctorId on assign/reassign; the queue read query filters/groups on this.
+  assignedDoctorId String?
   roomId         String?
   status         VisitStatus @default(WAITING)
   tokenNumber    Int
+  priority       Int         @default(0) // manual reorder; higher = sooner; 0 = normal FIFO
+  // Optimistic-locking counter. Every transition updates WHERE lifecycleVersion = ? then
+  // increments it, so two simultaneous call-ins can't both win (see queue routes Part 4.5).
+  lifecycleVersion Int       @default(0)
   scheduledAt    DateTime?
+  checkedInAt    DateTime?
+  calledInAt     DateTime? // WAITING → IN_CHAIR
+  checkoutStartedAt DateTime?
+  completedAt    DateTime?
   startedAt      DateTime?
   endedAt        DateTime?
   chiefComplaint String?
@@ -389,20 +429,45 @@ model Visit {
   updatedAt      DateTime    @updatedAt
   deletedAt      DateTime?
 
-  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor       User          @relation("VisitDoctor", fields: [doctorId], references: [id])
-  room         Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  consultation Consultation?
-  sittings     Sitting[]
-  prescriptions Prescription[]
-  bills        Bill[]
-  media        Media[]
+  clinic         Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor         User          @relation("VisitDoctor", fields: [doctorId], references: [id])
+  assignedDoctor User?         @relation("VisitAssignedDoctor", fields: [assignedDoctorId], references: [id], onDelete: SetNull)
+  room           Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  consultation   Consultation?
+  sittings       Sitting[]
+  prescriptions  Prescription[]
+  bills          Bill[]
+  media          Media[]
+  queueEvents    QueueEvent[]
 
+  // The queue read query: a clinic's active visits, by doctor, priority-then-FIFO.
+  @@index([clinicId, status, assignedDoctorId, priority(sort: Desc), checkedInAt(sort: Asc)])
+  // Recent activity / current-in-chair lookup.
+  @@index([clinicId, status, calledInAt(sort: Desc)])
   @@index([clinicId, status, createdAt])
   @@index([patientId])
   @@index([doctorId])
   @@index([roomId])
+}
+
+model QueueEvent {
+  id        String         @id @default(cuid())
+  clinicId  String
+  visitId   String
+  patientId String
+  type      QueueEventType
+  byUserId  String?
+  metadata  Json           @default("{}")
+  createdAt DateTime       @default(now())
+
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  visit   Visit   @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  byUser  User?   @relation("QueueEventBy", fields: [byUserId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId, createdAt(sort: Desc)])
+  @@index([clinicId, visitId, createdAt(sort: Desc)])
 }
 
 model Consultation {
