@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { DevBanner } from '@/components/dev-banner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,8 +26,7 @@ export const viewport: Viewport = {
   themeColor: '#0A0A0A',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Allow pinch-zoom for accessibility (no maximumScale / userScalable lock).
   viewportFit: 'cover',
 };
 
@@ -36,6 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div className="sticky top-0 z-50">
+          <DevBanner />
+        </div>
         <Providers>{children}</Providers>
       </body>
     </html>

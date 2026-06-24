@@ -155,10 +155,11 @@ async function main() {
         age: p.age,
         gender: p.gender,
         bloodGroup: p.bloodGroup,
-        address: p.address,
+        addressEnc: p.address ? encryptField(p.address) : null,
         medicalHistoryEnc: p.medicalHistory ? encryptField(p.medicalHistory) : null,
         allergiesEnc: p.allergies ? encryptField(p.allergies) : null,
         medicalFlags: p.medicalFlags,
+        status: 'ACTIVE',
         createdById: doctor.id,
       },
     });
@@ -218,10 +219,134 @@ async function main() {
     },
   });
 
+  // --- Phase 3: sample consultations --------------------------------------
+  // Akhilesh Guhan is the voice-demo patient (the RCT-on-26 narrative). We seed two
+  // consultations so a fresh DB shows both a confirmed record and a pending verification card.
+  const akhilesh = await prisma.patient.upsert({
+    where: { clinicId_patientCode: { clinicId: clinic.id, patientCode: 'PT-0004' } },
+    update: {},
+    create: {
+      clinicId: clinic.id,
+      patientCode: 'PT-0004',
+      name: 'Akhilesh Guhan',
+      phone: '9001234567',
+      age: 34,
+      gender: 'MALE',
+      bloodGroup: 'O+',
+      addressEnc: encryptField('Jayanagar, Bengaluru'),
+      medicalFlags: [],
+      chiefComplaint: 'Ongoing root canal, upper left',
+      status: 'ACTIVE',
+      createdById: doctor.id,
+    },
+  });
+
+  // (1) CONFIRMED — RCT on 26, third sitting, Amoxicillin, review next week.
+  const confirmedVisit = await prisma.visit.upsert({
+    where: { id: `seed-visit-${clinic.id}-rct` },
+    update: {},
+    create: {
+      id: `seed-visit-${clinic.id}-rct`,
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      doctorId: doctor.id,
+      status: 'CHECKOUT',
+      tokenNumber: 1,
+      startedAt: new Date(Date.now() - 60 * 60 * 1000),
+      endedAt: new Date(Date.now() - 30 * 60 * 1000),
+      chiefComplaint: 'Ongoing root canal, upper left',
+    },
+  });
+
+  await prisma.consultation.upsert({
+    where: { id: `seed-consult-${clinic.id}-rct` },
+    update: {},
+    create: {
+      id: `seed-consult-${clinic.id}-rct`,
+      visitId: confirmedVisit.id,
+      rawTranscriptEnc: encryptField(
+        'RCT on 26 completed, third sitting. Amoxicillin 500mg TID for 5 days. Review next week.',
+      ),
+      structuredData: {
+        procedure: 'RCT',
+        teeth: [26],
+        sittingCurrent: 3,
+        sittingTotal: 4,
+        status: 'COMPLETED',
+        prescriptions: [
+          { name: 'Amoxicillin', dosage: '500mg', frequency: 'TID', durationDays: 5, instructions: null },
+        ],
+        followUp: { afterDays: 7, procedureHint: null },
+        toothStatusUpdates: [{ tooth: 26, status: 'RCT', note: null }],
+        notes: null,
+        clarifications: [],
+        safetyWarnings: [],
+      },
+      languageCode: 'en-IN',
+      provider: 'mock+mock',
+      sttLatencyMs: 820,
+      extractionLatencyMs: 1180,
+      safetyWarnings: [],
+      status: 'CONFIRMED',
+      confirmedById: doctor.id,
+      confirmedAt: new Date(Date.now() - 30 * 60 * 1000),
+    },
+  });
+
+  // (2) PENDING_REVIEW — a filling on 46, waiting for the doctor's verification card.
+  const pendingVisit = await prisma.visit.upsert({
+    where: { id: `seed-visit-${clinic.id}-pending` },
+    update: {},
+    create: {
+      id: `seed-visit-${clinic.id}-pending`,
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      doctorId: doctor.id,
+      status: 'IN_CHAIR',
+      tokenNumber: 2,
+      startedAt: new Date(),
+      chiefComplaint: 'Sensitivity, lower right',
+    },
+  });
+
+  await prisma.consultation.upsert({
+    where: { id: `seed-consult-${clinic.id}-pending` },
+    update: {},
+    create: {
+      id: `seed-consult-${clinic.id}-pending`,
+      visitId: pendingVisit.id,
+      rawTranscriptEnc: encryptField(
+        'Composite filling on 46, caries removed. Ibuprofen 400mg BD for 3 days after food. Review in 2 weeks.',
+      ),
+      structuredData: {
+        procedure: 'Filling',
+        teeth: [46],
+        sittingCurrent: 1,
+        sittingTotal: 1,
+        status: 'COMPLETED',
+        prescriptions: [
+          { name: 'Ibuprofen', dosage: '400mg', frequency: 'BD', durationDays: 3, instructions: 'after food' },
+        ],
+        followUp: { afterDays: 14, procedureHint: 'Review' },
+        toothStatusUpdates: [{ tooth: 46, status: 'FILLED', note: null }],
+        notes: null,
+        clarifications: [],
+        safetyWarnings: [],
+      },
+      languageCode: 'en-IN',
+      provider: 'mock+mock',
+      sttLatencyMs: 760,
+      extractionLatencyMs: 1230,
+      safetyWarnings: [],
+      status: 'PENDING_REVIEW',
+    },
+  });
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
-  console.warn(`   Patients: ${patientSeed.length} | Lab partner + 1 open case | 1 low-stock item`);
+  console.warn(`   Patients: ${patientSeed.length + 1} | Lab partner + 1 open case | 1 low-stock item`);
+  console.warn('   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan');
 }
 
 main()

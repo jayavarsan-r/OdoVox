@@ -27,6 +27,15 @@ enum MemberStatus {
   PENDING
 }
 
+enum PatientStatus {
+  NEW
+  ACTIVE
+  IN_CHAIR
+  DUE_PAYMENT
+  LAB_PENDING
+  INACTIVE
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -46,6 +55,21 @@ enum ConsultationStatus {
   PENDING_REVIEW
   CONFIRMED
   REJECTED
+}
+
+enum JobKind {
+  STT
+  EXTRACTION_CLINICAL
+  EXTRACTION_PRESCRIPTION
+  EXTRACTION_INTAKE
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
 }
 
 enum PlanStatus {
@@ -152,6 +176,7 @@ model User {
   createdPatients        Patient[]           @relation("PatientCreatedBy")
   doctorVisits           Visit[]             @relation("VisitDoctor")
   confirmedConsultations Consultation[]      @relation("ConsultationConfirmedBy")
+  rejectedConsultations  Consultation[]      @relation("ConsultationRejectedBy")
   consultationEdits      ConsultationEdit[]
   prescriptions          Prescription[]      @relation("PrescriptionDoctor")
   appointments           Appointment[]       @relation("AppointmentDoctor")
@@ -199,6 +224,8 @@ model Clinic {
   auditLogs      AuditLog[]
   notifications  Notification[]
   settings       ClinicSetting[]
+  media          Media[]
+  jobs           Job[]
 
   @@index([joinCode])
 }
@@ -311,10 +338,14 @@ model Patient {
   age               Int
   gender            Gender
   bloodGroup        String?
-  address           String?
+  addressEnc        String? // ENCRYPTED (address is PHI)
   medicalHistoryEnc String? // ENCRYPTED
   allergiesEnc      String? // ENCRYPTED
   medicalFlags      String[]
+  chiefComplaint    String?       // latest, denormalized for list display
+  lastVisitAt       DateTime?     // denormalized, maintained in app logic
+  outstandingPaise  Int           @default(0) // denormalized for the "Due" badge
+  status            PatientStatus @default(NEW)
   createdById       String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -353,6 +384,7 @@ model Visit {
   startedAt      DateTime?
   endedAt        DateTime?
   chiefComplaint String?
+  manualEntry    Boolean     @default(false)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   deletedAt      DateTime?
@@ -374,20 +406,30 @@ model Visit {
 }
 
 model Consultation {
-  id             String             @id @default(cuid())
-  visitId        String             @unique
-  rawTranscript  String? // ENCRYPTED
-  structuredData Json               @default("{}")
-  audioUrl       String?
-  status         ConsultationStatus @default(PENDING_REVIEW)
-  confirmedAt    DateTime?
-  confirmedById  String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  deletedAt      DateTime?
+  id                  String             @id @default(cuid())
+  visitId             String             @unique
+  rawTranscriptEnc    String? // ENCRYPTED — AES-256-GCM ciphertext of the raw transcript (PHI)
+  structuredData      Json               @default("{}")
+  audioUrl            String?
+  audioStorageKey     String? // S3 key (separate from any cached signed URL)
+  audioDurationMs     Int?
+  languageCode        String? // en-IN | hi-IN | ta-IN
+  provider            String? // STT+extraction tag, e.g. "sarvam+gemini"
+  sttLatencyMs        Int?
+  extractionLatencyMs Int?
+  safetyWarnings      String[]           @default([])
+  status              ConsultationStatus @default(PENDING_REVIEW)
+  confirmedAt         DateTime?
+  confirmedById       String?
+  rejectedById        String?
+  rejectedReason      String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  deletedAt           DateTime?
 
   visit       Visit              @relation(fields: [visitId], references: [id], onDelete: Cascade)
   confirmedBy User?              @relation("ConsultationConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
+  rejectedBy  User?              @relation("ConsultationRejectedBy", fields: [rejectedById], references: [id], onDelete: SetNull)
   edits       ConsultationEdit[]
 
   @@index([visitId])
@@ -410,6 +452,27 @@ model ConsultationEdit {
   @@index([editedById])
 }
 
+// Tracks the voice pipeline's async work (STT + extraction). BullMQ writes these; dashboards
+// query them. The (clinicId, status, createdAt) index serves both the worker and clinic views.
+model Job {
+  id          String    @id @default(cuid())
+  clinicId    String
+  kind        JobKind
+  status      JobStatus @default(QUEUED)
+  inputRef    String // the entity this job acts on (e.g. consultationId or mediaId)
+  provider    String?
+  attempts    Int       @default(0)
+  lastError   String?
+  durationMs  Int?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, status, createdAt])
+  @@index([inputRef])
+}
+
 // ===========================================================================
 // Treatments
 // ===========================================================================
@@ -421,6 +484,7 @@ model TreatmentPlan {
   description        String?
   status             PlanStatus @default(DRAFT)
   estimatedCostPaise Int        @default(0)
+  createdById        String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   deletedAt          DateTime?
@@ -469,13 +533,15 @@ model Sitting {
 }
 
 model ToothRecord {
-  id          String      @id @default(cuid())
-  patientId   String
-  toothNumber Int
-  status      ToothStatus @default(HEALTHY)
-  history     Json        @default("[]")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String      @id @default(cuid())
+  patientId       String
+  toothNumber     Int
+  status          ToothStatus @default(HEALTHY)
+  history         Json        @default("[]")
+  notes           String?
+  lastUpdatedById String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
@@ -496,6 +562,7 @@ model Prescription {
   instructions    String?
   reviewAfterDays Int?
   pdfUrl          String?
+  pdfStorageKey   String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   deletedAt       DateTime?
@@ -711,22 +778,30 @@ model Payment {
 
 model Media {
   id           String    @id @default(cuid())
+  clinicId     String
   patientId    String
   visitId      String?
   type         MediaType
-  url          String
-  thumbnailUrl String?
-  notes        String?
+  storageKey   String // opaque S3/MinIO object key
+  url          String? // cached signed URL — regenerated on read
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  thumbnailKey String?
+  notesEnc     String? // ENCRYPTED
   uploadedById String
   uploadedAt   DateTime  @default(now())
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
+  clinic     Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient    Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
   visit      Visit?  @relation(fields: [visitId], references: [id], onDelete: SetNull)
   uploadedBy User    @relation(fields: [uploadedById], references: [id])
 
+  @@index([clinicId, patientId, uploadedAt])
   @@index([patientId])
   @@index([visitId])
   @@index([uploadedById])

@@ -9,3 +9,6 @@ export * from './appointment.js';
 export * from './lab.js';
 export * from './inventory.js';
 export * from './billing.js';
+export * from './media.js';
+export * from './home.js';
+export * from './extraction.js';

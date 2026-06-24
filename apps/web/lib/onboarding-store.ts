@@ -32,8 +32,10 @@ export const useOnboarding = create<OnboardingState>()(
       doctorProfile: null,
       setPhone: (phone) => set({ phone }),
       setRole: (role) => set({ role }),
-      setClinicData: (clinicData) => set({ clinicData }),
-      setDoctorProfile: (doctorProfile) => set({ doctorProfile }),
+      // Merge so multi-step wizard data survives back/forward navigation.
+      setClinicData: (data) => set((s) => ({ clinicData: { ...s.clinicData, ...data } })),
+      setDoctorProfile: (data) =>
+        set((s) => ({ doctorProfile: { ...s.doctorProfile, ...data } })),
       reset: () => set({ phone: null, role: null, clinicData: null, doctorProfile: null }),
     }),
     {

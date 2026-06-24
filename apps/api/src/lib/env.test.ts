@@ -16,6 +16,12 @@ const validRaw = (): NodeJS.ProcessEnv => ({
   COOKIE_SECRET: '0123456789abcdef0123456789abcdef',
   PHI_ENCRYPTION_KEY: crypto.randomBytes(32).toString('base64'),
   PHI_KEY_VERSION: '1',
+  S3_ENDPOINT: 'http://localhost:9000',
+  S3_REGION: 'us-east-1',
+  S3_ACCESS_KEY: 'odovox',
+  S3_SECRET_KEY: 'odovox-dev-password',
+  S3_BUCKET: 'odovox-media',
+  S3_FORCE_PATH_STYLE: 'true',
   SENTRY_DSN: '',
 });
 

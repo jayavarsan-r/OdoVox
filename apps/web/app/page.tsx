@@ -6,6 +6,7 @@ import { api, ApiError } from '@/lib/api-client';
 import { useAuth, type SessionClinic, type SessionUser } from '@/lib/auth';
 import { MobileShell } from '@/components/mobile-shell';
 import { GradientMesh } from '@/components/gradient-mesh';
+import { MascotMoment } from '@/components/illustrations';
 import { LogoLockup } from '@/components/ui/logo';
 import { Spinner } from '@/components/ui/spinner';
 import type { ClinicMemberResponse } from '@odovox/types';
@@ -60,8 +61,9 @@ export default function SplashPage() {
 
   return (
     <MobileShell className="items-center justify-center">
-      <GradientMesh preset="one" />
+      <GradientMesh variant="warm" />
       <div className="flex flex-col items-center gap-6">
+        <MascotMoment pose="hero" size="lg" animation="float" />
         <LogoLockup />
         <Spinner className="size-5 text-muted-foreground" />
       </div>

@@ -16,7 +16,8 @@
     "verify": "turbo run lint typecheck test",
     "db:generate": "pnpm --filter @odovox/db generate",
     "db:migrate": "pnpm --filter @odovox/db migrate",
-    "db:seed": "pnpm --filter @odovox/db seed",
+    "db:seed": "pnpm --filter @odovox/db seed && pnpm --filter @odovox/api storage:init",
+    "storage:init": "pnpm --filter @odovox/api storage:init",
     "db:studio": "pnpm --filter @odovox/db studio",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,css}\"",
     "prepare": "husky"

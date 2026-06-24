@@ -8,18 +8,43 @@ import {
   ToothStatus,
 } from './common.js';
 
+/** A procedure supplied inline when creating a plan (manual entry, Cases tab). */
+export const PlanProcedureInput = z.object({
+  name: z.string().min(1).max(160),
+  toothNumbers: z.array(FdiToothNumber).default([]),
+  totalSittings: z.number().int().min(1).max(10).default(1),
+  notes: z.string().max(2000).optional(),
+});
+export type PlanProcedureInput = z.infer<typeof PlanProcedureInput>;
+
 export const CreateTreatmentPlanInput = z.object({
   patientId: z.string().min(1),
   name: z.string().min(1).max(160),
   description: z.string().max(2000).optional(),
   estimatedCostPaise: PaiseAmount.default(0),
+  procedures: z.array(PlanProcedureInput).max(20).default([]),
 });
 export type CreateTreatmentPlanInput = z.infer<typeof CreateTreatmentPlanInput>;
 
 export const UpdateTreatmentPlanInput = CreateTreatmentPlanInput.partial()
-  .omit({ patientId: true })
+  .omit({ patientId: true, procedures: true })
   .extend({ status: PlanStatus.optional() });
 export type UpdateTreatmentPlanInput = z.infer<typeof UpdateTreatmentPlanInput>;
+
+/** Upsert a tooth's status from the odontogram (doctor-only). */
+export const UpsertToothInput = z.object({
+  status: ToothStatus,
+  notes: z.string().max(2000).nullable().optional(),
+});
+export type UpsertToothInput = z.infer<typeof UpsertToothInput>;
+
+export const ToothHistoryEntry = z.object({
+  date: z.string(),
+  status: ToothStatus,
+  by: z.string().nullable(),
+  notes: z.string().nullable(),
+});
+export type ToothHistoryEntry = z.infer<typeof ToothHistoryEntry>;
 
 export const TreatmentPlanResponse = z
   .object({
@@ -55,6 +80,17 @@ export const ProcedureResponse = z
   })
   .merge(Timestamps);
 export type ProcedureResponse = z.infer<typeof ProcedureResponse>;
+
+/** Plan + its procedures + a computed progress rollup (sittings done / total). */
+export const TreatmentPlanDetailResponse = TreatmentPlanResponse.extend({
+  procedures: z.array(ProcedureResponse),
+  progress: z.object({
+    totalSittings: z.number().int(),
+    completedSittings: z.number().int(),
+    percent: z.number().int().min(0).max(100),
+  }),
+});
+export type TreatmentPlanDetailResponse = z.infer<typeof TreatmentPlanDetailResponse>;
 
 export const ToothRecordResponse = z
   .object({

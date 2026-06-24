@@ -6,23 +6,14 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { motion } from 'framer-motion';
 import { Check, IndianRupee, Mic } from 'lucide-react';
 import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
-import { ToothMark } from '@/components/ui/logo';
+import { MascotMoment } from '@/components/illustrations';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-const MESH_PRESETS = ['one', 'two', 'three', 'four'] as const;
 
 function SlideHeroTooth() {
   return (
     <div className="relative flex h-56 items-center justify-center">
-      <motion.div
-        className="flex size-36 items-center justify-center rounded-pill bg-gradient-to-br from-lime to-sage"
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-      >
-        <ToothMark className="size-16 text-ink" />
-      </motion.div>
+      <MascotMoment pose="hero" size="xl" animation="float" background="none" />
     </div>
   );
 }
@@ -30,7 +21,7 @@ function SlideHeroTooth() {
 function SlideHeroVoice() {
   const items = ['Procedure: RCT · Tooth 36', 'Next visit: Cleaning', 'Prescribed: Ibuprofen 400mg'];
   return (
-    <div className="flex h-56 flex-col items-center justify-center gap-4">
+    <div className="relative flex h-56 flex-col items-center justify-center gap-4">
       <div className="flex items-end gap-1.5">
         {[0, 1, 2, 3, 4, 5, 6].map((i) => (
           <motion.span
@@ -53,6 +44,9 @@ function SlideHeroVoice() {
             <Check className="size-4 text-success" /> {t}
           </motion.div>
         ))}
+      </div>
+      <div className="absolute -bottom-3 right-0 rotate-[6deg]">
+        <MascotMoment pose="smile" size="sm" animation="float" />
       </div>
     </div>
   );
@@ -155,9 +149,7 @@ export default function WelcomePage() {
   }, [embla, isLast, router]);
 
   return (
-    <MobileShell>
-      <GradientMesh preset={MESH_PRESETS[index]} />
-
+    <MobileShell className="bg-paper">
       <div className="flex items-center justify-end px-5 pt-3">
         <button
           type="button"
@@ -179,7 +171,9 @@ export default function WelcomePage() {
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="flex h-full flex-col justify-center"
               >
-                {slide.hero}
+                <div className="mx-2 flex items-center justify-center rounded-3xl bg-paper-cream py-6">
+                  {slide.hero}
+                </div>
                 <h1 className="mt-8 text-3xl font-semibold tracking-tight">{slide.heading}</h1>
                 <p className="mt-3 text-base leading-relaxed text-muted-foreground">{slide.body}</p>
                 {'chips' in slide && slide.chips ? (

@@ -112,10 +112,20 @@ export async function clinicRoutes(fastify: FastifyInstance): Promise<void> {
       });
       await fastify.audit('USER_PROFILE_UPDATED', 'User', userId);
 
+      // Re-issue an access token scoped to the new clinic so the caller can immediately
+      // make clinic-scoped requests without re-logging-in.
+      const accessToken = await fastify.jwt.signAccessToken({
+        sub: userId,
+        phone: req.user!.phone,
+        clinicId: clinic.id,
+        role: 'DOCTOR',
+      });
+
       return ok({
         clinic: toClinicResponse(clinic),
         membership: toMemberResponse(membership),
         joinCode,
+        accessToken,
       });
     },
   );
@@ -183,9 +193,17 @@ export async function clinicRoutes(fastify: FastifyInstance): Promise<void> {
       });
       await fastify.audit('USER_PROFILE_UPDATED', 'User', userId);
 
+      const accessToken = await fastify.jwt.signAccessToken({
+        sub: userId,
+        phone: req.user!.phone,
+        clinicId: clinic.id,
+        role: input.role,
+      });
+
       return ok({
         clinic: toClinicResponse(clinic),
         membership: toMemberResponse(membership),
+        accessToken,
       });
     },
   );

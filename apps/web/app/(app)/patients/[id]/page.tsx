@@ -1,0 +1,674 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import {
+  ChevronLeft,
+  Trash2,
+  Mic,
+  Pill,
+  CalendarPlus,
+  IndianRupee,
+  Plus,
+  FileText,
+  Image as ImageIcon,
+  ClipboardList,
+  Receipt,
+  UserX,
+} from 'lucide-react';
+import { AnimatedPage } from '@/components/animated-page';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { EmptyState, HeroCard } from '@/components/ds';
+import {
+  Odontogram,
+  OdontogramLegend,
+  TOOTH_STATUSES,
+  TOOTH_TONE,
+  type ToothStatus,
+} from '@/components/odontogram/odontogram';
+import { api } from '@/lib/api-client';
+import { useDictation } from '@/lib/voice/use-dictation';
+import { useToast } from '@/lib/toast';
+import {
+  usePatient,
+  useTeeth,
+  useUpsertTooth,
+  usePlans,
+  useCreatePlan,
+  useVisits,
+  useCreateVisit,
+  useCreatePrescription,
+  useMedia,
+  useUploadMedia,
+  useDeleteMedia,
+  useDeletePatient,
+  fetchMediaUrl,
+  fetchPrescriptionPdfUrl,
+} from '@/lib/queries';
+import { initials, statusStyle, rupees } from '@/lib/patient-ui';
+import { cn } from '@/lib/utils';
+
+type Tab = 'overview' | 'cases' | 'teeth' | 'media' | 'billing';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'cases', label: 'Cases' },
+  { id: 'teeth', label: 'Tooth Map' },
+  { id: 'media', label: 'Media' },
+  { id: 'billing', label: 'Billing' },
+];
+const FREQ = ['OD', 'BD', 'TID', 'QID', 'SOS'];
+const MED_SUGGESTIONS = [
+  'Amoxicillin 500mg',
+  'Ibuprofen 400mg',
+  'Paracetamol 500mg',
+  'Metronidazole 400mg',
+  'Chlorhexidine MW',
+  'Diclofenac 50mg',
+];
+
+interface Med {
+  name: string;
+  dosage: string;
+  frequency: string;
+  durationDays: number;
+  instructions?: string;
+}
+
+export default function PatientDetailPage() {
+  const router = useRouter();
+  const toast = useToast();
+  const { id } = useParams<{ id: string }>();
+  const [tab, setTab] = useState<Tab>('overview');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const patient = usePatient(id);
+  const teeth = useTeeth(id);
+  const deletePatient = useDeletePatient();
+
+  const records = useMemo(() => {
+    const map: Record<number, ToothStatus> = {};
+    for (const t of teeth.data ?? []) map[t.toothNumber] = t.status as ToothStatus;
+    return map;
+  }, [teeth.data]);
+
+  if (patient.isLoading) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Spinner className="size-5 text-muted-foreground" />
+      </div>
+    );
+  }
+  if (patient.isError || !patient.data) {
+    return (
+      <EmptyState
+        variant="page"
+        icon={<UserX />}
+        iconTone="peach"
+        title="Patient not found"
+        body="This patient may have been removed."
+        cta={{ label: 'Back to patients', onClick: () => router.push('/patients') }}
+      />
+    );
+  }
+  const p = patient.data;
+  const s = statusStyle(p.status);
+
+  const doDelete = async () => {
+    try {
+      await deletePatient.mutateAsync(id);
+      toast.success('Patient deleted.');
+      router.replace('/patients');
+    } catch (err) {
+      toast.apiError(err);
+    }
+  };
+
+  return (
+    <AnimatedPage className="flex flex-1 flex-col">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-3 pt-3">
+        <button onClick={() => router.back()} aria-label="Back" className="-ml-1 flex size-10 items-center justify-center rounded-pill hover:bg-muted">
+          <ChevronLeft className="size-5" />
+        </button>
+        <span className="text-sm font-medium text-muted-foreground">Patient</span>
+        <button onClick={() => setConfirmDelete(true)} aria-label="Delete patient" className="flex size-10 items-center justify-center rounded-pill text-danger hover:bg-muted">
+          <Trash2 className="size-5" />
+        </button>
+      </div>
+
+      {/* Identity */}
+      <div className="flex items-center gap-3 px-5 pt-2">
+        <span className={cn('flex size-14 items-center justify-center rounded-pill text-lg font-semibold ring-2 ring-lime/40 ring-offset-2 ring-offset-background', s.avatar)}>
+          {initials(p.name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-2xl font-semibold tracking-tight">{p.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {p.age} · {p.gender.toLowerCase()} · <span className="font-mono">{p.phone}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="sticky top-0 z-10 mt-4 flex gap-1 overflow-x-auto border-b border-border bg-background px-3">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'relative shrink-0 px-3 py-2.5 text-sm font-medium transition-colors',
+              tab === t.id ? 'text-ink' : 'text-text-muted',
+            )}
+          >
+            {t.label}
+            {tab === t.id ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-pill bg-lime" /> : null}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 px-5 py-4">
+        {tab === 'overview' && <OverviewTab patientId={id} records={records} onOpenTeeth={() => setTab('teeth')} />}
+        {tab === 'cases' && <CasesTab patientId={id} />}
+        {tab === 'teeth' && <TeethTab patientId={id} records={records} />}
+        {tab === 'media' && <MediaTab patientId={id} />}
+        {tab === 'billing' && <BillingTab patientId={id} />}
+      </div>
+
+      <BottomSheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete patient?">
+        <p className="text-sm text-muted-foreground">
+          {p.name} will be hidden from all lists. This can be undone by an admin.
+        </p>
+        <div className="mt-5 flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+          <Button variant="destructive" className="flex-1" onClick={doDelete} loading={deletePatient.isPending}>Delete</Button>
+        </div>
+      </BottomSheet>
+    </AnimatedPage>
+  );
+}
+
+// ===== Overview ==============================================================
+function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void }) {
+  const toast = useToast();
+  const router = useRouter();
+  const visits = useVisits(patientId);
+  const plans = usePlans(patientId);
+  const [rx, setRx] = useState(false);
+  const [visitOpen, setVisitOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const activePlan = plans.data?.find((pl) => pl.status === 'ACTIVE');
+
+  const startConsultation = async () => {
+    if (starting) return;
+    setStarting(true);
+    try {
+      const { consultationId } = await api.post<{ consultationId: string }>('/consultations', { patientId });
+      router.push(`/consult/${consultationId}?patientId=${patientId}`);
+    } catch {
+      toast.info('Could not start the consultation. Please try again.');
+      setStarting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <HeroCard
+        variant="dark"
+        icon={<Mic />}
+        title="Record findings"
+        subtitle="Voice consultation"
+        onClick={() => void startConsultation()}
+      />
+
+      <div className="grid grid-cols-3 gap-2">
+        <QuickAction label="Prescribe" icon={<Pill className="size-5" />} accent="bg-peach-soft" onClick={() => setRx(true)} />
+        <QuickAction label="New visit" icon={<CalendarPlus className="size-5" />} accent="bg-sky-soft" onClick={() => setVisitOpen(true)} />
+        <QuickAction label="Collect" icon={<IndianRupee className="size-5" />} accent="bg-lime-soft" onClick={() => toast.info('Payments land in Phase 8.')} />
+      </div>
+
+      <Section title="Current treatment">
+        {activePlan ? (
+          <div className="rounded-lg border border-border bg-surface p-4">
+            <p className="text-sm font-semibold">{activePlan.name}</p>
+            <ProgressBar percent={activePlan.progress.percent} />
+            <p className="mt-1 text-xs text-muted-foreground">{activePlan.progress.completedSittings}/{activePlan.progress.totalSittings} sittings</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No active treatment yet.</div>
+        )}
+      </Section>
+
+      <Section title="Affected teeth" action={<button onClick={onOpenTeeth} className="text-sm text-muted-foreground">Open →</button>}>
+        <div className="rounded-lg border border-border bg-surface p-3">
+          <Odontogram records={records} compact onToothTap={onOpenTeeth} />
+        </div>
+      </Section>
+
+      <Section title="Previous work">
+        {(visits.data?.length ?? 0) === 0 ? (
+          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No visits recorded yet.</div>
+        ) : (
+          <div className="space-y-2">
+            {visits.data!.slice(0, 5).map((v) => (
+              <div key={v.id} className="rounded-lg border border-border bg-surface p-3">
+                <p className="text-sm font-medium">{v.chiefComplaint ?? 'Visit'}</p>
+                <p className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleDateString('en-IN')}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
+
+      <PrescriptionSheet patientId={patientId} open={rx} onClose={() => setRx(false)} />
+      <NewVisitSheet patientId={patientId} open={visitOpen} onClose={() => setVisitOpen(false)} />
+    </div>
+  );
+}
+
+// ===== Cases =================================================================
+function CasesTab({ patientId }: { patientId: string }) {
+  const toast = useToast();
+  const plans = usePlans(patientId);
+  const createPlan = useCreatePlan(patientId);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [cost, setCost] = useState('');
+  const [procs, setProcs] = useState<{ name: string; totalSittings: number; toothNumbers: string }[]>([
+    { name: '', totalSittings: 1, toothNumbers: '' },
+  ]);
+
+  const save = async () => {
+    try {
+      await createPlan.mutateAsync({
+        name,
+        estimatedCostPaise: Math.round((Number(cost) || 0) * 100),
+        procedures: procs
+          .filter((p) => p.name.trim())
+          .map((p) => ({
+            name: p.name,
+            totalSittings: p.totalSittings,
+            toothNumbers: p.toothNumbers.split(',').map((n) => Number(n.trim())).filter((n) => !Number.isNaN(n)),
+          })),
+      });
+      toast.success('Treatment plan created.');
+      setOpen(false);
+      setName(''); setCost(''); setProcs([{ name: '', totalSittings: 1, toothNumbers: '' }]);
+    } catch (err) {
+      toast.apiError(err);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <Button className="w-full" onClick={() => setOpen(true)}><Plus className="size-4" /> New plan</Button>
+      {plans.isLoading ? (
+        <Spinner />
+      ) : (plans.data?.length ?? 0) === 0 ? (
+        <EmptyState
+          variant="inline"
+          icon={<ClipboardList />}
+          iconTone="sage"
+          title="No treatment plans"
+          body="Tap Record findings or + New plan to start."
+        />
+      ) : (
+        plans.data!.map((pl) => (
+          <div key={pl.id} className="rounded-lg border border-border bg-surface p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold">{pl.name}</p>
+              <span className="rounded-pill bg-muted px-2 py-0.5 text-xs">{pl.status}</span>
+            </div>
+            <ProgressBar percent={pl.progress.percent} />
+            <p className="mt-1 text-xs text-muted-foreground">{pl.progress.completedSittings}/{pl.progress.totalSittings} sittings · {rupees(pl.estimatedCostPaise)}</p>
+          </div>
+        ))
+      )}
+
+      <BottomSheet open={open} onClose={() => setOpen(false)} title="New treatment plan">
+        <div className="space-y-3">
+          <Input placeholder="Plan name (e.g. RCT + Crown)" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input placeholder="Estimated cost (₹)" inputMode="numeric" value={cost} onChange={(e) => setCost(e.target.value)} />
+          <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Procedures</p>
+          {procs.map((proc, i) => (
+            <div key={i} className="space-y-2 rounded-lg border border-border p-3">
+              <Input placeholder="Procedure (RCT, Scaling…)" value={proc.name} onChange={(e) => setProcs((ps) => ps.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+              <div className="flex gap-2">
+                <Input placeholder="Teeth (e.g. 36, 37)" value={proc.toothNumbers} onChange={(e) => setProcs((ps) => ps.map((x, j) => (j === i ? { ...x, toothNumbers: e.target.value } : x)))} />
+                <Input className="w-20" type="number" min={1} value={proc.totalSittings} onChange={(e) => setProcs((ps) => ps.map((x, j) => (j === i ? { ...x, totalSittings: Number(e.target.value) } : x)))} />
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={() => setProcs((ps) => [...ps, { name: '', totalSittings: 1, toothNumbers: '' }])} className="text-sm font-medium text-muted-foreground">+ Add procedure</button>
+          <Button className="w-full" disabled={!name.trim()} loading={createPlan.isPending} onClick={save}>Create plan</Button>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+// ===== Tooth Map =============================================================
+function TeethTab({ patientId, records }: { patientId: string; records: Record<number, ToothStatus> }) {
+  const toast = useToast();
+  const teeth = useTeeth(patientId);
+  const upsert = useUpsertTooth(patientId);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [status, setStatus] = useState<ToothStatus>('HEALTHY');
+  const [notes, setNotes] = useState('');
+
+  const open = (n: number) => {
+    setSelected(n);
+    setStatus((records[n] ?? 'HEALTHY') as ToothStatus);
+    const existing = teeth.data?.find((t) => t.toothNumber === n);
+    setNotes(existing?.notes ?? '');
+  };
+  const history = teeth.data?.find((t) => t.toothNumber === selected)?.history ?? [];
+
+  const save = async () => {
+    if (selected == null) return;
+    try {
+      await upsert.mutateAsync({ tooth: selected, input: { status, notes: notes || null } });
+      toast.success(`Tooth ${selected} updated.`);
+      setSelected(null);
+    } catch (err) {
+      toast.apiError(err);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <Odontogram records={records} highlightTooth={selected} onToothTap={open} />
+      </div>
+      <OdontogramLegend />
+
+      <BottomSheet open={selected != null} onClose={() => setSelected(null)} title={`Tooth ${selected ?? ''}`}>
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {TOOTH_STATUSES.map((st) => (
+              <button key={st} type="button" onClick={() => setStatus(st)} className={cn('rounded-pill border px-3 py-1.5 text-xs font-medium', status === st ? TOOTH_TONE[st] + ' ring-2 ring-ink ring-offset-1' : 'border-border bg-surface')}>{st}</button>
+            ))}
+          </div>
+          <Input placeholder="Notes (encrypted)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          {history.length > 0 ? (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-text-subtle">History</p>
+              <div className="space-y-1">
+                {history.slice().reverse().map((h, i) => (
+                  <p key={i} className="text-xs text-muted-foreground">{new Date(h.date).toLocaleDateString('en-IN')} · {h.status}{h.notes ? ` · ${h.notes}` : ''}</p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <Button className="w-full" loading={upsert.isPending} onClick={save}>Save</Button>
+        </div>
+      </BottomSheet>
+    </div>
+  );
+}
+
+// ===== Media =================================================================
+function MediaTab({ patientId }: { patientId: string }) {
+  const toast = useToast();
+  const media = useMedia(patientId);
+  const upload = useUploadMedia(patientId);
+  const del = useDeleteMedia(patientId);
+
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    const type = file.type === 'application/pdf' ? 'DOCUMENT' : 'XRAY';
+    try {
+      await upload.mutateAsync({ file, type });
+      toast.success('Uploaded.');
+    } catch (err) {
+      toast.apiError(err);
+    }
+  };
+
+  const items = media.data?.items ?? [];
+  return (
+    <div className="space-y-4">
+      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border-strong bg-surface p-4 text-sm font-medium text-muted-foreground">
+        {upload.isPending ? <Spinner /> : <Plus className="size-4" />}
+        Upload x-ray, photo or document
+        <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+      </label>
+
+      {media.isLoading ? (
+        <Spinner />
+      ) : items.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          icon={<ImageIcon />}
+          iconTone="sky"
+          title="No media yet"
+          body="Upload x-rays, photos, or documents."
+        />
+      ) : (
+        <div className="grid grid-cols-3 gap-2">
+          {items.map((m) => (
+            <MediaThumb key={m.id} id={m.id} type={m.type} onDelete={() => del.mutate(m.id)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MediaThumb({ id, type, onDelete }: { id: string; type: string; onDelete: () => void }) {
+  const { data: url } = useQuery({ queryKey: ['media-url', id], queryFn: () => fetchMediaUrl(id) });
+  return (
+    <div className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-paper-warm">
+      {type === 'DOCUMENT' || !url ? (
+        <button onClick={() => url && window.open(url, '_blank')} className="flex size-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
+          <FileText className="size-6" /> {type === 'DOCUMENT' ? 'PDF' : '…'}
+        </button>
+      ) : (
+        <img src={url} alt="media" className="size-full object-cover" onClick={() => window.open(url, '_blank')} />
+      )}
+      <button onClick={onDelete} aria-label="Delete" className="absolute right-1 top-1 hidden rounded-pill bg-ink/70 p-1 text-paper group-hover:block">
+        <Trash2 className="size-3" />
+      </button>
+    </div>
+  );
+}
+
+// ===== Billing ===============================================================
+interface BillingData {
+  summary: { totalBilledPaise: number; totalPaidPaise: number; outstandingPaise: number };
+  bills: { id: string; totalPaise: number; paidPaise: number; status: string; createdAt: string }[];
+}
+function BillingTab({ patientId }: { patientId: string }) {
+  const billing = useQuery({ queryKey: ['billing', patientId], queryFn: () => api.get<BillingData>(`/patients/${patientId}/billing`) });
+  if (billing.isLoading) return <Spinner />;
+  const d = billing.data!;
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-2 rounded-lg border border-border bg-surface p-4">
+        <div><p className="text-xs text-muted-foreground">Billed</p><p className="font-semibold">{rupees(d.summary.totalBilledPaise)}</p></div>
+        <div><p className="text-xs text-muted-foreground">Paid</p><p className="font-semibold">{rupees(d.summary.totalPaidPaise)}</p></div>
+        <div><p className="text-xs text-muted-foreground">Due</p><p className="font-semibold text-danger">{rupees(d.summary.outstandingPaise)}</p></div>
+      </div>
+      {d.bills.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          icon={<Receipt />}
+          iconTone="neutral"
+          title="No bills yet"
+          body="Bills will appear here after visits."
+        />
+      ) : (
+        d.bills.map((b) => (
+          <div key={b.id} className="flex items-center justify-between rounded-lg border border-border bg-surface p-3">
+            <p className="text-sm">{new Date(b.createdAt).toLocaleDateString('en-IN')}</p>
+            <span className="text-sm font-medium">{rupees(b.totalPaise)} · {b.status}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// ===== Shared sub-forms ======================================================
+function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; open: boolean; onClose: () => void }) {
+  const toast = useToast();
+  const createRx = useCreatePrescription(patientId);
+  const [meds, setMeds] = useState<Med[]>([]);
+  const [instructions, setInstructions] = useState('');
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  const addMed = (name: string) => setMeds((m) => [...m, { name, dosage: '1 tab', frequency: 'BD', durationDays: 5 }]);
+
+  // Stub swap (Phase 3): "Dictate prescription" → real medicines extraction + allergy safety.
+  const dictate = useDictation<{
+    prescription: { prescriptions: { name: string; dosage: string | null; frequency: string | null; durationDays: number | null }[] };
+    safetyWarnings: string[];
+  }>(
+    '/prescriptions/dictate',
+    ({ prescription, safetyWarnings }) => {
+      setMeds(
+        prescription.prescriptions.map((p) => ({
+          name: p.name,
+          dosage: p.dosage ?? '1 tab',
+          frequency: (p.frequency ?? 'BD') as Med['frequency'],
+          durationDays: p.durationDays ?? 5,
+        })),
+      );
+      if (safetyWarnings.length) toast.info(`Safety: ${safetyWarnings.join(', ')} — verify before saving.`);
+      else toast.info('Filled from your voice — review and edit.');
+    },
+    { patientId },
+  );
+  const dictateBusy = dictate.state.kind === 'recording' || dictate.state.kind === 'processing';
+
+  const save = async () => {
+    try {
+      const rx = await createRx.mutateAsync({ medicines: meds, instructions: instructions || undefined });
+      setSavedId(rx.id);
+      toast.success('Prescription saved.');
+    } catch (err) {
+      toast.apiError(err);
+    }
+  };
+  const viewPdf = async () => {
+    if (!savedId) return;
+    const url = await fetchPrescriptionPdfUrl(savedId);
+    window.open(url, '_blank');
+  };
+
+  return (
+    <BottomSheet open={open} onClose={onClose} title="New prescription">
+      {savedId ? (
+        <div className="space-y-3 text-center">
+          <p className="text-sm text-muted-foreground">Prescription saved.</p>
+          <Button className="w-full" onClick={viewPdf}><FileText className="size-4" /> View PDF</Button>
+          <Button variant="outline" className="w-full" onClick={onClose}>Done</Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => !dictateBusy && void dictate.start()}
+            disabled={dictateBusy}
+            className={cn(
+              'flex w-full items-center justify-center gap-2 rounded-pill py-2.5 text-sm font-medium transition-colors',
+              dictateBusy ? 'animate-pulse bg-ink text-lime' : 'bg-lime text-ink shadow-lime-glow',
+            )}
+          >
+            <Mic className="size-4" /> {dictateBusy ? 'Listening… (auto-stops)' : 'Dictate prescription'}
+          </button>
+          <div className="flex flex-wrap gap-2">
+            {MED_SUGGESTIONS.map((m) => (
+              <button key={m} type="button" onClick={() => addMed(m)} className="rounded-pill border border-border px-3 py-1 text-xs">{m}</button>
+            ))}
+          </div>
+          {meds.map((med, i) => (
+            <div key={i} className="space-y-2 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{med.name}</p>
+                <button onClick={() => setMeds((ms) => ms.filter((_, j) => j !== i))} className="text-danger" aria-label="Remove">−</button>
+              </div>
+              <div className="flex gap-2">
+                <Input className="flex-1" placeholder="Dosage" value={med.dosage} onChange={(e) => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, dosage: e.target.value } : x)))} />
+                <Input className="w-20" type="number" min={1} value={med.durationDays} onChange={(e) => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, durationDays: Number(e.target.value) } : x)))} />
+              </div>
+              <div className="flex gap-1.5">
+                {FREQ.map((f) => (
+                  <button key={f} type="button" onClick={() => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, frequency: f } : x)))} className={cn('flex-1 rounded-md border py-1.5 text-xs', med.frequency === f ? 'border-ink bg-ink text-paper' : 'border-border')}>{f}</button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <Input placeholder="Instructions (after food…)" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+          <Button className="w-full" disabled={meds.length === 0} loading={createRx.isPending} onClick={save}>Save prescription</Button>
+        </div>
+      )}
+    </BottomSheet>
+  );
+}
+
+function NewVisitSheet({ patientId, open, onClose }: { patientId: string; open: boolean; onClose: () => void }) {
+  const toast = useToast();
+  const createVisit = useCreateVisit(patientId);
+  const [procedure, setProcedure] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const save = async () => {
+    try {
+      await createVisit.mutateAsync({ procedure, notes: notes || undefined, toothNumbers: [] });
+      toast.success('Visit recorded.');
+      onClose();
+      setProcedure(''); setNotes('');
+    } catch (err) {
+      toast.apiError(err);
+    }
+  };
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Record a visit">
+      <div className="space-y-3">
+        <Input placeholder="Procedure (e.g. Scaling)" value={procedure} onChange={(e) => setProcedure(e.target.value)} />
+        <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Button className="w-full" disabled={!procedure.trim()} loading={createVisit.isPending} onClick={save}>Save visit</Button>
+      </div>
+    </BottomSheet>
+  );
+}
+
+// ===== tiny shared bits ======================================================
+function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-xs font-semibold tracking-widest text-text-subtle">{title.toUpperCase()}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+function ProgressBar({ percent }: { percent: number }) {
+  return (
+    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-pill bg-muted">
+      <div className="h-full rounded-pill bg-lime" style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
+function QuickAction({ label, icon, accent, onClick }: { label: string; icon: React.ReactNode; accent: string; onClick: () => void }) {
+  // Mini light-hero tile: elevated + scale-on-tap (kept vertical for the 3-up grid).
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex flex-col items-start gap-2 rounded-lg border border-border/60 p-3 text-left shadow-elev-2 transition-transform active:scale-95',
+        accent,
+      )}
+    >
+      <span className="text-ink">{icon}</span>
+      <span className="text-xs font-medium text-ink">{label}</span>
+    </button>
+  );
+}

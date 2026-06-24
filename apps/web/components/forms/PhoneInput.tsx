@@ -34,13 +34,13 @@ export function PhoneInput({
   return (
     <div
       className={cn(
-        'flex h-12 items-center rounded-md border bg-surface shadow-soft transition-colors',
-        'focus-within:ring-2 focus-within:ring-ring',
+        'flex h-12 items-center rounded-md border bg-surface shadow-[var(--inset-input)] transition-shadow',
+        'focus-within:shadow-[var(--ring-lime)]',
         invalid ? 'border-danger' : 'border-input',
         disabled && 'opacity-50',
       )}
     >
-      <span className="flex items-center gap-1 border-r border-border px-3 text-sm font-medium text-muted-foreground">
+      <span className="flex items-center gap-1 border-r border-border-strong px-3 text-sm font-medium text-muted-foreground">
         <span aria-hidden>🇮🇳</span> +91
       </span>
       <input

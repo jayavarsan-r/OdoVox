@@ -19,6 +19,7 @@ export const CLINIC_SCOPED_MODELS = [
   'InventoryItem',
   'Notification',
   'ClinicSetting',
+  'Media',
 ] as const;
 
 export type ClinicScopedModel = (typeof CLINIC_SCOPED_MODELS)[number];

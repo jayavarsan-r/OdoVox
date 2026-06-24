@@ -3,37 +3,41 @@
 import { useRouter } from 'next/navigation';
 import { Building2, KeyRound } from 'lucide-react';
 import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
+import { AnimatedPage } from '@/components/animated-page';
 import { BackHeader } from '@/components/onboarding/back-header';
-import { ChoiceCard } from '@/components/onboarding/choice-card';
+import { EditorialHeading, HeroCard } from '@/components/ds';
+import { MascotMoment } from '@/components/illustrations';
 
 export default function ClinicChoicePage() {
   const router = useRouter();
   return (
-    <MobileShell>
-      <GradientMesh preset="three" />
+    <MobileShell className="bg-paper">
       <BackHeader />
-      <div className="flex flex-1 flex-col justify-center px-7">
-        <h1 className="text-2xl font-semibold tracking-tight">Your clinic</h1>
-        <p className="mt-1.5 text-base text-muted-foreground">Set up or join a clinic.</p>
+      <AnimatedPage className="flex flex-1 flex-col px-7">
+        <div className="flex flex-col items-center pt-6">
+          <MascotMoment pose="hero" size="md" animation="float" background="cream" />
+        </div>
+        <div className="mt-7">
+          <EditorialHeading title="Your clinic" subtitle="Two minutes. Three steps." />
+        </div>
 
-        <div className="mt-8 space-y-3">
-          <ChoiceCard
-            icon={<Building2 className="size-6" />}
+        <div className="mt-7 space-y-3">
+          <HeroCard
+            variant="light"
+            icon={<Building2 />}
             title="Create a new clinic"
             subtitle="I'll be the clinic admin"
-            accent="bg-lime-soft"
-            onClick={() => router.push('/clinic-create')}
+            onClick={() => router.push('/clinic-create/step-1-basics')}
           />
-          <ChoiceCard
-            icon={<KeyRound className="size-6" />}
+          <HeroCard
+            variant="light"
+            icon={<KeyRound />}
             title="Join an existing clinic"
             subtitle="I have a join code"
-            accent="bg-lavender-soft"
             onClick={() => router.push('/clinic-join')}
           />
         </div>
-      </div>
+      </AnimatedPage>
     </MobileShell>
   );
 }

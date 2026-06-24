@@ -10,6 +10,17 @@ export const CreateVisitInput = z.object({
 });
 export type CreateVisitInput = z.infer<typeof CreateVisitInput>;
 
+/** Manual, after-the-fact visit entry (Phase 2 — no voice/consultation). */
+export const CreateManualVisitInput = z.object({
+  doctorId: z.string().min(1).optional(),
+  roomId: z.string().min(1).optional(),
+  procedure: z.string().min(1).max(200),
+  toothNumbers: z.array(z.number().int()).max(32).default([]),
+  notes: z.string().max(4000).optional(),
+  occurredAt: z.coerce.date().optional(),
+});
+export type CreateManualVisitInput = z.infer<typeof CreateManualVisitInput>;
+
 export const UpdateVisitInput = z.object({
   status: VisitStatus.optional(),
   roomId: z.string().min(1).nullable().optional(),

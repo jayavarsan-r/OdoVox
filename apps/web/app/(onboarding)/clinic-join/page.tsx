@@ -4,20 +4,19 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { Building2 } from 'lucide-react';
 import { ClinicJoinInput } from '@odovox/types';
 import type { ClinicMemberResponse } from '@odovox/types';
 import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
 import { BackHeader } from '@/components/onboarding/back-header';
-import { Card, CardContent } from '@/components/ui/card';
+import { EditorialHeading, HeroCard } from '@/components/ds';
+import { MascotMoment } from '@/components/illustrations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
 import { FormField } from '@/components/forms/FormField';
 import { ChipMultiSelect } from '@/components/forms/ChipMultiSelect';
-import { api, ApiError } from '@/lib/api-client';
+import { api } from '@/lib/api-client';
+import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/lib/onboarding-store';
 
@@ -42,6 +41,7 @@ interface LookupResult {
 
 export default function ClinicJoinPage() {
   const router = useRouter();
+  const toast = useToast();
   const role = useOnboarding((s) => s.role);
   const setMembership = useAuth((s) => s.setMembership);
   const resetOnboarding = useOnboarding((s) => s.reset);
@@ -83,11 +83,7 @@ export default function ClinicJoinPage() {
       );
       setLookup(data);
     } catch (err) {
-      toast.error(
-        err instanceof ApiError && err.status === 404
-          ? 'No clinic found for that code.'
-          : 'Could not look up that code.',
-      );
+      toast.apiError(err);
     }
   });
 
@@ -109,46 +105,41 @@ export default function ClinicJoinPage() {
       resetOnboarding();
       router.replace('/home');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Could not join the clinic.');
+      toast.apiError(err);
     } finally {
       setJoining(false);
     }
   };
 
   return (
-    <MobileShell>
-      <GradientMesh preset="four" />
+    <MobileShell className="bg-paper">
       <BackHeader title="Join a clinic" />
       <div className="flex flex-1 flex-col px-5 pt-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Join a clinic</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ask your clinic admin for the join code.
-        </p>
+        <EditorialHeading
+          title="Join a clinic"
+          subtitle="Ask your clinic admin for the join code."
+          trailing={<MascotMoment pose="thinking" size="sm" animation="float" />}
+        />
 
         {lookup ? (
-          <Card className="mt-8">
-            <CardContent className="space-y-5 p-6 text-center">
-              <span className="mx-auto flex size-14 items-center justify-center rounded-md bg-lime-soft text-ink">
-                <Building2 className="size-7" />
-              </span>
-              <div>
-                <p className="text-sm text-muted-foreground">Join</p>
-                <p className="text-xl font-semibold">{lookup.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {lookup.city}, {lookup.state}
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1" onClick={() => setLookup(null)} disabled={joining}>
-                  Back
-                </Button>
-                <Button className="flex-1" onClick={confirmJoin} disabled={joining}>
-                  {joining ? <Spinner /> : null}
-                  Confirm
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mt-8 space-y-4">
+            <HeroCard
+              variant="light"
+              size="lg"
+              glow="lime"
+              icon={<Building2 />}
+              title={lookup.name}
+              subtitle={`${lookup.city}, ${lookup.state}`}
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setLookup(null)} disabled={joining}>
+                Back
+              </Button>
+              <Button className="flex-1" onClick={confirmJoin} loading={joining}>
+                Confirm
+              </Button>
+            </div>
+          </div>
         ) : (
           <form onSubmit={findClinic} className="mt-8 space-y-4">
             <FormField label="Your name" htmlFor="name" required error={errors.name?.message}>
@@ -194,8 +185,7 @@ export default function ClinicJoinPage() {
               </>
             ) : null}
 
-            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? <Spinner /> : null}
+            <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
               Find clinic
             </Button>
           </form>

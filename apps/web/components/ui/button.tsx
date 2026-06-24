@@ -4,15 +4,18 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-pill text-sm font-medium transition-all duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground shadow-soft hover:brightness-95',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-muted',
-        ghost: 'bg-transparent text-foreground hover:bg-muted',
-        destructive: 'bg-destructive text-destructive-foreground shadow-soft hover:brightness-110',
-        outline: 'border border-border bg-surface text-foreground hover:bg-muted',
+        primary:
+          'bg-primary text-primary-foreground shadow-[var(--shadow-lime)] hover:shadow-[var(--shadow-lime-hover)] disabled:bg-border disabled:text-text-muted disabled:shadow-none',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-muted disabled:opacity-50',
+        ghost: 'bg-transparent text-foreground hover:bg-muted disabled:opacity-50',
+        destructive:
+          'bg-destructive text-destructive-foreground shadow-soft hover:brightness-110 disabled:opacity-50',
+        outline:
+          'border border-border bg-surface text-foreground hover:bg-muted disabled:opacity-50',
       },
       size: {
         sm: 'h-9 px-3',
@@ -32,13 +35,26 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  /** When true, the label collapses to a pulsing mono "…" and the button is disabled. */
+  loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        disabled={disabled || loading}
+        {...props}
+      >
+        {loading ? (
+          <span className="animate-pulse font-mono text-lg leading-none tracking-widest">…</span>
+        ) : (
+          children
+        )}
+      </Comp>
     );
   },
 );

@@ -93,6 +93,16 @@ export type MemberRole = z.infer<typeof MemberRole>;
 export const MemberStatus = z.enum(['ACTIVE', 'INACTIVE', 'PENDING']);
 export type MemberStatus = z.infer<typeof MemberStatus>;
 
+export const PatientStatus = z.enum([
+  'NEW',
+  'ACTIVE',
+  'IN_CHAIR',
+  'DUE_PAYMENT',
+  'LAB_PENDING',
+  'INACTIVE',
+]);
+export type PatientStatus = z.infer<typeof PatientStatus>;
+
 export const Gender = z.enum(['MALE', 'FEMALE', 'OTHER']);
 export type Gender = z.infer<typeof Gender>;
 

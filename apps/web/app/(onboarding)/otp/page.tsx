@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
+import { AnimatedPage } from '@/components/animated-page';
 import { BackHeader } from '@/components/onboarding/back-header';
+import { DecorativeFooter, EditorialHeading } from '@/components/ds';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { OtpInput } from '@/components/forms/OtpInput';
-import { api, ApiError } from '@/lib/api-client';
+import { api } from '@/lib/api-client';
+import { useToast } from '@/lib/toast';
 import { useOnboarding } from '@/lib/onboarding-store';
 import { useAuth, type SessionUser } from '@/lib/auth';
 import type { ClinicMemberResponse, OnboardingNextStep } from '@odovox/types';
@@ -26,6 +26,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 export default function OtpPage() {
   const router = useRouter();
+  const toast = useToast();
   const phone = useOnboarding((s) => s.phone);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -65,14 +66,7 @@ export default function OtpPage() {
     } catch (err) {
       setInvalid(true);
       setOtp('');
-      if (err instanceof ApiError) {
-        const remaining = (err.details as { attemptsRemaining?: number } | undefined)?.attemptsRemaining;
-        toast.error(
-          typeof remaining === 'number' ? `Wrong code. ${remaining} attempts left.` : err.message,
-        );
-      } else {
-        toast.error('Something went wrong. Try again.');
-      }
+      toast.apiError(err);
     } finally {
       setLoading(false);
       submitting.current = false;
@@ -86,19 +80,18 @@ export default function OtpPage() {
       setSecondsLeft(RESEND_SECONDS);
       toast.success('A new code is on its way.');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Could not resend the code.');
+      toast.apiError(err);
     }
   };
 
   return (
-    <MobileShell>
-      <GradientMesh preset="two" />
+    <MobileShell className="bg-paper">
       <BackHeader />
-      <div className="flex flex-1 flex-col px-7 pt-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Verify your number</h1>
-        <p className="mt-1.5 text-base text-muted-foreground">
-          We sent a 6-digit code to <span className="font-medium text-foreground">{masked}</span>
-        </p>
+      <AnimatedPage className="flex flex-1 flex-col px-7 pt-6">
+        <EditorialHeading
+          title="Verify your number"
+          subtitle={`We sent a 6-digit code to ${masked}`}
+        />
 
         <div className="mt-8">
           <OtpInput
@@ -138,21 +131,22 @@ export default function OtpPage() {
         <Button
           size="lg"
           className="mt-8 w-full"
-          disabled={otp.length !== 6 || loading}
+          disabled={otp.length !== 6}
+          loading={loading}
           onClick={() => verify(otp)}
         >
-          {loading ? <Spinner /> : null}
           Verify
         </Button>
 
         {isDev ? (
-          <div className="mt-auto pb-8 pt-6 text-center">
+          <div className="pt-6 text-center">
             <span className="rounded-pill border border-border bg-surface/70 px-3 py-1 font-mono text-xs text-muted-foreground backdrop-blur">
               Dev mode: use 123456
             </span>
           </div>
         ) : null}
-      </div>
+      </AnimatedPage>
+      <DecorativeFooter variant="dots" className="pb-6" />
     </MobileShell>
   );
 }

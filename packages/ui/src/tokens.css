@@ -7,8 +7,10 @@
   /* Brand */
   --color-ink: #0a0a0a;
   --color-ink-soft: #1a1a1a;
-  --color-paper: #fafafa;
-  --color-paper-warm: #f5f5f7;
+  /* Warm off-white surfaces — Phase 2.5 overrides pure white for a softer paper base. */
+  --color-paper: #fafaf7;
+  --color-paper-warm: #f4f3ee;
+  --color-paper-cream: #f9f6f0; /* mascot / celebration backgrounds ONLY */
 
   /* Accents — soft, desaturated, dental-clinic friendly */
   --color-lime: #d4f564; /* primary accent — Resume, active states */
@@ -17,8 +19,12 @@
   --color-peach-soft: #ffe8d1;
   --color-sky: #bfe3ff; /* schedule, time */
   --color-sky-soft: #dff1ff;
-  --color-sage: #c8e6c9; /* success, healthy */
-  --color-sage-soft: #e3f2e4;
+  /* Sage = clinical secondary (treatment plans, procedure/clinical status, success).
+     Phase 2.5 deepened sage from a pale mint to this muted clinical tone. */
+  --color-sage: #7ba098;
+  --color-sage-soft: #c9dcd6;
+  --color-sage-tint: #e6efec;
+  --color-sage-deep: #4a6b62;
   --color-lavender: #e0d4ff; /* lab, special */
   --color-lavender-soft: #efe9ff;
 
@@ -32,8 +38,17 @@
   --color-border-strong: #d1d5db;
   --color-success: #16a34a;
   --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7; /* Phase 3 — safety-warning card backing on the verification card */
   --color-danger: #dc2626;
   --color-info: #2563eb;
+  --color-info-soft: #ddebfe;
+
+  /* Quick-tool saturated icon colors (Phase 2.6 — each pairs with its pastel tile). */
+  --color-tool-patient: #e07b3a; /* warm orange on peach-soft */
+  --color-tool-inventory: #3d8b6b; /* forest green on sage-tint */
+  --color-tool-lab: #7c3aed; /* deep purple on lavender-soft */
+  --color-tool-dayoff: #6b8e23; /* olive lime on lime-soft */
+  /* (Appointment icon uses --color-info, the clear blue.) */
 
   /* Radii */
   --radius-sm: 8px;
@@ -46,6 +61,39 @@
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
   --shadow-hero: 0 12px 40px rgba(0, 0, 0, 0.12);
+  /* Lime glow for the primary button (lime = #d4f564 → rgb 212 245 100) */
+  --shadow-lime: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(212, 245, 100, 0.35);
+  --shadow-lime-hover: 0 12px 32px rgba(212, 245, 100, 0.5);
+  /* Focus ring for inputs: 2px lime + 4px lime-soft halo */
+  --ring-lime: 0 0 0 2px var(--color-lime), 0 0 0 6px var(--color-lime-soft);
+  --inset-input: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  /* ===== Glass tokens (glassmorphism — hero cards, sheets, dev banner, /done) ===== */
+  --glass-blur-sm: 12px;
+  --glass-blur-md: 20px;
+  --glass-blur-lg: 32px;
+  --glass-bg-light: rgba(255, 255, 255, 0.65);
+  --glass-bg-dark: rgba(10, 10, 10, 0.55);
+  --glass-bg-lime: rgba(212, 245, 100, 0.18);
+  --glass-bg-sage: rgba(123, 160, 152, 0.18);
+  --glass-border-light: rgba(255, 255, 255, 0.4);
+  --glass-border-dark: rgba(255, 255, 255, 0.08);
+
+  /* ===== Elevation system (layered, neutral) ===== */
+  --elev-0: none;
+  --elev-1: 0 1px 2px rgba(10, 10, 10, 0.04), 0 1px 3px rgba(10, 10, 10, 0.03);
+  --elev-2: 0 2px 4px rgba(10, 10, 10, 0.04), 0 4px 12px rgba(10, 10, 10, 0.05);
+  --elev-3: 0 4px 8px rgba(10, 10, 10, 0.05), 0 12px 24px rgba(10, 10, 10, 0.08);
+  --elev-4: 0 8px 16px rgba(10, 10, 10, 0.06), 0 24px 48px rgba(10, 10, 10, 0.12);
+  --elev-hero: 0 1px 2px rgba(10, 10, 10, 0.06), 0 32px 64px rgba(10, 10, 10, 0.18);
+  --elev-lime-glow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 12px 32px rgba(212, 245, 100, 0.35);
+  --elev-sage-glow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 12px 32px rgba(123, 160, 152, 0.28);
+
+  /* Dark hero card depth (Phase 2.6): gradient + top inner highlight + layered drop. */
+  --hero-dark-grad: linear-gradient(135deg, #0f1419 0%, #1a2028 100%);
+  --elev-hero-dark: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 24px 48px rgba(15, 20, 25, 0.18),
+    0 4px 12px rgba(15, 20, 25, 0.12);
+  --hero-icon-glow: 0 0 24px rgba(212, 245, 100, 0.3);
 
   /* Typography scale */
   --font-display: 'Geist', system-ui, sans-serif;
@@ -53,13 +101,43 @@
 
   /* Motion */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --duration-instant: 80ms;
   --duration-fast: 150ms;
   --duration-base: 240ms;
   --duration-slow: 400ms;
+  --duration-emphatic: 600ms;
 
   /* Layout (mobile-first) */
   --max-width-mobile: 430px;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
+
+  /* ===== Mascot + illustration slots =====
+     Consumed by <MascotMoment> / <DecorativeArt>. Placeholder PNGs ship in
+     apps/web/public/illu/; replace with AI-generated renders (see docs/design-system.md). */
+  --illu-mascot-hero: url('/illu/mascot/odo-hero.png');
+  --illu-mascot-smile: url('/illu/mascot/odo-smile.png');
+  --illu-mascot-celebrate: url('/illu/mascot/odo-celebrate.png');
+  --illu-mascot-thinking: url('/illu/mascot/odo-thinking.png');
+  --illu-mascot-sleeping: url('/illu/mascot/odo-sleeping.png');
+  --illu-object-tooth: url('/illu/objects/tooth.png');
+  --illu-object-xray: url('/illu/objects/xray-film.png');
+  --illu-object-mirror: url('/illu/objects/dental-mirror.png');
+  --illu-object-pills: url('/illu/objects/pill-bottle.png');
+  --illu-object-clipboard: url('/illu/objects/clipboard.png');
 }
+
+/* ===================================================================================
+   COLOR USAGE RULES (Phase 2.5 lock-in — full rationale in docs/design-system.md §1)
+   -----------------------------------------------------------------------------------
+   • Lime   → primary action / voice / "your turn" (CTA, mic, Start Consultation, active tab)
+   • Sage   → clinical context (treatment plans, procedure cards, clinical status, success)
+   • Ink    → primary text, hero-card backgrounds
+   • Peach / Sky / Sage-tint / Lavender → category coding (tools, status, specialty chips)
+   • Paper-cream → mascot / celebration backgrounds ONLY
+   • Glass-light → hero/glass cards on light backgrounds; Glass-dark → over photos/gradients
+   • Danger / Warning / Info / Success → system messages only, never decorative
+   =================================================================================== */

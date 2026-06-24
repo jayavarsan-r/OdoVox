@@ -1,127 +1,228 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
-import { api, ApiError } from '@/lib/api-client';
-import { useAuth, type SessionClinic, type SessionUser } from '@/lib/auth';
-import type { ClinicMemberResponse } from '@odovox/types';
+import {
+  Stethoscope,
+  ArrowRight,
+  UserPlus,
+  Calendar,
+  Pill,
+  Boxes,
+  FlaskConical,
+  CalendarOff,
+  ChevronRight,
+  Bell,
+  Clock,
+} from 'lucide-react';
+import { AnimatedPage } from '@/components/animated-page';
+import { ProfileButton } from '@/components/app-shell/profile-button';
+import { VoiceSearchInput } from '@/components/voice-search-input';
+import { EmptyState, FabMenu, HeroCard } from '@/components/ds';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/lib/toast';
+import { useAuth } from '@/lib/auth';
+import { useNeedsYou, useRecentVisits } from '@/lib/queries';
+import { cn } from '@/lib/utils';
 
-interface MeResponse {
-  user: SessionUser;
-  activeMembership: ClinicMemberResponse | null;
-  clinic: SessionClinic | null;
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** Pastel tile with a saturated matching colored icon, subtitle, and chevron. */
+function QuickTile({
+  label,
+  subtitle,
+  icon,
+  accent,
+  iconColor,
+  onClick,
+}: {
+  label: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  accent: string;
+  iconColor: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'relative flex flex-col items-start rounded-2xl p-4 text-left shadow-elev-1 transition-all duration-fast hover:shadow-elev-2 active:scale-[0.98]',
+        accent,
+      )}
+    >
+      <ChevronRight className="absolute right-3 top-3 size-4 text-text-subtle" />
+      <span className="flex size-10 items-center justify-center rounded-md bg-paper/50 backdrop-blur-sm">
+        <span className={cn('[&_svg]:size-6', iconColor)}>{icon}</span>
+      </span>
+      <span className="mt-3 text-base font-semibold text-ink">{label}</span>
+      <span className="text-[13px] text-text-muted">{subtitle}</span>
+    </button>
+  );
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  DOCTOR: 'Doctor',
-  RECEPTIONIST: 'Receptionist',
-  ADMIN: 'Admin',
-};
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <h2 className="text-xs font-semibold tracking-widest text-text-subtle">{children}</h2>;
+}
 
-export default function HomePage() {
+export default function DoctorHomePage() {
   const router = useRouter();
-  const { user, activeMembership, clinic, setSession, clearSession } = useAuth();
-  const [loading, setLoading] = useState(!user);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const toast = useToast();
+  const { user, clinic } = useAuth();
+  const [search, setSearch] = useState('');
+  const needsYou = useNeedsYou();
+  const recent = useRecentVisits();
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const me = await api.get<MeResponse>('/auth/me');
-        if (cancelled) return;
-        if (!me.activeMembership) {
-          router.replace('/role');
-          return;
-        }
-        setSession({
-          accessToken: useAuth.getState().accessToken ?? '',
-          user: me.user,
-          activeMembership: me.activeMembership,
-          clinic: me.clinic,
-        });
-      } catch (err) {
-        // api-client already redirects to /welcome when refresh fails.
-        if (err instanceof ApiError && err.status !== 401) {
-          toast.error('Could not load your workspace.');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [router, setSession]);
-
-  const logout = async () => {
-    setLoggingOut(true);
-    try {
-      await api.post('/auth/logout', undefined, { skipAuth: true });
-    } catch {
-      // best effort
-    }
-    clearSession();
-    router.replace('/welcome');
-  };
-
-  if (loading) {
-    return (
-      <MobileShell className="items-center justify-center">
-        <Spinner className="size-5 text-muted-foreground" />
-      </MobileShell>
-    );
-  }
-
-  const role = activeMembership?.role ?? 'RECEPTIONIST';
-  const isDoctor = role === 'DOCTOR' || role === 'ADMIN';
-  const name = user?.name || 'there';
-  const greeting = isDoctor ? `Hi, Dr. ${name}` : `Hi, ${name}`;
-  const initials = (user?.name || 'OV').slice(0, 2).toUpperCase();
+  const now = new Date();
+  const dateLabel = `${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}`;
+  const raw = (user?.name || 'Doctor').replace(/^Dr\.?\s*/i, '').split(' ')[0] || 'Doctor';
+  const firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
+  const soon = (phase: string) => () => toast.info(`Coming in ${phase}.`);
+  const needsCount = needsYou.data?.items.length ?? 0;
 
   return (
-    <MobileShell className="px-5">
-      <GradientMesh preset="one" />
-      <header className="flex items-center gap-3 pt-6">
-        <span className="flex size-12 items-center justify-center rounded-pill bg-ink text-base font-semibold text-lime">
-          {initials}
-        </span>
+    <AnimatedPage className="flex flex-1 flex-col gap-6 px-5 pt-4">
+      {/* Greeting */}
+      <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold tracking-tight">{greeting}</h1>
-          <div className="mt-0.5 flex items-center gap-2">
-            <span className="truncate text-sm text-muted-foreground">
-              {clinic?.name ?? 'Your clinic'}
-            </span>
-            <Badge variant="outline">{ROLE_LABEL[role]}</Badge>
-          </div>
+          <p className="text-sm font-medium text-text-muted">{dateLabel}</p>
+          <h1 className="mt-1 text-[32px] font-semibold leading-tight tracking-tight text-ink">
+            Hi, Dr. {firstName}
+          </h1>
+          <p className="mt-1 truncate text-base text-text-muted">
+            {clinic?.name ?? 'Your clinic'}
+            {clinic?.city ? ` · ${clinic.city}` : ''}
+          </p>
         </div>
+        <ProfileButton />
       </header>
 
-      <div className="mt-8 flex-1">
-        <Card className="bg-surface">
-          <CardContent className="space-y-2 p-6">
-            <h2 className="text-base font-semibold">You&apos;re all set up 🎉</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Patient management, voice consultations, and your full workflow arrive next. This is
-              just the foundation — Phase 1 of 10.
-            </p>
-          </CardContent>
-        </Card>
+      {/* Search */}
+      <VoiceSearchInput
+        value={search}
+        onChange={setSearch}
+        onSubmit={(v) => router.push(`/patients${v ? `?search=${encodeURIComponent(v)}` : ''}`)}
+      />
+
+      {/* Start consultation hero (depth handled by HeroCard dark) */}
+      <HeroCard
+        variant="dark"
+        icon={<Stethoscope />}
+        title="Start consultation"
+        subtitle="Queue is clear"
+        trailing={<ArrowRight />}
+        onClick={() => router.push('/consult')}
+      />
+
+      {/* Quick tools */}
+      <div className="grid grid-cols-2 gap-3">
+        <QuickTile label="New patient" subtitle="Add a new patient" icon={<UserPlus />} accent="bg-peach-soft" iconColor="text-tool-patient" onClick={() => router.push('/patients/new')} />
+        <QuickTile label="Appointment" subtitle="View & manage" icon={<Calendar />} accent="bg-sky-soft" iconColor="text-info" onClick={soon('Phase 6')} />
+        <QuickTile label="Inventory" subtitle="Stock & supplies" icon={<Boxes />} accent="bg-sage-tint" iconColor="text-tool-inventory" onClick={soon('Phase 7')} />
+        <QuickTile label="Lab tracker" subtitle="Track lab cases" icon={<FlaskConical />} accent="bg-lavender-soft" iconColor="text-tool-lab" onClick={() => router.push('/lab')} />
+        <QuickTile label="Day off" subtitle="Manage leaves" icon={<CalendarOff />} accent="bg-lime-soft" iconColor="text-tool-dayoff" onClick={soon('Phase 6')} />
       </div>
 
-      <div className="pb-8 pt-4">
-        <Button variant="ghost" className="w-full" onClick={logout} disabled={loggingOut}>
-          {loggingOut ? <Spinner /> : null}
-          Log out
-        </Button>
-      </div>
-    </MobileShell>
+      {/* Today */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <SectionLabel>TODAY · 0</SectionLabel>
+          <button onClick={() => router.push('/schedule')} className="text-sm font-medium text-info">
+            Schedule →
+          </button>
+        </div>
+        <EmptyState
+          variant="inline"
+          icon={<Calendar />}
+          iconTone="sky"
+          title="No appointments scheduled."
+          body="Scheduling arrives in Phase 6."
+        />
+      </section>
+
+      {/* Needs you */}
+      <section>
+        <h2 className={cn('mb-2 text-xs font-semibold tracking-widest', needsCount > 0 ? 'text-lime' : 'text-text-subtle')}>
+          NEEDS YOU · {needsCount}
+        </h2>
+        {needsYou.isLoading ? (
+          <Skeleton className="h-16 w-full rounded-2xl" />
+        ) : needsCount === 0 ? (
+          <EmptyState
+            variant="inline"
+            icon={<Bell />}
+            iconTone="info"
+            title="All caught up!"
+            body="You're all clear for now."
+          />
+        ) : (
+          <div className="space-y-2">
+            {needsYou.data!.items.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => router.push(`/patients/${item.patientId}`)}
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left shadow-elev-1"
+              >
+                <span className="size-2 shrink-0 rounded-pill bg-lime" />
+                <span className="flex-1 text-sm font-medium">{item.title}</span>
+                <ChevronRight className="size-4 text-text-subtle" />
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Recent */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <SectionLabel>RECENT APPOINTMENTS</SectionLabel>
+          <button onClick={() => router.push('/patients')} className="text-sm font-medium text-text-muted">
+            See all →
+          </button>
+        </div>
+        {recent.isLoading ? (
+          <Skeleton className="h-16 w-full rounded-2xl" />
+        ) : (recent.data?.items.length ?? 0) === 0 ? (
+          <EmptyState
+            variant="inline"
+            icon={<Clock />}
+            iconTone="neutral"
+            title="No visits yet"
+            body="Recorded visits show up here."
+          />
+        ) : (
+          <div className="space-y-2">
+            {recent.data!.items.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => router.push(`/patients/${v.patientId}`)}
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left shadow-elev-1"
+              >
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{v.patientName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(v.date).toLocaleDateString('en-IN')} · {v.procedureSummary}
+                  </p>
+                </div>
+                <ChevronRight className="size-4 text-text-subtle" />
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <FabMenu
+        items={[
+          { id: 'new-patient', label: 'New patient', tone: 'peach', icon: <UserPlus />, onClick: () => router.push('/patients/new') },
+          { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: soon('Phase 6') },
+          { id: 'quick-rx', label: 'Quick prescription', tone: 'sage', icon: <Pill />, onClick: soon('Phase 3') },
+        ]}
+      />
+    </AnimatedPage>
   );
 }

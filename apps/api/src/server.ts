@@ -18,6 +18,16 @@ import { auditPlugin } from './plugins/audit.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { clinicRoutes } from './routes/clinics.js';
+import { patientRoutes } from './routes/patients.js';
+import { clinicalRoutes } from './routes/clinical.js';
+import { mediaRoutes } from './routes/media.js';
+import { homeRoutes } from './routes/home.js';
+import { consultationRoutes } from './routes/consultations.js';
+import { dictateRoutes } from './routes/dictate.js';
+import { preflight } from './lib/preflight.js';
+import { printBootBanner } from './lib/boot-banner.js';
+import { startWorkers } from './queues/start-workers.js';
+import { closeQueues } from './queues/index.js';
 
 // Load .env in non-production (repo root).
 if (process.env.NODE_ENV !== 'production') {
@@ -61,6 +71,12 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(clinicRoutes);
+  await app.register(patientRoutes);
+  await app.register(clinicalRoutes);
+  await app.register(mediaRoutes);
+  await app.register(homeRoutes);
+  await app.register(consultationRoutes);
+  await app.register(dictateRoutes);
 
   return app;
 }
@@ -69,9 +85,13 @@ async function start(): Promise<void> {
   const env = loadEnv();
   const app = await buildServer();
 
+  let workers: { stop: () => Promise<void> } | null = null;
+
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down…`);
     try {
+      await workers?.stop(); // drain in-process voice workers first
+      await closeQueues();
       await app.close(); // closes server + triggers onClose (prisma, redis, sentry flush)
       process.exit(0);
     } catch (err) {
@@ -83,8 +103,15 @@ async function start(): Promise<void> {
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
   process.on('SIGINT', () => void shutdown('SIGINT'));
 
+  // Fail loud at boot if Postgres / Redis / the PHI key are misconfigured.
+  await preflight(app);
+
   try {
     await app.listen({ port: env.PORT, host: '0.0.0.0' });
+    // Start the in-process STT + extraction workers (Phase 10 may split these out).
+    workers = startWorkers(app);
+    // Make the active STT / AI / OTP providers impossible to miss at boot.
+    printBootBanner(env);
   } catch (err) {
     app.log.error({ err }, 'Failed to start server');
     process.exit(1);

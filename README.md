@@ -148,6 +148,52 @@ curl http://localhost:4000/health
 | `pnpm db:studio`   | Open Prisma Studio                                    |
 | `pnpm format`      | Prettier write across the repo                        |
 
+## Troubleshooting
+
+### `P1010: User was denied access on the database`
+Your host's `localhost:5432` is being answered by a **different** Postgres than the Odovox
+container — most often a native Homebrew/Postgres.app instance that shadows `localhost` over
+Docker. That instance has no `odovox` role, so Prisma is denied. Two fixes:
+
+- **Use non-conflicting ports (recommended, non-destructive):** set `POSTGRES_PORT=5433` and
+  `REDIS_PORT=6380` in `.env`, update `DATABASE_URL`/`REDIS_URL` to those ports, then
+  `docker compose up -d` to republish the containers on the free ports.
+- **Or** the credentials genuinely drifted from the container's seeded volume — wipe and
+  rebuild:
+  ```bash
+  docker compose down -v   # wipes the Postgres volume
+  docker compose up -d
+  pnpm db:migrate && pnpm db:seed
+  ```
+
+Confirm which Postgres answers `localhost`:
+```bash
+lsof -nP -iTCP:5432 -sTCP:LISTEN          # is a native postgres listening on 127.0.0.1?
+docker compose ps                         # what host port did the container publish?
+```
+
+### `connect ECONNREFUSED ::1:4000` from the web app
+The API isn't running, or it crashed during boot. Check the terminal where you ran `pnpm dev` —
+the actual error (Prisma, Redis, env validation, or a failed **preflight** check) is logged
+there. The API now runs a boot-time preflight that fails loud with the offending component.
+
+### "Could not send the code" toast in dev
+The OTP API call failed. Check `curl http://localhost:4000/health` — if `db` or `redis` is
+`"error"`, that infra component is the cause.
+
+### `pnpm db:migrate` fails with P3005 (schema not empty)
+You're applying migrations on a DB previously initialized via `db push`. Baseline it:
+```bash
+cd packages/db && npx prisma migrate resolve --applied <migration-name>
+```
+Or wipe and retry: `docker compose down -v && docker compose up -d && pnpm db:migrate`.
+
+### `EADDRINUSE: address already in use 0.0.0.0:4000`
+A previous API process is still holding port 4000:
+```bash
+lsof -nP -iTCP:4000 -sTCP:LISTEN -t | xargs kill -9
+```
+
 ## Security baseline (Phase 0)
 
 - Helmet (CSP + HSTS, no `X-Powered-By`), CORS allowlist, global rate limiting.

@@ -3,8 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { Stethoscope, UserCheck } from 'lucide-react';
 import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
-import { ChoiceCard } from '@/components/onboarding/choice-card';
+import { AnimatedPage } from '@/components/animated-page';
+import { EditorialHeading, HeroCard } from '@/components/ds';
+import { MascotMoment } from '@/components/illustrations';
 import { useOnboarding } from '@/lib/onboarding-store';
 
 export default function RolePage() {
@@ -17,29 +18,33 @@ export default function RolePage() {
   };
 
   return (
-    <MobileShell className="px-7">
-      <GradientMesh preset="three" />
-      <div className="flex flex-1 flex-col justify-center">
-        <h1 className="text-2xl font-semibold tracking-tight">What&apos;s your role?</h1>
-        <p className="mt-1.5 text-base text-muted-foreground">This sets up your workspace.</p>
+    <MobileShell className="bg-paper px-7">
+      <AnimatedPage className="flex flex-1 flex-col">
+        <div className="flex flex-col items-center pt-10">
+          <MascotMoment pose="thinking" size="lg" animation="float" background="cream" />
+        </div>
 
-        <div className="mt-8 space-y-3">
-          <ChoiceCard
-            icon={<Stethoscope className="size-6" />}
+        <div className="mt-8">
+          <EditorialHeading title="What's your role?" subtitle="This sets up your workspace." />
+        </div>
+
+        <div className="mt-7 space-y-3">
+          <HeroCard
+            variant="light"
+            icon={<Stethoscope />}
             title="Doctor"
             subtitle="I'm a dentist or specialist"
-            accent="bg-sky-soft"
             onClick={() => pick('DOCTOR')}
           />
-          <ChoiceCard
-            icon={<UserCheck className="size-6" />}
+          <HeroCard
+            variant="light"
+            icon={<UserCheck />}
             title="Receptionist"
             subtitle="I manage the front desk"
-            accent="bg-peach-soft"
             onClick={() => pick('RECEPTIONIST')}
           />
         </div>
-      </div>
+      </AnimatedPage>
     </MobileShell>
   );
 }

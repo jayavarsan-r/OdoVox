@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { buildServer } from '../src/server.js';
 import { ClinicCreateInput } from '@odovox/types';
 import type { ClinicJoinInput } from '@odovox/types';
+import { runWithContext } from '../src/lib/request-context.js';
 
 /** Build a real server wired to the dev Postgres/Redis (see docker-compose). */
 export async function buildTestApp(): Promise<FastifyInstance> {
@@ -72,6 +73,53 @@ export function authHeader(token: string, ip = randomIp()): Record<string, strin
   return { authorization: `Bearer ${token}`, 'x-forwarded-for': ip };
 }
 
+export interface ClinicSetup {
+  accessToken: string; // clinic-scoped
+  userId: string;
+  phone: string;
+  clinicId: string;
+  joinCode: string;
+}
+
+/** Sign up a doctor and create a clinic; returns a clinic-scoped access token. */
+export async function createDoctorWithClinic(
+  app: FastifyInstance,
+  over: Partial<ClinicCreateInput> = {},
+): Promise<ClinicSetup> {
+  const session = await signIn(app);
+  const res = await app.inject({
+    method: 'POST',
+    url: '/clinics',
+    headers: authHeader(session.accessToken),
+    payload: sampleClinicInput(over),
+  });
+  if (res.statusCode !== 200) throw new Error(`create clinic failed: ${res.statusCode} ${res.body}`);
+  const data = res.json().data;
+  return {
+    accessToken: data.accessToken,
+    userId: session.userId,
+    phone: session.phone,
+    clinicId: data.clinic.id,
+    joinCode: data.joinCode,
+  };
+}
+
+/** Sign up a receptionist and join an existing clinic; returns a clinic-scoped token. */
+export async function joinReceptionist(
+  app: FastifyInstance,
+  joinCode: string,
+): Promise<{ accessToken: string; userId: string; phone: string }> {
+  const session = await signIn(app);
+  const res = await app.inject({
+    method: 'POST',
+    url: '/clinics/join',
+    headers: authHeader(session.accessToken),
+    payload: { joinCode, name: 'Ravi Kumar', role: 'RECEPTIONIST' },
+  });
+  if (res.statusCode !== 200) throw new Error(`join failed: ${res.statusCode} ${res.body}`);
+  return { accessToken: res.json().data.accessToken, userId: session.userId, phone: session.phone };
+}
+
 export function sampleClinicInput(over: Partial<ClinicCreateInput> = {}): ClinicCreateInput {
   return ClinicCreateInput.parse({
     name: 'Smile Dental Care',
@@ -99,6 +147,74 @@ export function sampleJoinInput(joinCode: string, over: Partial<ClinicJoinInput>
     role: 'RECEPTIONIST' as const,
     ...over,
   };
+}
+
+export interface SeededConsultation {
+  patientId: string;
+  visitId: string;
+  consultationId: string;
+}
+
+/**
+ * Create a patient + in-chair visit + PENDING_REVIEW consultation directly via Prisma, inside a
+ * clinic-scoped context (Visit/Patient are scoped models). Used by confirm/pipeline tests.
+ */
+export async function seedConsultation(
+  app: FastifyInstance,
+  clinicId: string,
+  doctorId: string,
+  structuredData: object,
+  over: { allergiesEnc?: string | null; medicalFlags?: string[]; age?: number } = {},
+): Promise<SeededConsultation> {
+  return runWithContext({ clinicId, userId: doctorId }, async () => {
+    const patient = await app.prisma.patient.create({
+      data: {
+        clinicId,
+        patientCode: `PT-T${Math.floor(Math.random() * 1e9)}`,
+        name: 'Test Patient',
+        phone: randomPhone(),
+        age: over.age ?? 30,
+        gender: 'MALE',
+        allergiesEnc: over.allergiesEnc ?? null,
+        medicalFlags: over.medicalFlags ?? [],
+        status: 'ACTIVE',
+        createdById: doctorId,
+      },
+    });
+    const visit = await app.prisma.visit.create({
+      data: { clinicId, patientId: patient.id, doctorId, status: 'IN_CHAIR', tokenNumber: 1 },
+    });
+    const consultation = await app.prisma.consultation.create({
+      data: { visitId: visit.id, status: 'PENDING_REVIEW', structuredData: structuredData as object },
+    });
+    return { patientId: patient.id, visitId: visit.id, consultationId: consultation.id };
+  });
+}
+
+/** Create a bare patient (in a clinic-scoped context) and return its id. */
+export async function createPatient(
+  app: FastifyInstance,
+  clinicId: string,
+  doctorId: string,
+  over: { allergiesEnc?: string | null; medicalFlags?: string[]; age?: number } = {},
+): Promise<string> {
+  return runWithContext({ clinicId, userId: doctorId }, async () => {
+    const p = await app.prisma.patient.create({
+      data: {
+        clinicId,
+        patientCode: `PT-D${Math.floor(Math.random() * 1e9)}`,
+        name: 'Rx Patient',
+        phone: randomPhone(),
+        age: over.age ?? 30,
+        gender: 'MALE',
+        allergiesEnc: over.allergiesEnc ?? null,
+        medicalFlags: over.medicalFlags ?? [],
+        status: 'ACTIVE',
+        createdById: doctorId,
+      },
+    });
+    return p.id;
+  });
 }
 
 /** Best-effort teardown of rows created by a test. */
