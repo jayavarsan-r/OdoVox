@@ -9,6 +9,9 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   test: {
+    // Force mock providers (sarvam/gemini/msg91) before any module loads — the suite stays hermetic
+    // even when the developer's .env points at real providers for manual testing.
+    setupFiles: ['./test/setup.ts'],
     testTimeout: 20_000,
     hookTimeout: 30_000,
     // Several suites spin up real Socket.IO servers (ephemeral ports), BullMQ/Redis connections and

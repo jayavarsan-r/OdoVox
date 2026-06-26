@@ -1,45 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
-import { GlassCard } from '@/components/ds';
+import type { ConsultationContext } from '@odovox/types';
 import { MascotMoment } from '@/components/illustrations/mascot-moment';
 import { Button } from '@/components/ui/button';
 import { Recorder } from '@/components/voice/recorder';
 import { ProgressStrip } from '@/components/voice/progress-strip';
 import { VerificationCard } from '@/components/voice/verification-card';
+import { PatientContextCard } from '@/components/consult/patient-context-card';
+import { ComplaintStrip } from '@/components/consult/complaint-strip';
 import { useConsultStore } from '@/lib/consult/store';
 import { NextUpHint } from '@/components/queue/next-up-hint';
 import { api } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 
-interface PatientCtx {
-  name: string;
-  age: number;
-  chiefComplaint: string | null;
-  medicalFlags: string[];
-}
-
 /** The headline flow: record → pipeline progress → verification card → confirm. bg-paper, no mascot
  * at page level (only inside the CONFIRMED success card), no gradient mesh, glass on the cards only. */
 export default function ConsultDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const patientId = useSearchParams().get('patientId');
   const router = useRouter();
   const state = useConsultStore((s) => s.state);
-  const [patient, setPatient] = useState<PatientCtx | null>(null);
+
+  // Patient + visit (chief complaint) + x-ray context for this consultation (Phase 4.5).
+  const { data: context } = useQuery({
+    queryKey: ['consult-context', id],
+    queryFn: () => api.get<{ context: ConsultationContext }>(`/consultations/${id}`).then((r) => r.context),
+    enabled: !!id,
+  });
+  const patientId = context?.patient.id ?? null;
 
   useEffect(() => {
     void useConsultStore.getState().init(id);
     return () => useConsultStore.getState().teardown();
   }, [id]);
-
-  useEffect(() => {
-    if (!patientId) return;
-    void api.get<PatientCtx>(`/patients/${patientId}`).then(setPatient).catch(() => undefined);
-  }, [patientId]);
 
   // On CONFIRMED, celebrate briefly then return to the patient detail with fresh data.
   useEffect(() => {
@@ -66,32 +63,23 @@ export default function ConsultDetailPage() {
           <ChevronLeft className="size-6" />
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-ink">{patient?.name ?? 'Consultation'}</p>
-          {patient ? <p className="text-xs text-text-muted">{patient.age} yrs</p> : null}
+          <p className="truncate text-sm font-semibold text-ink">{context?.patient.name ?? 'Consultation'}</p>
+          {context ? <p className="text-xs text-text-muted">{context.patient.age} yrs</p> : null}
         </div>
         <span className="flex items-center gap-1.5 text-xs font-medium text-text-subtle">
           <span className="size-2 rounded-pill bg-lime" /> LIVE
         </span>
       </header>
 
-      {/* Patient context card (glass allowed — modal context). Collapses to a line while recording. */}
-      {patient && !isVerify ? (
+      {/* Full patient context on the idle/ready states; a compact strip while recording (§2.2–2.3). */}
+      {context && isRecorder && !recording ? (
         <div className="px-5 pt-3">
-          <GlassCard tone="light" className="p-4">
-            <p className="text-sm font-semibold text-ink">{patient.name}</p>
-            {patient.chiefComplaint ? (
-              <p className="mt-0.5 text-[13px] text-text-muted">{patient.chiefComplaint}</p>
-            ) : null}
-            {patient.medicalFlags.length ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {patient.medicalFlags.map((f) => (
-                  <span key={f} className="rounded-pill bg-peach-soft px-2 py-0.5 text-[11px] font-medium text-ink">
-                    {f}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </GlassCard>
+          <PatientContextCard ctx={context} />
+        </div>
+      ) : null}
+      {context && recording ? (
+        <div className="pt-3">
+          <ComplaintStrip ctx={context} />
         </div>
       ) : null}
 

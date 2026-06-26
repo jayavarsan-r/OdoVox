@@ -64,9 +64,12 @@ export const EnvSchema = z.object({
   SARVAM_MODEL: z.string().min(1).default('saarika:v2.5'),
 
   // AI extraction. `mock` pattern-matches keywords (dev/tests); `gemini` calls Gemini Flash.
+  // Default model is gemini-2.5-flash: gemini-2.0-flash has a free-tier request limit of 0 (an
+  // un-billed key gets HTTP 429 RESOURCE_EXHAUSTED on every call), whereas 2.5-flash works on the
+  // free tier. We disable its "thinking" in the extractor so the JSON never truncates.
   AI_PROVIDER: z.enum(['mock', 'gemini']).default('mock'),
   GEMINI_API_KEY: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
-  GEMINI_MODEL: z.string().min(1).default('gemini-2.0-flash'),
+  GEMINI_MODEL: z.string().min(1).default('gemini-2.5-flash'),
 
   SENTRY_DSN: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
 })
@@ -77,13 +80,13 @@ export const EnvSchema = z.object({
       path: ['OTP_PROVIDER'],
     },
   )
-  .refine((env) => env.STT_PROVIDER !== 'sarvam' || !!env.SARVAM_API_KEY, {
-    message: 'SARVAM_API_KEY is required when STT_PROVIDER=sarvam',
-    path: ['STT_PROVIDER'],
+  .refine((env) => env.STT_PROVIDER !== 'sarvam' || (env.SARVAM_API_KEY?.length ?? 0) >= 20, {
+    message: 'SARVAM_API_KEY is required and must be non-empty when STT_PROVIDER=sarvam',
+    path: ['SARVAM_API_KEY'],
   })
-  .refine((env) => env.AI_PROVIDER !== 'gemini' || !!env.GEMINI_API_KEY, {
-    message: 'GEMINI_API_KEY is required when AI_PROVIDER=gemini',
-    path: ['AI_PROVIDER'],
+  .refine((env) => env.AI_PROVIDER !== 'gemini' || (env.GEMINI_API_KEY?.length ?? 0) >= 20, {
+    message: 'GEMINI_API_KEY is required and must be non-empty when AI_PROVIDER=gemini',
+    path: ['GEMINI_API_KEY'],
   });
 
 export type Env = z.infer<typeof EnvSchema>;

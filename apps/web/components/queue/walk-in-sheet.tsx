@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FileText, ImagePlus, X } from 'lucide-react';
 import type { PatientListItem } from '@odovox/types';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InitialsAvatar } from './queue-cards';
 import { usePatients } from '@/lib/queries';
-import { useWalkIn } from '@/lib/queue/mutations';
+import { useWalkIn, uploadVisitXray, XRAY_ACCEPT } from '@/lib/queue/mutations';
 import { useQueueStore } from '@/lib/queue/store';
 import { waitingCountByDoctor } from '@/lib/queue/selectors';
 import { buildWalkInBody, defaultDoctorId, doctorChoices } from '@/lib/queue/walk-in';
@@ -29,6 +30,8 @@ export function WalkInSheet({ open, onClose }: { open: boolean; onClose: () => v
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const [complaint, setComplaint] = useState('');
   const [priority, setPriority] = useState(0);
+  const [xrayFiles, setXrayFiles] = useState<File[]>([]);
+  const [busy, setBusy] = useState(false);
 
   const patients = usePatients(search, 'all');
   const list = patients.data?.pages.flatMap((p) => p.items) ?? [];
@@ -41,6 +44,8 @@ export function WalkInSheet({ open, onClose }: { open: boolean; onClose: () => v
     setDoctorId(null);
     setComplaint('');
     setPriority(0);
+    setXrayFiles([]);
+    setBusy(false);
   }
   function close() {
     reset();
@@ -51,15 +56,25 @@ export function WalkInSheet({ open, onClose }: { open: boolean; onClose: () => v
     setDoctorId(defaultDoctorId(state.doctors));
     setStep('doctor');
   }
+  function addXrays(files: FileList | null) {
+    if (!files) return;
+    setXrayFiles((prev) => [...prev, ...Array.from(files)].slice(0, 6));
+  }
   async function submit() {
     if (!patient || !doctorId) return;
+    setBusy(true);
     try {
-      await walkIn.mutateAsync(
+      // Create the visit first (we need its id), then link any x-rays to it.
+      const visit = await walkIn.mutateAsync(
         buildWalkInBody({ patientId: patient.id, doctorId, chiefComplaint: complaint, priority }),
       );
-      toast.success(`${patient.name} checked in`);
+      for (const file of xrayFiles) {
+        await uploadVisitXray({ patientId: patient.id, visitId: visit.id, file });
+      }
+      toast.success(`${patient.name} checked in${xrayFiles.length ? ` · ${xrayFiles.length} x-ray(s)` : ''}`);
       close();
     } catch (e) {
+      setBusy(false);
       toast.error(e instanceof ApiError ? e.message : 'Could not check in');
     }
   }
@@ -138,6 +153,31 @@ export function WalkInSheet({ open, onClose }: { open: boolean; onClose: () => v
             value={complaint}
             onChange={(e) => setComplaint(e.target.value)}
           />
+
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-text-subtle">
+              Attach x-rays (optional)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {xrayFiles.map((f, i) => (
+                <span
+                  key={`${f.name}-${i}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-paper-warm px-2 py-1.5 text-xs text-ink"
+                >
+                  <FileText className="size-3.5 text-text-muted" />
+                  <span className="max-w-[120px] truncate">{f.name}</span>
+                  <button type="button" aria-label="Remove" onClick={() => setXrayFiles((p) => p.filter((_, j) => j !== i))}>
+                    <X className="size-3.5 text-text-subtle" />
+                  </button>
+                </span>
+              ))}
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-medium text-text-muted">
+                <ImagePlus className="size-4" /> Upload x-ray
+                <input type="file" accept={XRAY_ACCEPT} multiple className="hidden" onChange={(e) => addXrays(e.target.files)} />
+              </label>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => setPriority(priority === 10 ? 0 : 10)}
@@ -148,7 +188,7 @@ export function WalkInSheet({ open, onClose }: { open: boolean; onClose: () => v
           >
             Priority patient
           </button>
-          <Button onClick={submit} loading={walkIn.isPending} disabled={!doctorId}>
+          <Button onClick={submit} loading={busy} disabled={!doctorId}>
             Check in
           </Button>
         </div>

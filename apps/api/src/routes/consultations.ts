@@ -106,15 +106,47 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     return ok({ jobId: job.id });
   });
 
-  // GET /consultations/:id — status + structured data. Transcript only for doctor/admin.
+  // GET /consultations/:id — status + structured data + patient/visit/x-ray context. Transcript
+  // only for doctor/admin. The context (Phase 4.5) lets the consult page show the chief complaint
+  // the receptionist checked the patient in for, plus any x-rays they attached at check-in.
   fastify.get('/consultations/:id', anyClinical, async (req) => {
     const { id } = req.params as { id: string };
     const consult = await loadInClinic(id, req.clinicId!);
     const latestJob = await prisma.job.findFirst({ where: { inputRef: id }, orderBy: { createdAt: 'desc' } });
     const includeTranscript = req.role === 'DOCTOR' || req.role === 'ADMIN';
+
+    // Media is clinic-scoped, and loadInClinic already proved the visit is in the caller's clinic —
+    // so this can't surface another clinic's x-rays.
+    const xrays = await prisma.media.findMany({
+      where: { visitId: consult.visitId, type: 'XRAY', deletedAt: null },
+      orderBy: { uploadedAt: 'asc' },
+      select: { id: true, type: true, mimeType: true },
+    });
+    const p = consult.visit.patient;
+    const context = {
+      patient: {
+        id: p.id,
+        name: p.name,
+        age: p.age,
+        gender: p.gender,
+        patientCode: p.patientCode,
+        allergies: parseAllergies(p.allergiesEnc),
+        medicalFlags: p.medicalFlags,
+      },
+      visit: {
+        id: consult.visit.id,
+        tokenNumber: consult.visit.tokenNumber,
+        chiefComplaint: consult.visit.chiefComplaint ?? p.chiefComplaint ?? null,
+        calledInAt: consult.visit.calledInAt ?? null,
+        status: consult.visit.status,
+      },
+      xrays,
+    };
+
     return ok({
       ...toConsultationResponse(consult, { includeTranscript }),
       latestJob: latestJob ? { kind: latestJob.kind, status: latestJob.status, lastError: latestJob.lastError } : null,
+      context,
     });
   });
 

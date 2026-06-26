@@ -47,6 +47,32 @@ export const VisitResponse = z
   .merge(Timestamps);
 export type VisitResponse = z.infer<typeof VisitResponse>;
 
+/**
+ * Patient + visit + x-ray context surfaced on the consultation page (Phase 4.5). The chief complaint
+ * comes from the VISIT (what reception checked the patient in for), falling back to the patient's
+ * denormalized one. X-rays are the visit's Media rows of type XRAY (attached at check-in).
+ */
+export const ConsultationContext = z.object({
+  patient: z.object({
+    id: z.string(),
+    name: z.string(),
+    age: z.number().int(),
+    gender: z.string(),
+    patientCode: z.string(),
+    allergies: z.array(z.string()),
+    medicalFlags: z.array(z.string()),
+  }),
+  visit: z.object({
+    id: z.string(),
+    tokenNumber: z.number().int(),
+    chiefComplaint: z.string().nullable(),
+    calledInAt: z.coerce.date().nullable(),
+    status: VisitStatus,
+  }),
+  xrays: z.array(z.object({ id: z.string(), type: z.string(), mimeType: z.string() })),
+});
+export type ConsultationContext = z.infer<typeof ConsultationContext>;
+
 export const ConsultationResponse = z
   .object({
     id: z.string(),

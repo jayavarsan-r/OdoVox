@@ -69,6 +69,23 @@ export function useWalkIn() {
   return useMutation({ mutationFn: (body: CreateWalkInInput) => api.post<VisitWithPatient>('/visits', body) });
 }
 
+/** X-ray mime types the walk-in sheet accepts (Phase 2 media constraints). */
+export const XRAY_ACCEPT = 'image/jpeg,image/png,image/webp,application/pdf';
+
+/** Reuse the Phase 2 presign → PUT → create-media flow, linking the upload to the new visit as XRAY. */
+export async function uploadVisitXray(input: { patientId: string; visitId: string; file: File }): Promise<void> {
+  const { file, patientId, visitId } = input;
+  const mimeType = file.type as 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf';
+  const { uploadUrl, storageKey } = await api.post<{ uploadUrl: string; storageKey: string }>('/media/presign', {
+    filename: file.name,
+    mimeType,
+    sizeBytes: file.size,
+    patientId,
+  });
+  await fetch(uploadUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } });
+  await api.post('/media', { patientId, visitId, storageKey, type: 'XRAY', mimeType, sizeBytes: file.size });
+}
+
 export function useCheckIn() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: CheckInInput }) =>

@@ -83,9 +83,11 @@ describe('SarvamSttProvider', () => {
   });
 
   it('gives up after exhausting retries on persistent 5xx', async () => {
+    // Fresh Response per call — the provider reads res.text(), so a reused Response would be
+    // "Body already read" on retry.
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response('down', { status: 500 }));
+      .mockImplementation(() => Promise.resolve(new Response('down', { status: 500 })));
 
     const provider = new SarvamSttProvider({ apiKey: 'SK', maxRetries: 2, backoffBaseMs: 0 });
     await expect(provider.transcribe(Buffer.from('a'), { mimeType: 'audio/webm' })).rejects.toThrow(

@@ -64,13 +64,13 @@ describe('GeminiExtractor.extractClinical', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(geminiOk('{ not valid json ]'));
     await expect(
       new GeminiExtractor({ apiKey: 'GK' }).extractClinical('anything', ctx),
-    ).rejects.toThrow(/extract/i);
+    ).rejects.toThrow(/malformed JSON/i);
   });
 
-  it('throws when the API returns a non-2xx', async () => {
+  it('throws when the API returns a non-2xx (no-retry path)', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('quota', { status: 429 }));
     await expect(
-      new GeminiExtractor({ apiKey: 'GK' }).extractClinical('anything', ctx),
+      new GeminiExtractor({ apiKey: 'GK', maxRetries: 0 }).extractClinical('anything', ctx),
     ).rejects.toThrow(/Gemini/i);
   });
 
