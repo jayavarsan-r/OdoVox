@@ -3,6 +3,8 @@ import { ClinicalExtraction, type ClinicalExtraction as ClinicalExtractionType }
 import { AppError, NotFoundError } from '../errors.js';
 import { encryptField } from '../encryption.js';
 import { runWithContext } from '../request-context.js';
+import { resolveFollowUpSlot } from '../schedule/follow-up.js';
+import { reminderDrafts } from '../schedule/reminders.js';
 import type { ExtendedPrismaClient } from '../../plugins/prisma.js';
 
 export interface CommitParams {
@@ -19,9 +21,9 @@ export interface CommitResult {
   procedureId?: string;
   prescriptionId?: string;
   appointmentId?: string;
+  /** Set when the follow-up could not be slotted and fell back to 10:00 (spec §5.2). */
+  appointmentWarning?: string | null;
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Commit a confirmed consultation in a SINGLE transaction. The doctor's data is sacred: either
@@ -210,11 +212,16 @@ export async function commitConsultation(
         result.prescriptionId = rx.id;
       }
 
-      // 6. Follow-up appointment. (Stage 3 replaces this literal `now + afterDays` insertion with
-      // availability-aware scheduling; for now it just lands a 30-min slot at the target time.)
+      // 6. Follow-up appointment — availability-aware (spec §5.2). Resolve the "in N days" hint to a
+      // real free slot (or fall back to 10:00 with a safety warning), then book + insert reminders.
       if (data.followUp?.afterDays != null && data.followUp.afterDays > 0) {
-        const startsAt = new Date(Date.now() + data.followUp.afterDays * DAY_MS);
         const durationMinutes = 30;
+        const resolution = await resolveFollowUpSlot(tx as unknown as Parameters<typeof resolveFollowUpSlot>[0], {
+          clinicId,
+          doctorId: userId,
+          afterDays: data.followUp.afterDays,
+          durationMinutes,
+        });
         const appt = await tx.appointment.create({
           data: {
             clinicId,
@@ -222,14 +229,41 @@ export async function commitConsultation(
             doctorId: userId,
             createdById: userId,
             procedureHint: data.followUp.procedureHint ?? data.procedure ?? 'Follow-up',
-            startsAt,
-            endsAt: new Date(startsAt.getTime() + durationMinutes * 60_000),
+            startsAt: resolution.startsAt,
+            endsAt: resolution.endsAt,
             durationMinutes,
             status: 'SCHEDULED',
             notes: `Auto-scheduled from consultation ${consult.id}`,
           },
         });
+        await tx.appointmentReminder.createMany({
+          data: reminderDrafts({ clinicId, appointmentId: appt.id, patientId, startsAt: resolution.startsAt }),
+        });
         result.appointmentId = appt.id;
+        result.appointmentWarning = resolution.warning;
+
+        // Surface a NO_AVAILABLE_SLOT warning on the consultation the doctor just saw.
+        if (resolution.warning) {
+          await tx.consultation.update({
+            where: { id: consult.id },
+            data: { safetyWarnings: [...data.safetyWarnings, resolution.warning] },
+          });
+        }
+        await tx.auditLog.create({
+          data: {
+            clinicId,
+            userId,
+            action: 'APPOINTMENT_AUTO_SCHEDULED',
+            entityType: 'Appointment',
+            entityId: appt.id,
+            metadata: {
+              afterDays: data.followUp.afterDays,
+              resolvedDate: resolution.resolvedDateISO,
+              startsAt: resolution.startsAt.toISOString(),
+              warning: resolution.warning,
+            },
+          },
+        });
       }
 
       // 7. Tooth status updates (upsert + append history).

@@ -31,6 +31,7 @@ import { scheduleRoutes } from './routes/schedule.js';
 import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
+import { startScheduleCron } from './queues/schedule-cron.js';
 import { closeQueues } from './queues/index.js';
 
 // Load .env in non-production (repo root).
@@ -94,11 +95,13 @@ async function start(): Promise<void> {
   const app = await buildServer();
 
   let workers: { stop: () => Promise<void> } | null = null;
+  let scheduleCron: { stop: () => Promise<void> } | null = null;
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down…`);
     try {
       await workers?.stop(); // drain in-process voice workers first
+      await scheduleCron?.stop();
       await closeQueues();
       await app.close(); // closes server + triggers onClose (prisma, redis, sentry flush)
       process.exit(0);
@@ -118,6 +121,8 @@ async function start(): Promise<void> {
     await app.listen({ port: env.PORT, host: '0.0.0.0' });
     // Start the in-process STT + extraction workers (Phase 10 may split these out).
     workers = startWorkers(app);
+    // Repeating NO_SHOW sweep (every 5 min). Only here in start() → never under tests.
+    scheduleCron = startScheduleCron(app);
     // Make the active STT / AI / OTP providers impossible to miss at boot.
     printBootBanner(env);
   } catch (err) {

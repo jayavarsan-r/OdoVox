@@ -18,6 +18,7 @@ import {
 import { broadcastToClinic } from '../lib/realtime/broadcast.js';
 import { markRecording } from '../lib/realtime/recording.js';
 import { loadQueueVisit } from '../lib/queue/snapshot.js';
+import { APPOINTMENT_INCLUDE, serializeAppointment } from '../lib/schedule/serialize.js';
 
 const StartInput = z.object({ patientId: z.string().min(1), visitId: z.string().min(1).optional() });
 const PresignInput = z.object({
@@ -229,6 +230,20 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     // transaction so the receptionist's "Ready for Checkout" section updates instantly.
     const qVisit = await loadQueueVisit(prisma, req.clinicId!, consult.visitId);
     if (qVisit) broadcastToClinic(req.clinicId!, { type: 'queue.visit.checkout', payload: qVisit });
+
+    // Phase 6 (§5): a follow-up that auto-scheduled an appointment broadcasts to the calendar.
+    if (result.appointmentId) {
+      const appt = await prisma.appointment.findFirst({
+        where: { id: result.appointmentId, clinicId: req.clinicId! },
+        include: APPOINTMENT_INCLUDE,
+      });
+      if (appt) {
+        broadcastToClinic(req.clinicId!, {
+          type: 'schedule.appointment.created',
+          payload: serializeAppointment(appt),
+        });
+      }
+    }
     return ok(result);
   });
 
