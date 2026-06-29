@@ -5,7 +5,7 @@ import type { ActivePlanContext, ClinicalExtractionContext, PrescriptionContext 
  * quality with prompt revisions (stored alongside the consultation provider tag). The base
  * instructions are constant; only the PATIENT CONTEXT block is interpolated per request.
  */
-export const CLINICAL_PROMPT_VERSION = 'clinical-v2';
+export const CLINICAL_PROMPT_VERSION = 'clinical-v3';
 export const PRESCRIPTION_PROMPT_VERSION = 'prescription-v2';
 export const INTAKE_PROMPT_VERSION = 'intake-v1';
 
@@ -51,6 +51,13 @@ const CLINICAL_INSTRUCTIONS = `INSTRUCTIONS:
 7. If the transcript is ambiguous, set the field to null and add a clarification to \`clarifications: string[]\`.
 
 ALLERGY GUARDRAIL: If the doctor prescribes a medicine that contains an ingredient the patient is allergic to (cross-check the allergies above), set \`safetyWarnings: ["allergy_conflict:<medicine>"]\`. Do NOT remove the prescription — flag it; the doctor decides.
+
+HARDENING RULES (be conservative — when in doubt, null):
+- TEETH: emit an FDI number only when the doctor names a tooth. Valid quadrant-tooth values are 11-18, 21-28, 31-38, 41-48. If the doctor says a number outside these ranges, still emit it verbatim and add a clarification — NEVER silently "correct" it to the nearest valid tooth.
+- sittingTotal: set it ONLY when the doctor states a total ("of four", "4 sittings"). Never infer a total from the procedure type or a typical protocol.
+- DOSAGE / FREQUENCY / DURATION: set each to null unless explicitly spoken. Never fill in a "standard" or "typical" dose the doctor didn't say.
+- STATUS: leave null unless the doctor states the procedure is in progress, completed, or aborted.
+- READ-ONLY CONTEXT: do NOT copy any medicine, diagnosis, plan detail, or follow-up from PATIENT CONTEXT or ACTIVE TREATMENT PLANS into the output. That block is background only — output must come from today's transcript alone.
 
 LANGUAGE NOTE: For Hindi/Tamil clinical terms, translate to English in the output (e.g. "extracted", "scaling").`;
 
