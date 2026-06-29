@@ -45,12 +45,14 @@ function Tooth({
   n,
   status,
   highlight,
+  hasPlan,
   compact,
   onTap,
 }: {
   n: number;
   status: ToothStatus;
   highlight?: boolean;
+  hasPlan?: boolean;
   compact?: boolean;
   onTap?: (n: number) => void;
 }) {
@@ -58,15 +60,19 @@ function Tooth({
     <button
       type="button"
       onClick={() => onTap?.(n)}
-      aria-label={`Tooth ${n}, ${status.toLowerCase()}`}
+      aria-label={`Tooth ${n}, ${status.toLowerCase()}${hasPlan ? ', active plan' : ''}`}
       className={cn(
-        'flex flex-col items-center justify-center rounded-md border font-mono transition-transform active:scale-90',
+        'relative flex flex-col items-center justify-center rounded-md border font-mono transition-transform active:scale-90',
         compact ? 'h-7 w-6 text-[9px]' : 'h-9 w-7 text-[10px]',
         TOOTH_TONE[status],
         highlight && 'ring-2 ring-ink ring-offset-1',
       )}
     >
       <span className="font-semibold">{n}</span>
+      {/* Phase 5: active-plan indicator. */}
+      {hasPlan ? (
+        <span aria-hidden className="absolute -right-0.5 -top-0.5 size-2 rounded-pill border border-surface bg-sage" />
+      ) : null}
     </button>
   );
 }
@@ -75,13 +81,17 @@ export function Odontogram({
   records,
   onToothTap,
   highlightTooth,
+  activePlanTeeth,
   compact,
 }: {
   records: Record<number, ToothStatus>;
   onToothTap?: (n: number) => void;
   highlightTooth?: number | null;
+  /** Teeth with an active treatment plan — rendered with a sage dot (Phase 5). */
+  activePlanTeeth?: number[];
   compact?: boolean;
 }) {
+  const planSet = new Set(activePlanTeeth ?? []);
   const row = (teeth: number[]) => (
     <div className="flex justify-center gap-0.5">
       {teeth.map((n) => (
@@ -90,6 +100,7 @@ export function Odontogram({
           n={n}
           status={records[n] ?? 'HEALTHY'}
           highlight={highlightTooth === n}
+          hasPlan={planSet.has(n)}
           compact={compact}
           onTap={onToothTap}
         />

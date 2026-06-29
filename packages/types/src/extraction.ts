@@ -44,6 +44,10 @@ export const ClinicalExtraction = z.object({
   teeth: z.array(z.number().int()).default([]),
   sittingCurrent: z.number().int().nullable().default(null),
   sittingTotal: z.number().int().nullable().default(null),
+  // Phase 5: set by the extractor when the transcript continues an existing ACTIVE plan
+  // (same procedure + tooth, or an explicit reference like "second sitting"). When set, the
+  // confirm transaction advances that plan instead of creating a new one. Null = new plan.
+  continuesPlanId: z.string().nullable().default(null),
   status: ExtractionProcedureStatus.nullable().default(null),
   prescriptions: z.array(ExtractedPrescription).default([]),
   followUp: ExtractedFollowUp.nullable().default(null),
@@ -57,6 +61,9 @@ export type ClinicalExtraction = z.infer<typeof ClinicalExtraction>;
 /** Medicines-only extraction (Dictate prescription flow). */
 export const PrescriptionExtraction = z.object({
   prescriptions: z.array(ExtractedPrescription).default([]),
+  // Phase 5: set when the doctor names a clinic template ("apply RCT pack"). The server populates
+  // the template's medicines and merges any explicitly dictated additions. Null = no template.
+  applyTemplateId: z.string().nullable().default(null),
   clarifications: z.array(z.string()).default([]),
   safetyWarnings: z.array(z.string()).default([]),
 });
@@ -78,6 +85,16 @@ export type PatientIntakeExtraction = z.infer<typeof PatientIntakeExtraction>;
 // Extraction context — patient metadata fed to the prompt (never echoed to output).
 // ---------------------------------------------------------------------------
 
+/** A patient's in-progress treatment plan, summarised for the continuation prompt (Phase 5). */
+export interface ActivePlanContext {
+  planId: string;
+  procedureName: string | null;
+  teeth: number[];
+  completedSittings: number;
+  totalSittings: number;
+  startedAt: string;
+}
+
 export interface ClinicalExtractionContext {
   name: string;
   age: number | null;
@@ -87,6 +104,15 @@ export interface ClinicalExtractionContext {
   currentPlanSummary: string | null;
   lastVisitSummary: string | null;
   chiefComplaint: string | null;
+  /** Phase 5: ACTIVE plans the patient already has — lets the extractor flag continuations. */
+  activePlans: ActivePlanContext[];
+}
+
+/** A clinic prescription template, named to the prescription prompt so "apply X" resolves to an id. */
+export interface TemplateHint {
+  id: string;
+  name: string;
+  tags: string[];
 }
 
 export interface PrescriptionContext {
@@ -94,4 +120,6 @@ export interface PrescriptionContext {
   age: number | null;
   allergies: string[];
   medicalFlags: string[];
+  /** Phase 5: the clinic's active templates the doctor can invoke by name. */
+  templates: TemplateHint[];
 }

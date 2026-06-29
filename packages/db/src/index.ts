@@ -2,6 +2,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 export { PrismaClient, Prisma };
 export * from '@prisma/client';
+export * from './starter-templates.js';
 
 /**
  * Models that carry a direct `clinicId` column. Every read/write to these from a
@@ -21,6 +22,7 @@ export const CLINIC_SCOPED_MODELS = [
   'Notification',
   'ClinicSetting',
   'Media',
+  'PrescriptionTemplate',
 ] as const;
 
 export type ClinicScopedModel = (typeof CLINIC_SCOPED_MODELS)[number];

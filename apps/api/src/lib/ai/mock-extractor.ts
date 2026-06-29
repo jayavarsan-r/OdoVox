@@ -2,10 +2,12 @@ import {
   ClinicalExtraction,
   PatientIntakeExtraction,
   PrescriptionExtraction,
+  type ActivePlanContext,
   type ClinicalExtractionContext,
   type ExtractedPrescription,
   type MedicineFrequency,
   type PrescriptionContext,
+  type TemplateHint,
   type ToothStatus,
 } from '@odovox/types';
 import type { IClinicalExtractor } from './extractor.js';
@@ -48,6 +50,7 @@ const MEDICINES: ReadonlyArray<{ canonical: string; pattern: RegExp }> = [
   { canonical: 'Azithromycin', pattern: /azithromycin|azithral/i },
   { canonical: 'Cephalexin', pattern: /cephalexin|sporidex/i },
   { canonical: 'Chlorhexidine', pattern: /chlorhexidine|hexidine|clohex/i },
+  { canonical: 'Pantoprazole', pattern: /pantoprazole|pantop|pan\s?40/i },
 ];
 
 const ORDINALS: Record<string, number> = {
@@ -198,6 +201,49 @@ function parseMedicalFlags(transcript: string): string[] {
   return [...flags];
 }
 
+/**
+ * Phase 5: decide whether today's dictation continues one of the patient's ACTIVE plans. A match
+ * needs the SAME procedure and overlapping (or unspecified) teeth — the spec's hard rule is "never
+ * assume continuation when teeth or procedure don't match". An explicit "starting / new plan / first
+ * sitting" cue forces a fresh plan even when the procedure matches an active one.
+ */
+function detectContinuesPlan(
+  transcript: string,
+  procedure: string | null,
+  teeth: number[],
+  activePlans: ActivePlanContext[],
+): ActivePlanContext | null {
+  if (!procedure || activePlans.length === 0) return null;
+  if (/\b(starting|started|start a|new plan|fresh plan|first sitting)\b/i.test(transcript)) return null;
+  const norm = procedure.toLowerCase();
+  for (const plan of activePlans) {
+    if ((plan.procedureName ?? '').toLowerCase() !== norm) continue;
+    const toothOverlap =
+      teeth.length === 0 || plan.teeth.length === 0 || plan.teeth.some((t) => teeth.includes(t));
+    if (toothOverlap) return plan;
+  }
+  return null;
+}
+
+/**
+ * Phase 5: resolve a spoken template name ("apply RCT pack", "post-extraction kit") to a template
+ * id. Match on normalized (alphanumeric-only) containment so punctuation/spacing variations survive;
+ * prefer the longest template name to avoid a short name shadowing a more specific one.
+ */
+function detectTemplate(transcript: string, templates: TemplateHint[]): string | null {
+  if (templates.length === 0) return null;
+  const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const haystack = norm(transcript);
+  let best: { id: string; len: number } | null = null;
+  for (const t of templates) {
+    const needle = norm(t.name);
+    if (needle && haystack.includes(needle) && (!best || needle.length > best.len)) {
+      best = { id: t.id, len: needle.length };
+    }
+  }
+  return best?.id ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // MockExtractor
 // ---------------------------------------------------------------------------
@@ -217,16 +263,24 @@ export class MockExtractor implements IClinicalExtractor {
 
   async extractClinical(
     transcript: string,
-    _ctx: ClinicalExtractionContext,
+    ctx: ClinicalExtractionContext,
   ): Promise<ClinicalExtraction> {
     await this.simulateLatency();
 
     const procedure = parseProcedure(transcript);
     const teeth = parseTeeth(transcript);
-    const { current, total } = parseSitting(transcript);
+    const parsedSitting = parseSitting(transcript);
+    let current = parsedSitting.current;
+    const total = parsedSitting.total;
     const status = parseStatus(transcript);
     const prescriptions = parseMedicines(transcript);
     const followUp = parseFollowUp(transcript);
+
+    // Phase 5: plan continuation. When matched, default the sitting number to the plan's next
+    // sitting if the doctor didn't speak an explicit one.
+    const continuedPlan = detectContinuesPlan(transcript, procedure, teeth, ctx.activePlans ?? []);
+    const continuesPlanId = continuedPlan?.planId ?? null;
+    if (continuedPlan && current == null) current = continuedPlan.completedSittings + 1;
 
     const toothStatus = procedure ? PROCEDURE_TOOTH_STATUS[procedure] : undefined;
     const toothStatusUpdates = toothStatus
@@ -243,6 +297,7 @@ export class MockExtractor implements IClinicalExtractor {
       teeth,
       sittingCurrent: current,
       sittingTotal: total,
+      continuesPlanId,
       status,
       prescriptions,
       followUp,
@@ -255,11 +310,12 @@ export class MockExtractor implements IClinicalExtractor {
 
   async extractPrescription(
     transcript: string,
-    _ctx: PrescriptionContext,
+    ctx: PrescriptionContext,
   ): Promise<PrescriptionExtraction> {
     await this.simulateLatency();
     return PrescriptionExtraction.parse({
       prescriptions: parseMedicines(transcript),
+      applyTemplateId: detectTemplate(transcript, ctx.templates ?? []),
       clarifications: [],
       safetyWarnings: [],
     });

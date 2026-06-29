@@ -22,6 +22,9 @@ import type {
   NeedsYouItem,
   RecentVisitItem,
   TodayStats,
+  TemplateResponse,
+  CreateTemplateInput,
+  UpdateTemplateInput,
 } from '@odovox/types';
 
 interface Paginated<T> {
@@ -112,6 +115,7 @@ export interface PlanRow {
   description: string | null;
   status: string;
   estimatedCostPaise: number;
+  teeth: number[];
   progress: { totalSittings: number; completedSittings: number; percent: number };
 }
 
@@ -123,12 +127,136 @@ export function usePlans(patientId: string) {
   });
 }
 
+export interface PlanSitting {
+  id: string;
+  sittingNumber: number;
+  date: string;
+  completed: boolean;
+  notes: string | null;
+  visitId: string | null;
+}
+export interface PlanProcedureDetail {
+  id: string;
+  name: string;
+  toothNumbers: number[];
+  totalSittings: number;
+  completedSittings: number;
+  status: string;
+  sittings: PlanSitting[];
+}
+export interface PlanDetail {
+  id: string;
+  patientId: string;
+  name: string;
+  description: string | null;
+  status: string;
+  estimatedCostPaise: number;
+  createdAt: string;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  progress: { totalSittings: number; completedSittings: number; percent: number };
+  procedures: PlanProcedureDetail[];
+  prescriptions: { id: string; createdAt: string; medicines: unknown }[];
+  xrayCount: number;
+}
+
+export function usePlan(planId: string) {
+  return useQuery({
+    queryKey: ['plan', planId],
+    queryFn: () => api.get<PlanDetail>(`/plans/${planId}`),
+    enabled: !!planId,
+  });
+}
+
+export function useCompletePlan(planId: string, patientId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ id: string; status: string }>(`/plans/${planId}/complete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plan', planId] });
+      qc.invalidateQueries({ queryKey: ['plans', patientId] });
+    },
+  });
+}
+
+export function useCancelPlan(planId: string, patientId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string) => api.post<{ id: string; status: string }>(`/plans/${planId}/cancel`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plan', planId] });
+      qc.invalidateQueries({ queryKey: ['plans', patientId] });
+    },
+  });
+}
+
+export async function fetchPlanPdfUrl(planId: string): Promise<string> {
+  const { url } = await api.get<{ url: string }>(`/plans/${planId}/pdf`);
+  return url;
+}
+
 export function useCreatePlan(patientId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: Omit<CreateTreatmentPlanInput, 'patientId'>) =>
       api.post<PlanRow>(`/patients/${patientId}/plans`, input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['plans', patientId] }),
+  });
+}
+
+// ---- Prescription templates -------------------------------------------------
+export function useTemplates(search: string) {
+  return useQuery({
+    queryKey: ['templates', { search }],
+    queryFn: () => {
+      const qs = search ? `?search=${encodeURIComponent(search)}` : '';
+      return api.get<{ items: TemplateResponse[] }>(`/prescription-templates${qs}`);
+    },
+  });
+}
+
+export function useCreateTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateTemplateInput) =>
+      api.post<TemplateResponse>('/prescription-templates', input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  });
+}
+
+export function useUpdateTemplate(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateTemplateInput) =>
+      api.patch<TemplateResponse>(`/prescription-templates/${id}`, input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  });
+}
+
+export function useArchiveTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<{ id: string }>(`/prescription-templates/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
+  });
+}
+
+export interface AppliedTemplate {
+  id: string;
+  name: string;
+  medicines: TemplateResponse['medicines'];
+  instructions: string | null;
+  reviewAfterDays: number | null;
+  usageCount: number;
+}
+
+/** POST /:id/use — bumps usageCount and returns the medicines to populate the sheet. */
+export function useApplyTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<AppliedTemplate>(`/prescription-templates/${id}/use`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['templates'] }),
   });
 }
 

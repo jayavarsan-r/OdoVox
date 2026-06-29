@@ -308,6 +308,50 @@ export async function seedConsultation(
   });
 }
 
+export interface SeededPlan {
+  planId: string;
+  procedureId: string;
+}
+
+/**
+ * Seed an ACTIVE TreatmentPlan + Procedure with `completedSittings` already-completed Sittings, for
+ * the multi-sitting continuation tests. Plan/Procedure/Sitting are patient-scoped (not clinic-scoped)
+ * but we run inside a clinic context to mirror the commit path.
+ */
+export async function seedActivePlan(
+  app: FastifyInstance,
+  clinicId: string,
+  doctorId: string,
+  patientId: string,
+  opts: { procedure?: string; teeth?: number[]; totalSittings?: number; completedSittings?: number } = {},
+): Promise<SeededPlan> {
+  const procedure = opts.procedure ?? 'RCT';
+  const teeth = opts.teeth ?? [26];
+  const totalSittings = opts.totalSittings ?? 4;
+  const completedSittings = opts.completedSittings ?? 2;
+  return runWithContext({ clinicId, userId: doctorId }, async () => {
+    const plan = await app.prisma.treatmentPlan.create({
+      data: { patientId, name: procedure, status: 'ACTIVE', createdById: doctorId },
+    });
+    const proc = await app.prisma.procedure.create({
+      data: {
+        planId: plan.id,
+        name: procedure,
+        toothNumbers: teeth,
+        totalSittings,
+        completedSittings,
+        status: 'IN_PROGRESS',
+      },
+    });
+    for (let i = 1; i <= completedSittings; i++) {
+      await app.prisma.sitting.create({
+        data: { procedureId: proc.id, sittingNumber: i, completedAt: new Date() },
+      });
+    }
+    return { planId: plan.id, procedureId: proc.id };
+  });
+}
+
 /** Create a bare patient (in a clinic-scoped context) and return its id. */
 export async function createPatient(
   app: FastifyInstance,

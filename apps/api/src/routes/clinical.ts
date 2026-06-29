@@ -6,13 +6,17 @@ import {
   CreatePrescriptionInput,
   type Medicine,
 } from '@odovox/types';
+import { z } from 'zod';
 import type { Patient, Prisma } from '@odovox/db';
-import { AppError, NotFoundError } from '../lib/errors.js';
+import { AppError, ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
 import { decryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
 import { storage } from '../lib/storage.js';
 import { generatePrescriptionPdf } from '../lib/prescription-pdf.js';
+import { generateTreatmentPlanPdf } from '../lib/treatment-plan-pdf.js';
+
+const CancelPlanInput = z.object({ reason: z.string().min(1).max(500) });
 
 function planProgress(procedures: { totalSittings: number; completedSittings: number }[]) {
   const totalSittings = procedures.reduce((s, p) => s + p.totalSittings, 0);
@@ -52,6 +56,7 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
         estimatedCostPaise: p.estimatedCostPaise,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
+        teeth: [...new Set(p.procedures.flatMap((proc) => proc.toothNumbers))],
         progress: planProgress(p.procedures),
       })),
     );
@@ -87,17 +92,94 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ ...plan, progress: planProgress(plan.procedures) });
   });
 
+  // Detail: full nested structure — procedures → sittings (visit date + decrypted notes), plus
+  // prescriptions and x-rays across the plan's sitting visits.
   fastify.get('/plans/:id', anyRole, async (req) => {
     const { id } = req.params as { id: string };
     const plan = await prisma.treatmentPlan.findUnique({
       where: { id },
-      include: { procedures: true, patient: true },
+      include: {
+        patient: true,
+        procedures: { include: { sittings: { include: { visit: true }, orderBy: { sittingNumber: 'asc' } } } },
+      },
     });
     if (!plan || plan.deletedAt || plan.patient.clinicId !== req.clinicId) {
       throw new NotFoundError('Plan not found');
     }
+
+    const visitIds = plan.procedures
+      .flatMap((p) => p.sittings.map((s) => s.visitId))
+      .filter((v): v is string => Boolean(v));
+    const [prescriptions, xrayCount] = await Promise.all([
+      visitIds.length
+        ? prisma.prescription.findMany({
+            where: { visitId: { in: visitIds }, deletedAt: null },
+            orderBy: { createdAt: 'asc' },
+          })
+        : Promise.resolve([]),
+      visitIds.length
+        ? prisma.media.count({ where: { visitId: { in: visitIds }, type: 'XRAY', deletedAt: null } })
+        : Promise.resolve(0),
+    ]);
+
     const { patient: _patient, procedures, ...rest } = plan;
-    return ok({ ...rest, procedures, progress: planProgress(procedures) });
+    return ok({
+      ...rest,
+      progress: planProgress(procedures),
+      procedures: procedures.map((p) => ({
+        id: p.id,
+        name: p.name,
+        toothNumbers: p.toothNumbers,
+        totalSittings: p.totalSittings,
+        completedSittings: p.completedSittings,
+        status: p.status,
+        sittings: p.sittings.map((s) => ({
+          id: s.id,
+          sittingNumber: s.sittingNumber,
+          date: s.visit?.startedAt ?? s.completedAt ?? s.createdAt,
+          completed: s.completedAt != null,
+          notes: s.notesEnc ? decryptField(s.notesEnc) : null,
+          visitId: s.visitId,
+        })),
+      })),
+      prescriptions,
+      xrayCount,
+    });
+  });
+
+  // Mark a plan complete: plan + all its procedures → COMPLETED (audit logged).
+  fastify.post('/plans/:id/complete', doctorOnly, async (req) => {
+    const { id } = req.params as { id: string };
+    const plan = await prisma.treatmentPlan.findUnique({ where: { id }, include: { patient: true } });
+    if (!plan || plan.deletedAt || plan.patient.clinicId !== req.clinicId) throw new NotFoundError('Plan not found');
+    if (plan.status === 'CANCELLED') throw new AppError('Cannot complete a cancelled plan', 422, 'PLAN_CANCELLED');
+    await prisma.$transaction([
+      prisma.treatmentPlan.update({ where: { id }, data: { status: 'COMPLETED', completedAt: new Date() } }),
+      prisma.procedure.updateMany({ where: { planId: id, status: { not: 'CANCELLED' } }, data: { status: 'COMPLETED' } }),
+    ]);
+    await fastify.audit('TREATMENT_PLAN_COMPLETED', 'TreatmentPlan', id);
+    return ok({ id, status: 'COMPLETED' });
+  });
+
+  // Cancel a plan with a reason: plan + sub-procedures → CANCELLED. Only the plan's doctor (or an
+  // admin) may cancel. Future consultations then start a new plan instead of continuing this one.
+  fastify.post('/plans/:id/cancel', doctorOnly, async (req) => {
+    const { id } = req.params as { id: string };
+    const { reason } = parse(CancelPlanInput, req.body);
+    const plan = await prisma.treatmentPlan.findUnique({ where: { id }, include: { patient: true } });
+    if (!plan || plan.deletedAt || plan.patient.clinicId !== req.clinicId) throw new NotFoundError('Plan not found');
+    if (req.role !== 'ADMIN' && plan.createdById && plan.createdById !== req.user!.id) {
+      throw new ForbiddenError('Only the doctor on this plan can cancel it');
+    }
+    await prisma.$transaction([
+      prisma.treatmentPlan.update({
+        where: { id },
+        data: { status: 'CANCELLED', cancelledAt: new Date(), cancellationReason: reason },
+      }),
+      prisma.procedure.updateMany({ where: { planId: id }, data: { status: 'CANCELLED' } }),
+    ]);
+    await fastify.audit('TREATMENT_PLAN_CANCELLED', 'TreatmentPlan', id, { reason });
+    return ok({ id, status: 'CANCELLED' });
   });
 
   fastify.patch('/plans/:id', doctorOnly, async (req) => {
@@ -247,4 +329,79 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     const url = await storage.getSignedUrl(storageKey, 300);
     return ok({ url });
   });
+
+  // Treatment-plan case sheet PDF. Generated lazily on GET (Phase 4.5 pattern) and cached in S3.
+  fastify.get('/plans/:id/pdf', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    const plan = await prisma.treatmentPlan.findUnique({
+      where: { id },
+      include: {
+        patient: true,
+        procedures: { include: { sittings: { include: { visit: true }, orderBy: { sittingNumber: 'asc' } } } },
+      },
+    });
+    if (!plan || plan.deletedAt || plan.patient.clinicId !== req.clinicId) throw new NotFoundError('Plan not found');
+
+    const visitIds = plan.procedures
+      .flatMap((p) => p.sittings.map((s) => s.visitId))
+      .filter((v): v is string => Boolean(v));
+    const prescriptions = visitIds.length
+      ? await prisma.prescription.findMany({ where: { visitId: { in: visitIds }, deletedAt: null }, orderBy: { createdAt: 'asc' } })
+      : [];
+    const xrayCount = visitIds.length
+      ? await prisma.media.count({ where: { visitId: { in: visitIds }, type: 'XRAY', deletedAt: null } })
+      : 0;
+
+    const clinic = await prisma.clinic.findFirst({ where: { id: req.clinicId } });
+    const doctor = plan.createdById ? await prisma.user.findUnique({ where: { id: plan.createdById } }) : null;
+    const member = plan.createdById ? await prisma.clinicMember.findFirst({ where: { userId: plan.createdById } }) : null;
+    if (!clinic) throw new AppError('Missing clinic for PDF', 500, 'PDF_CONTEXT_MISSING');
+
+    const pdf = await generateTreatmentPlanPdf({
+      clinicName: clinic.name,
+      clinicAddress: `${clinic.addressLine}, ${clinic.city}, ${clinic.state} ${clinic.pincode}`,
+      doctorName: doctor?.name ?? 'Doctor',
+      qualification: member?.qualification ?? null,
+      registrationNumber: member?.registrationNumberEnc ? decryptField(member.registrationNumberEnc) : null,
+      patientName: plan.patient.name,
+      patientAge: plan.patient.age,
+      patientGender: plan.patient.gender,
+      patientCode: plan.patient.patientCode,
+      planName: plan.name,
+      status: plan.status,
+      estimatedCostPaise: plan.estimatedCostPaise,
+      createdAt: plan.createdAt,
+      procedures: plan.procedures.map((p) => ({
+        name: p.name,
+        toothNumbers: p.toothNumbers,
+        totalSittings: p.totalSittings,
+        completedSittings: p.completedSittings,
+        status: p.status,
+        sittings: p.sittings.map((s) => ({
+          sittingNumber: s.sittingNumber,
+          date: s.visit?.startedAt ?? s.completedAt ?? s.createdAt,
+          notes: s.notesEnc ? decryptField(s.notesEnc) : null,
+          completed: s.completedAt != null,
+        })),
+      })),
+      prescriptions: prescriptions.map((rx) => ({
+        date: rx.createdAt,
+        medicines: rx.medicines as unknown as PlanRxMedicine[],
+      })),
+      xrayCount,
+    });
+
+    const storageKey = `clinics/${req.clinicId}/plans/${plan.id}.pdf`;
+    await storage.putObject(storageKey, pdf, 'application/pdf');
+    await fastify.audit('TREATMENT_PLAN_PDF_GENERATED', 'TreatmentPlan', plan.id);
+    const url = await storage.getSignedUrl(storageKey, 300);
+    return ok({ url });
+  });
+}
+
+interface PlanRxMedicine {
+  name: string;
+  dosage?: string;
+  frequency?: string;
+  durationDays?: number | null;
 }

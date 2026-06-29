@@ -11,6 +11,7 @@ const ctx: ClinicalExtractionContext = {
   currentPlanSummary: null,
   lastVisitSummary: null,
   chiefComplaint: null,
+  activePlans: [],
 };
 
 const HEADLINE =
@@ -52,7 +53,7 @@ describe('MockExtractor.extractPrescription', () => {
   it('extracts only medicines (no procedure/teeth)', async () => {
     const r = await new MockExtractor().extractPrescription(
       'Ibuprofen 400mg BD for 3 days after food.',
-      { name: 'Akhilesh Guhan', age: 34, allergies: [], medicalFlags: [] },
+      { name: 'Akhilesh Guhan', age: 34, allergies: [], medicalFlags: [], templates: [] },
     );
     expect(r.prescriptions).toHaveLength(1);
     expect(r.prescriptions[0]).toMatchObject({

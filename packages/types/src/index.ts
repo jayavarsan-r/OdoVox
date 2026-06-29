@@ -7,6 +7,7 @@ export * from './queue.js';
 export * from './realtime.js';
 export * from './treatment.js';
 export * from './prescription.js';
+export * from './template.js';
 export * from './appointment.js';
 export * from './lab.js';
 export * from './inventory.js';

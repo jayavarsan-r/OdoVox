@@ -101,6 +101,7 @@ enum PlanStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+  ON_HOLD
 }
 
 enum ProcedureStatus {
@@ -213,6 +214,7 @@ model User {
   payments               Payment[]
   uploadedMedia          Media[]
   notifications          Notification[]
+  prescriptionTemplates  PrescriptionTemplate[] @relation("PrescriptionTemplateCreatedBy")
 
   @@index([phone])
 }
@@ -253,6 +255,7 @@ model Clinic {
   settings       ClinicSetting[]
   media          Media[]
   jobs           Job[]
+  prescriptionTemplates PrescriptionTemplate[]
 
   @@index([joinCode])
 }
@@ -550,6 +553,11 @@ model TreatmentPlan {
   status             PlanStatus @default(DRAFT)
   estimatedCostPaise Int        @default(0)
   createdById        String?
+  // The visit where the plan was first created. NULL if created retroactively (Phase 5).
+  parentVisitId      String?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   deletedAt          DateTime?
@@ -585,7 +593,8 @@ model Sitting {
   procedureId   String
   visitId       String?
   sittingNumber Int
-  notes         String?
+  // Clinical free text, encrypted at rest (§PHI). Decrypted only in the plan-detail view.
+  notesEnc      String?
   completedAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -593,6 +602,7 @@ model Sitting {
   procedure Procedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
   visit     Visit?    @relation(fields: [visitId], references: [id], onDelete: SetNull)
 
+  @@unique([procedureId, sittingNumber])
   @@index([procedureId])
   @@index([visitId])
 }
@@ -639,6 +649,31 @@ model Prescription {
   @@index([visitId])
   @@index([patientId])
   @@index([doctorId])
+}
+
+/// Clinic-level reusable prescription bundle (Phase 5). One tap / one voice phrase populates the
+/// prescription sheet's medicines. Mutable; existing Prescriptions snapshot medicines at creation
+/// (no versioning by reference), so archiving never breaks history.
+model PrescriptionTemplate {
+  id              String   @id @default(cuid())
+  clinicId        String
+  createdById     String
+  name            String
+  description     String?
+  isShared        Boolean  @default(true)
+  isArchived      Boolean  @default(false)
+  medicines       Json     @default("[]") // [{name, dosage, frequency, durationDays, instructions}]
+  instructions    String?
+  reviewAfterDays Int?
+  tags            String[] @default([])
+  usageCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinic    Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("PrescriptionTemplateCreatedBy", fields: [createdById], references: [id])
+
+  @@index([clinicId, isArchived, name])
 }
 
 // ===========================================================================

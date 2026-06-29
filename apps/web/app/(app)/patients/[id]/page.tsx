@@ -16,6 +16,8 @@ import {
   ClipboardList,
   Receipt,
   UserX,
+  Star,
+  X,
 } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
@@ -48,6 +50,9 @@ import {
   useDeletePatient,
   fetchMediaUrl,
   fetchPrescriptionPdfUrl,
+  useTemplates,
+  useApplyTemplate,
+  useCreateTemplate,
 } from '@/lib/queries';
 import { initials, statusStyle, rupees } from '@/lib/patient-ui';
 import { cn } from '@/lib/utils';
@@ -232,10 +237,15 @@ function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; r
 
       <Section title="Current treatment">
         {activePlan ? (
-          <div className="rounded-lg border border-border bg-surface p-4">
-            <p className="text-sm font-semibold">{activePlan.name}</p>
-            <ProgressBar percent={activePlan.progress.percent} />
-            <p className="mt-1 text-xs text-muted-foreground">{activePlan.progress.completedSittings}/{activePlan.progress.totalSittings} sittings</p>
+          <div className="rounded-lg border border-sage/40 bg-sage-tint/40 p-4">
+            <button type="button" onClick={() => router.push(`/patients/${patientId}/plans/${activePlan.id}`)} className="w-full text-left">
+              <p className="text-sm font-semibold text-ink">{activePlan.name}{activePlan.teeth.length ? ` · Tooth ${activePlan.teeth.join(', ')}` : ''}</p>
+              <ProgressBar percent={activePlan.progress.percent} />
+              <p className="mt-1 text-xs text-text-muted">{activePlan.progress.completedSittings} of {activePlan.progress.totalSittings} sittings completed</p>
+            </button>
+            <Button variant="ghost" size="sm" className="mt-2 w-full" loading={starting} onClick={() => void startConsultation()}>
+              <Mic className="size-4" /> Continue treatment
+            </Button>
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No active treatment yet.</div>
@@ -244,7 +254,7 @@ function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; r
 
       <Section title="Affected teeth" action={<button onClick={onOpenTeeth} className="text-sm text-muted-foreground">Open →</button>}>
         <div className="rounded-lg border border-border bg-surface p-3">
-          <Odontogram records={records} compact onToothTap={onOpenTeeth} />
+          <Odontogram records={records} compact activePlanTeeth={[...new Set((plans.data ?? []).filter((p) => p.status === 'ACTIVE').flatMap((p) => p.teeth))]} onToothTap={onOpenTeeth} />
         </div>
       </Section>
 
@@ -272,6 +282,7 @@ function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; r
 // ===== Cases =================================================================
 function CasesTab({ patientId }: { patientId: string }) {
   const toast = useToast();
+  const router = useRouter();
   const plans = usePlans(patientId);
   const createPlan = useCreatePlan(patientId);
   const [open, setOpen] = useState(false);
@@ -316,16 +327,46 @@ function CasesTab({ patientId }: { patientId: string }) {
           body="Tap Record findings or + New plan to start."
         />
       ) : (
-        plans.data!.map((pl) => (
-          <div key={pl.id} className="rounded-lg border border-border bg-surface p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">{pl.name}</p>
-              <span className="rounded-pill bg-muted px-2 py-0.5 text-xs">{pl.status}</span>
-            </div>
-            <ProgressBar percent={pl.progress.percent} />
-            <p className="mt-1 text-xs text-muted-foreground">{pl.progress.completedSittings}/{pl.progress.totalSittings} sittings · {rupees(pl.estimatedCostPaise)}</p>
-          </div>
-        ))
+        (() => {
+          const all = plans.data!;
+          const activePlans = all.filter((p) => p.status === 'ACTIVE');
+          const pastPlans = all.filter((p) => p.status !== 'ACTIVE');
+          const goTo = (id: string) => router.push(`/patients/${patientId}/plans/${id}`);
+          return (
+            <>
+              {activePlans.length ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Active treatment</p>
+                  {activePlans.map((pl) => (
+                    <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-lg border border-sage/40 bg-sage-tint/40 p-4 text-left active:scale-[0.99]">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-ink">{pl.name}</p>
+                        <span className="rounded-pill bg-sage-tint px-2 py-0.5 text-xs text-sage-deep">Active</span>
+                      </div>
+                      <ProgressBar percent={pl.progress.percent} />
+                      <p className="mt-1 text-xs text-text-muted">{pl.progress.completedSittings} of {pl.progress.totalSittings} sittings completed · {rupees(pl.estimatedCostPaise)}</p>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {pastPlans.length ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Past treatments · {pastPlans.length}</p>
+                  {pastPlans.map((pl) => (
+                    <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-lg border border-border bg-surface p-4 text-left active:scale-[0.99]">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold">{pl.name}</p>
+                        <span className="rounded-pill bg-muted px-2 py-0.5 text-xs">{pl.status}</span>
+                      </div>
+                      <ProgressBar percent={pl.progress.percent} />
+                      <p className="mt-1 text-xs text-muted-foreground">{pl.progress.completedSittings}/{pl.progress.totalSittings} sittings · {rupees(pl.estimatedCostPaise)}</p>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          );
+        })()
       )}
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title="New treatment plan">
@@ -353,11 +394,18 @@ function CasesTab({ patientId }: { patientId: string }) {
 // ===== Tooth Map =============================================================
 function TeethTab({ patientId, records }: { patientId: string; records: Record<number, ToothStatus> }) {
   const toast = useToast();
+  const router = useRouter();
   const teeth = useTeeth(patientId);
+  const plans = usePlans(patientId);
   const upsert = useUpsertTooth(patientId);
   const [selected, setSelected] = useState<number | null>(null);
   const [status, setStatus] = useState<ToothStatus>('HEALTHY');
   const [notes, setNotes] = useState('');
+
+  const activePlans = (plans.data ?? []).filter((p) => p.status === 'ACTIVE');
+  const activePlanTeeth = [...new Set(activePlans.flatMap((p) => p.teeth))];
+  const planForTooth = (n: number | null) =>
+    n == null ? undefined : activePlans.find((p) => p.teeth.includes(n));
 
   const open = (n: number) => {
     setSelected(n);
@@ -381,12 +429,25 @@ function TeethTab({ patientId, records }: { patientId: string; records: Record<n
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-border bg-surface p-4">
-        <Odontogram records={records} highlightTooth={selected} onToothTap={open} />
+        <Odontogram records={records} highlightTooth={selected} activePlanTeeth={activePlanTeeth} onToothTap={open} />
       </div>
       <OdontogramLegend />
 
       <BottomSheet open={selected != null} onClose={() => setSelected(null)} title={`Tooth ${selected ?? ''}`}>
         <div className="space-y-4">
+          {(() => {
+            const pl = planForTooth(selected);
+            return pl ? (
+              <button
+                type="button"
+                onClick={() => router.push(`/patients/${patientId}/plans/${pl.id}`)}
+                className="flex w-full items-center justify-between rounded-lg bg-sage-tint px-3 py-2 text-left text-xs text-sage-deep"
+              >
+                <span>Active plan: {pl.name} · {pl.progress.completedSittings} of {pl.progress.totalSittings} sittings</span>
+                <ChevronLeft className="size-4 rotate-180" />
+              </button>
+            ) : null;
+          })()}
           <div className="flex flex-wrap gap-2">
             {TOOTH_STATUSES.map((st) => (
               <button key={st} type="button" onClick={() => setStatus(st)} className={cn('rounded-pill border px-3 py-1.5 text-xs font-medium', status === st ? TOOTH_TONE[st] + ' ring-2 ring-ink ring-offset-1' : 'border-border bg-surface')}>{st}</button>
@@ -520,15 +581,70 @@ function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; op
   const [instructions, setInstructions] = useState('');
   const [savedId, setSavedId] = useState<string | null>(null);
 
+  // Phase 5: template picker. `applied` is the template currently populating the sheet (null = none).
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [applied, setApplied] = useState<{ id: string; name: string } | null>(null);
+  const { data: templateData } = useTemplates(templateSearch);
+  const templates = templateData?.items ?? [];
+  const applyTemplate = useApplyTemplate();
+  const createTemplate = useCreateTemplate();
+
   const addMed = (name: string) => setMeds((m) => [...m, { name, dosage: '1 tab', frequency: 'BD', durationDays: 5 }]);
 
-  // Stub swap (Phase 3): "Dictate prescription" → real medicines extraction + allergy safety.
+  async function pickTemplate(id: string, name: string) {
+    try {
+      const res = await applyTemplate.mutateAsync(id);
+      setMeds(
+        res.medicines.map((p) => ({
+          name: p.name,
+          dosage: p.dosage,
+          frequency: p.frequency,
+          durationDays: p.durationDays ?? 5,
+          instructions: p.instructions,
+        })),
+      );
+      if (res.instructions) setInstructions(res.instructions);
+      setApplied({ id, name });
+      toast.info(`Applied “${name}” — review and edit before saving.`);
+    } catch (err) {
+      toast.apiError(err);
+    }
+  }
+
+  function clearTemplate() {
+    setApplied(null);
+    setMeds([]);
+  }
+
+  async function saveAsTemplate() {
+    const name = window.prompt('Template name (e.g. RCT pack)')?.trim();
+    if (!name) return;
+    try {
+      await createTemplate.mutateAsync({
+        name,
+        medicines: meds.map((m) => ({
+          name: m.name,
+          dosage: m.dosage,
+          frequency: m.frequency,
+          durationDays: m.durationDays,
+          instructions: m.instructions,
+        })),
+        instructions: instructions || undefined,
+      });
+      toast.success(`Saved “${name}” as a template.`);
+    } catch (err) {
+      toast.apiError(err);
+    }
+  }
+
+  // Dictation (Phase 3) now also recognises a spoken template name → applied pill.
   const dictate = useDictation<{
     prescription: { prescriptions: { name: string; dosage: string | null; frequency: string | null; durationDays: number | null }[] };
+    templateUsed: { id: string; name: string } | null;
     safetyWarnings: string[];
   }>(
     '/prescriptions/dictate',
-    ({ prescription, safetyWarnings }) => {
+    ({ prescription, templateUsed, safetyWarnings }) => {
       setMeds(
         prescription.prescriptions.map((p) => ({
           name: p.name,
@@ -537,7 +653,9 @@ function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; op
           durationDays: p.durationDays ?? 5,
         })),
       );
+      setApplied(templateUsed);
       if (safetyWarnings.length) toast.info(`Safety: ${safetyWarnings.join(', ')} — verify before saving.`);
+      else if (templateUsed) toast.info(`Applied “${templateUsed.name}” from your voice — review and edit.`);
       else toast.info('Filled from your voice — review and edit.');
     },
     { patientId },
@@ -580,6 +698,46 @@ function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; op
           >
             <Mic className="size-4" /> {dictateBusy ? 'Listening… (auto-stops)' : 'Dictate prescription'}
           </button>
+
+          {/* Phase 5: template picker — one tap fills the medicines below. */}
+          {applied ? (
+            <div className="flex items-center justify-between rounded-pill bg-sage-tint px-3 py-1.5 text-xs font-medium text-sage-deep">
+              <span className="inline-flex items-center gap-1.5">
+                <Star className="size-3.5" /> Used: {applied.name}
+              </span>
+              <button type="button" aria-label="Clear template" onClick={clearTemplate} className="flex size-5 items-center justify-center rounded-pill hover:bg-sage-soft">
+                <X className="size-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Templates</p>
+              <Input placeholder="Search templates…" value={templateSearch} onChange={(e) => setTemplateSearch(e.target.value)} />
+              {templates.length ? (
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                  {templates.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => void pickTemplate(t.id, t.name)}
+                      disabled={applyTemplate.isPending}
+                      className="shrink-0 rounded-lg border border-border bg-paper-warm p-2.5 text-left active:scale-[0.98]"
+                      style={{ minWidth: 140 }}
+                    >
+                      <span className="block truncate text-sm font-semibold text-ink">{t.name}</span>
+                      <span className="mt-1 flex items-center gap-2 text-[11px] text-text-muted">
+                        <span className="inline-flex items-center gap-1"><Pill className="size-3" /> {t.medicines.length}</span>
+                        <span className="inline-flex items-center gap-1"><Star className="size-3" /> {t.usageCount}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-text-muted">No templates yet — build one in Clinic › Templates.</p>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2">
             {MED_SUGGESTIONS.map((m) => (
               <button key={m} type="button" onClick={() => addMed(m)} className="rounded-pill border border-border px-3 py-1 text-xs">{m}</button>
@@ -603,6 +761,11 @@ function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; op
             </div>
           ))}
           <Input placeholder="Instructions (after food…)" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+          {meds.length > 0 && !applied ? (
+            <Button variant="ghost" size="sm" className="w-full" loading={createTemplate.isPending} onClick={saveAsTemplate}>
+              <Plus className="size-4" /> Save as template
+            </Button>
+          ) : null}
           <Button className="w-full" disabled={meds.length === 0} loading={createRx.isPending} onClick={save}>Save prescription</Button>
         </div>
       )}

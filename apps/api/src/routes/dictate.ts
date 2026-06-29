@@ -1,7 +1,12 @@
 import type { FastifyInstance } from 'fastify';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
-import { ClinicalExtraction } from '@odovox/types';
+import {
+  ClinicalExtraction,
+  MedicineFrequency,
+  type ExtractedPrescription,
+  type TemplateMedicine,
+} from '@odovox/types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
 import { requireRole } from '../lib/rbac.js';
@@ -71,12 +76,20 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ intake, transcript });
   });
 
-  // Prescription dictation — medicines only, with the allergy/interaction safety check.
+  // Prescription dictation — medicines only, with the allergy/interaction safety check. Phase 5: the
+  // doctor can invoke a clinic template by name ("apply RCT pack") — the server populates the
+  // template's medicines and merges any explicitly dictated additions.
   fastify.post('/prescriptions/dictate', doctorOnly, async (req) => {
     const { patientId, storageKey } = parse(RxInput, req.body);
     assertOwnKey(storageKey, req.clinicId!);
     const patient = await prisma.patient.findFirst({ where: { id: patientId, deletedAt: null } });
     if (!patient) throw new NotFoundError('Patient not found');
+
+    // The clinic's active templates, named to the extractor so "apply X" resolves to an id.
+    const templates = await prisma.prescriptionTemplate.findMany({
+      where: { isArchived: false },
+      select: { id: true, name: true, tags: true },
+    });
 
     const transcript = await transcribeAndPurge(storageKey);
     const allergies = parseAllergies(patient.allergiesEnc);
@@ -85,9 +98,30 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
       age: patient.age,
       allergies,
       medicalFlags: patient.medicalFlags,
+      templates,
     });
 
-    // Reuse the clinical safety layer over a prescription-only extraction.
+    // Resolve a named template: load its medicines, merge (template first, then dictated additions),
+    // bump usageCount, and audit TEMPLATE_USED. A stale/cross-clinic id silently no-ops (findFirst is
+    // clinic-scoped) so dictation never fails on a bad template reference.
+    let templateUsed: { id: string; name: string } | null = null;
+    if (prescription.applyTemplateId) {
+      const tpl = await prisma.prescriptionTemplate.findFirst({
+        where: { id: prescription.applyTemplateId, isArchived: false },
+      });
+      if (tpl) {
+        const tplMeds = (tpl.medicines as TemplateMedicine[]) ?? [];
+        prescription.prescriptions = [...tplMeds.map(templateMedicineToExtracted), ...prescription.prescriptions];
+        templateUsed = { id: tpl.id, name: tpl.name };
+        await prisma.prescriptionTemplate.update({
+          where: { id: tpl.id },
+          data: { usageCount: { increment: 1 } },
+        });
+        await fastify.audit('TEMPLATE_USED', 'PrescriptionTemplate', tpl.id, { via: 'dictation' });
+      }
+    }
+
+    // Reuse the clinical safety layer over the FINAL merged medicines.
     const safety = runSafetyChecks(
       ClinicalExtraction.parse({ prescriptions: prescription.prescriptions }),
       { age: patient.age, medicalFlags: patient.medicalFlags },
@@ -96,8 +130,21 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
     await fastify.audit('DICTATE_PRESCRIPTION', 'Dictation', patient.id);
     return ok({
       prescription,
+      templateUsed,
       safetyWarnings: serializeSafetyWarnings(safety),
       safety: { warnings: safety.warnings, blockingErrors: safety.blockingErrors },
     });
   });
+}
+
+/** Coerce a template medicine (free-string frequency) into the dictation medicine shape. */
+function templateMedicineToExtracted(m: TemplateMedicine): ExtractedPrescription {
+  const freq = MedicineFrequency.safeParse(m.frequency);
+  return {
+    name: m.name,
+    dosage: m.dosage ?? null,
+    frequency: freq.success ? freq.data : null,
+    durationDays: m.durationDays ?? null,
+    instructions: m.instructions ?? null,
+  };
 }

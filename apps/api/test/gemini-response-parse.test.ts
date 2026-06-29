@@ -12,6 +12,7 @@ const ctx = {
   currentPlanSummary: null,
   lastVisitSummary: null,
   chiefComplaint: 'Tooth pain',
+  activePlans: [],
 };
 
 // The real Gemini envelope wraps the JSON-as-string in candidates[0].content.parts[0].text.

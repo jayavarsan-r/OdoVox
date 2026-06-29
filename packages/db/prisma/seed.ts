@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { config as loadEnv } from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import { STARTER_TEMPLATES } from '../src/starter-templates.js';
 
 // Load the repo-root .env so the seed has DATABASE_URL + PHI_ENCRYPTION_KEY.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -422,12 +423,31 @@ async function main() {
     });
   }
 
+  // --- Phase 5: starter prescription templates -----------------------------
+  for (const t of STARTER_TEMPLATES) {
+    await prisma.prescriptionTemplate.upsert({
+      where: { id: `seed-tpl-${clinic.id}-${t.slug}` },
+      update: {},
+      create: {
+        id: `seed-tpl-${clinic.id}-${t.slug}`,
+        clinicId: clinic.id,
+        createdById: doctor.id,
+        name: t.name,
+        description: t.description,
+        tags: t.tags,
+        reviewAfterDays: t.reviewAfterDays,
+        medicines: t.medicines as unknown as object,
+      },
+    });
+  }
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);
   console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
   console.warn(`   Patients: ${patientSeed.length + 1} | Lab partner + 1 open case | 1 low-stock item`);
   console.warn('   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan');
+  console.warn(`   Prescription templates: ${STARTER_TEMPLATES.length} starters (RCT pack, Post-extraction, …)`);
 }
 
 main()

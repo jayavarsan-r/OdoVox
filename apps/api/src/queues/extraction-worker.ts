@@ -55,15 +55,39 @@ export async function runExtractionJob(deps: ExtractionDeps, data: ExtractionJob
       const transcript = decryptField(consult.rawTranscriptEnc);
       const allergies = parseAllergies(patient.allergiesEnc);
 
+      // Phase 5: the patient's ACTIVE plans feed the continuation prompt so the extractor can flag
+      // when today's dictation advances an existing plan rather than starting a new one.
+      const activePlanRows = await prisma.treatmentPlan.findMany({
+        where: { patientId: patient.id, status: 'ACTIVE', deletedAt: null },
+        include: { procedures: { orderBy: { createdAt: 'desc' } } },
+      });
+      const activePlans = activePlanRows.map((p) => {
+        const proc = p.procedures[0];
+        return {
+          planId: p.id,
+          procedureName: proc?.name ?? p.name,
+          teeth: proc?.toothNumbers ?? [],
+          completedSittings: proc?.completedSittings ?? 0,
+          totalSittings: proc?.totalSittings ?? 1,
+          startedAt: p.createdAt.toISOString(),
+        };
+      });
+      const currentPlanSummary = activePlans.length
+        ? activePlans
+            .map((p) => `${p.procedureName} on ${p.teeth.join('/') || '—'} (sitting ${p.completedSittings}/${p.totalSittings})`)
+            .join('; ')
+        : null;
+
       const ctx: ClinicalExtractionContext = {
         name: patient.name,
         age: patient.age,
         gender: patient.gender,
         allergies,
         medicalFlags: patient.medicalFlags,
-        currentPlanSummary: null,
+        currentPlanSummary,
         lastVisitSummary: null,
         chiefComplaint: patient.chiefComplaint,
+        activePlans,
       };
 
       const extracted = await deps.extractor.extractClinical(transcript, ctx);

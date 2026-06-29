@@ -1,16 +1,37 @@
-import type { ClinicalExtractionContext, PrescriptionContext } from '@odovox/types';
+import type { ActivePlanContext, ClinicalExtractionContext, PrescriptionContext } from '@odovox/types';
 
 /**
  * Prompt versioning: bump the version when the wording changes so we can correlate extraction
  * quality with prompt revisions (stored alongside the consultation provider tag). The base
  * instructions are constant; only the PATIENT CONTEXT block is interpolated per request.
  */
-export const CLINICAL_PROMPT_VERSION = 'clinical-v1';
-export const PRESCRIPTION_PROMPT_VERSION = 'prescription-v1';
+export const CLINICAL_PROMPT_VERSION = 'clinical-v2';
+export const PRESCRIPTION_PROMPT_VERSION = 'prescription-v2';
 export const INTAKE_PROMPT_VERSION = 'intake-v1';
 
 const list = (xs: string[]): string => (xs.length ? xs.join(', ') : 'none');
 const orNone = (s: string | null): string => s ?? 'none';
+
+/** Compact JSON of the patient's ACTIVE plans, fed to the continuation instructions. */
+function activePlansJson(plans: ActivePlanContext[]): string {
+  if (plans.length === 0) return '[]';
+  return JSON.stringify(
+    plans.map((p) => ({
+      planId: p.planId,
+      procedure: p.procedureName,
+      teeth: p.teeth,
+      completedSittings: p.completedSittings,
+      totalSittings: p.totalSittings,
+      startedAt: p.startedAt,
+    })),
+  );
+}
+
+const PLAN_CONTINUATION_INSTRUCTIONS = `INSTRUCTIONS FOR PLAN CONTINUATION:
+- If the transcript clearly continues one of the ACTIVE TREATMENT PLANS above (same procedure + tooth, or an explicit reference like "second sitting", "continuing the RCT"), set \`continuesPlanId\` to that plan's planId.
+- If unclear, leave \`continuesPlanId\` null — the server will create a new plan.
+- When continuing, set \`sittingCurrent\` to that plan's completedSittings + 1.
+- NEVER assume continuation when the teeth or procedure don't match an active plan.`;
 
 const CLINICAL_INSTRUCTIONS = `INSTRUCTIONS:
 1. Read the transcript. The doctor's speech may be English, Hindi, Tamil, or code-mixed Hinglish/Tanglish.
@@ -46,7 +67,19 @@ PATIENT CONTEXT (the dentist is recording about this specific patient):
 - Last visit summary: ${orNone(ctx.lastVisitSummary)}
 - Today's chief complaint: ${orNone(ctx.chiefComplaint)}
 
-${CLINICAL_INSTRUCTIONS}`;
+ACTIVE TREATMENT PLANS (the patient already has these in progress):
+${activePlansJson(ctx.activePlans)}
+
+${CLINICAL_INSTRUCTIONS}
+
+${PLAN_CONTINUATION_INSTRUCTIONS}`;
+}
+
+function templatesList(templates: PrescriptionContext['templates']): string {
+  if (!templates.length) return 'none';
+  return templates
+    .map((t) => `- id: ${t.id} | name: "${t.name}"${t.tags.length ? ` | tags: ${t.tags.join(', ')}` : ''}`)
+    .join('\n');
 }
 
 export function buildPrescriptionSystemInstruction(ctx: PrescriptionContext): string {
@@ -57,6 +90,14 @@ PATIENT CONTEXT:
 - Age: ${ctx.age ?? 'unknown'}
 - Existing allergies: ${list(ctx.allergies)}
 - Existing medical flags: ${list(ctx.medicalFlags)}
+
+KNOWN TEMPLATES IN THIS CLINIC:
+${templatesList(ctx.templates)}
+
+TEMPLATE INSTRUCTIONS:
+- If the doctor says "apply <template name>" or just names a template ("RCT pack", "post-extraction kit"), set \`applyTemplateId\` to that template's id and leave \`prescriptions\` empty for the template's medicines — the server populates them.
+- The doctor can still add medicines after a template: "RCT pack, also add Pantoprazole 40mg OD for 5 days" → set applyTemplateId AND put the additional medicines (Pantoprazole) in \`prescriptions\`.
+- If no template is named, leave \`applyTemplateId\` null and extract medicines normally.
 
 For each medicine capture: name, dosage (mg), frequency (OD/BD/TID/QID/SOS), durationDays, instructions. If an ingredient conflicts with an allergy above, add "allergy_conflict:<medicine>" to safetyWarnings — flag, never remove. Return ONLY JSON matching the responseSchema.`;
 }

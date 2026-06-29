@@ -27,6 +27,7 @@ export const CLINICAL_RESPONSE_SCHEMA: GeminiSchema = {
     teeth: { type: 'ARRAY', items: { type: 'INTEGER' } },
     sittingCurrent: { type: 'INTEGER', nullable: true },
     sittingTotal: { type: 'INTEGER', nullable: true },
+    continuesPlanId: { type: 'STRING', nullable: true },
     status: { type: 'STRING', enum: ['IN_PROGRESS', 'COMPLETED', 'ABORTED'], nullable: true },
     prescriptions: { type: 'ARRAY', items: PRESCRIPTION_ITEM_SCHEMA },
     followUp: {
@@ -63,6 +64,7 @@ export const PRESCRIPTION_RESPONSE_SCHEMA: GeminiSchema = {
   type: 'OBJECT',
   properties: {
     prescriptions: { type: 'ARRAY', items: PRESCRIPTION_ITEM_SCHEMA },
+    applyTemplateId: { type: 'STRING', nullable: true },
     clarifications: { type: 'ARRAY', items: { type: 'STRING' } },
     safetyWarnings: { type: 'ARRAY', items: { type: 'STRING' } },
   },

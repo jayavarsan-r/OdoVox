@@ -15,6 +15,7 @@ const ctx: ClinicalExtractionContext = {
   currentPlanSummary: null,
   lastVisitSummary: null,
   chiefComplaint: null,
+  activePlans: [],
 };
 
 const geminiOk = (text: string): Response =>

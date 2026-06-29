@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { ClinicalExtraction, type ClinicalExtraction as ClinicalExtractionType } from '@odovox/types';
 import { AppError, NotFoundError } from '../errors.js';
+import { encryptField } from '../encryption.js';
 import { runWithContext } from '../request-context.js';
 import type { ExtendedPrismaClient } from '../../plugins/prisma.js';
 
@@ -69,8 +70,75 @@ export async function commitConsultation(
         },
       });
 
-      // 2-4. Plan → Procedure → Sitting (only when a procedure was recorded).
-      if (data.procedure) {
+      // 2-4. Plan → Procedure → Sitting.
+      if (data.continuesPlanId) {
+        // ── CONTINUATION BRANCH (Phase 5) ──────────────────────────────────────────────────────
+        // Advance an existing ACTIVE plan: add the next sitting, never create a new plan/procedure.
+        const plan = await tx.treatmentPlan.findUnique({
+          where: { id: data.continuesPlanId },
+          include: { patient: { select: { clinicId: true } } },
+        });
+        // Cross-clinic plans must not even reveal their existence → 404.
+        if (!plan || plan.deletedAt || plan.patient.clinicId !== clinicId) {
+          throw new NotFoundError('Treatment plan not found');
+        }
+        // Same clinic but a different patient → explicit mismatch (a doctor edited the card wrong).
+        if (plan.patientId !== patientId) {
+          throw new AppError('Plan belongs to a different patient', 422, 'PLAN_PATIENT_MISMATCH', {
+            planId: plan.id,
+          });
+        }
+        if (plan.status !== 'ACTIVE') {
+          throw new AppError('Cannot continue an inactive or missing plan', 422, 'PLAN_NOT_ACTIVE', {
+            status: plan.status,
+          });
+        }
+        const procedure = await tx.procedure.findFirst({
+          where: { planId: plan.id },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (!procedure) {
+          throw new AppError('Plan has no procedure to advance', 422, 'PLAN_NOT_ACTIVE');
+        }
+
+        const nextSittingNum = procedure.completedSittings + 1;
+        // Safety: a doctor can't skip sittings — sitting N must follow N-1.
+        if (data.sittingCurrent != null && data.sittingCurrent > nextSittingNum) {
+          throw new AppError(
+            `You're skipping sittings — sitting ${nextSittingNum} was never completed`,
+            422,
+            'SITTING_GAP',
+            { expected: nextSittingNum, got: data.sittingCurrent },
+          );
+        }
+        result.planId = plan.id;
+        result.procedureId = procedure.id;
+
+        await tx.sitting.create({
+          data: {
+            procedureId: procedure.id,
+            visitId,
+            sittingNumber: nextSittingNum,
+            completedAt: data.status === 'COMPLETED' ? new Date() : null,
+            notesEnc: data.notes ? encryptField(data.notes) : null,
+          },
+        });
+        const completedSittings = await tx.sitting.count({
+          where: { procedureId: procedure.id, completedAt: { not: null } },
+        });
+        const procDone = completedSittings >= procedure.totalSittings;
+        await tx.procedure.update({
+          where: { id: procedure.id },
+          data: { completedSittings, status: procDone ? 'COMPLETED' : 'IN_PROGRESS' },
+        });
+        if (procDone) {
+          await tx.treatmentPlan.update({
+            where: { id: plan.id },
+            data: { status: 'COMPLETED', completedAt: new Date() },
+          });
+        }
+      } else if (data.procedure) {
+        // ── NEW-PLAN BRANCH (Phase 3 path, name-based reuse — unchanged) ────────────────────────
         const existingPlan = await tx.treatmentPlan.findFirst({
           where: { patientId, name: data.procedure, deletedAt: null, status: { not: 'CANCELLED' } },
           orderBy: { createdAt: 'desc' },
@@ -78,7 +146,7 @@ export async function commitConsultation(
         const plan =
           existingPlan ??
           (await tx.treatmentPlan.create({
-            data: { patientId, name: data.procedure, status: 'ACTIVE', createdById: userId },
+            data: { patientId, name: data.procedure, status: 'ACTIVE', createdById: userId, parentVisitId: visitId },
           }));
         result.planId = plan.id;
 
@@ -101,12 +169,23 @@ export async function commitConsultation(
         result.procedureId = procedure.id;
 
         if (data.sittingCurrent != null) {
+          // Guard the new unique([procedureId, sittingNumber]) constraint: if this sitting number
+          // already exists on the procedure (e.g. a repeat confirm), advance to the next free one.
+          const clash = await tx.sitting.findUnique({
+            where: { procedureId_sittingNumber: { procedureId: procedure.id, sittingNumber: data.sittingCurrent } },
+          });
+          const last = await tx.sitting.findFirst({
+            where: { procedureId: procedure.id },
+            orderBy: { sittingNumber: 'desc' },
+          });
+          const sittingNumber = clash ? (last?.sittingNumber ?? 0) + 1 : data.sittingCurrent;
           await tx.sitting.create({
             data: {
               procedureId: procedure.id,
               visitId,
-              sittingNumber: data.sittingCurrent,
+              sittingNumber,
               completedAt: data.status === 'COMPLETED' ? new Date() : null,
+              notesEnc: data.notes ? encryptField(data.notes) : null,
             },
           });
           const completedSittings = await tx.sitting.count({
