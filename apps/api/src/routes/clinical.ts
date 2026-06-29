@@ -15,6 +15,8 @@ import { requireRole } from '../lib/rbac.js';
 import { storage } from '../lib/storage.js';
 import { generatePrescriptionPdf } from '../lib/prescription-pdf.js';
 import { generateTreatmentPlanPdf } from '../lib/treatment-plan-pdf.js';
+import { broadcastToClinic } from '../lib/realtime/broadcast.js';
+import { APPOINTMENT_INCLUDE, serializeAppointment } from '../lib/schedule/serialize.js';
 
 const CancelPlanInput = z.object({ reason: z.string().min(1).max(500) });
 
@@ -171,15 +173,37 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     if (req.role !== 'ADMIN' && plan.createdById && plan.createdById !== req.user!.id) {
       throw new ForbiddenError('Only the doctor on this plan can cancel it');
     }
+    // Phase 6 (§6.3): cancelling a plan auto-cancels its remaining SCHEDULED appointments (never
+    // COMPLETED/past ones). Capture them first so we can broadcast each after commit.
+    const futureAppts = await prisma.appointment.findMany({
+      where: { clinicId: req.clinicId!, treatmentPlanId: id, status: 'SCHEDULED', deletedAt: null },
+      select: { id: true },
+    });
+    const apptIds = futureAppts.map((a) => a.id);
+
     await prisma.$transaction([
       prisma.treatmentPlan.update({
         where: { id },
         data: { status: 'CANCELLED', cancelledAt: new Date(), cancellationReason: reason },
       }),
       prisma.procedure.updateMany({ where: { planId: id }, data: { status: 'CANCELLED' } }),
+      prisma.appointment.updateMany({
+        where: { id: { in: apptIds } },
+        data: { status: 'CANCELLED', cancelledAt: new Date(), cancelledById: req.user!.id, cancellationReason: 'Treatment plan cancelled.' },
+      }),
+      prisma.appointmentReminder.updateMany({
+        where: { appointmentId: { in: apptIds }, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      }),
     ]);
-    await fastify.audit('TREATMENT_PLAN_CANCELLED', 'TreatmentPlan', id, { reason });
-    return ok({ id, status: 'CANCELLED' });
+    await fastify.audit('TREATMENT_PLAN_CANCELLED', 'TreatmentPlan', id, { reason, cancelledAppointments: apptIds.length });
+
+    // Broadcast each cancelled appointment so the calendars update in real time.
+    for (const apptId of apptIds) {
+      const full = await prisma.appointment.findFirst({ where: { id: apptId, clinicId: req.clinicId! }, include: APPOINTMENT_INCLUDE });
+      if (full) broadcastToClinic(req.clinicId!, { type: 'schedule.appointment.cancelled', payload: serializeAppointment(full) });
+    }
+    return ok({ id, status: 'CANCELLED', cancelledAppointments: apptIds.length });
   });
 
   fastify.patch('/plans/:id', doctorOnly, async (req) => {
