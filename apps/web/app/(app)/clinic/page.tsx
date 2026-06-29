@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { FileText, ChevronRight } from 'lucide-react';
+import { FileText, ChevronRight, CalendarClock, CalendarOff } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { EditorialHeading, HeroCard } from '@/components/ds';
 import { IlluBuildingSoon } from '@/components/illustrations';
@@ -23,12 +23,32 @@ export default function ClinicPage() {
           onClick={() => router.push('/clinic/templates')}
         />
 
+        <HeroCard
+          variant="light"
+          size="compact"
+          title="Doctor availability"
+          subtitle="Weekly working hours per doctor"
+          icon={<CalendarClock />}
+          trailing={<ChevronRight />}
+          onClick={() => router.push('/clinic/availability')}
+        />
+
+        <HeroCard
+          variant="light"
+          size="compact"
+          title="Days off & closures"
+          subtitle="Block clinic days or a doctor's leave"
+          icon={<CalendarOff />}
+          trailing={<ChevronRight />}
+          onClick={() => router.push('/clinic/day-off')}
+        />
+
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <div className="mx-auto mb-3 w-24">
             <IlluBuildingSoon />
           </div>
-          <p className="font-medium text-ink">Team, rooms, hours &amp; join code</p>
-          <p className="mt-1 text-sm text-text-muted">Clinic settings expand in Phase 6 of 10.</p>
+          <p className="font-medium text-ink">Team, rooms &amp; join code</p>
+          <p className="mt-1 text-sm text-text-muted">More clinic settings expand later.</p>
         </div>
       </div>
     </AnimatedPage>

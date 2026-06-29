@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Conflict, PatientListItem } from '@odovox/types';
 import { AlertTriangle, Check, Search } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
@@ -30,6 +30,7 @@ export function NewAppointmentSheet({
   defaultDateISO,
   doctors,
   lockedDoctorId,
+  defaultDoctorId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -37,6 +38,7 @@ export function NewAppointmentSheet({
   defaultDateISO: string;
   doctors: Array<{ id: string; name: string }>;
   lockedDoctorId?: string;
+  defaultDoctorId?: string;
 }) {
   const toast = useToast();
   const create = useCreateAppointment();
@@ -44,7 +46,13 @@ export function NewAppointmentSheet({
 
   const [search, setSearch] = useState('');
   const [patient, setPatient] = useState<PatientListItem | null>(null);
-  const [doctorId, setDoctorId] = useState<string>(lockedDoctorId ?? doctors[0]?.id ?? '');
+  const [doctorId, setDoctorId] = useState<string>(lockedDoctorId ?? defaultDoctorId ?? doctors[0]?.id ?? '');
+
+  // Re-sync the doctor when the sheet (re)opens with a different prefilled doctor (multi-doctor tap).
+  const firstDoctorId = doctors[0]?.id ?? '';
+  useEffect(() => {
+    if (open) setDoctorId(lockedDoctorId ?? defaultDoctorId ?? firstDoctorId);
+  }, [open, defaultDoctorId, lockedDoctorId, firstDoctorId]);
   const [dateISO, setDateISO] = useState(defaultDateISO);
   const [duration, setDuration] = useState(30);
   const [procedureHint, setProcedureHint] = useState('');

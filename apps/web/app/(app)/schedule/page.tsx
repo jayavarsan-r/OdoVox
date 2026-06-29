@@ -9,6 +9,7 @@ import { EditorialHeading } from '@/components/ds';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WeekStrip } from '@/components/schedule/week-strip';
 import { DayView } from '@/components/schedule/day-view';
+import { MultiDoctorDay } from '@/components/schedule/multi-doctor-day';
 import { NewAppointmentSheet } from '@/components/schedule/new-appointment-sheet';
 import { AppointmentDetailSheet } from '@/components/schedule/appointment-detail-sheet';
 import { useSchedule } from '@/lib/schedule/api';
@@ -39,6 +40,7 @@ export default function SchedulePage() {
 
   const [focusISO, setFocusISO] = useState(() => localDateISO(new Date(), FALLBACK_TZ));
   const [newOpen, setNewOpen] = useState(false);
+  const [prefillDoctorId, setPrefillDoctorId] = useState<string | undefined>(undefined);
   const [detail, setDetail] = useState<ScheduleAppointment | null>(null);
 
   const schedule = useSchedule(focusISO, focusISO, doctorParam);
@@ -75,14 +77,24 @@ export default function SchedulePage() {
 
         {schedule.isLoading ? (
           <Skeleton className="h-96 w-full rounded-xl" />
-        ) : (
+        ) : isDoctor ? (
           <DayView
             dateISO={focusISO}
             clinicHours={clinicHours}
             appointments={appointments}
             forcedOffDay={forcedOffDay}
             onSelect={setDetail}
-            onTapEmpty={() => setNewOpen(true)}
+            onTapEmpty={() => { setPrefillDoctorId(myDoctorId ?? undefined); setNewOpen(true); }}
+          />
+        ) : (
+          <MultiDoctorDay
+            dateISO={focusISO}
+            clinicHours={clinicHours}
+            forcedOffDay={forcedOffDay}
+            appointments={appointments}
+            knownDoctors={doctors}
+            onSelect={setDetail}
+            onTapEmpty={(docId) => { setPrefillDoctorId(docId); setNewOpen(true); }}
           />
         )}
       </div>
@@ -103,6 +115,7 @@ export default function SchedulePage() {
         defaultDateISO={focusISO}
         doctors={doctors}
         lockedDoctorId={isDoctor ? myDoctorId ?? undefined : undefined}
+        defaultDoctorId={prefillDoctorId}
       />
       <AppointmentDetailSheet appt={detail} tz={tz} onClose={() => setDetail(null)} />
     </AnimatedPage>

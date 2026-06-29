@@ -266,6 +266,19 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
+  // ── GET /patients/:patientId/appointments (upcoming, for the patient overview card) ──────────
+  fastify.get('/patients/:patientId/appointments', anyRole, async (req) => {
+    const { patientId } = req.params as { patientId: string };
+    const clinicId = req.clinicId!;
+    const rows = await prisma.appointment.findMany({
+      where: { clinicId, patientId, deletedAt: null, status: 'SCHEDULED', startsAt: { gte: new Date() } },
+      include: APPOINTMENT_INCLUDE,
+      orderBy: { startsAt: 'asc' },
+      take: 20,
+    });
+    return ok({ appointments: rows.map(serializeAppointment) });
+  });
+
   // ── GET /schedule/slots ───────────────────────────────────────────────────────────────────
   fastify.get('/schedule/slots', anyRole, async (req) => {
     const q = parse(DateQuery, req.query);

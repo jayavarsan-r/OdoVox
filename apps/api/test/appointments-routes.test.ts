@@ -250,6 +250,22 @@ describe('recurring series', () => {
   });
 });
 
+describe('GET /patients/:id/appointments', () => {
+  it('returns the patient’s upcoming appointments, isolated per clinic', async () => {
+    const s = await setup();
+    await create(s.accessToken, { patientId: s.patientId, doctorId: s.doctorId, startsAt: at('10:00').toISOString(), durationMinutes: 30 });
+    const mine = await app.inject({ method: 'GET', url: `/patients/${s.patientId}/appointments`, headers: authHeader(s.accessToken) });
+    expect(mine.statusCode).toBe(200);
+    expect(mine.json().data.appointments.length).toBeGreaterThanOrEqual(1);
+
+    const other = await createDoctorWithClinic(app);
+    phones.push(other.phone);
+    clinicIds.push(other.clinicId);
+    const cross = await app.inject({ method: 'GET', url: `/patients/${s.patientId}/appointments`, headers: authHeader(other.accessToken) });
+    expect(cross.json().data.appointments).toHaveLength(0); // clinic-scoped
+  });
+});
+
 describe('cross-clinic isolation', () => {
   it('returns 404 when another clinic tries to cancel an appointment', async () => {
     const s = await setup();

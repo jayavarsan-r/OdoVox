@@ -55,7 +55,37 @@ import {
   useCreateTemplate,
 } from '@/lib/queries';
 import { initials, statusStyle, rupees } from '@/lib/patient-ui';
+import { usePatientAppointments } from '@/lib/schedule/api';
+import { appointmentSubtitle } from '@/lib/schedule/format';
+import { formatLocalTime } from '@/lib/schedule/tz';
 import { cn } from '@/lib/utils';
+
+const CLINIC_TZ = 'Asia/Kolkata';
+const DAY3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function UpcomingAppointments({ patientId }: { patientId: string }) {
+  const { data } = usePatientAppointments(patientId);
+  const appts = data?.appointments ?? [];
+  if (appts.length === 0) return null;
+  return (
+    <Section title={`Upcoming appointments · ${appts.length}`}>
+      <ul className="flex flex-col gap-2">
+        {appts.map((a) => {
+          const d = new Date(a.startsAt);
+          const dateLabel = `${DAY3[d.getDay()]} ${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: CLINIC_TZ })}`;
+          const sub = appointmentSubtitle(a);
+          return (
+            <li key={a.id} className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+              <span className="font-medium tabular-nums">{dateLabel} {formatLocalTime(d, CLINIC_TZ)}</span>
+              {sub ? <span className="text-text-muted"> — {sub}</span> : null}
+              {a.doctorName ? <span className="text-text-muted"> — {a.doctorName}</span> : null}
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
 
 type Tab = 'overview' | 'cases' | 'teeth' | 'media' | 'billing';
 const TABS: { id: Tab; label: string }[] = [
@@ -251,6 +281,8 @@ function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; r
           <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No active treatment yet.</div>
         )}
       </Section>
+
+      <UpcomingAppointments patientId={patientId} />
 
       <Section title="Affected teeth" action={<button onClick={onOpenTeeth} className="text-sm text-muted-foreground">Open →</button>}>
         <div className="rounded-lg border border-border bg-surface p-3">

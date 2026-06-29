@@ -33,6 +33,14 @@ export function useSchedule(from: string, to: string, doctorId: string) {
   });
 }
 
+export function usePatientAppointments(patientId: string) {
+  return useQuery({
+    queryKey: ['patient-appointments', patientId],
+    enabled: !!patientId,
+    queryFn: () => api.get<{ appointments: ScheduleAppointment[] }>(`/patients/${patientId}/appointments`),
+  });
+}
+
 export function useSlots(date: string, doctorId: string, durationMinutes: number, enabled = true) {
   return useQuery({
     queryKey: ['schedule-slots', date, doctorId, durationMinutes],
