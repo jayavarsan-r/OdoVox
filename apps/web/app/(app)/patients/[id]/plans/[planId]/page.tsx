@@ -11,7 +11,85 @@ import { Input } from '@/components/ui/input';
 import { EditorialHeading } from '@/components/ds';
 import { useToast } from '@/lib/toast';
 import { usePlan, useCompletePlan, useCancelPlan, fetchPlanPdfUrl } from '@/lib/queries';
+import { useCreateRecurring } from '@/lib/schedule/api';
+import { previewSeries } from '@/lib/schedule/recurring-preview';
+import { addDaysISO, localDateISO } from '@/lib/schedule/tz';
+import { ApiError } from '@/lib/api-client';
+import { CalendarPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const CLINIC_TZ = 'Asia/Kolkata';
+const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtISO = (iso: string) => `${Number(iso.split('-')[2])} ${MON3[Number(iso.split('-')[1]) - 1]}`;
+
+type Interval = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+
+/** §6.2 — pre-schedule the remaining sittings of a plan as a recurring series tied to the plan. */
+function ScheduleRemaining({
+  patientId,
+  planId,
+  doctorId,
+  procedureName,
+  remaining,
+  completedSittings,
+}: {
+  patientId: string;
+  planId: string;
+  doctorId: string;
+  procedureName: string;
+  remaining: number;
+  completedSittings: number;
+}) {
+  const toast = useToast();
+  const recurring = useCreateRecurring();
+  const [interval, setInterval] = useState<Interval>('BIWEEKLY');
+  const baseISO = addDaysISO(localDateISO(new Date(), CLINIC_TZ), 7);
+  const preview = previewSeries({ firstDateISO: baseISO, interval, totalOccurrences: remaining });
+
+  async function scheduleAll() {
+    try {
+      await recurring.mutateAsync({
+        patientId,
+        doctorId,
+        firstStartsAt: new Date(`${baseISO}T10:00:00+05:30`),
+        durationMinutes: 30,
+        totalOccurrences: remaining,
+        interval,
+        procedureHint: procedureName,
+        treatmentPlanId: planId,
+      });
+      toast.success(`Scheduled ${remaining} sittings`);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === 'SERIES_UNSCHEDULED') {
+        toast.error('Some sittings could not be placed — adjust the interval or pick manually');
+      } else {
+        toast.apiError(err);
+      }
+    }
+  }
+
+  const options: Array<[Interval, string]> = [['WEEKLY', 'Weekly'], ['BIWEEKLY', 'Every 2 weeks'], ['MONTHLY', 'Monthly']];
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-paper-warm p-4">
+      <p className="text-sm font-semibold">Schedule remaining sittings</p>
+      <div className="flex gap-2">
+        {options.map(([v, label]) => (
+          <button key={v} type="button" onClick={() => setInterval(v)} className={cn('flex-1 rounded-pill border px-2.5 py-1.5 text-xs font-medium', interval === v ? 'border-lime bg-lime text-ink' : 'border-border')}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <ul className="text-xs text-text-muted">
+        {preview.map((r) => (
+          <li key={r.index}>Sitting {completedSittings + r.index} — {fmtISO(r.dateISO)} · 10:00 AM</li>
+        ))}
+      </ul>
+      <Button size="sm" onClick={scheduleAll} loading={recurring.isPending}>
+        <CalendarPlus className="size-4" /> Schedule all
+      </Button>
+    </div>
+  );
+}
 
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE: 'bg-sage-tint text-sage-deep',
@@ -135,6 +213,18 @@ export default function PlanDetailPage() {
               })}
             </div>
           </div>
+        ) : null}
+
+        {/* Schedule remaining sittings (§6.2) */}
+        {active && proc && plan.createdById && proc.totalSittings - proc.completedSittings > 0 ? (
+          <ScheduleRemaining
+            patientId={patientId}
+            planId={planId}
+            doctorId={plan.createdById}
+            procedureName={proc.name}
+            remaining={proc.totalSittings - proc.completedSittings}
+            completedSittings={proc.completedSittings}
+          />
         ) : null}
 
         {/* Actions */}

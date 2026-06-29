@@ -147,6 +147,7 @@ export interface PlanProcedureDetail {
 export interface PlanDetail {
   id: string;
   patientId: string;
+  createdById: string | null;
   name: string;
   description: string | null;
   status: string;

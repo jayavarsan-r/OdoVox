@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import type { ScheduleAppointment } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
@@ -38,7 +39,11 @@ export default function SchedulePage() {
   const myDoctorId = membership?.userId ?? null;
   const doctorParam = isDoctor ? 'me' : 'all';
 
-  const [focusISO, setFocusISO] = useState(() => localDateISO(new Date(), FALLBACK_TZ));
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get('date');
+  const [focusISO, setFocusISO] = useState(() =>
+    dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : localDateISO(new Date(), FALLBACK_TZ),
+  );
   const [newOpen, setNewOpen] = useState(false);
   const [prefillDoctorId, setPrefillDoctorId] = useState<string | undefined>(undefined);
   const [detail, setDetail] = useState<ScheduleAppointment | null>(null);
