@@ -378,6 +378,38 @@ export async function createPatient(
   });
 }
 
+/** Seed a doctor's recurring weekly availability (Mon-Sat 09:00-18:00) in a clinic context. */
+export async function seedDoctorAvailability(
+  app: FastifyInstance,
+  clinicId: string,
+  doctorId: string,
+  opts: { startTime?: string; endTime?: string; days?: number[] } = {},
+): Promise<void> {
+  const days = opts.days ?? [1, 2, 3, 4, 5, 6];
+  await runWithContext({ clinicId, userId: doctorId }, async () => {
+    await app.prisma.doctorAvailability.createMany({
+      data: days.map((dayOfWeek) => ({
+        clinicId,
+        doctorId,
+        dayOfWeek,
+        startTime: opts.startTime ?? '09:00',
+        endTime: opts.endTime ?? '18:00',
+      })),
+      skipDuplicates: true,
+    });
+  });
+}
+
+/**
+ * A YYYY-MM-DD (Asia/Kolkata) `daysAhead` in the future, nudged off Sunday (clinic weekly-off).
+ * Used so appointment tests land on an open weekday in clinic hours and never trip PAST_TIME.
+ */
+export function futureWeekdayISO(daysAhead = 14): string {
+  const d = new Date(Date.now() + daysAhead * 86_400_000);
+  if (d.getUTCDay() === 0) d.setUTCDate(d.getUTCDate() + 1); // skip Sunday
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
 /** Best-effort teardown of rows created by a test. */
 export async function cleanup(
   app: FastifyInstance,

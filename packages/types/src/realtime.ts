@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ConsultationStatus, QueueEventType, RoomStatus, VisitStatus } from './common.js';
+import { AppointmentStatus, ConsultationStatus, QueueEventType, RoomStatus, VisitStatus } from './common.js';
 
 /**
  * Realtime (Socket.IO) event contract — the single source of truth shared by the API broadcast
@@ -106,6 +106,35 @@ export type ActivityItem = z.infer<typeof ActivityItemZ>;
 // cancelled) keep the minimal `{ visitId }` shape since the store just drops the row.
 // `queue.visit.cancelled` is added (referenced by §6.2 but absent from the §2.3 list).
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Schedule appointment — enriched for the calendar UI (Phase 6). Broadcast on every mutation so
+// the doctor/receptionist calendars update in real time. Times are UTC; the UI renders local.
+// ---------------------------------------------------------------------------
+export const ScheduleAppointmentZ = z.object({
+  id: z.string(),
+  clinicId: z.string(),
+  patientId: z.string(),
+  patientName: z.string(),
+  doctorId: z.string(),
+  doctorName: z.string().nullable(),
+  roomId: z.string().nullable(),
+  roomName: z.string().nullable(),
+  startsAt: z.coerce.date(),
+  endsAt: z.coerce.date(),
+  durationMinutes: z.number().int(),
+  status: AppointmentStatus,
+  procedureHint: z.string().nullable(),
+  notes: z.string().nullable(),
+  seriesId: z.string().nullable(),
+  seriesIndex: z.number().int().nullable(),
+  seriesTotal: z.number().int().nullable(),
+  treatmentPlanId: z.string().nullable(),
+  sittingNumber: z.number().int().nullable(),
+  originalStartsAt: z.coerce.date().nullable(),
+  rescheduleCount: z.number().int(),
+});
+export type ScheduleAppointment = z.infer<typeof ScheduleAppointmentZ>;
+
 export const ServerEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('queue.snapshot'), payload: QueueSnapshotZ }),
   z.object({ type: z.literal('queue.visit.checked_in'), payload: VisitWithPatientZ }),
@@ -128,6 +157,12 @@ export const ServerEvent = z.discriminatedUnion('type', [
     payload: z.object({ visitId: z.string(), doctorId: z.string() }),
   }),
   z.object({ type: z.literal('activity'), payload: ActivityItemZ }),
+  // Schedule (Phase 6). Created/rescheduled carry the full appointment so the calendar can place
+  // or move the block; cancelled/no_show carry it too (with the new status) so the UI removes it.
+  z.object({ type: z.literal('schedule.appointment.created'), payload: ScheduleAppointmentZ }),
+  z.object({ type: z.literal('schedule.appointment.rescheduled'), payload: ScheduleAppointmentZ }),
+  z.object({ type: z.literal('schedule.appointment.cancelled'), payload: ScheduleAppointmentZ }),
+  z.object({ type: z.literal('schedule.appointment.no_show'), payload: ScheduleAppointmentZ }),
 ]);
 export type ServerEvent = z.infer<typeof ServerEvent>;
 export type ServerEventType = ServerEvent['type'];
