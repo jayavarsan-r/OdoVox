@@ -130,17 +130,21 @@ export async function getQueueSnapshot(
   });
 }
 
-/** Doctor ids with a full DAY_OFF recorded for today (Phase 6 owns scheduling; we just read it). */
+/** Doctor ids with a DOCTOR-scope DayOff covering today (Phase 6 owns scheduling; we just read it). */
 async function doctorsOffToday(prisma: ExtendedPrismaClient): Promise<Set<string>> {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
-  // DoctorAvailability is not clinic-scoped; scope through nothing but the date window. Off-clinic
-  // doctors won't appear in the snapshot's doctor list anyway, so cross-clinic leakage is moot.
-  const rows = await prisma.doctorAvailability.findMany({
-    where: { type: 'DAY_OFF', date: { gte: start, lte: end } },
+  // A DayOff covers today if its [date, endDate ?? date] range includes today. Scoped per doctor;
+  // off-clinic doctors don't appear in the snapshot's doctor list anyway, so leakage is moot.
+  const rows = await prisma.dayOff.findMany({
+    where: {
+      scope: 'DOCTOR',
+      date: { lte: end },
+      OR: [{ endDate: null, date: { gte: start } }, { endDate: { gte: start } }],
+    },
     select: { doctorId: true },
   });
-  return new Set(rows.map((r) => r.doctorId));
+  return new Set(rows.map((r) => r.doctorId).filter((id): id is string => id != null));
 }

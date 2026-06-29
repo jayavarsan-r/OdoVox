@@ -124,18 +124,19 @@ enum ToothStatus {
 }
 
 enum AppointmentStatus {
-  SCHEDULED
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-  NO_SHOW
-  RESCHEDULED
+  SCHEDULED // booked, future
+  CHECKED_IN // Phase 4 queue takes over from here
+  COMPLETED // converted to a Visit and completed
+  CANCELLED // cancelled (by patient, doctor, or system)
+  NO_SHOW // didn't show up; cron-set
+  RESCHEDULED // soft state: original row marked, new row created
 }
 
-enum AvailabilityType {
-  DAY_OFF
-  HALF_DAY_OFF
-  HOUR_BLOCK
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
 }
 
 enum LabCaseStatus {
@@ -198,17 +199,17 @@ model User {
   clinicMembers          ClinicMember[]
   refreshTokens          RefreshToken[]
   auditLogs              AuditLog[]
-  createdPatients        Patient[]           @relation("PatientCreatedBy")
-  doctorVisits           Visit[]             @relation("VisitDoctor")
-  assignedVisits         Visit[]             @relation("VisitAssignedDoctor")
-  queueEvents            QueueEvent[]        @relation("QueueEventBy")
-  confirmedConsultations Consultation[]      @relation("ConsultationConfirmedBy")
-  rejectedConsultations  Consultation[]      @relation("ConsultationRejectedBy")
+  createdPatients        Patient[]              @relation("PatientCreatedBy")
+  doctorVisits           Visit[]                @relation("VisitDoctor")
+  assignedVisits         Visit[]                @relation("VisitAssignedDoctor")
+  queueEvents            QueueEvent[]           @relation("QueueEventBy")
+  confirmedConsultations Consultation[]         @relation("ConsultationConfirmedBy")
+  rejectedConsultations  Consultation[]         @relation("ConsultationRejectedBy")
   consultationEdits      ConsultationEdit[]
-  prescriptions          Prescription[]      @relation("PrescriptionDoctor")
-  appointments           Appointment[]       @relation("AppointmentDoctor")
+  prescriptions          Prescription[]         @relation("PrescriptionDoctor")
+  appointments           Appointment[]          @relation("AppointmentDoctor")
   availabilities         DoctorAvailability[]
-  labCases               LabCase[]           @relation("LabCaseDoctor")
+  labCases               LabCase[]              @relation("LabCaseDoctor")
   labCaseEvents          LabCaseEvent[]
   inventoryMovements     InventoryMovement[]
   payments               Payment[]
@@ -220,41 +221,46 @@ model User {
 }
 
 model Clinic {
-  id           String   @id @default(cuid())
-  name         String
-  joinCode     String   @unique
-  addressLine  String
-  city         String
-  state        String
-  pincode      String
-  gstNumber    String?
-  logoUrl      String?
-  contactPhone String
-  openingTime  String
-  closingTime  String
-  lunchStart   String?
-  lunchEnd     String?
-  weeklyOffDays Int[]
-  chairsCount  Int      @default(1)
-  timezone     String   @default("Asia/Kolkata")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  deletedAt    DateTime?
+  id                 String    @id @default(cuid())
+  name               String
+  joinCode           String    @unique
+  addressLine        String
+  city               String
+  state              String
+  pincode            String
+  gstNumber          String?
+  logoUrl            String?
+  contactPhone       String
+  openingTime        String
+  closingTime        String
+  lunchStart         String?
+  lunchEnd           String?
+  weeklyOffDays      Int[]
+  chairsCount        Int       @default(1)
+  timezone           String    @default("Asia/Kolkata")
+  // Grace window (minutes) after startsAt before the NO_SHOW cron marks a SCHEDULED appointment. (Phase 6)
+  noShowGraceMinutes Int       @default(30)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
 
-  members        ClinicMember[]
-  rooms          Room[]
-  patients       Patient[]
-  visits         Visit[]
-  queueEvents    QueueEvent[]
-  appointments   Appointment[]
-  labPartners    LabPartner[]
-  labCases       LabCase[]
-  inventoryItems InventoryItem[]
-  auditLogs      AuditLog[]
-  notifications  Notification[]
-  settings       ClinicSetting[]
-  media          Media[]
-  jobs           Job[]
+  members               ClinicMember[]
+  rooms                 Room[]
+  patients              Patient[]
+  visits                Visit[]
+  queueEvents           QueueEvent[]
+  appointments          Appointment[]
+  doctorAvailabilities  DoctorAvailability[]
+  dayOffs               DayOff[]
+  appointmentReminders  AppointmentReminder[]
+  labPartners           LabPartner[]
+  labCases              LabCase[]
+  inventoryItems        InventoryItem[]
+  auditLogs             AuditLog[]
+  notifications         Notification[]
+  settings              ClinicSetting[]
+  media                 Media[]
+  jobs                  Job[]
   prescriptionTemplates PrescriptionTemplate[]
 
   @@index([joinCode])
@@ -272,9 +278,9 @@ model ClinicMember {
   specialization        String?
   status                MemberStatus @default(PENDING)
   joinedAt              DateTime     @default(now())
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  deletedAt          DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  deletedAt             DateTime?
 
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -350,8 +356,9 @@ model Room {
   updatedAt DateTime   @updatedAt
   deletedAt DateTime?
 
-  clinic Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  visits Visit[]
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  visits       Visit[]
+  appointments Appointment[]
 
   @@index([clinicId])
 }
@@ -361,7 +368,7 @@ model Room {
 // ===========================================================================
 
 model Patient {
-  id                String   @id @default(cuid())
+  id                String        @id @default(cuid())
   clinicId          String
   patientCode       String
   name              String
@@ -373,26 +380,26 @@ model Patient {
   medicalHistoryEnc String? // ENCRYPTED
   allergiesEnc      String? // ENCRYPTED
   medicalFlags      String[]
-  chiefComplaint    String?       // latest, denormalized for list display
-  lastVisitAt       DateTime?     // denormalized, maintained in app logic
+  chiefComplaint    String? // latest, denormalized for list display
+  lastVisitAt       DateTime? // denormalized, maintained in app logic
   outstandingPaise  Int           @default(0) // denormalized for the "Due" badge
   status            PatientStatus @default(NEW)
   createdById       String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   deletedAt         DateTime?
 
-  clinic        Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  createdBy     User           @relation("PatientCreatedBy", fields: [createdById], references: [id])
-  visits        Visit[]
+  clinic         Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  createdBy      User            @relation("PatientCreatedBy", fields: [createdById], references: [id])
+  visits         Visit[]
   queueEvents    QueueEvent[]
   treatmentPlans TreatmentPlan[]
-  toothRecords  ToothRecord[]
-  prescriptions Prescription[]
-  appointments  Appointment[]
-  labCases      LabCase[]
-  bills         Bill[]
-  media         Media[]
+  toothRecords   ToothRecord[]
+  prescriptions  Prescription[]
+  appointments   Appointment[]
+  labCases       LabCase[]
+  bills          Bill[]
+  media          Media[]
 
   @@unique([clinicId, patientCode])
   @@index([clinicId, name])
@@ -405,38 +412,38 @@ model Patient {
 // ===========================================================================
 
 model Visit {
-  id             String      @id @default(cuid())
-  clinicId       String
-  patientId      String
-  doctorId       String
+  id                String      @id @default(cuid())
+  clinicId          String
+  patientId         String
+  doctorId          String
   // Which doctor's queue this visit currently sits in (multi-doctor clinics). Kept in sync
   // with doctorId on assign/reassign; the queue read query filters/groups on this.
-  assignedDoctorId String?
-  roomId         String?
-  status         VisitStatus @default(WAITING)
-  tokenNumber    Int
-  priority       Int         @default(0) // manual reorder; higher = sooner; 0 = normal FIFO
+  assignedDoctorId  String?
+  roomId            String?
+  status            VisitStatus @default(WAITING)
+  tokenNumber       Int
+  priority          Int         @default(0) // manual reorder; higher = sooner; 0 = normal FIFO
   // Optimistic-locking counter. Every transition updates WHERE lifecycleVersion = ? then
   // increments it, so two simultaneous call-ins can't both win (see queue routes Part 4.5).
-  lifecycleVersion Int       @default(0)
-  scheduledAt    DateTime?
-  checkedInAt    DateTime?
-  calledInAt     DateTime? // WAITING → IN_CHAIR
+  lifecycleVersion  Int         @default(0)
+  scheduledAt       DateTime?
+  checkedInAt       DateTime?
+  calledInAt        DateTime? // WAITING → IN_CHAIR
   checkoutStartedAt DateTime?
-  completedAt    DateTime?
-  startedAt      DateTime?
-  endedAt        DateTime?
-  chiefComplaint String?
-  manualEntry    Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  deletedAt      DateTime?
+  completedAt       DateTime?
+  startedAt         DateTime?
+  endedAt           DateTime?
+  chiefComplaint    String?
+  manualEntry       Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  deletedAt         DateTime?
 
-  clinic         Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor         User          @relation("VisitDoctor", fields: [doctorId], references: [id])
-  assignedDoctor User?         @relation("VisitAssignedDoctor", fields: [assignedDoctorId], references: [id], onDelete: SetNull)
-  room           Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  clinic         Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient        Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor         User           @relation("VisitDoctor", fields: [doctorId], references: [id])
+  assignedDoctor User?          @relation("VisitAssignedDoctor", fields: [assignedDoctorId], references: [id], onDelete: SetNull)
+  room           Room?          @relation(fields: [roomId], references: [id], onDelete: SetNull)
   consultation   Consultation?
   sittings       Sitting[]
   prescriptions  Prescription[]
@@ -629,17 +636,17 @@ model ToothRecord {
 // ===========================================================================
 
 model Prescription {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   visitId         String?
   patientId       String
   doctorId        String
-  medicines       Json     @default("[]")
+  medicines       Json      @default("[]")
   instructions    String?
   reviewAfterDays Int?
   pdfUrl          String?
   pdfStorageKey   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
 
   visit   Visit?  @relation(fields: [visitId], references: [id], onDelete: SetNull)
@@ -681,46 +688,115 @@ model PrescriptionTemplate {
 // ===========================================================================
 
 model Appointment {
-  id                  String            @id @default(cuid())
-  clinicId            String
-  patientId           String
-  doctorId            String
-  procedureType       String
-  scheduledAt         DateTime
-  durationMinutes     Int               @default(30)
-  status              AppointmentStatus @default(SCHEDULED)
-  notes               String?
-  parentAppointmentId String?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  deletedAt           DateTime?
+  id              String            @id @default(cuid())
+  clinicId        String
+  patientId       String
+  doctorId        String
+  roomId          String?
+  startsAt        DateTime // UTC
+  endsAt          DateTime // UTC — computed from durationMinutes
+  durationMinutes Int               @default(30)
+  status          AppointmentStatus @default(SCHEDULED)
+  procedureHint   String?
+  notes           String?
 
-  clinic   Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient  Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor   User          @relation("AppointmentDoctor", fields: [doctorId], references: [id])
-  parent   Appointment?  @relation("Reschedule", fields: [parentAppointmentId], references: [id], onDelete: SetNull)
-  children Appointment[] @relation("Reschedule")
+  // recurring series support
+  seriesId    String? // groups recurring appointments
+  seriesIndex Int? // 1-based position within series
+  seriesTotal Int? // total in series
 
-  @@index([clinicId, scheduledAt])
-  @@index([doctorId, scheduledAt])
-  @@index([patientId])
-  @@index([parentAppointmentId])
+  // multi-sitting integration
+  treatmentPlanId String? // links to the plan being scheduled
+  sittingNumber   Int? // which sitting this is for
+
+  // reschedule audit (denormalized for fast queries)
+  originalStartsAt DateTime? // first scheduled time (null if never rescheduled)
+  rescheduleCount  Int       @default(0)
+
+  // cancellation
+  cancelledAt        DateTime?
+  cancelledById      String?
+  cancellationReason String?
+
+  // no-show
+  noShowAt DateTime? // when the cron marked it
+
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  clinic    Clinic                @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient   Patient               @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor    User                  @relation("AppointmentDoctor", fields: [doctorId], references: [id])
+  room      Room?                 @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  reminders AppointmentReminder[]
+
+  @@index([clinicId, startsAt, doctorId]) // day/week view queries
+  @@index([clinicId, status, startsAt]) // status filtering
+  @@index([clinicId, seriesId]) // series operations
+  @@index([clinicId, patientId, startsAt(sort: Desc)]) // patient's upcoming
 }
 
+// Recurring weekly availability template per doctor (Phase 6). A doctor with no rows for a day is
+// not available that day. Clinic openingTime/closingTime is the outer envelope; this narrows it.
 model DoctorAvailability {
-  id        String           @id @default(cuid())
-  doctorId  String
-  date      DateTime
-  type      AvailabilityType
-  startTime String?
-  endTime   String?
-  reason    String?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id            String    @id @default(cuid())
+  clinicId      String
+  doctorId      String
+  dayOfWeek     Int // 0 = Sun, 6 = Sat
+  startTime     String // HH:mm in clinic local time, e.g. "09:00"
+  endTime       String // HH:mm
+  effectiveFrom DateTime? // for future-dated changes (nullable = "always")
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  doctor User @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  doctor User   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
-  @@index([doctorId, date])
+  @@unique([doctorId, dayOfWeek, startTime, effectiveFrom]) // prevent dup entries
+  @@index([clinicId, doctorId, dayOfWeek])
+}
+
+// One-off blocks: holidays, doctor leave, clinic closure (Phase 6).
+model DayOff {
+  id          String    @id @default(cuid())
+  clinicId    String
+  date        DateTime // start of day in clinic timezone
+  endDate     DateTime? // for multi-day blocks; null = single day
+  scope       String // 'CLINIC' | 'DOCTOR'
+  doctorId    String? // required if scope=DOCTOR
+  reason      String?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, date])
+  @@index([clinicId, doctorId, date])
+}
+
+// Phase 6 inserts these rows; Phase 9 (WhatsApp/SMS) reads and sends them.
+model AppointmentReminder {
+  id            String         @id @default(cuid())
+  clinicId      String
+  appointmentId String
+  patientId     String
+  scheduledFor  DateTime // when to fire
+  channel       String // 'whatsapp' | 'sms' | 'in_app'
+  template      String // template key — Phase 9 maps to actual content
+  status        ReminderStatus @default(PENDING)
+  sentAt        DateTime?
+  errorReason   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  clinic      Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, status, scheduledFor])
+  @@index([appointmentId])
 }
 
 // ===========================================================================
@@ -728,13 +804,13 @@ model DoctorAvailability {
 // ===========================================================================
 
 model LabPartner {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   clinicId  String
   name      String
   contact   String
   address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   clinic Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
@@ -912,16 +988,16 @@ model Media {
 // ===========================================================================
 
 model Notification {
-  id       String    @id @default(cuid())
-  userId   String
-  clinicId String?
-  type     String
-  title    String
-  body     String
-  payload  Json      @default("{}")
-  readAt   DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(cuid())
+  userId    String
+  clinicId  String?
+  type      String
+  title     String
+  body      String
+  payload   Json      @default("{}")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: SetNull)

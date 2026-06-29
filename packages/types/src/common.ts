@@ -159,7 +159,7 @@ export type ToothStatus = z.infer<typeof ToothStatus>;
 
 export const AppointmentStatus = z.enum([
   'SCHEDULED',
-  'CONFIRMED',
+  'CHECKED_IN',
   'COMPLETED',
   'CANCELLED',
   'NO_SHOW',
@@ -167,8 +167,14 @@ export const AppointmentStatus = z.enum([
 ]);
 export type AppointmentStatus = z.infer<typeof AppointmentStatus>;
 
-export const AvailabilityType = z.enum(['DAY_OFF', 'HALF_DAY_OFF', 'HOUR_BLOCK']);
-export type AvailabilityType = z.infer<typeof AvailabilityType>;
+export const ReminderStatus = z.enum(['PENDING', 'SENT', 'FAILED', 'CANCELLED']);
+export type ReminderStatus = z.infer<typeof ReminderStatus>;
+
+export const DayOffScope = z.enum(['CLINIC', 'DOCTOR']);
+export type DayOffScope = z.infer<typeof DayOffScope>;
+
+export const RecurringInterval = z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY']);
+export type RecurringInterval = z.infer<typeof RecurringInterval>;
 
 export const LabCaseStatus = z.enum([
   'CREATED',

@@ -93,6 +93,18 @@ async function main() {
     },
   });
 
+  // --- Doctor availability (Phase 6) — Mon-Sat 09:00-18:00, Sunday off. Idempotent re-seed. ---
+  await prisma.doctorAvailability.createMany({
+    data: [1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+      clinicId: clinic.id,
+      doctorId: doctor.id,
+      dayOfWeek,
+      startTime: '09:00',
+      endTime: '18:00',
+    })),
+    skipDuplicates: true,
+  });
+
   // --- Rooms (stable ids so a re-seed is idempotent + referenceable below) --
   const room1 = await prisma.room.upsert({
     where: { id: `seed-room-${clinic.id}-1` },

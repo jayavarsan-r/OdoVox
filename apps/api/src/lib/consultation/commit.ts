@@ -210,15 +210,21 @@ export async function commitConsultation(
         result.prescriptionId = rx.id;
       }
 
-      // 6. Follow-up appointment.
-      if (data.followUp?.afterDays != null) {
+      // 6. Follow-up appointment. (Stage 3 replaces this literal `now + afterDays` insertion with
+      // availability-aware scheduling; for now it just lands a 30-min slot at the target time.)
+      if (data.followUp?.afterDays != null && data.followUp.afterDays > 0) {
+        const startsAt = new Date(Date.now() + data.followUp.afterDays * DAY_MS);
+        const durationMinutes = 30;
         const appt = await tx.appointment.create({
           data: {
             clinicId,
             patientId,
             doctorId: userId,
-            procedureType: data.followUp.procedureHint ?? data.procedure ?? 'Follow-up',
-            scheduledAt: new Date(Date.now() + data.followUp.afterDays * DAY_MS),
+            createdById: userId,
+            procedureHint: data.followUp.procedureHint ?? data.procedure ?? 'Follow-up',
+            startsAt,
+            endsAt: new Date(startsAt.getTime() + durationMinutes * 60_000),
+            durationMinutes,
             status: 'SCHEDULED',
             notes: `Auto-scheduled from consultation ${consult.id}`,
           },

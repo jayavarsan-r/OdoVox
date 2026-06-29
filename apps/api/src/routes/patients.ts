@@ -49,7 +49,7 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
       where.lastVisitAt = { gte: new Date(Date.now() - 30 * 864e5) };
       orderBy = { lastVisitAt: 'desc' };
     } else if (q.filter === 'due_today') {
-      where.appointments = { some: { scheduledAt: { gte: startOfToday(), lte: endOfToday() } } };
+      where.appointments = { some: { startsAt: { gte: startOfToday(), lte: endOfToday() } } };
     } else if (q.filter === 'lab_pending') {
       where.labCases = { some: { status: { notIn: ['DELIVERED', 'FITTED', 'REJECTED'] } } };
     }

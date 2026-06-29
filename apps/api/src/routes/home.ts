@@ -50,14 +50,14 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
 
     // 4. Missed appointments in the last 7 days.
     const missed = await prisma.appointment.findMany({
-      where: { status: 'NO_SHOW', scheduledAt: { gte: new Date(now - 7 * DAY) } },
+      where: { status: 'NO_SHOW', startsAt: { gte: new Date(now - 7 * DAY) } },
       include: { patient: true },
       take: 10,
     });
     for (const a of missed) {
       items.push({
         kind: 'MISSED_APPOINTMENT',
-        title: `Missed appointment: ${a.patient.name} (${a.procedureType})`,
+        title: `Missed appointment: ${a.patient.name} (${a.procedureHint ?? 'appointment'})`,
         patientId: a.patientId,
         patientName: a.patient.name,
       });
@@ -114,17 +114,17 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
     const appts = await prisma.appointment.findMany({
-      where: { scheduledAt: { gte: start, lte: end } },
+      where: { startsAt: { gte: start, lte: end } },
       include: { patient: true },
-      orderBy: { scheduledAt: 'asc' },
+      orderBy: { startsAt: 'asc' },
     });
     return ok({
       items: appts.map((a) => ({
         id: a.id,
         patientId: a.patientId,
         patientName: a.patient.name,
-        procedureType: a.procedureType,
-        scheduledAt: a.scheduledAt,
+        procedureHint: a.procedureHint,
+        startsAt: a.startsAt,
         status: a.status,
       })),
     });
@@ -173,7 +173,7 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const [appointmentsToday, patientsSeen, inChair, waiting] = await Promise.all([
-      prisma.appointment.count({ where: { scheduledAt: { gte: start } } }),
+      prisma.appointment.count({ where: { startsAt: { gte: start } } }),
       prisma.visit.count({ where: { status: 'COMPLETED', endedAt: { gte: start } } }),
       prisma.visit.count({ where: { status: 'IN_CHAIR' } }),
       prisma.visit.count({ where: { status: 'WAITING' } }),
