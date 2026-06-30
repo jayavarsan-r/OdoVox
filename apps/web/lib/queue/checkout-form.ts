@@ -5,7 +5,19 @@ import { CheckoutFormInput, type CompleteVisitInput, type PaymentMethod } from '
  * with Razorpay. `buildCompleteBody` only attaches a payment when one is actually being taken. The
  * zod schema lives in @odovox/types (the web app has no direct zod dependency).
  */
-export const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'UPI', 'CARD', 'OTHER'];
+// Inline quick-checkout methods. The full itemized checkout sheet (Phase 8 Stage 7) adds Razorpay
+// links and method-specific fields; this one-tap path covers Cash / UPI / Card / Bank.
+export const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'UPI_MANUAL', 'CARD_MANUAL', 'BANK_TRANSFER'];
+
+/** Short human label for a payment method (used by the checkout method picker). */
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: 'Cash',
+  UPI_MANUAL: 'UPI',
+  CARD_MANUAL: 'Card',
+  BANK_TRANSFER: 'Bank',
+  RAZORPAY: 'Razorpay link',
+  ADJUSTMENT: 'Adjustment',
+};
 
 export const CheckoutFormSchema = CheckoutFormInput;
 export type CheckoutForm = CheckoutFormInput;

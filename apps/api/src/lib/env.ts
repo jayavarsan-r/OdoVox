@@ -71,6 +71,16 @@ export const EnvSchema = z.object({
   GEMINI_API_KEY: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
   GEMINI_MODEL: z.string().min(1).default('gemini-2.5-flash'),
 
+  // Payments. `mock` returns deterministic payment links / webhooks (dev/tests); `razorpay` calls
+  // the real Razorpay API (test or live mode). Same provider-abstraction pattern as STT/AI.
+  PAYMENT_PROVIDER: z.enum(['mock', 'razorpay']).default('mock'),
+  RAZORPAY_KEY_ID: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  RAZORPAY_KEY_SECRET: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  RAZORPAY_WEBHOOK_SECRET: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  RAZORPAY_MODE: z.enum(['test', 'live']).default('test'),
+  // Mock-gateway chaos knob: fraction (0..1) of created links that simulate a FAILED payment.
+  PAYMENT_MOCK_FAILURE_RATE: z.coerce.number().min(0).max(1).default(0),
+
   SENTRY_DSN: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
 })
   .refine(
@@ -87,7 +97,17 @@ export const EnvSchema = z.object({
   .refine((env) => env.AI_PROVIDER !== 'gemini' || (env.GEMINI_API_KEY?.length ?? 0) >= 20, {
     message: 'GEMINI_API_KEY is required and must be non-empty when AI_PROVIDER=gemini',
     path: ['GEMINI_API_KEY'],
-  });
+  })
+  .refine(
+    (env) =>
+      env.PAYMENT_PROVIDER !== 'razorpay' ||
+      (!!env.RAZORPAY_KEY_ID && !!env.RAZORPAY_KEY_SECRET && !!env.RAZORPAY_WEBHOOK_SECRET),
+    {
+      message:
+        'RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET are required when PAYMENT_PROVIDER=razorpay',
+      path: ['PAYMENT_PROVIDER'],
+    },
+  );
 
 export type Env = z.infer<typeof EnvSchema>;
 

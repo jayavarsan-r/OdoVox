@@ -208,11 +208,34 @@ export type LabCaseType = z.infer<typeof LabCaseType>;
 export const MovementKind = z.enum(['PURCHASE', 'CONSUMPTION', 'ADJUSTMENT', 'DISPOSAL_EXPIRED']);
 export type MovementKind = z.infer<typeof MovementKind>;
 
-export const BillStatus = z.enum(['PENDING', 'PARTIAL', 'PAID', 'REFUNDED']);
+export const BillStatus = z.enum(['DRAFT', 'FINALIZED', 'PARTIAL', 'PAID', 'REFUNDED', 'CANCELLED']);
 export type BillStatus = z.infer<typeof BillStatus>;
 
-export const PaymentMethod = z.enum(['CASH', 'UPI', 'CARD', 'OTHER']);
+export const ItemKind = z.enum(['PROCEDURE', 'LAB_CHARGE', 'MATERIAL', 'ADJUSTMENT', 'OTHER']);
+export type ItemKind = z.infer<typeof ItemKind>;
+
+export const PaymentMethod = z.enum([
+  'CASH',
+  'UPI_MANUAL',
+  'CARD_MANUAL',
+  'BANK_TRANSFER',
+  'RAZORPAY',
+  'ADJUSTMENT',
+]);
 export type PaymentMethod = z.infer<typeof PaymentMethod>;
+
+export const PaymentStatus = z.enum([
+  'PENDING',
+  'SUCCEEDED',
+  'FAILED',
+  'REFUNDED',
+  'PARTIAL_REFUND',
+  'CANCELLED',
+]);
+export type PaymentStatus = z.infer<typeof PaymentStatus>;
+
+export const RefundStatus = z.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELLED']);
+export type RefundStatus = z.infer<typeof RefundStatus>;
 
 export const MediaType = z.enum(['XRAY', 'PHOTO', 'DOCUMENT', 'LAB_PHOTO']);
 export type MediaType = z.infer<typeof MediaType>;

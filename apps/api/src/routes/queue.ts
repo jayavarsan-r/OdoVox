@@ -26,6 +26,7 @@ import {
   type QueueVisitRow,
 } from '../lib/queue/engine.js';
 import { assertReorderable, assertTransition } from '../lib/queue/transitions.js';
+import { buildBillNumber, buildPaymentNumber, generateUniqueNumber } from '../lib/billing/numbers.js';
 import { buildActivityItem } from '../lib/queue/activity.js';
 import { broadcastToClinic } from '../lib/realtime/broadcast.js';
 import { getRecordingVisitIds } from '../lib/realtime/recording.js';
@@ -281,33 +282,70 @@ export async function queueRoutes(fastify: FastifyInstance): Promise<void> {
       },
       auditAction: 'QUEUE_COMPLETE',
       auditMetadata: { paidPaise: body.payment?.amountPaise ?? 0, method: body.payment?.method ?? null },
-      // Minimal billing now; Phase 8 reworks with Razorpay. Record a Bill + Payment if money moved.
+      // Quick inline checkout payment. The full itemized billing flow lives in the /bills and
+      // /payments routes (Phase 8 Part 4 wires checkout to those); this keeps the one-tap "complete
+      // with cash" path working and produces a valid finalized, paid Bill + Payment.
       extra: async (tx) => {
         if (!body.payment) return;
-        const existing = await tx.bill.findFirst({ where: { visitId: visit.id, deletedAt: null } });
+        const clinicId = req.clinicId!;
+        const [patient, clinic, existing] = await Promise.all([
+          tx.patient.findUniqueOrThrow({ where: { id: visit.patientId }, select: { name: true, phone: true } }),
+          tx.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: { joinCode: true } }),
+          tx.bill.findFirst({ where: { visitId: visit.id, deletedAt: null } }),
+        ]);
+        const amount = body.payment.amountPaise;
         const bill =
           existing ??
           (await tx.bill.create({
             data: {
+              clinicId,
               visitId: visit.id,
               patientId: visit.patientId,
-              items: [],
-              totalPaise: body.payment.amountPaise,
-              paidPaise: 0,
+              billNumber: await generateUniqueNumber(
+                buildBillNumber,
+                async (c) => !!(await tx.bill.findFirst({ where: { clinicId, billNumber: c }, select: { id: true } })),
+                clinic.joinCode,
+                'bill number',
+              ),
+              patientNameSnapshot: patient.name,
+              patientPhoneSnapshot: patient.phone,
+              doctorIdSnapshot: visit.doctorId,
+              subtotalPaise: amount,
+              totalPaise: amount,
+              balancePaise: amount,
+              status: 'FINALIZED',
+              finalizedAt: new Date(),
+              createdById: req.user!.id,
             },
           }));
         await tx.payment.create({
           data: {
+            clinicId,
             billId: bill.id,
-            amountPaise: body.payment.amountPaise,
+            patientId: visit.patientId,
+            paymentNumber: await generateUniqueNumber(
+              buildPaymentNumber,
+              async (c) =>
+                !!(await tx.payment.findFirst({ where: { clinicId, paymentNumber: c }, select: { id: true } })),
+              clinic.joinCode,
+              'payment number',
+            ),
+            amountPaise: amount,
             method: body.payment.method,
-            reference: body.payment.reference ?? null,
+            status: 'SUCCEEDED',
+            idempotencyKey: `checkout-${visit.id}-${Date.now()}`,
             receivedById: req.user!.id,
+            receivedAt: new Date(),
+            notes: body.payment.reference ?? body.payment.notes ?? null,
           },
         });
-        const paidPaise = bill.paidPaise + body.payment.amountPaise;
-        const status = paidPaise >= bill.totalPaise ? 'PAID' : paidPaise > 0 ? 'PARTIAL' : 'PENDING';
-        await tx.bill.update({ where: { id: bill.id }, data: { paidPaise, status } });
+        const paidPaise = bill.paidPaise + amount;
+        const balancePaise = bill.totalPaise - paidPaise;
+        const status = balancePaise <= 0 ? 'PAID' : 'PARTIAL';
+        await tx.bill.update({
+          where: { id: bill.id },
+          data: { paidPaise, balancePaise, status, paidInFullAt: status === 'PAID' ? new Date() : null },
+        });
       },
     });
     await broadcastToClinic(req.clinicId!, { type: 'queue.visit.completed', payload: { visitId: updated.id } });

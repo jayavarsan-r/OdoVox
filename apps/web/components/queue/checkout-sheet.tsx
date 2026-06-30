@@ -11,6 +11,7 @@ import {
   CheckoutFormSchema,
   defaultCheckoutForm,
   PAYMENT_METHODS,
+  PAYMENT_METHOD_LABELS,
   rupees,
   type CheckoutForm,
 } from '@/lib/queue/checkout-form';
@@ -91,7 +92,7 @@ export function CheckoutSheet({
                     form.method === m ? 'bg-lime text-ink' : 'bg-paper-warm text-text-muted',
                   )}
                 >
-                  {m}
+                  {PAYMENT_METHOD_LABELS[m]}
                 </button>
               ))}
             </div>

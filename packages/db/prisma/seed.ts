@@ -386,18 +386,224 @@ async function main() {
     },
   });
 
-  // Demo bill for the checkout visit so the receptionist's "Take payment" shows an amount.
+  // -------------------------------------------------------------------------
+  // Phase 8 billing demo data: 3 bills (PAID / PARTIAL / DRAFT), 4 payments
+  // (2 Cash, 1 UPI, 1 Razorpay) and 1 partial refund.
+  // -------------------------------------------------------------------------
+  const billPrefix = (clinic.joinCode.replace(/[^A-Za-z]/g, '') + 'XX').slice(0, 2).toUpperCase();
+  const nameSnap = akhilesh.name;
+  const phoneSnap = akhilesh.phone;
+
+  // (A) PAID — completed ₹3,500 visit, settled by Cash ₹1,500 + UPI ₹2,000.
+  const billPaid = await prisma.bill.upsert({
+    where: { id: `seed-bill-${clinic.id}-paid` },
+    update: {},
+    create: {
+      id: `seed-bill-${clinic.id}-paid`,
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      billNumber: `BL-${billPrefix}PAID01`,
+      patientNameSnapshot: nameSnap,
+      patientPhoneSnapshot: phoneSnap,
+      doctorIdSnapshot: doctor.id,
+      subtotalPaise: 350000,
+      totalPaise: 350000,
+      paidPaise: 350000,
+      balancePaise: 0,
+      status: 'PAID',
+      finalizedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      paidInFullAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      createdById: doctor.id,
+      items: {
+        create: [
+          {
+            clinicId: clinic.id,
+            kind: 'PROCEDURE',
+            description: 'Scaling & polishing (full mouth)',
+            sourceType: 'manual',
+            quantity: 1,
+            unitPricePaise: 350000,
+            subtotalPaise: 350000,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { id: `seed-pay-${clinic.id}-cash1` },
+    update: {},
+    create: {
+      id: `seed-pay-${clinic.id}-cash1`,
+      clinicId: clinic.id,
+      billId: billPaid.id,
+      patientId: akhilesh.id,
+      paymentNumber: `PAY-${billPrefix}000001`,
+      amountPaise: 150000,
+      method: 'CASH',
+      status: 'SUCCEEDED',
+      idempotencyKey: `seed-${clinic.id}-cash1`,
+      receivedById: doctor.id,
+      receivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
+  });
+  await prisma.payment.upsert({
+    where: { id: `seed-pay-${clinic.id}-upi1` },
+    update: {},
+    create: {
+      id: `seed-pay-${clinic.id}-upi1`,
+      clinicId: clinic.id,
+      billId: billPaid.id,
+      patientId: akhilesh.id,
+      paymentNumber: `PAY-${billPrefix}000002`,
+      amountPaise: 200000,
+      method: 'UPI_MANUAL',
+      status: 'SUCCEEDED',
+      upiId: 'akhilesh@oksbi',
+      upiTxnRef: '418723004511',
+      idempotencyKey: `seed-${clinic.id}-upi1`,
+      receivedById: doctor.id,
+      receivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  // (B) PARTIAL — ₹15,000 RCT + crown; ₹5,000 Cash + ₹5,000 Razorpay; ₹2,000 refunded.
+  const billPartial = await prisma.bill.upsert({
+    where: { id: `seed-bill-${clinic.id}-partial` },
+    update: {},
+    create: {
+      id: `seed-bill-${clinic.id}-partial`,
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      billNumber: `BL-${billPrefix}PART01`,
+      patientNameSnapshot: nameSnap,
+      patientPhoneSnapshot: phoneSnap,
+      doctorIdSnapshot: doctor.id,
+      subtotalPaise: 1500000,
+      totalPaise: 1500000,
+      paidPaise: 1000000,
+      refundedPaise: 200000,
+      balancePaise: 700000, // 1,500,000 - 1,000,000 + 200,000
+      status: 'PARTIAL',
+      finalizedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      notes: 'Patient on a 2-installment plan',
+      createdById: doctor.id,
+      items: {
+        create: [
+          {
+            clinicId: clinic.id,
+            kind: 'PROCEDURE',
+            description: 'Root canal therapy — 26',
+            sourceType: 'manual',
+            quantity: 1,
+            unitPricePaise: 900000,
+            subtotalPaise: 900000,
+          },
+          {
+            clinicId: clinic.id,
+            kind: 'LAB_CHARGE',
+            description: 'Crown — Zirconia (26)',
+            sourceType: 'manual',
+            quantity: 1,
+            unitPricePaise: 600000,
+            subtotalPaise: 600000,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.payment.upsert({
+    where: { id: `seed-pay-${clinic.id}-cash2` },
+    update: {},
+    create: {
+      id: `seed-pay-${clinic.id}-cash2`,
+      clinicId: clinic.id,
+      billId: billPartial.id,
+      patientId: akhilesh.id,
+      paymentNumber: `PAY-${billPrefix}000003`,
+      amountPaise: 500000,
+      method: 'CASH',
+      status: 'SUCCEEDED',
+      idempotencyKey: `seed-${clinic.id}-cash2`,
+      receivedById: doctor.id,
+      receivedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    },
+  });
+  const payRzp = await prisma.payment.upsert({
+    where: { id: `seed-pay-${clinic.id}-rzp1` },
+    update: {},
+    create: {
+      id: `seed-pay-${clinic.id}-rzp1`,
+      clinicId: clinic.id,
+      billId: billPartial.id,
+      patientId: akhilesh.id,
+      paymentNumber: `PAY-${billPrefix}000004`,
+      amountPaise: 500000,
+      method: 'RAZORPAY',
+      status: 'PARTIAL_REFUND',
+      razorpayLinkId: 'plink_seed_demo',
+      razorpayPaymentId: 'pay_seed_demo',
+      razorpayFee: 10000,
+      refundedAmountPaise: 200000,
+      idempotencyKey: `seed-${clinic.id}-rzp1`,
+      receivedById: doctor.id,
+      receivedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  // 1 partial refund against the Razorpay payment (crown shade revised down).
+  await prisma.refund.upsert({
+    where: { id: `seed-refund-${clinic.id}-1` },
+    update: {},
+    create: {
+      id: `seed-refund-${clinic.id}-1`,
+      clinicId: clinic.id,
+      paymentId: payRzp.id,
+      billId: billPartial.id,
+      refundNumber: `RF-${billPrefix}000001`,
+      amountPaise: 200000,
+      reason: 'Crown shade revised — partial adjustment',
+      method: 'RAZORPAY',
+      razorpayRefundId: 'rfnd_seed_demo',
+      razorpayStatus: 'processed',
+      status: 'SUCCEEDED',
+      processedById: doctor.id,
+      processedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+    },
+  });
+
+  // (C) DRAFT — the in-progress checkout visit; receptionist's "Take payment" shows this amount.
   await prisma.bill.upsert({
     where: { id: `seed-bill-${clinic.id}-rct` },
     update: {},
     create: {
       id: `seed-bill-${clinic.id}-rct`,
+      clinicId: clinic.id,
       visitId: confirmedVisit.id,
       patientId: akhilesh.id,
-      items: [{ description: 'Root canal therapy — 26 (3 sittings)', amountPaise: 350000 }],
+      billNumber: `BL-${billPrefix}DRAFT1`,
+      patientNameSnapshot: nameSnap,
+      patientPhoneSnapshot: phoneSnap,
+      doctorIdSnapshot: doctor.id,
+      subtotalPaise: 350000,
       totalPaise: 350000,
-      paidPaise: 0,
-      status: 'PENDING',
+      balancePaise: 350000,
+      status: 'DRAFT',
+      createdById: doctor.id,
+      items: {
+        create: [
+          {
+            clinicId: clinic.id,
+            kind: 'PROCEDURE',
+            description: 'Root canal therapy — 26 (sitting 3)',
+            sourceType: 'manual',
+            quantity: 1,
+            unitPricePaise: 350000,
+            subtotalPaise: 350000,
+          },
+        ],
+      },
     },
   });
 

@@ -21,14 +21,19 @@ export function formatBootBanner(env: Env): string {
     env.AI_PROVIDER === 'gemini'
       ? `gemini · ${env.GEMINI_MODEL} · key=${maskKey(env.GEMINI_API_KEY)}`
       : 'mock';
+  const payments =
+    env.PAYMENT_PROVIDER === 'razorpay'
+      ? `razorpay · ${env.RAZORPAY_MODE} · key=${maskKey(env.RAZORPAY_KEY_ID)}`
+      : 'mock';
 
   const lines = [
     `Odovox API · listening on :${env.PORT}`,
     '',
-    `  STT:    ${stt}`,
-    `  AI:     ${ai}`,
-    `  OTP:    ${env.OTP_PROVIDER}`,
-    `  ENV:    ${env.NODE_ENV}`,
+    `  STT:      ${stt}`,
+    `  AI:       ${ai}`,
+    `  PAYMENTS: ${payments}`,
+    `  OTP:      ${env.OTP_PROVIDER}`,
+    `  ENV:      ${env.NODE_ENV}`,
   ];
 
   const width = Math.max(...lines.map((l) => l.length));

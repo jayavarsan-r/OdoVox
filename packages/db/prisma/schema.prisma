@@ -174,18 +174,54 @@ enum MovementKind {
   DISPOSAL_EXPIRED // -stock; batch expired/discarded
 }
 
+// Phase 8 rewrite. DRAFT while being built during checkout; FINALIZED locks item edits; PARTIAL/PAID
+// track payment progress; REFUNDED when fully refunded; CANCELLED voids the bill.
 enum BillStatus {
-  PENDING
+  DRAFT
+  FINALIZED
   PARTIAL
   PAID
   REFUNDED
+  CANCELLED
 }
 
+// Phase 8. Line-item classification on a Bill.
+enum ItemKind {
+  PROCEDURE
+  LAB_CHARGE
+  MATERIAL
+  ADJUSTMENT
+  OTHER
+}
+
+// Phase 8 rewrite. *_MANUAL methods are recorded by the receptionist (system doesn't verify with the
+// payer bank). RAZORPAY is the hosted payment-link flow. ADJUSTMENT is a non-money correction.
 enum PaymentMethod {
   CASH
-  UPI
-  CARD
-  OTHER
+  UPI_MANUAL
+  CARD_MANUAL
+  BANK_TRANSFER
+  RAZORPAY
+  ADJUSTMENT
+}
+
+// Phase 8. PENDING = created but not confirmed (Razorpay link awaiting webhook). SUCCEEDED = money in.
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIAL_REFUND
+  CANCELLED
+}
+
+// Phase 8. Refund lifecycle. Cash refunds settle SUCCEEDED immediately; Razorpay refunds start
+// PENDING and flip on webhook confirmation.
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
 }
 
 enum MediaType {
@@ -229,6 +265,9 @@ model User {
   createdInventoryItems  InventoryItem[]
   inventoryMovements     InventoryMovement[]
   payments               Payment[]
+  createdBills           Bill[]                 @relation("BillCreatedBy")
+  processedRefunds       Refund[]               @relation("RefundProcessedBy")
+  createdPaymentPlans    PaymentPlan[]          @relation("PaymentPlanCreatedBy")
   uploadedMedia          Media[]
   notifications          Notification[]
   prescriptionTemplates  PrescriptionTemplate[] @relation("PrescriptionTemplateCreatedBy")
@@ -245,6 +284,11 @@ model Clinic {
   state              String
   pincode            String
   gstNumber          String?
+  // Phase 8 billing config. Most small dental clinics are below the GST threshold → exempt by default.
+  gstApplicable      Boolean   @default(false)
+  gstPercent         Decimal   @default(0) // 18 for dental services when applicable
+  // When true, CONSUMPTION inventory movements for a visit auto-add as MATERIAL bill items.
+  chargeForMaterials Boolean   @default(false)
   logoUrl            String?
   contactPhone       String
   openingTime        String
@@ -280,6 +324,10 @@ model Clinic {
   media                 Media[]
   jobs                  Job[]
   prescriptionTemplates PrescriptionTemplate[]
+  bills                 Bill[]
+  refunds               Refund[]
+  paymentPlans          PaymentPlan[]
+  webhookEvents         WebhookEvent[]
 
   @@index([joinCode])
 }
@@ -417,6 +465,7 @@ model Patient {
   appointments   Appointment[]
   labCases       LabCase[]
   bills          Bill[]
+  payments       Payment[]
   media          Media[]
 
   @@unique([clinicId, patientCode])
@@ -998,43 +1047,222 @@ model InventoryMovement {
 // Billing
 // ===========================================================================
 
+// Phase 8 rewrite. An itemized invoice. All money in paise (Int). Totals are computed server-side
+// on finalize/payment — never trusted from the client. Patient name/phone are snapshotted at finalize
+// so a later patient rename doesn't rewrite history.
 model Bill {
-  id         String     @id @default(cuid())
-  visitId    String?
-  patientId  String
-  items      Json       @default("[]")
-  totalPaise Int        @default(0)
-  paidPaise  Int        @default(0)
-  status     BillStatus @default(PENDING)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  deletedAt  DateTime?
+  id        String  @id @default(cuid())
+  clinicId  String
+  patientId String
+  visitId   String?
 
-  visit    Visit?    @relation(fields: [visitId], references: [id], onDelete: SetNull)
-  patient  Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  payments Payment[]
+  billNumber String // auto: BL-{first2OfJoinCode}{6 alnum}; allocated at create/finalize
 
+  // Identity snapshots (frozen at finalize)
+  patientNameSnapshot  String  @default("")
+  patientPhoneSnapshot String  @default("")
+  doctorIdSnapshot     String?
+
+  // Totals — all paise, all Int
+  subtotalPaise  Int     @default(0)
+  discountPaise  Int     @default(0)
+  discountReason String?
+
+  gstApplicable Boolean @default(false) // copied from clinic at bill creation
+  gstPercent    Decimal @default(0) // e.g. 18 for dental (9% CGST + 9% SGST)
+  gstPaise      Int     @default(0)
+
+  totalPaise    Int @default(0) // subtotal - discount + gst
+  paidPaise     Int @default(0) // sum of non-refunded succeeded payments
+  refundedPaise Int @default(0)
+  balancePaise  Int @default(0) // total - paid + refunded
+
+  status BillStatus @default(DRAFT)
+  notes  String?
+
+  finalizedAt     DateTime?
+  paidInFullAt    DateTime?
+  cancelledAt     DateTime?
+  cancelledReason String?
+
+  // Lazily-generated invoice PDF (Phase 4.5 pattern)
+  pdfUrl        String?
+  pdfStorageKey String?
+
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  visit        Visit?        @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  createdBy    User          @relation("BillCreatedBy", fields: [createdById], references: [id])
+  items        BillItem[]
+  payments     Payment[]
+  refunds      Refund[]
+  paymentPlans PaymentPlan[]
+
+  @@unique([clinicId, billNumber])
+  @@index([clinicId, status, createdAt(sort: Desc)])
+  @@index([clinicId, patientId, createdAt(sort: Desc)])
+  @@index([clinicId, balancePaise]) // outstanding reports
   @@index([visitId])
-  @@index([patientId])
-  @@index([status])
 }
 
-model Payment {
-  id           String        @id @default(cuid())
-  billId       String
-  amountPaise  Int
-  method       PaymentMethod
-  reference    String?
-  receivedById String
-  receivedAt   DateTime      @default(now())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+// Phase 8. A single line on a Bill. Editable only while the Bill is DRAFT.
+model BillItem {
+  id       String @id @default(cuid())
+  billId   String
+  clinicId String
 
-  bill       Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
-  receivedBy User @relation(fields: [receivedById], references: [id])
+  kind        ItemKind
+  description String
+
+  sourceType String? // 'procedure' | 'lab_case' | 'inventory' | 'manual'
+  sourceId   String? // FK-ish to Procedure / LabCase / InventoryMovement / etc.
+
+  quantity       Int @default(1)
+  unitPricePaise Int
+  discountPaise  Int @default(0)
+  subtotalPaise  Int // (unit * qty) - discount
+
+  notes     String?
+  createdAt DateTime @default(now())
+
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
 
   @@index([billId])
-  @@index([receivedById])
+  @@index([clinicId, sourceType, sourceId])
+}
+
+// Phase 8 rewrite. A payment against a Bill. Idempotent on (clinicId, idempotencyKey) — retrying a
+// flaky network call with the same key returns the existing row instead of double-charging.
+model Payment {
+  id        String @id @default(cuid())
+  clinicId  String
+  billId    String
+  patientId String
+
+  paymentNumber String // auto: PAY-{first2OfJoinCode}{6 alnum}
+
+  amountPaise Int
+  method      PaymentMethod
+  status      PaymentStatus @default(PENDING)
+
+  // Method-specific (only the relevant ones populated)
+  upiId       String?
+  upiTxnRef   String?
+  cardLast4   String?
+  cardNetwork String?
+  bankTxnRef  String?
+
+  // Razorpay-specific
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpayLinkId    String?
+  razorpaySignature String?
+  razorpayFee       Int     @default(0)
+
+  idempotencyKey String
+
+  receivedById String
+  receivedAt   DateTime?
+
+  notes String?
+
+  refundedAmountPaise Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bill       Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  receivedBy User     @relation(fields: [receivedById], references: [id])
+  refunds    Refund[]
+
+  @@unique([clinicId, paymentNumber])
+  @@unique([clinicId, idempotencyKey]) // CRITICAL — prevents double-charge on retry
+  @@index([clinicId, status, createdAt(sort: Desc)])
+  @@index([billId])
+  @@index([razorpayPaymentId])
+  @@index([razorpayLinkId])
+}
+
+// Phase 8. A refund against a Payment. Cash refunds settle immediately; Razorpay refunds flip from
+// PENDING on webhook confirmation.
+model Refund {
+  id        String @id @default(cuid())
+  clinicId  String
+  paymentId String
+  billId    String
+
+  refundNumber String // auto: RF-{first2OfJoinCode}{6 alnum}
+
+  amountPaise Int
+  reason      String
+  method      PaymentMethod
+
+  razorpayRefundId String?
+  razorpayStatus   String?
+
+  status RefundStatus @default(PENDING)
+
+  processedById String
+  processedAt   DateTime?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic      Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  payment     Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  bill        Bill    @relation(fields: [billId], references: [id], onDelete: Cascade)
+  processedBy User    @relation("RefundProcessedBy", fields: [processedById], references: [id])
+
+  @@unique([clinicId, refundNumber])
+  @@index([clinicId, paymentId])
+  @@index([clinicId, createdAt(sort: Desc)])
+}
+
+// Phase 8. Installment schedule for a Bill. Phase 8 only tracks the schedule (no auto-collection).
+// Each installment's status is computed from payments linked to the bill.
+model PaymentPlan {
+  id           String   @id @default(cuid())
+  clinicId     String
+  billId       String
+  totalPaise   Int
+  installments Json     @default("[]") // [{ amountPaise, dueDate, paymentId?, status }]
+  notes        String?
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clinic    Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  bill      Bill   @relation(fields: [billId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("PaymentPlanCreatedBy", fields: [createdById], references: [id])
+
+  @@index([clinicId, billId])
+}
+
+// Phase 8. Inbound payment-gateway webhook ledger. Dedup on (source, eventId) so replays are no-ops.
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  clinicId    String?
+  source      String // 'razorpay'
+  eventId     String // the gateway's event id
+  eventType   String
+  payload     Json
+  signature   String
+  status      String // 'received' | 'processed' | 'duplicate' | 'failed'
+  errorDetail String?
+  processedAt DateTime?
+  receivedAt  DateTime  @default(now())
+
+  clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+
+  @@unique([source, eventId])
+  @@index([clinicId, receivedAt(sort: Desc)])
 }
 
 // ===========================================================================
