@@ -40,6 +40,20 @@ export class NotFoundError extends AppError {
   }
 }
 
+/** 409 — a request conflicts with current state (e.g. an invalid lab-case transition). */
+export class ConflictError extends AppError {
+  constructor(message = 'Conflict', code = 'CONFLICT', details?: unknown) {
+    super(message, 409, code, details);
+  }
+}
+
+/** 422 — well-formed request the server refuses to process (e.g. insufficient stock). */
+export class UnprocessableError extends AppError {
+  constructor(message = 'Unprocessable', code = 'UNPROCESSABLE', details?: unknown) {
+    super(message, 422, code, details);
+  }
+}
+
 /**
  * Central Fastify error handler. Maps known errors to status codes and NEVER leaks
  * stack traces or internal messages to clients in production.

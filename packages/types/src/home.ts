@@ -6,6 +6,8 @@ export const NeedsYouKind = z.enum([
   'PAYMENT_OVERDUE',
   'ALLERGY_TODAY',
   'LAB_READY',
+  'LAB_OVERDUE',
+  'LOW_STOCK',
   'MISSED_APPOINTMENT',
   'TREATMENT_STALLED',
 ]);
@@ -14,8 +16,11 @@ export type NeedsYouKind = z.infer<typeof NeedsYouKind>;
 export const NeedsYouItem = z.object({
   kind: NeedsYouKind,
   title: z.string(),
-  patientId: z.string(),
-  patientName: z.string(),
+  // patient context is absent for non-patient items (e.g. LOW_STOCK).
+  patientId: z.string().nullable().optional(),
+  patientName: z.string().nullable().optional(),
+  // Deep link the row taps through to (e.g. /lab/:id or /inventory/:id).
+  href: z.string().optional(),
 });
 export type NeedsYouItem = z.infer<typeof NeedsYouItem>;
 

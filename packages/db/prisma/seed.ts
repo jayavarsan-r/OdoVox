@@ -183,55 +183,164 @@ async function main() {
     where: { clinicId: clinic.id, patientCode: 'PT-0001' },
   });
 
-  // --- Lab partner + open lab case ----------------------------------------
-  const labPartner = await prisma.labPartner.upsert({
-    where: { id: `seed-lab-${clinic.id}` },
+  // --- Lab vendor + sample cases (Phase 7) --------------------------------
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const labVendor = await prisma.labVendor.upsert({
+    where: { id: `seed-labvendor-${clinic.id}` },
     update: {},
     create: {
-      id: `seed-lab-${clinic.id}`,
+      id: `seed-labvendor-${clinic.id}`,
       clinicId: clinic.id,
-      name: 'PrecisionDent Lab',
-      contact: '7000000000',
-      address: 'Jayanagar, Bengaluru',
+      name: 'Saveetha Dental Lab',
+      contactPhoneEnc: encryptField('9840012345'),
+      contactPersonName: 'Mr. Karthik',
+      addressEnc: encryptField('Poonamallee High Rd, Chennai 600077'),
+      email: 'orders@saveethalab.in',
+      defaultTurnaroundDays: 7,
+      specialties: ['crown', 'bridge', 'denture'],
+      notes: 'Primary crown & bridge lab.',
+      createdById: doctor.id,
     },
   });
 
   const labCaseCount = await prisma.labCase.count({ where: { clinicId: clinic.id } });
   if (labCaseCount === 0) {
+    const now = Date.now();
+    // 1) DRAFT — impression just taken, not sent.
     await prisma.labCase.create({
       data: {
         clinicId: clinic.id,
         patientId: firstPatient.id,
         doctorId: doctor.id,
-        partnerId: labPartner.id,
-        caseType: 'PFM Crown',
-        toothNumbers: [26],
-        status: 'IN_PROGRESS',
-        notes: 'Shade A2.',
-        expectedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        events: {
-          create: [{ status: 'CREATED', createdById: doctor.id, notes: 'Case opened' }],
-        },
+        vendorId: labVendor.id,
+        caseNumber: 'LC-SM0001AA',
+        type: 'CROWN',
+        teeth: [26],
+        material: 'Zirconia',
+        shade: 'A2',
+        description: 'Crown for missing molar.',
+        impressionTakenAt: new Date(now),
+        status: 'DRAFT',
+        costPaise: 250000,
+        patientChargePaise: 1500000,
+        notesEnc: encryptField('Patient prefers a natural shade.'),
+        createdById: doctor.id,
+      },
+    });
+    // 2) SENT — waiting at vendor.
+    await prisma.labCase.create({
+      data: {
+        clinicId: clinic.id,
+        patientId: firstPatient.id,
+        doctorId: doctor.id,
+        vendorId: labVendor.id,
+        caseNumber: 'LC-SM0002BB',
+        type: 'BRIDGE',
+        teeth: [14, 15, 16],
+        material: 'PFM',
+        shade: 'A3',
+        description: '3-unit posterior bridge.',
+        impressionTakenAt: new Date(now - 2 * DAY_MS),
+        sentAt: new Date(now - 2 * DAY_MS),
+        expectedReturnAt: new Date(now + 5 * DAY_MS),
+        status: 'SENT',
+        costPaise: 600000,
+        createdById: doctor.id,
+      },
+    });
+    // 3) READY — returned, awaiting delivery (surfaces on Doctor Home Needs You).
+    await prisma.labCase.create({
+      data: {
+        clinicId: clinic.id,
+        patientId: firstPatient.id,
+        doctorId: doctor.id,
+        vendorId: labVendor.id,
+        caseNumber: 'LC-SM0003CC',
+        type: 'DENTURE_PARTIAL',
+        teeth: [34, 35, 36, 37],
+        material: 'Acrylic',
+        shade: 'A2',
+        description: 'Lower partial denture.',
+        impressionTakenAt: new Date(now - 9 * DAY_MS),
+        sentAt: new Date(now - 9 * DAY_MS),
+        expectedReturnAt: new Date(now - 2 * DAY_MS),
+        returnedAt: new Date(now - 1 * DAY_MS),
+        status: 'READY',
+        costPaise: 450000,
+        patientChargePaise: 1800000,
+        createdById: doctor.id,
       },
     });
   }
 
-  // --- Low-stock inventory item -------------------------------------------
-  await prisma.inventoryItem.upsert({
-    where: { id: `seed-inv-${clinic.id}` },
-    update: {},
-    create: {
-      id: `seed-inv-${clinic.id}`,
-      clinicId: clinic.id,
-      name: 'Lignocaine 2% (with adrenaline)',
-      category: 'MEDICINE',
-      unit: 'cartridge',
-      currentStock: 3,
-      lowStockThreshold: 10,
-      trackExpiry: true,
-      notes: 'Below threshold — reorder.',
-    },
-  });
+  // --- Inventory categories + items + movements (Phase 7) ------------------
+  const catDefs = [
+    { key: 'consumables', name: 'Consumables', iconName: 'box', sortOrder: 0 },
+    { key: 'anaesthetics', name: 'Anaesthetics', iconName: 'syringe', sortOrder: 1 },
+    { key: 'instruments', name: 'Instruments', iconName: 'wrench', sortOrder: 2 },
+    { key: 'xray', name: 'X-ray', iconName: 'scan', sortOrder: 3 },
+  ];
+  const catByKey: Record<string, string> = {};
+  for (const c of catDefs) {
+    const row = await prisma.inventoryCategory.upsert({
+      where: { clinicId_name: { clinicId: clinic.id, name: c.name } },
+      update: {},
+      create: {
+        id: `seed-invcat-${c.key}-${clinic.id}`,
+        clinicId: clinic.id,
+        name: c.name,
+        iconName: c.iconName,
+        sortOrder: c.sortOrder,
+        createdById: doctor.id,
+      },
+    });
+    catByKey[c.key] = row.id;
+  }
+
+  const EXP_2026 = new Date('2026-12-31T00:00:00.000Z');
+  const itemDefs = [
+    { key: 'ligno', name: 'Lignocaine 2% carpule', cat: 'anaesthetics', unit: 'carpule', stock: 20, reorder: 10, expiry: EXP_2026 },
+    { key: 'gloves', name: 'Latex gloves L', cat: 'consumables', unit: 'piece', stock: 200, reorder: 100 },
+    { key: 'composite', name: 'Composite resin A2', cat: 'consumables', unit: 'piece', stock: 2, reorder: 5 }, // LOW STOCK demo
+    { key: 'needles', name: 'Disposable needles 30G', cat: 'consumables', unit: 'piece', stock: 50, reorder: 30 },
+    { key: 'suction', name: 'Suction tips', cat: 'consumables', unit: 'piece', stock: 300, reorder: 100 },
+    { key: 'burs', name: 'Dental burs assorted', cat: 'instruments', unit: 'piece', stock: 25, reorder: 10 },
+    { key: 'probe', name: 'Periodontal probe', cat: 'instruments', unit: 'piece', stock: 5, reorder: 3 },
+    { key: 'films', name: 'X-ray films size 2', cat: 'xray', unit: 'piece', stock: 100, reorder: 50 },
+  ];
+  const itemByKey: Record<string, string> = {};
+  for (const it of itemDefs) {
+    const row = await prisma.inventoryItem.upsert({
+      where: { id: `seed-invitem-${it.key}-${clinic.id}` },
+      update: {},
+      create: {
+        id: `seed-invitem-${it.key}-${clinic.id}`,
+        clinicId: clinic.id,
+        categoryId: catByKey[it.cat]!,
+        name: it.name,
+        unitOfMeasure: it.unit,
+        currentStock: it.stock,
+        reorderLevel: it.reorder,
+        expiryDate: it.expiry ?? null,
+        createdById: doctor.id,
+      },
+    });
+    itemByKey[it.key] = row.id;
+  }
+
+  const movementCount = await prisma.inventoryMovement.count({ where: { clinicId: clinic.id } });
+  if (movementCount === 0) {
+    const now = Date.now();
+    await prisma.inventoryMovement.createMany({
+      data: [
+        { clinicId: clinic.id, itemId: itemByKey['ligno']!, kind: 'PURCHASE', quantity: 30, pricePerUnitPaise: 1200, totalPricePaise: 36000, batchNumber: 'LIG-2026-01', byUserId: doctor.id, createdAt: new Date(now - 28 * DAY_MS) },
+        { clinicId: clinic.id, itemId: itemByKey['gloves']!, kind: 'PURCHASE', quantity: 300, pricePerUnitPaise: 800, totalPricePaise: 240000, byUserId: receptionist.id, createdAt: new Date(now - 21 * DAY_MS) },
+        { clinicId: clinic.id, itemId: itemByKey['ligno']!, kind: 'CONSUMPTION', quantity: -10, procedureName: 'RCT', byUserId: doctor.id, createdAt: new Date(now - 14 * DAY_MS) },
+        { clinicId: clinic.id, itemId: itemByKey['gloves']!, kind: 'CONSUMPTION', quantity: -100, procedureName: 'General', byUserId: doctor.id, createdAt: new Date(now - 7 * DAY_MS) },
+        { clinicId: clinic.id, itemId: itemByKey['composite']!, kind: 'CONSUMPTION', quantity: -8, procedureName: 'Restorations', byUserId: doctor.id, createdAt: new Date(now - 3 * DAY_MS) },
+      ],
+    });
+  }
 
   // --- Phase 3: sample consultations --------------------------------------
   // Akhilesh Guhan is the voice-demo patient (the RCT-on-26 narrative). We seed two
@@ -457,7 +566,9 @@ async function main() {
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);
   console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
-  console.warn(`   Patients: ${patientSeed.length + 1} | Lab partner + 1 open case | 1 low-stock item`);
+  console.warn(
+    `   Patients: ${patientSeed.length + 1} | Lab: 1 vendor + 3 cases (DRAFT/SENT/READY) | Inventory: 4 categories, 8 items (1 low-stock), 5 movements`,
+  );
   console.warn('   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan');
   console.warn(`   Prescription templates: ${STARTER_TEMPLATES.length} starters (RCT pack, Post-extraction, …)`);
 }

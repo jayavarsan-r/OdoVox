@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import type { NeedsYouItem } from '@odovox/types';
 import { ok } from '../lib/http.js';
 import { requireRole } from '../lib/rbac.js';
+import { labCaseTypeLabel } from '../lib/lab/labels.js';
 
 const DAY = 864e5;
 
@@ -35,16 +36,17 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
 
     // 3. Lab cases READY (clinic-scoped).
     const labReady = await prisma.labCase.findMany({
-      where: { status: 'READY', deletedAt: null },
+      where: { status: 'READY' },
       include: { patient: true },
-      take: 10,
+      take: 5,
     });
     for (const c of labReady) {
       items.push({
         kind: 'LAB_READY',
-        title: `Lab ready: ${c.patient.name}'s ${c.caseType}`,
+        title: `Lab ready: ${c.patient.name} (${labCaseTypeLabel(c.type)})`,
         patientId: c.patientId,
         patientName: c.patient.name,
+        href: `/lab/${c.id}`,
       });
     }
 

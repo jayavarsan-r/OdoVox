@@ -139,27 +139,39 @@ enum ReminderStatus {
   CANCELLED
 }
 
-enum LabCaseStatus {
-  CREATED
-  ASSIGNED
-  IN_PROGRESS
-  READY
-  DELIVERED
-  FITTED
-  REJECTED
-}
-
-enum InventoryCategory {
-  MEDICINE
-  CONSUMABLE
-  INSTRUMENT
+// Phase 7 lab-case kinds. `type` on LabCase.
+enum LabCaseType {
+  CROWN
+  BRIDGE
+  DENTURE_FULL
+  DENTURE_PARTIAL
+  ALIGNER
+  NIGHT_GUARD
+  OCCLUSAL_SPLINT
+  VENEER
+  INLAY_ONLAY
+  RPD
   OTHER
 }
 
-enum MovementType {
-  IN
-  OUT
-  ADJUST
+// Phase 7 lab-case lifecycle. See lab routes for the allowed transition matrix.
+enum LabCaseStatus {
+  DRAFT // not yet sent
+  SENT // sent to vendor
+  IN_PROGRESS // vendor confirmed receipt / working
+  READY // returned, awaiting try-in/delivery
+  DELIVERED // delivered to patient (try-in or final)
+  RETURNED_FOR_REWORK // sent back to vendor for adjustments
+  COMPLETED // patient happy, case closed
+  CANCELLED // cancelled before completion
+}
+
+// Phase 7 inventory stock movements. quantity is signed (see InventoryMovement).
+enum MovementKind {
+  PURCHASE // +stock; recorded with price
+  CONSUMPTION // -stock; tied to a visit
+  ADJUSTMENT // ± stock; stock counts / corrections; reason required
+  DISPOSAL_EXPIRED // -stock; batch expired/discarded
 }
 
 enum BillStatus {
@@ -180,6 +192,7 @@ enum MediaType {
   XRAY
   PHOTO
   DOCUMENT
+  LAB_PHOTO
 }
 
 // ===========================================================================
@@ -210,7 +223,10 @@ model User {
   appointments           Appointment[]          @relation("AppointmentDoctor")
   availabilities         DoctorAvailability[]
   labCases               LabCase[]              @relation("LabCaseDoctor")
-  labCaseEvents          LabCaseEvent[]
+  createdLabCases        LabCase[]              @relation("LabCaseCreatedBy")
+  labVendors             LabVendor[]
+  inventoryCategories    InventoryCategory[]
+  createdInventoryItems  InventoryItem[]
   inventoryMovements     InventoryMovement[]
   payments               Payment[]
   uploadedMedia          Media[]
@@ -253,9 +269,11 @@ model Clinic {
   doctorAvailabilities  DoctorAvailability[]
   dayOffs               DayOff[]
   appointmentReminders  AppointmentReminder[]
-  labPartners           LabPartner[]
+  labVendors            LabVendor[]
   labCases              LabCase[]
+  inventoryCategories   InventoryCategory[]
   inventoryItems        InventoryItem[]
+  inventoryMovements    InventoryMovement[]
   auditLogs             AuditLog[]
   notifications         Notification[]
   settings              ClinicSetting[]
@@ -803,106 +821,177 @@ model AppointmentReminder {
 // Lab
 // ===========================================================================
 
-model LabPartner {
-  id        String    @id @default(cuid())
-  clinicId  String
-  name      String
-  contact   String
-  address   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+// Phase 7. A lab the clinic works with. Phone + address are PII, encrypted at rest.
+model LabVendor {
+  id                    String   @id @default(cuid())
+  clinicId              String
+  name                  String
+  contactPhoneEnc       String // ENCRYPTED (AES-256-GCM) — phone is PII
+  contactPersonName     String?
+  addressEnc            String? // ENCRYPTED — address is PII
+  email                 String?
+  defaultTurnaroundDays Int      @default(7)
+  specialties           String[] // ["crown", "bridge", "denture", "aligner"]
+  notes                 String?
+  isArchived            Boolean  @default(false)
+  createdById           String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  clinic Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  cases  LabCase[]
+  clinic    Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  createdBy User      @relation(fields: [createdById], references: [id])
+  cases     LabCase[]
 
-  @@index([clinicId])
+  @@index([clinicId, isArchived, name])
 }
 
+// Phase 7. A single lab job (crown, denture, …) tracked through its lifecycle. Lab events are
+// recorded in AuditLog (no dedicated event-log model). Photos reuse Media (type=LAB_PHOTO).
 model LabCase {
-  id           String        @id @default(cuid())
-  clinicId     String
-  patientId    String
-  doctorId     String
-  partnerId    String?
-  caseType     String
-  toothNumbers Int[]
-  status       LabCaseStatus @default(CREATED)
-  notes        String?
-  expectedDate DateTime?
-  actualDate   DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
+  id         String @id @default(cuid())
+  clinicId   String
+  patientId  String
+  doctorId   String
+  vendorId   String
+  caseNumber String // auto-generated: LC-{first2OfClinicCode}{6 alnum}
 
-  clinic  Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor  User           @relation("LabCaseDoctor", fields: [doctorId], references: [id])
-  partner LabPartner?    @relation(fields: [partnerId], references: [id], onDelete: SetNull)
-  events  LabCaseEvent[]
+  type     LabCaseType
+  teeth    Int[] // FDI numbers
+  material String? // "PFM", "Zirconia", "Acrylic"
+  shade    String? // "A2", "A3.5", "B1"
 
-  @@index([clinicId, status])
-  @@index([patientId])
-  @@index([doctorId])
-  @@index([partnerId])
-}
+  description String? // clinical brief
 
-model LabCaseEvent {
-  id          String        @id @default(cuid())
-  caseId      String
-  status      LabCaseStatus
-  notes       String?
+  impressionTakenAt DateTime?
+  sentAt            DateTime?
+  expectedReturnAt  DateTime? // computed from vendor.defaultTurnaroundDays
+  returnedAt        DateTime?
+  deliveredAt       DateTime?
+  completedAt       DateTime?
+
+  status          LabCaseStatus @default(DRAFT)
+  rejectionReason String? // when RETURNED_FOR_REWORK or CANCELLED
+
+  costPaise          Int? // clinic pays lab
+  patientChargePaise Int? // clinic charges patient
+
+  notesEnc        String? // ENCRYPTED — clinical notes (PHI)
+  treatmentPlanId String? // links to Phase 5 plan
+  visitId         String? // visit where impression was taken
+
+  // Rework lineage: when a case is sent for rework a new LabCase is cloned, pointing here.
+  reworkOfId String?
+
   createdById String
-  createdAt   DateTime      @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  labCase   LabCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  createdBy User    @relation(fields: [createdById], references: [id])
+  clinic    Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor    User      @relation("LabCaseDoctor", fields: [doctorId], references: [id])
+  createdBy User      @relation("LabCaseCreatedBy", fields: [createdById], references: [id])
+  vendor    LabVendor @relation(fields: [vendorId], references: [id])
+  reworkOf  LabCase?  @relation("LabCaseRework", fields: [reworkOfId], references: [id], onDelete: SetNull)
+  reworks   LabCase[] @relation("LabCaseRework")
+  photos    Media[]
 
-  @@index([caseId])
-  @@index([createdById])
+  @@unique([clinicId, caseNumber])
+  @@index([clinicId, status, expectedReturnAt])
+  @@index([clinicId, patientId, createdAt(sort: Desc)])
+  @@index([clinicId, vendorId, status])
+  @@index([doctorId])
 }
 
 // ===========================================================================
 // Inventory
 // ===========================================================================
 
-model InventoryItem {
-  id                String            @id @default(cuid())
-  clinicId          String
-  name              String
-  category          InventoryCategory
-  unit              String
-  currentStock      Float             @default(0)
-  lowStockThreshold Float             @default(0)
-  trackExpiry       Boolean           @default(false)
-  notes             String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  deletedAt         DateTime?
+// Phase 7. Clinic-defined item grouping (Consumables, Anaesthetics, …). A table, not an enum,
+// so clinics can add their own. Archived categories keep their items (items retain categoryId).
+model InventoryCategory {
+  id          String   @id @default(cuid())
+  clinicId    String
+  name        String
+  iconName    String? // lucide icon name (e.g. "syringe", "box", "pill")
+  sortOrder   Int      @default(0)
+  isArchived  Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
 
-  clinic    Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  movements InventoryMovement[]
+  clinic    Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  createdBy User            @relation(fields: [createdById], references: [id])
+  items     InventoryItem[]
 
-  @@index([clinicId])
-  @@index([clinicId, category])
+  @@unique([clinicId, name])
 }
 
-model InventoryMovement {
-  id          String       @id @default(cuid())
-  itemId      String
-  type        MovementType
-  quantity    Float
-  reason      String?
+// Phase 7. A stocked item. STOCK CONVENTION: currentStock/reorderLevel are Int. For fractional
+// units (e.g. 3.5 ml carpule) store the value × 1000 (3500); movement quantities use the same
+// scale. Whole-unit items (gloves, needles) store the count directly. Stock changes ONLY via
+// InventoryMovement — never edit currentStock directly.
+model InventoryItem {
+  id         String @id @default(cuid())
+  clinicId   String
+  categoryId String
+
+  name          String
+  sku           String?
+  unitOfMeasure String // "piece", "box", "ml", "carpule"
+
+  currentStock Int @default(0) // see STOCK CONVENTION above
+  reorderLevel Int @default(0) // low-stock alert threshold
+
+  vendorName             String? // free text — inventory vendor ≠ LabVendor
+  lastPurchasePricePaise Int?
+  lastPurchaseDate       DateTime?
+
   batchNumber String?
-  expiryDate  DateTime?
+  expiryDate  DateTime? // null for non-expiring items (instruments)
+
+  notes       String?
+  isArchived  Boolean  @default(false)
   createdById String
-  createdAt   DateTime     @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  createdBy User          @relation(fields: [createdById], references: [id])
+  clinic    Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  category  InventoryCategory   @relation(fields: [categoryId], references: [id])
+  createdBy User                @relation(fields: [createdById], references: [id])
+  movements InventoryMovement[]
 
-  @@index([itemId])
-  @@index([createdById])
+  @@index([clinicId, isArchived, categoryId, name])
+  @@index([clinicId, currentStock, reorderLevel]) // low-stock query
+  @@index([clinicId, expiryDate]) // expiry alert query
+}
+
+// Phase 7. The only way item stock changes. quantity is signed: +ve PURCHASE/ADJUSTMENT-up,
+// -ve CONSUMPTION/DISPOSAL/ADJUSTMENT-down. Insert + item.currentStock update are one transaction.
+model InventoryMovement {
+  id       String       @id @default(cuid())
+  clinicId String
+  itemId   String
+  kind     MovementKind
+  quantity Int // signed (see STOCK CONVENTION on InventoryItem)
+
+  pricePerUnitPaise Int? // for PURCHASE; null otherwise
+  totalPricePaise   Int? // denormalized for fast reports
+
+  visitId       String? // CONSUMPTION linked to a visit
+  procedureName String? // free-text context
+
+  batchNumber String? // overrides item batch on PURCHASE
+  expiryDate  DateTime?
+
+  reason    String? // required for ADJUSTMENT / DISPOSAL_EXPIRED
+  byUserId  String
+  createdAt DateTime @default(now())
+
+  clinic Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  item   InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  byUser User          @relation(fields: [byUserId], references: [id])
+
+  @@index([clinicId, itemId, createdAt(sort: Desc)])
+  @@index([clinicId, kind, createdAt(sort: Desc)])
 }
 
 // ===========================================================================
@@ -957,6 +1046,7 @@ model Media {
   clinicId     String
   patientId    String
   visitId      String?
+  labCaseId    String? // Phase 7 — set for type=LAB_PHOTO
   type         MediaType
   storageKey   String // opaque S3/MinIO object key
   url          String? // cached signed URL — regenerated on read
@@ -972,14 +1062,16 @@ model Media {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  clinic     Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient    Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  visit      Visit?  @relation(fields: [visitId], references: [id], onDelete: SetNull)
-  uploadedBy User    @relation(fields: [uploadedById], references: [id])
+  clinic     Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  visit      Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  labCase    LabCase? @relation(fields: [labCaseId], references: [id], onDelete: SetNull)
+  uploadedBy User     @relation(fields: [uploadedById], references: [id])
 
   @@index([clinicId, patientId, uploadedAt])
   @@index([patientId])
   @@index([visitId])
+  @@index([labCaseId])
   @@index([uploadedById])
 }
 

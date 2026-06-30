@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { AppointmentStatus, ConsultationStatus, QueueEventType, RoomStatus, VisitStatus } from './common.js';
+import { LabCaseSummary } from './lab.js';
+import { InventoryItemSummary } from './inventory.js';
 
 /**
  * Realtime (Socket.IO) event contract — the single source of truth shared by the API broadcast
@@ -163,6 +165,22 @@ export const ServerEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('schedule.appointment.rescheduled'), payload: ScheduleAppointmentZ }),
   z.object({ type: z.literal('schedule.appointment.cancelled'), payload: ScheduleAppointmentZ }),
   z.object({ type: z.literal('schedule.appointment.no_show'), payload: ScheduleAppointmentZ }),
+  // Lab (Phase 7). Created/updated carry the full case summary so the list + patient Cases tab
+  // update live; Doctor Home re-fetches Needs You on these.
+  z.object({ type: z.literal('lab.case.created'), payload: LabCaseSummary }),
+  z.object({ type: z.literal('lab.case.updated'), payload: LabCaseSummary }),
+  // Inventory (Phase 7). item.updated carries the new stock; low_stock_alert fires when a movement
+  // pushes stock at/below reorderLevel.
+  z.object({ type: z.literal('inventory.item.updated'), payload: InventoryItemSummary }),
+  z.object({
+    type: z.literal('inventory.low_stock_alert'),
+    payload: z.object({
+      itemId: z.string(),
+      itemName: z.string(),
+      currentStock: z.number().int(),
+      reorderLevel: z.number().int(),
+    }),
+  }),
 ]);
 export type ServerEvent = z.infer<typeof ServerEvent>;
 export type ServerEventType = ServerEvent['type'];

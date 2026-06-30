@@ -176,22 +176,37 @@ export type DayOffScope = z.infer<typeof DayOffScope>;
 export const RecurringInterval = z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY']);
 export type RecurringInterval = z.infer<typeof RecurringInterval>;
 
+// Phase 7 — lab-case lifecycle. Transition matrix enforced in apps/api lab routes.
 export const LabCaseStatus = z.enum([
-  'CREATED',
-  'ASSIGNED',
+  'DRAFT',
+  'SENT',
   'IN_PROGRESS',
   'READY',
   'DELIVERED',
-  'FITTED',
-  'REJECTED',
+  'RETURNED_FOR_REWORK',
+  'COMPLETED',
+  'CANCELLED',
 ]);
 export type LabCaseStatus = z.infer<typeof LabCaseStatus>;
 
-export const InventoryCategory = z.enum(['MEDICINE', 'CONSUMABLE', 'INSTRUMENT', 'OTHER']);
-export type InventoryCategory = z.infer<typeof InventoryCategory>;
+export const LabCaseType = z.enum([
+  'CROWN',
+  'BRIDGE',
+  'DENTURE_FULL',
+  'DENTURE_PARTIAL',
+  'ALIGNER',
+  'NIGHT_GUARD',
+  'OCCLUSAL_SPLINT',
+  'VENEER',
+  'INLAY_ONLAY',
+  'RPD',
+  'OTHER',
+]);
+export type LabCaseType = z.infer<typeof LabCaseType>;
 
-export const MovementType = z.enum(['IN', 'OUT', 'ADJUST']);
-export type MovementType = z.infer<typeof MovementType>;
+// Phase 7 — signed inventory stock movements.
+export const MovementKind = z.enum(['PURCHASE', 'CONSUMPTION', 'ADJUSTMENT', 'DISPOSAL_EXPIRED']);
+export type MovementKind = z.infer<typeof MovementKind>;
 
 export const BillStatus = z.enum(['PENDING', 'PARTIAL', 'PAID', 'REFUNDED']);
 export type BillStatus = z.infer<typeof BillStatus>;
@@ -199,5 +214,5 @@ export type BillStatus = z.infer<typeof BillStatus>;
 export const PaymentMethod = z.enum(['CASH', 'UPI', 'CARD', 'OTHER']);
 export type PaymentMethod = z.infer<typeof PaymentMethod>;
 
-export const MediaType = z.enum(['XRAY', 'PHOTO', 'DOCUMENT']);
+export const MediaType = z.enum(['XRAY', 'PHOTO', 'DOCUMENT', 'LAB_PHOTO']);
 export type MediaType = z.infer<typeof MediaType>;
