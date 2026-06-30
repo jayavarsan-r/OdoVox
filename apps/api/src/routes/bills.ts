@@ -144,6 +144,11 @@ export async function billRoutes(fastify: FastifyInstance): Promise<void> {
         },
       });
       await recomputeBillTotals(tx, created.id);
+      // Mark auto-included lab cases as billed so they can't be double-billed on a later bill.
+      const labCaseIds = allItems.filter((i) => i.sourceType === 'lab_case' && i.sourceId).map((i) => i.sourceId!);
+      if (labCaseIds.length) {
+        await tx.labCase.updateMany({ where: { id: { in: labCaseIds }, clinicId }, data: { billedInBillId: created.id } });
+      }
       await broadcastBill(tx, clinicId, created.id, 'billing.bill.created');
       return created;
     });
@@ -252,6 +257,18 @@ export async function billRoutes(fastify: FastifyInstance): Promise<void> {
           finalizedAt: new Date(),
           patientNameSnapshot: patient.name,
           patientPhoneSnapshot: patient.phone,
+        },
+      });
+      // Phase 9 notification hook: queue a "send bill via WhatsApp" reminder (Phase 9 actually sends).
+      await tx.billReminder.create({
+        data: {
+          clinicId,
+          billId: id,
+          patientId: bill.patientId,
+          type: 'BILL_FINALIZED',
+          scheduledFor: new Date(),
+          channel: 'whatsapp',
+          template: 'bill_ready',
         },
       });
       await broadcastBill(tx, clinicId, id, 'billing.bill.finalized');

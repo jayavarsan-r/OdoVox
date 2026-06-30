@@ -29,6 +29,7 @@ export const CLINICAL_RESPONSE_SCHEMA: GeminiSchema = {
     sittingTotal: { type: 'INTEGER', nullable: true },
     continuesPlanId: { type: 'STRING', nullable: true },
     status: { type: 'STRING', enum: ['IN_PROGRESS', 'COMPLETED', 'ABORTED'], nullable: true },
+    estimatedCostPaise: { type: 'INTEGER', nullable: true },
     prescriptions: { type: 'ARRAY', items: PRESCRIPTION_ITEM_SCHEMA },
     followUp: {
       type: 'OBJECT',

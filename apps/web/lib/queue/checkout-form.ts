@@ -36,6 +36,7 @@ export function defaultCheckoutForm(duePaise: number | null): CheckoutForm {
 
 export function buildCompleteBody(form: CheckoutForm): CompleteVisitInput {
   const body: CompleteVisitInput = {
+    acceptBalance: false,
     prescriptionHanded: form.prescriptionHanded,
     nextVisitConfirmed: form.nextVisitConfirmed,
   };

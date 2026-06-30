@@ -57,6 +57,7 @@ HARDENING RULES (be conservative — when in doubt, null):
 - sittingTotal: set it ONLY when the doctor states a total ("of four", "4 sittings"). Never infer a total from the procedure type or a typical protocol.
 - DOSAGE / FREQUENCY / DURATION: set each to null unless explicitly spoken. Never fill in a "standard" or "typical" dose the doctor didn't say.
 - STATUS: leave null unless the doctor states the procedure is in progress, completed, or aborted.
+- COST (estimatedCostPaise): if the doctor mentions a cost for the procedure, extract it. Indian dental costs are quoted in rupees (₹) — convert to paise (×100). "Five thousand rupees for the RCT" -> 500000; "₹3,500 for cleaning" -> 350000. Never invent a cost — leave null if not mentioned.
 - READ-ONLY CONTEXT: do NOT copy any medicine, diagnosis, plan detail, or follow-up from PATIENT CONTEXT or ACTIVE TREATMENT PLANS into the output. That block is background only — output must come from today's transcript alone.
 
 LANGUAGE NOTE: For Hindi/Tamil clinical terms, translate to English in the output (e.g. "extracted", "scaling").`;

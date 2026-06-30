@@ -269,6 +269,18 @@ export async function queueRoutes(fastify: FastifyInstance): Promise<void> {
     const visit = await loadVisit(id);
     assertTransition('complete', visit.status);
 
+    // Phase 8 itemized flow: when a bill is referenced it must be settled (or balance accepted).
+    if (body.billId) {
+      const bill = await prisma.bill.findFirst({ where: { id: body.billId, clinicId: req.clinicId!, deletedAt: null } });
+      if (!bill) throw new NotFoundError('Bill not found');
+      if (bill.patientId !== visit.patientId) throw new ValidationError('Bill does not belong to this visit');
+      if (bill.balancePaise > 0 && !body.acceptBalance) {
+        throw new ValidationError('Bill is not fully paid — settle it or complete with balance', {
+          balancePaise: bill.balancePaise,
+        });
+      }
+    }
+
     const updated = await runLockedTransition(prisma, {
       clinicId: req.clinicId!,
       userId: req.user!.id,

@@ -163,10 +163,19 @@ export async function commitConsultation(
               data: {
                 toothNumbers: data.teeth.length ? data.teeth : existingProc.toothNumbers,
                 totalSittings,
+                // Phase 8: keep the latest dictated cost; don't overwrite an existing one with null.
+                ...(data.estimatedCostPaise != null ? { estimatedCostPaise: data.estimatedCostPaise } : {}),
               },
             })
           : await tx.procedure.create({
-              data: { planId: plan.id, name: data.procedure, toothNumbers: data.teeth, totalSittings, status: 'IN_PROGRESS' },
+              data: {
+                planId: plan.id,
+                name: data.procedure,
+                toothNumbers: data.teeth,
+                totalSittings,
+                status: 'IN_PROGRESS',
+                estimatedCostPaise: data.estimatedCostPaise ?? 0,
+              },
             });
         result.procedureId = procedure.id;
 

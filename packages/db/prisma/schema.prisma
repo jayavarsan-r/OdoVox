@@ -328,6 +328,7 @@ model Clinic {
   refunds               Refund[]
   paymentPlans          PaymentPlan[]
   webhookEvents         WebhookEvent[]
+  billReminders         BillReminder[]
 
   @@index([joinCode])
 }
@@ -651,6 +652,9 @@ model Procedure {
   totalSittings     Int             @default(1)
   completedSittings Int             @default(0)
   status            ProcedureStatus @default(PENDING)
+  // Phase 8: optional cost dictated by the doctor (voice extraction). Flows to the Bill as the
+  // PROCEDURE line's unit price when a bill is auto-populated from a visit.
+  estimatedCostPaise Int            @default(0)
   notes             String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
@@ -923,6 +927,8 @@ model LabCase {
 
   costPaise          Int? // clinic pays lab
   patientChargePaise Int? // clinic charges patient
+  // Phase 8: set to the Bill id once this case's patient charge has been billed (prevents double-billing).
+  billedInBillId     String?
 
   notesEnc        String? // ENCRYPTED — clinical notes (PHI)
   treatmentPlanId String? // links to Phase 5 plan
@@ -1263,6 +1269,29 @@ model WebhookEvent {
 
   @@unique([source, eventId])
   @@index([clinicId, receivedAt(sort: Desc)])
+}
+
+// Phase 8 (Phase 9 sends these). Billing-event reminders: "send bill via WhatsApp", payment receipt,
+// outstanding-balance nudge. Mirrors AppointmentReminder; `type` distinguishes the billing event.
+model BillReminder {
+  id           String         @id @default(cuid())
+  clinicId     String
+  billId       String
+  patientId    String
+  type         String // 'BILL_FINALIZED' | 'PAYMENT_RECEIVED' | 'OUTSTANDING'
+  scheduledFor DateTime
+  channel      String // 'whatsapp' | 'sms' | 'in_app'
+  template     String
+  status       ReminderStatus @default(PENDING)
+  sentAt       DateTime?
+  errorReason  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, status, scheduledFor])
+  @@index([billId])
 }
 
 // ===========================================================================

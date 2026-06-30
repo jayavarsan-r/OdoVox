@@ -45,6 +45,13 @@ export type CheckoutInput = z.infer<typeof CheckoutInput>;
 
 /** POST /visits/:id/complete — receptionist finishes checkout (payment + handover + next visit). */
 export const CompleteVisitInput = z.object({
+  // Phase 8: the itemized flow records payments on a Bill, then completes the visit referencing it.
+  // The bill must be settled (balance 0) unless acceptBalance is set (payment-plan / "complete with
+  // balance"). billId is validated against the visit's patient.
+  billId: z.string().min(1).optional(),
+  acceptBalance: z.boolean().default(false),
+  // Legacy one-tap path: a single inline payment recorded as the visit completes. Kept so the
+  // current quick-cash checkout keeps working; the Bill + Payment routes are the first-class path.
   payment: z
     .object({
       method: PaymentMethod,

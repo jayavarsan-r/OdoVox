@@ -49,6 +49,9 @@ export const ClinicalExtraction = z.object({
   // confirm transaction advances that plan instead of creating a new one. Null = new plan.
   continuesPlanId: z.string().nullable().default(null),
   status: ExtractionProcedureStatus.nullable().default(null),
+  // Phase 8: procedure cost in paise if the doctor dictated one ("five thousand rupees for the RCT"
+  // → 500000). Null when not mentioned — never invented. Flows to Procedure.estimatedCostPaise.
+  estimatedCostPaise: z.number().int().nullable().default(null),
   prescriptions: z.array(ExtractedPrescription).default([]),
   followUp: ExtractedFollowUp.nullable().default(null),
   toothStatusUpdates: z.array(ExtractedToothStatusUpdate).default([]),

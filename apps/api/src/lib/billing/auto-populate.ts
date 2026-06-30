@@ -38,16 +38,16 @@ export async function buildItemsFromVisit(
       sourceType: 'procedure',
       sourceId: s.procedureId,
       quantity: 1,
-      // Phase 8 Part 4.2 wires voice → Procedure.estimatedCostPaise; until then 0 (receptionist edits).
-      unitPricePaise: 0,
+      // Voice-dictated cost (Procedure.estimatedCostPaise); 0 when none — receptionist edits.
+      unitPricePaise: s.procedure.estimatedCostPaise,
       discountPaise: 0,
     });
   }
 
-  // 2. Lab charges (linked to this visit, with a patient charge set). Phase 8 Part 6.2 adds
-  //    LabCase.billedInBillId to guard double-billing; until then nothing is filtered out.
+  // 2. Lab charges linked to this visit, with a patient charge set, not yet billed
+  //    (LabCase.billedInBillId guards double-billing).
   const labCases = await db.labCase.findMany({
-    where: { clinicId, visitId, patientChargePaise: { not: null } },
+    where: { clinicId, visitId, patientChargePaise: { not: null }, billedInBillId: null },
   });
   for (const lc of labCases) {
     items.push({
