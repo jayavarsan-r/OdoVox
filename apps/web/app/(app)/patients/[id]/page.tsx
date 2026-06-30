@@ -55,6 +55,8 @@ import {
   useCreateTemplate,
 } from '@/lib/queries';
 import { initials, statusStyle, rupees } from '@/lib/patient-ui';
+import { useLabCases } from '@/lib/lab-queries';
+import { labCaseTypeLabel, labStatusStyle } from '@/lib/lab-ui';
 import { usePatientAppointments } from '@/lib/schedule/api';
 import { appointmentSubtitle } from '@/lib/schedule/format';
 import { formatLocalTime } from '@/lib/schedule/tz';
@@ -401,6 +403,8 @@ function CasesTab({ patientId }: { patientId: string }) {
         })()
       )}
 
+      <PatientLabCases patientId={patientId} />
+
       <BottomSheet open={open} onClose={() => setOpen(false)} title="New treatment plan">
         <div className="space-y-3">
           <Input placeholder="Plan name (e.g. RCT + Crown)" value={name} onChange={(e) => setName(e.target.value)} />
@@ -419,6 +423,43 @@ function CasesTab({ patientId }: { patientId: string }) {
           <Button className="w-full" disabled={!name.trim()} loading={createPlan.isPending} onClick={save}>Create plan</Button>
         </div>
       </BottomSheet>
+    </div>
+  );
+}
+
+// ===== Lab cases (shown under treatment plans on the Cases tab) ==============
+function PatientLabCases({ patientId }: { patientId: string }) {
+  const router = useRouter();
+  const query = useLabCases({ patientId });
+  const cases = query.data?.pages.flatMap((p) => p.items) ?? [];
+  if (cases.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Lab cases · {cases.length}</p>
+      {cases.map((c) => {
+        const s = labStatusStyle(c.status);
+        return (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => router.push(`/lab/${c.id}`)}
+            className="flex w-full items-stretch overflow-hidden rounded-lg border border-border bg-surface text-left active:scale-[0.99]"
+          >
+            <span className={cn('w-1 shrink-0', s.bar)} />
+            <span className="flex flex-1 flex-col gap-0.5 p-3">
+              <span className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-semibold">{c.caseNumber}</span>
+                <span className={cn('rounded-pill px-2 py-0.5 text-xs font-medium', s.pill)}>{s.label}</span>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {labCaseTypeLabel(c.type)}
+                {c.teeth.length ? ` · Tooth ${c.teeth.join(', ')}` : ''}
+                {c.vendorName ? ` · ${c.vendorName}` : ''}
+              </span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

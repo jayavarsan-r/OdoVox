@@ -50,6 +50,40 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
       });
     }
 
+    // 3b. Lab cases overdue (sent/in-progress, expected return already passed).
+    const labOverdue = await prisma.labCase.findMany({
+      where: { status: { in: ['SENT', 'IN_PROGRESS'] }, expectedReturnAt: { lt: new Date(now) } },
+      include: { patient: true },
+      orderBy: { expectedReturnAt: 'asc' },
+      take: 5,
+    });
+    for (const c of labOverdue) {
+      items.push({
+        kind: 'LAB_OVERDUE',
+        title: `Lab overdue: ${c.patient.name} (${labCaseTypeLabel(c.type)})`,
+        patientId: c.patientId,
+        patientName: c.patient.name,
+        href: `/lab/${c.id}`,
+      });
+    }
+
+    // 3c. Low-stock inventory items (below reorder level). No patient context.
+    const lowStock = await prisma.inventoryItem.findMany({
+      where: { isArchived: false, reorderLevel: { gt: 0 } },
+      take: 50,
+    });
+    const belowReorder = lowStock
+      .filter((i) => i.currentStock < i.reorderLevel)
+      .sort((a, b) => b.reorderLevel - b.currentStock - (a.reorderLevel - a.currentStock))
+      .slice(0, 5);
+    for (const i of belowReorder) {
+      items.push({
+        kind: 'LOW_STOCK',
+        title: `Low stock: ${i.name} (${i.currentStock}/${i.reorderLevel})`,
+        href: `/inventory/${i.id}`,
+      });
+    }
+
     // 4. Missed appointments in the last 7 days.
     const missed = await prisma.appointment.findMany({
       where: { status: 'NO_SHOW', startsAt: { gte: new Date(now - 7 * DAY) } },
@@ -132,40 +166,63 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
     });
   });
 
-  // ---- Receptionist "Recent activity" — audit-derived consultation completions ----
+  // ---- Receptionist "Recent activity" — audit-derived consultation, lab & inventory events ----
+  const LAB_ACTIONS = ['LAB_CASE_SENT', 'LAB_CASE_RECEIVED', 'LAB_CASE_DELIVERED'];
+  const INV_ACTIONS = ['INVENTORY_PURCHASE'];
+
   fastify.get('/today/activity', anyRole, async (req) => {
     const rows = await prisma.auditLog.findMany({
       where: {
         clinicId: req.clinicId,
-        action: { in: ['CONSULTATION_CONFIRMED', 'CONSULTATION_CONFIRMED_WITH_WARNING'] },
+        action: {
+          in: ['CONSULTATION_CONFIRMED', 'CONSULTATION_CONFIRMED_WITH_WARNING', ...LAB_ACTIONS, ...INV_ACTIONS],
+        },
       },
       orderBy: { createdAt: 'desc' },
-      take: 10,
+      take: 15,
       include: { user: true },
     });
 
-    const consultIds = rows.map((r) => r.entityId).filter((id): id is string => !!id);
-    const consults = await prisma.consultation.findMany({
-      where: { id: { in: consultIds } },
-      include: { visit: { include: { patient: true } } },
-    });
-    const byId = new Map(consults.map((c) => [c.id, c]));
+    // Batch-load the entities the feed copy needs.
+    const consultIds = rows.filter((r) => r.action.startsWith('CONSULTATION')).map((r) => r.entityId).filter((id): id is string => !!id);
+    const labIds = rows.filter((r) => LAB_ACTIONS.includes(r.action)).map((r) => r.entityId).filter((id): id is string => !!id);
+    const itemIds = rows.filter((r) => INV_ACTIONS.includes(r.action)).map((r) => r.entityId).filter((id): id is string => !!id);
+
+    const [consults, labCases, invItems] = await Promise.all([
+      prisma.consultation.findMany({ where: { id: { in: consultIds } }, include: { visit: { include: { patient: true } } } }),
+      prisma.labCase.findMany({ where: { id: { in: labIds } }, include: { patient: true } }),
+      prisma.inventoryItem.findMany({ where: { id: { in: itemIds } } }),
+    ]);
+    const consultById = new Map(consults.map((c) => [c.id, c]));
+    const labById = new Map(labCases.map((c) => [c.id, c]));
+    const itemById = new Map(invItems.map((i) => [i.id, i]));
 
     const items = rows.map((r) => {
-      const c = r.entityId ? byId.get(r.entityId) : undefined;
-      const doctorName = r.user?.name ?? 'A doctor';
+      const actorName = r.user?.name ?? 'Someone';
+      const base = { id: r.id, at: r.createdAt, withWarning: r.action === 'CONSULTATION_CONFIRMED_WITH_WARNING' };
+
+      if (LAB_ACTIONS.includes(r.action)) {
+        const c = r.entityId ? labById.get(r.entityId) : undefined;
+        const who = c?.patient.name ?? 'a patient';
+        const verb =
+          r.action === 'LAB_CASE_SENT'
+            ? `${actorName} sent case ${c?.caseNumber ?? ''} (${c ? labCaseTypeLabel(c.type) : 'lab'}) for ${who}`
+            : r.action === 'LAB_CASE_RECEIVED'
+              ? `Lab case ${c?.caseNumber ?? ''} is ready (${who})`
+              : `${c?.caseNumber ?? 'Lab case'} delivered to ${who}`;
+        return { ...base, patientId: c?.patientId ?? null, text: verb };
+      }
+
+      if (INV_ACTIONS.includes(r.action)) {
+        const item = r.entityId ? itemById.get(r.entityId) : undefined;
+        const qty = (r.metadata as { quantity?: number })?.quantity ?? 0;
+        return { ...base, patientId: null, text: `${actorName} added ${qty} ${item?.unitOfMeasure ?? 'units'} of ${item?.name ?? 'an item'} to inventory` };
+      }
+
+      const c = r.entityId ? consultById.get(r.entityId) : undefined;
       const procedure = (r.metadata as { procedure?: string | null })?.procedure ?? 'a consultation';
       const patientName = c?.visit.patient.name ?? 'a patient';
-      return {
-        id: r.id,
-        doctorName,
-        procedure,
-        patientName,
-        patientId: c?.visit.patientId ?? null,
-        at: r.createdAt,
-        withWarning: r.action === 'CONSULTATION_CONFIRMED_WITH_WARNING',
-        text: `${doctorName} completed ${procedure} on ${patientName}`,
-      };
+      return { ...base, patientId: c?.visit.patientId ?? null, text: `${actorName} completed ${procedure} on ${patientName}` };
     });
     return ok({ items });
   });

@@ -162,17 +162,21 @@ export default function DoctorHomePage() {
           />
         ) : (
           <div className="space-y-2">
-            {needsYou.data!.items.map((item, i) => (
-              <button
-                key={i}
-                onClick={() => router.push(`/patients/${item.patientId}`)}
-                className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left shadow-elev-1"
-              >
-                <span className="size-2 shrink-0 rounded-pill bg-lime" />
-                <span className="flex-1 text-sm font-medium">{item.title}</span>
-                <ChevronRight className="size-4 text-text-subtle" />
-              </button>
-            ))}
+            {needsYou.data!.items.map((item, i) => {
+              const href = item.href ?? (item.patientId ? `/patients/${item.patientId}` : null);
+              const tone = item.kind === 'LOW_STOCK' || item.kind === 'LAB_OVERDUE' ? 'bg-danger' : 'bg-lime';
+              return (
+                <button
+                  key={i}
+                  onClick={() => href && router.push(href)}
+                  className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left shadow-elev-1"
+                >
+                  <span className={cn('size-2 shrink-0 rounded-pill', tone)} />
+                  <span className="flex-1 text-sm font-medium">{item.title}</span>
+                  <ChevronRight className="size-4 text-text-subtle" />
+                </button>
+              );
+            })}
           </div>
         )}
       </section>

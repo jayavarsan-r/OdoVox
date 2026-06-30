@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { QueueSnapshot } from '@odovox/types';
 import { api, refreshAccessToken } from '../api-client';
 import { useAuth } from '../auth';
@@ -16,13 +17,33 @@ import { realtime } from './socket';
 export function useRealtime(): { status: ReturnType<typeof useQueueStore.getState>['status'] } {
   const authed = useAuth((s) => !!s.accessToken && !!s.activeMembership);
   const membershipId = useAuth((s) => s.activeMembership?.id ?? null);
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (!authed) return;
     const membership = useAuth.getState().activeMembership;
     useQueueStore.getState().setMyDoctorId(membership?.role === 'DOCTOR' ? membership.userId : null);
 
-    const offEvent = realtime.onEvent((event) => useQueueStore.getState().applyEvent(event));
+    const offEvent = realtime.onEvent((event) => {
+      useQueueStore.getState().applyEvent(event);
+      // Phase 7: lab + inventory events refresh their lists/details + Doctor Home "Needs You".
+      switch (event.type) {
+        case 'lab.case.created':
+        case 'lab.case.updated':
+          qc.invalidateQueries({ queryKey: ['lab-cases'] });
+          qc.invalidateQueries({ queryKey: ['lab-case', event.payload.id] });
+          qc.invalidateQueries({ queryKey: ['needs-you'] });
+          break;
+        case 'inventory.item.updated':
+          qc.invalidateQueries({ queryKey: ['inventory-items'] });
+          qc.invalidateQueries({ queryKey: ['inventory-item', event.payload.id] });
+          break;
+        case 'inventory.low_stock_alert':
+          qc.invalidateQueries({ queryKey: ['inventory-items'] });
+          qc.invalidateQueries({ queryKey: ['needs-you'] });
+          break;
+      }
+    });
     const offStatus = realtime.onStatus((status) => useQueueStore.getState().setStatus(status));
     realtime.connect(
       () => useAuth.getState().accessToken,
@@ -48,7 +69,7 @@ export function useRealtime(): { status: ReturnType<typeof useQueueStore.getStat
       document.removeEventListener('visibilitychange', onVisible);
       realtime.disconnect();
     };
-  }, [authed, membershipId]);
+  }, [authed, membershipId, qc]);
 
   const status = useQueueStore((s) => s.status);
   return { status };
