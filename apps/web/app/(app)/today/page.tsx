@@ -18,6 +18,8 @@ import { useQueueStore } from '@/lib/queue/store';
 import { getByDoctor, getCheckout } from '@/lib/queue/selectors';
 import { useActivityFeed, useQueueSnapshot } from '@/lib/queue/mutations';
 import { useTodayStats } from '@/lib/queries';
+import { useDailyCollection } from '@/lib/billing/api';
+import { collectionStatTiles } from '@/lib/billing/format';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 
@@ -26,6 +28,7 @@ export default function TodayPage() {
   const toast = useToast();
   const { clinic } = useAuth();
   const stats = useTodayStats();
+  const collection = useDailyCollection();
   const snapshot = useQueueSnapshot('all');
   useActivityFeed(true);
   const state = useQueueStore((s) => s.state);
@@ -57,6 +60,16 @@ export default function TodayPage() {
       <OfflineBanner />
 
       <div className="flex flex-1 flex-col gap-6 px-5 pb-28 pt-4">
+        {/* Phase 8: today's money — collection, cash, online, pending checkouts. */}
+        {collection.isLoading || !collection.data ? (
+          <Skeleton className="h-20 w-full" />
+        ) : (
+          <div className="grid grid-cols-4 gap-2">
+            {collectionStatTiles(collection.data, checkout.length).map((t) => (
+              <StatTile key={t.label} size="sm" value={t.value} label={t.label} variant={t.variant} />
+            ))}
+          </div>
+        )}
         {stats.isLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : (
