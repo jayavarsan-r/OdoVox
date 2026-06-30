@@ -32,6 +32,7 @@ import { labRoutes } from './routes/lab.js';
 import { inventoryRoutes } from './routes/inventory.js';
 import { billRoutes } from './routes/bills.js';
 import { paymentRoutes } from './routes/payments.js';
+import { webhookRoutes } from './routes/webhooks.js';
 import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
@@ -94,6 +95,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(inventoryRoutes);
   await app.register(billRoutes);
   await app.register(paymentRoutes);
+  await app.register(webhookRoutes);
 
   return app;
 }

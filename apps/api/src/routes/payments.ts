@@ -5,6 +5,7 @@ import {
   CardManualPaymentInput,
   CashPaymentInput,
   ListPaymentsQuery,
+  RazorpayLinkInput,
   UpiManualPaymentInput,
 } from '@odovox/types';
 import { AppError, NotFoundError } from '../lib/errors.js';
@@ -14,6 +15,7 @@ import { buildPaymentNumber, generateUniqueNumber } from '../lib/billing/numbers
 import { broadcastBill, broadcastPayment } from '../lib/billing/service.js';
 import { recordManualPayment, type RecordPaymentInput } from '../lib/billing/payment-service.js';
 import { toPaymentResponse } from '../lib/billing/serialize.js';
+import { getPaymentGateway } from '../lib/payments/index.js';
 
 export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   const { prisma } = fastify;
@@ -78,6 +80,57 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
       billId: b.billId, amountPaise: b.amountPaise, idempotencyKey: b.idempotencyKey,
       receivedAt: b.receivedAt ?? null, method: 'BANK_TRANSFER', bankTxnRef: b.bankTxnRef,
     });
+  });
+
+  // ── Razorpay payment link (RECEPTIONIST + ADMIN) ──
+  // Creates a hosted payment link, saves a PENDING Payment, and returns the short URL. The patient
+  // pays remotely; the webhook (POST /webhooks/razorpay) flips the payment to SUCCEEDED.
+  fastify.post('/payments/razorpay/link', receptionistAdmin, async (req, reply) => {
+    const b = parse(RazorpayLinkInput, req.body);
+    const clinicId = req.clinicId!;
+    const prior = await prisma.payment.findFirst({ where: { clinicId, idempotencyKey: b.idempotencyKey } });
+    if (prior) return ok(await paymentDetail(clinicId, prior.id));
+
+    const bill = await prisma.bill.findFirst({ where: { id: b.billId, clinicId, deletedAt: null } });
+    if (!bill) throw new NotFoundError('Bill not found');
+    if (bill.status !== 'FINALIZED' && bill.status !== 'PARTIAL') {
+      throw new AppError('Bill must be finalized before sending a payment link', 422, 'BILL_NOT_PAYABLE');
+    }
+    if (b.amountPaise <= 0 || b.amountPaise > bill.balancePaise) {
+      throw new AppError('Link amount must be within the outstanding balance', 422, 'PAYMENT_EXCEEDS_BALANCE');
+    }
+    const patient = await prisma.patient.findFirstOrThrow({ where: { id: bill.patientId }, select: { name: true, phone: true } });
+    const clinic = await prisma.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: { name: true, joinCode: true } });
+
+    const paymentNumber = await generateUniqueNumber(
+      buildPaymentNumber,
+      async (c) => !!(await prisma.payment.findFirst({ where: { clinicId, paymentNumber: c }, select: { id: true } })),
+      clinic.joinCode,
+      'payment number',
+    );
+    const gateway = getPaymentGateway(req.log);
+    const link = await gateway.createPaymentLink({
+      amountPaise: b.amountPaise,
+      referenceId: paymentNumber,
+      description: `Bill ${bill.billNumber} · ${clinic.name}`,
+      customer: { name: patient.name, contact: patient.phone },
+      notify: b.notify,
+      expiresInHours: b.expiresInHours,
+      notes: { billId: bill.id, clinicId },
+    });
+    const payment = await prisma.payment.create({
+      data: {
+        clinicId, billId: bill.id, patientId: bill.patientId, paymentNumber,
+        amountPaise: b.amountPaise, method: 'RAZORPAY', status: 'PENDING',
+        razorpayLinkId: link.linkId, razorpayOrderId: link.orderId,
+        idempotencyKey: b.idempotencyKey, receivedById: req.user!.id,
+      },
+    });
+    await prisma.$transaction(async (tx) => broadcastPayment(tx, clinicId, payment.id, 'billing.payment.pending'));
+    await fastify.audit('PAYMENT_LINK_CREATED', 'Payment', payment.id, { billId: bill.id, linkId: link.linkId });
+    reply.status(201);
+    const detail = await paymentDetail(clinicId, payment.id);
+    return ok({ ...detail, razorpayShortUrl: link.shortUrl, shortUrl: link.shortUrl, paymentId: payment.id });
   });
 
   // ── Adjustment (ADMIN only; non-money correction, may be negative) ──

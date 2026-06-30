@@ -14,6 +14,8 @@ declare module 'fastify' {
     user?: { id: string; phone: string };
     clinicId?: string;
     role?: 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
+    /** Raw request body string — populated only on the webhook routes for HMAC signature checks. */
+    rawBody?: string;
   }
 
   interface FastifyInstance {
