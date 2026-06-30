@@ -123,7 +123,7 @@ export default function DoctorHomePage() {
       <div className="grid grid-cols-2 gap-3">
         <QuickTile label="New patient" subtitle="Add a new patient" icon={<UserPlus />} accent="bg-peach-soft" iconColor="text-tool-patient" onClick={() => router.push('/patients/new')} />
         <QuickTile label="Appointment" subtitle="View & manage" icon={<Calendar />} accent="bg-sky-soft" iconColor="text-info" onClick={soon('Phase 6')} />
-        <QuickTile label="Inventory" subtitle="Stock & supplies" icon={<Boxes />} accent="bg-sage-tint" iconColor="text-tool-inventory" onClick={soon('Phase 7')} />
+        <QuickTile label="Inventory" subtitle="Stock & supplies" icon={<Boxes />} accent="bg-sage-tint" iconColor="text-tool-inventory" onClick={() => router.push('/inventory')} />
         <QuickTile label="Lab tracker" subtitle="Track lab cases" icon={<FlaskConical />} accent="bg-lavender-soft" iconColor="text-tool-lab" onClick={() => router.push('/lab')} />
         <QuickTile label="Day off" subtitle="Manage leaves" icon={<CalendarOff />} accent="bg-lime-soft" iconColor="text-tool-dayoff" onClick={soon('Phase 6')} />
       </div>
