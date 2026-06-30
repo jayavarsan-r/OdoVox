@@ -29,6 +29,7 @@ import { queueRoutes } from './routes/queue.js';
 import { prescriptionTemplateRoutes } from './routes/prescription-templates.js';
 import { scheduleRoutes } from './routes/schedule.js';
 import { labRoutes } from './routes/lab.js';
+import { inventoryRoutes } from './routes/inventory.js';
 import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
@@ -88,6 +89,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(prescriptionTemplateRoutes);
   await app.register(scheduleRoutes);
   await app.register(labRoutes);
+  await app.register(inventoryRoutes);
 
   return app;
 }

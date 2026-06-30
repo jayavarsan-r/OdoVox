@@ -22,3 +22,30 @@ export function requireRole(...roles: Role[]) {
     }
   };
 }
+
+/**
+ * preHandler: require the caller to be a clinic admin. "Admin" in Odovox is the `isAdmin` flag on a
+ * ClinicMember (typically the founding DOCTOR), not a distinct MemberRole — so we read the member
+ * row for the request's clinic. Must run after `fastify.authenticate`.
+ */
+export function requireAdmin() {
+  return async function adminGuard(req: FastifyRequest): Promise<void> {
+    const userId = req.user?.id;
+    const clinicId = req.clinicId;
+    const member =
+      userId && clinicId
+        ? await req.server.prisma.clinicMember.findFirst({
+            where: { userId, clinicId, deletedAt: null },
+            select: { isAdmin: true },
+          })
+        : null;
+    if (!member?.isAdmin) {
+      await req.server.audit('ACCESS_DENIED', 'Route', null, {
+        route: req.url,
+        method: req.method,
+        required: 'isAdmin',
+      });
+      throw new ForbiddenError('This action requires a clinic admin');
+    }
+  };
+}
