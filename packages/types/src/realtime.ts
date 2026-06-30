@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AppointmentStatus, ConsultationStatus, QueueEventType, RoomStatus, VisitStatus } from './common.js';
 import { LabCaseSummary } from './lab.js';
 import { InventoryItemSummary } from './inventory.js';
+import { BillSummaryZ, PaymentSummaryZ, RefundSummaryZ } from './billing.js';
 
 /**
  * Realtime (Socket.IO) event contract — the single source of truth shared by the API broadcast
@@ -181,6 +182,15 @@ export const ServerEvent = z.discriminatedUnion('type', [
       reorderLevel: z.number().int(),
     }),
   }),
+  // Billing (Phase 8). Bill events carry the bill summary so the receptionist's /today stat tiles,
+  // checkout sheet and patient billing tab update live; payment/refund events drive the payments
+  // feed and collection totals.
+  z.object({ type: z.literal('billing.bill.created'), payload: BillSummaryZ }),
+  z.object({ type: z.literal('billing.bill.finalized'), payload: BillSummaryZ }),
+  z.object({ type: z.literal('billing.bill.paid'), payload: BillSummaryZ }),
+  z.object({ type: z.literal('billing.payment.succeeded'), payload: PaymentSummaryZ }),
+  z.object({ type: z.literal('billing.payment.pending'), payload: PaymentSummaryZ }),
+  z.object({ type: z.literal('billing.refund.created'), payload: RefundSummaryZ }),
 ]);
 export type ServerEvent = z.infer<typeof ServerEvent>;
 export type ServerEventType = ServerEvent['type'];
