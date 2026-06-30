@@ -83,6 +83,70 @@ export const ListBillsQuery = z.object({
 export type ListBillsQuery = z.infer<typeof ListBillsQuery>;
 
 // ---------------------------------------------------------------------------
+// Payment inputs (one endpoint per method; all carry an idempotency key)
+// ---------------------------------------------------------------------------
+
+const PaymentBase = {
+  billId: z.string().min(1),
+  amountPaise: PaiseAmount,
+  idempotencyKey: z.string().min(8).max(64),
+  receivedAt: z.coerce.date().optional(),
+};
+
+export const CashPaymentInput = z.object({ ...PaymentBase });
+export type CashPaymentInput = z.infer<typeof CashPaymentInput>;
+
+export const UpiManualPaymentInput = z.object({
+  ...PaymentBase,
+  upiId: z.string().max(120).optional(),
+  upiTxnRef: z.string().min(1).max(120),
+});
+export type UpiManualPaymentInput = z.infer<typeof UpiManualPaymentInput>;
+
+export const CardManualPaymentInput = z.object({
+  ...PaymentBase,
+  cardLast4: z.string().regex(/^\d{4}$/).optional(),
+  cardNetwork: z.string().max(40).optional(),
+});
+export type CardManualPaymentInput = z.infer<typeof CardManualPaymentInput>;
+
+export const BankTransferPaymentInput = z.object({
+  ...PaymentBase,
+  bankTxnRef: z.string().min(1).max(120),
+});
+export type BankTransferPaymentInput = z.infer<typeof BankTransferPaymentInput>;
+
+export const AdjustmentInput = z.object({
+  billId: z.string().min(1),
+  // Positive adjusts the balance down (credit); negative adjusts it up.
+  amountPaise: z.number().int().refine((n) => n !== 0, 'Adjustment cannot be zero'),
+  reason: z.string().min(1).max(300),
+  idempotencyKey: z.string().min(8).max(64),
+});
+export type AdjustmentInput = z.infer<typeof AdjustmentInput>;
+
+export const RazorpayLinkInput = z.object({
+  billId: z.string().min(1),
+  amountPaise: PaiseAmount,
+  notify: z.enum(['sms', 'whatsapp', 'both', 'none']).default('whatsapp'),
+  expiresInHours: z.number().int().min(1).max(720).optional(),
+  idempotencyKey: z.string().min(8).max(64),
+});
+export type RazorpayLinkInput = z.infer<typeof RazorpayLinkInput>;
+
+export const ListPaymentsQuery = z.object({
+  billId: z.string().min(1).optional(),
+  patientId: z.string().min(1).optional(),
+  method: PaymentMethod.optional(),
+  status: PaymentStatus.optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type ListPaymentsQuery = z.infer<typeof ListPaymentsQuery>;
+
+// ---------------------------------------------------------------------------
 // Payment + refund responses (created via the /payments + /refunds routes)
 // ---------------------------------------------------------------------------
 

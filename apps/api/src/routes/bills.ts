@@ -10,7 +10,7 @@ import {
 } from '@odovox/types';
 import { AppError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
-import { requireRole, requireAdmin } from '../lib/rbac.js';
+import { requireRole, requireAdmin, requireReceptionistOrAdmin } from '../lib/rbac.js';
 import { storage } from '../lib/storage.js';
 import { buildBillNumber, generateUniqueNumber } from '../lib/billing/numbers.js';
 import { buildItemsFromVisit } from '../lib/billing/auto-populate.js';
@@ -27,7 +27,7 @@ import {
 export async function billRoutes(fastify: FastifyInstance): Promise<void> {
   const { prisma } = fastify;
   const anyRole = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')] };
-  const receptionistAdmin = { preHandler: [fastify.authenticate, requireRole('RECEPTIONIST', 'ADMIN')] };
+  const receptionistAdmin = { preHandler: [fastify.authenticate, requireReceptionistOrAdmin()] };
   const adminOnly = { preHandler: [fastify.authenticate, requireAdmin()] };
 
   // ── Helpers ─────────────────────────────────────────────────────────────────

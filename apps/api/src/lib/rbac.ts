@@ -28,18 +28,20 @@ export function requireRole(...roles: Role[]) {
  * ClinicMember (typically the founding DOCTOR), not a distinct MemberRole — so we read the member
  * row for the request's clinic. Must run after `fastify.authenticate`.
  */
+async function isClinicAdmin(req: FastifyRequest): Promise<boolean> {
+  const userId = req.user?.id;
+  const clinicId = req.clinicId;
+  if (!userId || !clinicId) return false;
+  const member = await req.server.prisma.clinicMember.findFirst({
+    where: { userId, clinicId, deletedAt: null },
+    select: { isAdmin: true },
+  });
+  return !!member?.isAdmin;
+}
+
 export function requireAdmin() {
   return async function adminGuard(req: FastifyRequest): Promise<void> {
-    const userId = req.user?.id;
-    const clinicId = req.clinicId;
-    const member =
-      userId && clinicId
-        ? await req.server.prisma.clinicMember.findFirst({
-            where: { userId, clinicId, deletedAt: null },
-            select: { isAdmin: true },
-          })
-        : null;
-    if (!member?.isAdmin) {
+    if (!(await isClinicAdmin(req))) {
       await req.server.audit('ACCESS_DENIED', 'Route', null, {
         route: req.url,
         method: req.method,
@@ -47,5 +49,23 @@ export function requireAdmin() {
       });
       throw new ForbiddenError('This action requires a clinic admin');
     }
+  };
+}
+
+/**
+ * preHandler: allow a RECEPTIONIST or a clinic admin (the `isAdmin` flag — typically the founding
+ * DOCTOR). Used by money actions a plain doctor must NOT do (record payment, cancel bill, reports),
+ * where "admin" means the isAdmin flag rather than a distinct MemberRole. See the Phase 8 RBAC matrix.
+ */
+export function requireReceptionistOrAdmin() {
+  return async function guard(req: FastifyRequest): Promise<void> {
+    if (req.role === 'RECEPTIONIST' || (await isClinicAdmin(req))) return;
+    await req.server.audit('ACCESS_DENIED', 'Route', null, {
+      route: req.url,
+      method: req.method,
+      role: req.role ?? null,
+      required: 'RECEPTIONIST or isAdmin',
+    });
+    throw new ForbiddenError('This action requires a receptionist or clinic admin');
   };
 }

@@ -2,7 +2,7 @@ import type { ServerEvent } from '@odovox/types';
 import type { ExtendedPrismaClient } from '../../plugins/prisma.js';
 import { broadcastToClinic } from '../realtime/broadcast.js';
 import { computeBillTotals } from './totals.js';
-import { BILL_SUMMARY_INCLUDE, toBillSummary } from './serialize.js';
+import { BILL_SUMMARY_INCLUDE, toBillSummary, toPaymentSummary, toRefundSummary } from './serialize.js';
 
 /**
  * The interactive-transaction client type of the extended Prisma client (with the scope/audit
@@ -54,4 +54,23 @@ export async function broadcastBill(
   const row = await db.bill.findFirstOrThrow({ where: { id: billId, clinicId }, include: BILL_SUMMARY_INCLUDE });
   const event = { type, payload: toBillSummary(row) } as Extract<ServerEvent, { type: BillEventType }>;
   broadcastToClinic(clinicId, event);
+}
+
+type PaymentEventType = 'billing.payment.succeeded' | 'billing.payment.pending';
+
+/** Broadcast a billing.payment.* event for a payment id. */
+export async function broadcastPayment(
+  db: BillingTx,
+  clinicId: string,
+  paymentId: string,
+  type: PaymentEventType,
+): Promise<void> {
+  const row = await db.payment.findFirstOrThrow({ where: { id: paymentId, clinicId } });
+  broadcastToClinic(clinicId, { type, payload: toPaymentSummary(row) });
+}
+
+/** Broadcast a billing.refund.created event for a refund id. */
+export async function broadcastRefund(db: BillingTx, clinicId: string, refundId: string): Promise<void> {
+  const row = await db.refund.findFirstOrThrow({ where: { id: refundId, clinicId } });
+  broadcastToClinic(clinicId, { type: 'billing.refund.created', payload: toRefundSummary(row) });
 }
