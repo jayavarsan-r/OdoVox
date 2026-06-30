@@ -43,6 +43,16 @@ export async function finalizedBill(app: FastifyInstance, totalPaise = 1000000) 
   return { doctor, recp, patientId, billId, totalPaise };
 }
 
+/** Create a finalized bill and pay it (cash) for `amountPaise`. Returns the cash paymentId. */
+export async function paidBill(app: FastifyInstance, totalPaise = 350000, payPaise = totalPaise, key = 'paid-bill-key-1') {
+  const ctx = await finalizedBill(app, totalPaise);
+  const res = await app.inject({
+    method: 'POST', url: '/payments/cash', headers: authHeader(ctx.recp.accessToken),
+    payload: { billId: ctx.billId, amountPaise: payPaise, idempotencyKey: key },
+  });
+  return { ...ctx, payRes: res, paymentId: res.json().data.id as string };
+}
+
 /** Create a Razorpay payment link for `amountPaise` against a fresh finalized bill. */
 export async function razorpayLink(app: FastifyInstance, totalPaise = 350000, amountPaise = totalPaise, key = 'rzp-link-key-1') {
   const ctx = await finalizedBill(app, totalPaise);

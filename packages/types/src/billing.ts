@@ -134,6 +134,25 @@ export const RazorpayLinkInput = z.object({
 });
 export type RazorpayLinkInput = z.infer<typeof RazorpayLinkInput>;
 
+export const CreateRefundInput = z.object({
+  paymentId: z.string().min(1),
+  amountPaise: PaiseAmount,
+  reason: z.string().min(1).max(300),
+  // Defaults to the original payment's method when omitted.
+  method: PaymentMethod.optional(),
+});
+export type CreateRefundInput = z.infer<typeof CreateRefundInput>;
+
+export const ListRefundsQuery = z.object({
+  billId: z.string().min(1).optional(),
+  paymentId: z.string().min(1).optional(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+export type ListRefundsQuery = z.infer<typeof ListRefundsQuery>;
+
 export const ListPaymentsQuery = z.object({
   billId: z.string().min(1).optional(),
   patientId: z.string().min(1).optional(),
@@ -253,6 +272,53 @@ export const PaymentSummaryZ = z.object({
   createdAt: z.coerce.date(),
 });
 export type PaymentSummary = z.infer<typeof PaymentSummaryZ>;
+
+// ---------------------------------------------------------------------------
+// Reports
+// ---------------------------------------------------------------------------
+
+export const DailyCollectionResponse = z.object({
+  date: z.string(),
+  totalCollectedPaise: PaiseAmount,
+  byMethod: z.record(PaymentMethod, PaiseAmount),
+  byDoctor: z.array(z.object({ doctorId: z.string(), name: z.string(), totalPaise: PaiseAmount })),
+  transactionCount: z.number().int(),
+  refundsCount: z.number().int(),
+  totalRefundedPaise: PaiseAmount,
+});
+export type DailyCollectionResponse = z.infer<typeof DailyCollectionResponse>;
+
+export const OutstandingPatient = z.object({
+  patientId: z.string(),
+  name: z.string(),
+  balancePaise: PaiseAmount,
+  oldestBillDate: z.coerce.date(),
+  billCount: z.number().int(),
+});
+export type OutstandingPatient = z.infer<typeof OutstandingPatient>;
+
+export const OutstandingReportResponse = z.object({
+  asOf: z.string(),
+  totalOutstandingPaise: PaiseAmount,
+  patients: z.array(OutstandingPatient),
+});
+export type OutstandingReportResponse = z.infer<typeof OutstandingReportResponse>;
+
+export const DailyCollectionQuery = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() });
+export type DailyCollectionQuery = z.infer<typeof DailyCollectionQuery>;
+
+export const OutstandingQuery = z.object({
+  asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  doctorId: z.string().min(1).optional(),
+});
+export type OutstandingQuery = z.infer<typeof OutstandingQuery>;
+
+export const PatientStatementQuery = z.object({
+  patientId: z.string().min(1),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+});
+export type PatientStatementQuery = z.infer<typeof PatientStatementQuery>;
 
 export const RefundSummaryZ = z.object({
   id: z.string(),
