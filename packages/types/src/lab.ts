@@ -172,6 +172,21 @@ export const LabCaseSummary = z.object({
 });
 export type LabCaseSummary = z.infer<typeof LabCaseSummary>;
 
+export const LabPhotoPresignInput = z.object({
+  mimeType: z.string().min(1).max(100),
+});
+export type LabPhotoPresignInput = z.infer<typeof LabPhotoPresignInput>;
+
+export const AttachLabPhotoInput = z.object({
+  storageKey: z.string().min(1),
+  mimeType: z.string().min(1).max(100),
+  sizeBytes: z.number().int().nonnegative(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  thumbnailKey: z.string().optional(),
+});
+export type AttachLabPhotoInput = z.infer<typeof AttachLabPhotoInput>;
+
 export const LabCaseResponse = LabCaseSummary.extend({
   description: z.string().nullable(),
   impressionTakenAt: z.coerce.date().nullable(),
