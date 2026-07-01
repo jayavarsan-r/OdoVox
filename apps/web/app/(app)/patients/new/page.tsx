@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X, RefreshCw, Mic } from 'lucide-react';
+import { X, RefreshCw, Mic, Square } from 'lucide-react';
 import { CreatePatientInput } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { HeroCard } from '@/components/ds';
@@ -73,7 +73,6 @@ export default function NewPatientPage() {
     if (i.medicalFlags.length) setValue('medicalFlags', i.medicalFlags, opts);
     toast.info('Filled from your voice — review and edit before saving.');
   });
-  const intakeBusy = intake.state.kind === 'recording' || intake.state.kind === 'processing';
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -108,10 +107,25 @@ export default function NewPatientPage() {
           <HeroCard
             variant="dark"
             icon={<Mic />}
-            title={intakeBusy ? 'Listening…' : 'Speak patient details'}
-            subtitle={intakeBusy ? 'Auto-stops when you pause' : 'Name · phone · age · complaint'}
-            onClick={() => !intakeBusy && void intake.start()}
+            title={intake.state.kind === 'recording' ? 'Listening…' : intake.state.kind === 'processing' ? 'Processing…' : 'Speak patient details'}
+            subtitle={
+              intake.state.kind === 'recording'
+                ? 'Tap Stop when you’re done'
+                : intake.state.kind === 'processing'
+                  ? 'Filling the form…'
+                  : 'Name · phone · age · complaint'
+            }
+            onClick={() => intake.state.kind === 'idle' && void intake.start()}
           />
+          {intake.state.kind === 'recording' && (
+            <button
+              type="button"
+              onClick={() => intake.stop()}
+              className="flex w-full items-center justify-center gap-2 rounded-pill bg-ink py-3 text-sm font-semibold text-paper"
+            >
+              <Square className="size-4 fill-current" /> Stop recording
+            </button>
+          )}
 
           {/* Identity */}
           <div className="space-y-4 rounded-2xl bg-paper-warm p-5 shadow-elev-1">

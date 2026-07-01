@@ -29,7 +29,7 @@ export function useDictation<T>(
   endpoint: string,
   onResult: (data: T) => void,
   extraBody: Record<string, unknown> = {},
-): { state: SingleShotState; start: () => Promise<void>; cancel: () => void } {
+): { state: SingleShotState; start: () => Promise<void>; stop: () => void; cancel: () => void } {
   const [state, dispatch] = useReducer(singleShotReducer, { kind: 'idle' });
   const refs = useRef<DictationRefs>({
     mr: null,
@@ -122,11 +122,22 @@ export function useDictation<T>(
     }
   }, [cleanup, finish]);
 
+  // Manual stop: end recording NOW and process it (same path as the silence auto-stop). The
+  // MediaRecorder's onstop handler dispatches STOP → cleanup → finish(). We cancel the silence RAF
+  // first so the loop can't also fire mr.stop().
+  const stop = useCallback(() => {
+    if (refs.current.raf) {
+      cancelAnimationFrame(refs.current.raf);
+      refs.current.raf = null;
+    }
+    if (refs.current.mr?.state === 'recording') refs.current.mr.stop();
+  }, []);
+
   const cancel = useCallback(() => {
     if (refs.current.mr?.state === 'recording') refs.current.mr.stop();
     cleanup();
     dispatch({ type: 'RESET' });
   }, [cleanup]);
 
-  return { state, start, cancel };
+  return { state, start, stop, cancel };
 }
