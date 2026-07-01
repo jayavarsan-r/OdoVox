@@ -36,6 +36,7 @@ import { webhookRoutes } from './routes/webhooks.js';
 import { refundRoutes } from './routes/refunds.js';
 import { reportRoutes } from './routes/reports.js';
 import { whatsappConsentRoutes } from './routes/whatsapp-consent.js';
+import { whatsappRoutes } from './routes/whatsapp.js';
 import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
@@ -102,6 +103,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(refundRoutes);
   await app.register(reportRoutes);
   await app.register(whatsappConsentRoutes);
+  await app.register(whatsappRoutes);
 
   return app;
 }

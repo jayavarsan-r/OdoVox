@@ -3,6 +3,7 @@ import { AppointmentStatus, ConsultationStatus, QueueEventType, RoomStatus, Visi
 import { LabCaseSummary } from './lab.js';
 import { InventoryItemSummary } from './inventory.js';
 import { BillSummaryZ, PaymentSummaryZ, RefundSummaryZ } from './billing.js';
+import { ConversationListItem, MessageResponse } from './whatsapp.js';
 
 /**
  * Realtime (Socket.IO) event contract — the single source of truth shared by the API broadcast
@@ -191,6 +192,22 @@ export const ServerEvent = z.discriminatedUnion('type', [
   z.object({ type: z.literal('billing.payment.succeeded'), payload: PaymentSummaryZ }),
   z.object({ type: z.literal('billing.payment.pending'), payload: PaymentSummaryZ }),
   z.object({ type: z.literal('billing.refund.created'), payload: RefundSummaryZ }),
+
+  // WhatsApp (Phase 9). Outbound sends + inbound replies + delivery-status changes drive the
+  // receptionist inbox and conversation detail live across every open clinic screen.
+  z.object({
+    type: z.literal('whatsapp.message.sent'),
+    payload: z.object({ patientId: z.string().nullable(), message: MessageResponse }),
+  }),
+  z.object({
+    type: z.literal('whatsapp.message.received'),
+    payload: z.object({ conversationId: z.string(), patientId: z.string().nullable(), message: MessageResponse }),
+  }),
+  z.object({
+    type: z.literal('whatsapp.message.status_updated'),
+    payload: z.object({ messageId: z.string(), status: z.string(), conversationId: z.string().nullable() }),
+  }),
+  z.object({ type: z.literal('whatsapp.conversation.updated'), payload: ConversationListItem }),
 ]);
 export type ServerEvent = z.infer<typeof ServerEvent>;
 export type ServerEventType = ServerEvent['type'];

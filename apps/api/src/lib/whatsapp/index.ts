@@ -22,6 +22,24 @@ export {
   parseAiSensyStatus,
 } from './mock-provider.js';
 export { AiSensyProvider, buildAiSensyPayload, type WhatsAppLogger } from './aisensy-provider.js';
+export { checkConsent, CONSENT_TTL_MONTHS, type ConsentCheck, type ConsentBlockReason } from './consent.js';
+export {
+  sendWhatsAppMessage,
+  runWhatsAppSendJob,
+  monthSpendPaise,
+  type SendDeps,
+  type SendWorkerDeps,
+  type SendWhatsAppInput,
+  type SendOutcome,
+  type SendBlockReason,
+} from './send.js';
+export {
+  renderTemplateBody,
+  normalizeIndianPhone,
+  serializeMessage,
+  startOfMonth,
+  type MessageAttachmentShape,
+} from './render.js';
 
 let cached: IWhatsAppProvider | null = null;
 

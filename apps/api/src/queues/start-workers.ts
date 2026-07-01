@@ -10,9 +10,14 @@ import {
   EXTRACTION_QUEUE,
   STT_CONCURRENCY,
   STT_QUEUE,
+  WHATSAPP_SEND_CONCURRENCY,
+  WHATSAPP_SEND_QUEUE,
   createQueueConnection,
   enqueueExtractionJob,
+  type WhatsAppSendJobData,
 } from './index.js';
+import { getWhatsAppProvider } from '../lib/whatsapp/index.js';
+import { runWhatsAppSendJob } from '../lib/whatsapp/send.js';
 import { publishConsultationEvent } from './events.js';
 import { broadcastToClinic } from '../lib/realtime/broadcast.js';
 import { clearRecording } from '../lib/realtime/recording.js';
@@ -81,9 +86,21 @@ export function startWorkers(app: FastifyInstance): { stop: () => Promise<void> 
     { connection: asConn(connection), concurrency: EXTRACTION_CONCURRENCY },
   );
 
+  const whatsappSendWorker = new Worker<WhatsAppSendJobData>(
+    WHATSAPP_SEND_QUEUE,
+    (job) =>
+      runAsSystem(() =>
+        runWhatsAppSendJob({ prisma: app.prisma, provider: getWhatsAppProvider(app.log), logger: app.log }, job.data.messageId),
+      ),
+    { connection: asConn(connection), concurrency: WHATSAPP_SEND_CONCURRENCY },
+  );
+
   sttWorker.on('failed', (job, err) => app.log.error({ jobId: job?.id, err }, 'STT worker job failed'));
   extractionWorker.on('failed', (job, err) =>
     app.log.error({ jobId: job?.id, err }, 'Extraction worker job failed'),
+  );
+  whatsappSendWorker.on('failed', (job, err) =>
+    app.log.error({ jobId: job?.id, err }, 'WhatsApp send worker job failed'),
   );
 
   app.log.info(
@@ -95,6 +112,7 @@ export function startWorkers(app: FastifyInstance): { stop: () => Promise<void> 
     stop: async () => {
       await sttWorker.close();
       await extractionWorker.close();
+      await whatsappSendWorker.close();
       await connection.quit();
     },
   };
