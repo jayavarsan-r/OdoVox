@@ -64,6 +64,7 @@ import { cn } from '@/lib/utils';
 import { useBills } from '@/lib/billing/api';
 import { billStatusStyle } from '@/lib/billing/format';
 import { BillSheet } from '@/components/billing/bill-sheet';
+import { PatientWhatsAppCard } from '@/components/whatsapp/patient-whatsapp-card';
 
 const CLINIC_TZ = 'Asia/Kolkata';
 const DAY3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -211,7 +212,7 @@ export default function PatientDetailPage() {
       </div>
 
       <div className="flex-1 px-5 py-4">
-        {tab === 'overview' && <OverviewTab patientId={id} records={records} onOpenTeeth={() => setTab('teeth')} />}
+        {tab === 'overview' && <OverviewTab patientId={id} patientName={patient.data?.name ?? ''} records={records} onOpenTeeth={() => setTab('teeth')} />}
         {tab === 'cases' && <CasesTab patientId={id} />}
         {tab === 'teeth' && <TeethTab patientId={id} records={records} />}
         {tab === 'media' && <MediaTab patientId={id} />}
@@ -232,7 +233,7 @@ export default function PatientDetailPage() {
 }
 
 // ===== Overview ==============================================================
-function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void }) {
+function OverviewTab({ patientId, patientName, records, onOpenTeeth }: { patientId: string; patientName: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void }) {
   const toast = useToast();
   const router = useRouter();
   const visits = useVisits(patientId);
@@ -288,6 +289,8 @@ function OverviewTab({ patientId, records, onOpenTeeth }: { patientId: string; r
       </Section>
 
       <UpcomingAppointments patientId={patientId} />
+
+      <PatientWhatsAppCard patientId={patientId} patientName={patientName} />
 
       <Section title="Affected teeth" action={<button onClick={onOpenTeeth} className="text-sm text-muted-foreground">Open →</button>}>
         <div className="rounded-lg border border-border bg-surface p-3">

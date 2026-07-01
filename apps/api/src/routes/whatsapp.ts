@@ -15,6 +15,29 @@ export async function whatsappRoutes(fastify: FastifyInstance): Promise<void> {
   const anyRole = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')] };
   const adminOnly = { preHandler: [fastify.authenticate, requireAdmin()] };
 
+  // GET /whatsapp/templates — enabled + approved templates for the compose picker (any staff).
+  fastify.get('/whatsapp/templates', anyRole, async (req) => {
+    const clinicId = req.clinicId!;
+    const templates = await prisma.whatsAppTemplate.findMany({
+      where: { clinicId, isEnabled: true, approvalStatus: 'APPROVED' },
+      orderBy: { templateKey: 'asc' },
+    });
+    return ok(
+      templates.map((t) => ({
+        id: t.id,
+        templateKey: t.templateKey,
+        templateName: t.templateName,
+        language: t.language,
+        category: t.category,
+        approvalStatus: t.approvalStatus,
+        body: t.body,
+        variables: t.variables,
+        isEnabled: t.isEnabled,
+        estimatedCostPaise: t.estimatedCostPaise,
+      })),
+    );
+  });
+
   // POST /whatsapp/send — receptionist free-form template send.
   fastify.post('/whatsapp/send', anyRole, async (req) => {
     const body = parse(SendMessageInput, req.body);

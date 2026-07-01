@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { FileText, ChevronRight, CalendarClock, CalendarOff } from 'lucide-react';
+import { FileText, ChevronRight, CalendarClock, CalendarOff, MessageCircle } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { EditorialHeading, HeroCard } from '@/components/ds';
 import { IlluBuildingSoon } from '@/components/illustrations';
@@ -41,6 +41,16 @@ export default function ClinicPage() {
           icon={<CalendarOff />}
           trailing={<ChevronRight />}
           onClick={() => router.push('/clinic/day-off')}
+        />
+
+        <HeroCard
+          variant="light"
+          size="compact"
+          title="WhatsApp"
+          subtitle="Templates, budget & delivery costs"
+          icon={<MessageCircle />}
+          trailing={<ChevronRight />}
+          onClick={() => router.push('/clinic/whatsapp')}
         />
 
         <div className="rounded-xl border border-dashed border-border p-6 text-center">

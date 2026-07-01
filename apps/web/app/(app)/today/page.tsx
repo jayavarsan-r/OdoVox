@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Calendar, IndianRupee, CircleDot } from 'lucide-react';
+import { UserPlus, Calendar, IndianRupee, CircleDot, MessageCircle, ChevronRight } from 'lucide-react';
 import type { VisitWithPatient } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
@@ -79,6 +79,22 @@ export default function TodayPage() {
             <StatTile variant="warning" value={checkout.length} label="Ready to bill" />
           </div>
         )}
+
+        {/* Phase 9: WhatsApp inbox entry point (Messages isn't a bottom tab — the 5-tab bar is locked). */}
+        <button
+          type="button"
+          onClick={() => router.push('/messages')}
+          className="flex items-center gap-3 rounded-2xl bg-paper-warm px-4 py-3 text-left shadow-elev-1"
+        >
+          <span className="flex size-9 items-center justify-center rounded-md bg-sage-soft text-sage-deep">
+            <MessageCircle className="size-[18px]" />
+          </span>
+          <span className="flex-1">
+            <span className="block text-sm font-semibold">Messages</span>
+            <span className="block text-xs text-text-subtle">Patient WhatsApp conversations</span>
+          </span>
+          <ChevronRight className="size-4 text-text-subtle" />
+        </button>
 
         <section>
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-text-subtle">Active queue · live</h2>

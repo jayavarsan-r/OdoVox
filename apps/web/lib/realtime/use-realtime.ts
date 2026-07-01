@@ -42,6 +42,18 @@ export function useRealtime(): { status: ReturnType<typeof useQueueStore.getStat
           qc.invalidateQueries({ queryKey: ['inventory-items'] });
           qc.invalidateQueries({ queryKey: ['needs-you'] });
           break;
+        // Phase 9: WhatsApp inbox + conversation detail refresh live across every clinic screen.
+        case 'whatsapp.message.received':
+        case 'whatsapp.conversation.updated':
+          qc.invalidateQueries({ queryKey: ['wa-conversations'] });
+          qc.invalidateQueries({ queryKey: ['wa-conversation'] });
+          break;
+        case 'whatsapp.message.sent':
+        case 'whatsapp.message.status_updated':
+          qc.invalidateQueries({ queryKey: ['wa-conversation'] });
+          qc.invalidateQueries({ queryKey: ['wa-conversations'] });
+          qc.invalidateQueries({ queryKey: ['wa-patient-messages'] });
+          break;
       }
     });
     const offStatus = realtime.onStatus((status) => useQueueStore.getState().setStatus(status));
