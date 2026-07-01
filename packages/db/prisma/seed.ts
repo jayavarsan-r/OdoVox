@@ -64,6 +64,19 @@ async function main() {
       weeklyOffDays: [0],
       chairsCount: 2,
       timezone: 'Asia/Kolkata',
+      whatsappAccountStatus: 'connected',
+      whatsappAccountPhoneNumber: '+918000000000',
+      whatsappBudgetPaise: 50000, // ₹500 monthly budget
+    },
+  });
+
+  // Keep the WhatsApp config in sync on re-seed (upsert `update` above is intentionally empty).
+  await prisma.clinic.update({
+    where: { id: clinic.id },
+    data: {
+      whatsappAccountStatus: 'connected',
+      whatsappAccountPhoneNumber: '+918000000000',
+      whatsappBudgetPaise: 50000,
     },
   });
 
@@ -767,6 +780,166 @@ async function main() {
       },
     });
   }
+
+  // --- Phase 9: WhatsApp templates, consent, sample messages ---------------
+  const now = Date.now();
+  const WHATSAPP_TEMPLATES = [
+    {
+      templateKey: 'appointment_reminder_24h',
+      templateName: 'appointment_reminder_24h',
+      category: 'UTILITY' as const,
+      body: 'Hi {{1}}, this is a reminder for your appointment at {{2}} tomorrow at {{3}}. Reply 1 to confirm, 2 to reschedule.',
+      variables: ['patient_name', 'clinic_name', 'appt_time'],
+    },
+    {
+      templateKey: 'appointment_reminder_1h',
+      templateName: 'appointment_reminder_1h',
+      category: 'UTILITY' as const,
+      body: 'Hi {{1}}, your appointment at {{2}} is in 1 hour. Please arrive 10 minutes early.',
+      variables: ['patient_name', 'clinic_name'],
+    },
+    {
+      templateKey: 'prescription_ready',
+      templateName: 'prescription_ready',
+      category: 'SERVICE' as const,
+      body: 'Hi {{1}}, your prescription from your visit on {{2}} is attached. {{3}} - Dr. {{4}}',
+      variables: ['patient_name', 'visit_date', 'note', 'doctor_name'],
+    },
+    {
+      templateKey: 'lab_case_ready',
+      templateName: 'lab_case_ready',
+      category: 'SERVICE' as const,
+      body: 'Hi {{1}}, your {{2}} is ready for fitting at {{3}}. Please call to schedule your appointment.',
+      variables: ['patient_name', 'case_type', 'clinic_name'],
+    },
+    {
+      templateKey: 'payment_receipt',
+      templateName: 'payment_receipt',
+      category: 'UTILITY' as const,
+      body: 'Thank you {{1}} for your payment of ₹{{2}}. Receipt #{{3}} is attached.',
+      variables: ['patient_name', 'amount', 'receipt_number'],
+    },
+    {
+      templateKey: 'outstanding_balance_reminder',
+      templateName: 'outstanding_balance_reminder',
+      category: 'UTILITY' as const,
+      body: 'Hi {{1}}, you have an outstanding balance of ₹{{2}} at {{3}}. Please contact us to settle.',
+      variables: ['patient_name', 'amount', 'clinic_name'],
+    },
+  ];
+
+  for (const t of WHATSAPP_TEMPLATES) {
+    await prisma.whatsAppTemplate.upsert({
+      where: { clinicId_templateKey: { clinicId: clinic.id, templateKey: t.templateKey } },
+      update: { approvalStatus: 'APPROVED', isEnabled: true },
+      create: {
+        clinicId: clinic.id,
+        templateKey: t.templateKey,
+        templateName: t.templateName,
+        category: t.category,
+        approvalStatus: 'APPROVED',
+        body: t.body,
+        variables: t.variables,
+        estimatedCostPaise: 35,
+      },
+    });
+  }
+
+  // Opt every demo patient in so smoke tests can send without a manual consent step.
+  const allPatients = await prisma.patient.findMany({ where: { clinicId: clinic.id } });
+  for (const p of allPatients) {
+    await prisma.patientWhatsAppConsent.upsert({
+      where: { clinicId_patientId: { clinicId: clinic.id, patientId: p.id } },
+      update: { status: 'OPTED_IN' },
+      create: {
+        clinicId: clinic.id,
+        patientId: p.id,
+        status: 'OPTED_IN',
+        optedInAt: new Date(now - 30 * DAY_MS),
+        optedInByUserId: receptionist.id,
+        optedInMethod: 'signup_form',
+      },
+    });
+  }
+
+  // 2 sample outbound messages (1 SENT, 1 DELIVERED) for the inbox/message-history preview.
+  const reminderTpl = await prisma.whatsAppTemplate.findFirstOrThrow({
+    where: { clinicId: clinic.id, templateKey: 'appointment_reminder_24h' },
+  });
+  await prisma.whatsAppMessage.upsert({
+    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-out-sent' } },
+    update: {},
+    create: {
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      direction: 'OUTBOUND',
+      templateId: reminderTpl.id,
+      templateVariables: { 1: akhilesh.name, 2: clinic.name, 3: '10:30 AM' },
+      body: `Hi ${akhilesh.name}, this is a reminder for your appointment at ${clinic.name} tomorrow at 10:30 AM. Reply 1 to confirm, 2 to reschedule.`,
+      providerMessageId: 'mock-seed-sent-1',
+      providerStatus: 'sent',
+      costPaise: 35,
+      idempotencyKey: 'seed:wa-out-sent',
+      triggerType: 'MANUAL',
+      status: 'SENT',
+      sentAt: new Date(now - 2 * 60 * 60 * 1000),
+      createdById: receptionist.id,
+    },
+  });
+  await prisma.whatsAppMessage.upsert({
+    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-out-delivered' } },
+    update: {},
+    create: {
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      direction: 'OUTBOUND',
+      templateId: reminderTpl.id,
+      templateVariables: { 1: akhilesh.name, 2: clinic.name, 3: '9:00 AM' },
+      body: `Hi ${akhilesh.name}, your appointment at ${clinic.name} is in 1 hour. Please arrive 10 minutes early.`,
+      providerMessageId: 'mock-seed-delivered-1',
+      providerStatus: 'delivered',
+      costPaise: 35,
+      idempotencyKey: 'seed:wa-out-delivered',
+      triggerType: 'MANUAL',
+      status: 'DELIVERED',
+      sentAt: new Date(now - 26 * 60 * 60 * 1000),
+      deliveredAt: new Date(now - 26 * 60 * 60 * 1000 + 5000),
+      createdById: receptionist.id,
+    },
+  });
+
+  // 1 sample inbound message → creates an OPEN conversation with an unread count for the inbox.
+  const inboundAt = new Date(now - 15 * 60 * 1000);
+  const convo = await prisma.patientConversation.upsert({
+    where: { clinicId_patientId: { clinicId: clinic.id, patientId: akhilesh.id } },
+    update: {},
+    create: {
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      status: 'OPEN',
+      category: 'RESCHEDULE_REQUEST',
+      lastInboundAt: inboundAt,
+      windowExpiresAt: new Date(inboundAt.getTime() + 24 * 60 * 60 * 1000),
+      lastMessageAt: inboundAt,
+      lastMessagePreview: "I'd like to reschedule. Tomorrow doesn't work for me.",
+      unreadCount: 1,
+    },
+  });
+  await prisma.whatsAppMessage.upsert({
+    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-in-1' } },
+    update: {},
+    create: {
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      direction: 'INBOUND',
+      body: "I'd like to reschedule. Tomorrow doesn't work for me.",
+      idempotencyKey: 'seed:wa-in-1',
+      inboundType: 'text',
+      status: 'RECEIVED',
+      conversationId: convo.id,
+      createdAt: inboundAt,
+    },
+  });
 
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);

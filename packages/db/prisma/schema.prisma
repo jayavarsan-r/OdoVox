@@ -232,6 +232,64 @@ enum MediaType {
 }
 
 // ===========================================================================
+// Phase 9 — WhatsApp + Notifications
+// ===========================================================================
+
+enum ConsentStatus {
+  NOT_ASKED // default — never offered consent
+  PENDING // consent request sent, awaiting response (e.g. via opt-in template)
+  OPTED_IN // active consent
+  OPTED_OUT // explicit refusal or revoked
+  EXPIRED // consent older than configured TTL (default 12 months)
+}
+
+enum TemplateCategory {
+  UTILITY // appointment reminders, receipts (cheapest tier)
+  MARKETING // promotional (rarely used by clinics)
+  AUTHENTICATION // OTP-like (not used for Odovox)
+  SERVICE // post-treatment care, lab updates
+}
+
+enum TemplateApprovalStatus {
+  PENDING // submitted to Meta, awaiting review
+  APPROVED // can be sent
+  REJECTED // Meta rejected; needs edits
+  PAUSED // clinic paused
+  DELETED
+}
+
+enum MessageDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum MessageStatus {
+  PENDING // queued, not yet sent
+  SENT // sent to provider
+  DELIVERED // delivered to patient
+  READ // patient opened
+  FAILED // delivery failed
+  RECEIVED // inbound message
+  BLOCKED_NO_CONSENT // attempted but blocked by consent check
+  BLOCKED_BUDGET // blocked by clinic budget cap
+}
+
+enum ConversationStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ConversationCategory {
+  RESCHEDULE_REQUEST
+  COMPLAINT
+  GENERAL_QUERY
+  PRESCRIPTION_QUESTION
+  PAYMENT_QUERY
+  OTHER
+}
+
+// ===========================================================================
 // Auth & Org
 // ===========================================================================
 
@@ -300,6 +358,11 @@ model Clinic {
   timezone           String    @default("Asia/Kolkata")
   // Grace window (minutes) after startsAt before the NO_SHOW cron marks a SCHEDULED appointment. (Phase 6)
   noShowGraceMinutes Int       @default(30)
+  // Phase 9 WhatsApp config.
+  whatsappAccountStatus          String? // 'connected' | 'disconnected' | 'pending'
+  whatsappAccountPhoneNumber     String? // clinic's verified WhatsApp business number
+  whatsappBudgetPaise            Int? // monthly budget cap (null = unlimited)
+  whatsappBudgetWarningThreshold Decimal @default(0.8) // alert at 80% of budget
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
@@ -329,6 +392,11 @@ model Clinic {
   paymentPlans          PaymentPlan[]
   webhookEvents         WebhookEvent[]
   billReminders         BillReminder[]
+  whatsappConsents      PatientWhatsAppConsent[]
+  whatsappTemplates     WhatsAppTemplate[]
+  whatsappMessages      WhatsAppMessage[]
+  patientConversations  PatientConversation[]
+  whatsappCostLogs      WhatsAppCostLog[]
 
   @@index([joinCode])
 }
@@ -468,6 +536,9 @@ model Patient {
   bills          Bill[]
   payments       Payment[]
   media          Media[]
+  whatsappConsent      PatientWhatsAppConsent?
+  whatsappMessages     WhatsAppMessage[]
+  whatsappConversation PatientConversation?
 
   @@unique([clinicId, patientCode])
   @@index([clinicId, name])
@@ -1372,4 +1443,181 @@ model ClinicSetting {
 
   @@unique([clinicId, key])
   @@index([clinicId])
+}
+
+// ===========================================================================
+// Phase 9 — WhatsApp models
+// ===========================================================================
+
+// Explicit, auditable per-patient WhatsApp consent (DPDP-compliant). No message is ever sent
+// unless status = OPTED_IN and not expired (see checkConsent). Every state change records who + how.
+model PatientWhatsAppConsent {
+  id        String @id @default(cuid())
+  clinicId  String
+  patientId String @unique
+
+  status ConsentStatus @default(NOT_ASKED)
+
+  optedInAt       DateTime?
+  optedInByUserId String? // who marked consent (receptionist, doctor)
+  optedInMethod   String? // 'verbal' | 'written' | 'signup_form' | 'patient_initiated'
+
+  optedOutAt     DateTime?
+  optedOutReason String?
+
+  lastReconfirmedAt DateTime? // for periodic re-consent (DPDP best practice)
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, patientId])
+  @@index([clinicId, status])
+}
+
+// A Meta-approved template the clinic can send. Curated set (no self-service). Tracks approval + config.
+model WhatsAppTemplate {
+  id       String @id @default(cuid())
+  clinicId String
+
+  templateKey  String // internal identifier: 'appointment_reminder_24h'
+  templateName String // Meta's template name in AiSensy
+  language     String @default("en") // 'en' | 'hi'
+
+  category       TemplateCategory
+  approvalStatus TemplateApprovalStatus @default(PENDING)
+
+  body      String // template body for preview/audit
+  variables String[] // ordered variable names: ['patient_name', 'appt_time']
+
+  isEnabled Boolean @default(true) // clinic-level enable/disable
+
+  estimatedCostPaise Int @default(35) // ~₹0.35 per conversation in India
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic   Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  messages WhatsAppMessage[]
+
+  @@unique([clinicId, templateKey])
+  @@index([clinicId, isEnabled])
+}
+
+// Every outbound + inbound message. The @@unique on idempotencyKey is what makes send retries safe.
+model WhatsAppMessage {
+  id        String @id @default(cuid())
+  clinicId  String
+  patientId String?
+
+  direction MessageDirection
+
+  // Outbound-specific
+  templateId        String?
+  templateVariables Json?
+  body              String
+  attachments       Json? // [{ type: 'pdf', url, name }]
+
+  // Provider correlation
+  providerMessageId String?
+  providerStatus    String? // 'queued' | 'sent' | 'delivered' | 'read' | 'failed'
+  costPaise         Int     @default(0)
+
+  idempotencyKey String?
+
+  // Trigger source
+  triggerType       String?
+  triggerEntityType String?
+  triggerEntityId   String?
+
+  // Inbound-specific
+  inboundFromPhone String?
+  inboundType      String? // 'text' | 'button_reply' | 'list_reply' | 'image' | 'document'
+  inboundButtonId  String?
+
+  status        MessageStatus @default(PENDING)
+  failureReason String?
+
+  conversationId String?
+
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  failedAt    DateTime?
+
+  createdById String? // null for system-triggered sends
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinic       Clinic               @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient      Patient?             @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  template     WhatsAppTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  conversation PatientConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@unique([clinicId, idempotencyKey])
+  @@index([clinicId, patientId, createdAt(sort: Desc)])
+  @@index([clinicId, status, createdAt(sort: Desc)])
+  @@index([clinicId, conversationId, createdAt(sort: Desc)])
+  @@index([providerMessageId])
+}
+
+// One conversation thread per patient — the unit of the receptionist inbox. Tracks the WhatsApp
+// 24-hour session window (free-text replies only allowed while open).
+model PatientConversation {
+  id        String @id @default(cuid())
+  clinicId  String
+  patientId String @unique
+
+  status ConversationStatus @default(OPEN)
+
+  category ConversationCategory?
+
+  // 24-hour window awareness
+  lastInboundAt   DateTime?
+  windowExpiresAt DateTime? // lastInboundAt + 24h
+
+  lastMessageAt      DateTime?
+  lastMessagePreview String?
+
+  unreadCount Int @default(0)
+
+  assignedToUserId String?
+
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic   Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient  Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  messages WhatsAppMessage[]
+
+  @@unique([clinicId, patientId])
+  @@index([clinicId, status, lastMessageAt(sort: Desc)])
+}
+
+// Monthly per-clinic cost rollup, recomputed daily by cron from WhatsAppMessage rows.
+model WhatsAppCostLog {
+  id       String @id @default(cuid())
+  clinicId String
+  month    Int // 1..12
+  year     Int
+
+  conversationsCount Int @default(0)
+  utilityCount       Int @default(0)
+  serviceCount       Int @default(0)
+  marketingCount     Int @default(0)
+
+  totalCostPaise Int @default(0)
+
+  computedAt DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, year, month])
 }

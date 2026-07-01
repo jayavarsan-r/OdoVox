@@ -25,6 +25,10 @@ export function formatBootBanner(env: Env): string {
     env.PAYMENT_PROVIDER === 'razorpay'
       ? `razorpay · ${env.RAZORPAY_MODE} · key=${maskKey(env.RAZORPAY_KEY_ID)}`
       : 'mock';
+  const whatsapp =
+    env.WHATSAPP_PROVIDER === 'aisensy'
+      ? `aisensy · key=${maskKey(env.AISENSY_API_KEY)}`
+      : 'mock';
 
   const lines = [
     `Odovox API · listening on :${env.PORT}`,
@@ -32,6 +36,7 @@ export function formatBootBanner(env: Env): string {
     `  STT:      ${stt}`,
     `  AI:       ${ai}`,
     `  PAYMENTS: ${payments}`,
+    `  WHATSAPP: ${whatsapp}`,
     `  OTP:      ${env.OTP_PROVIDER}`,
     `  ENV:      ${env.NODE_ENV}`,
   ];

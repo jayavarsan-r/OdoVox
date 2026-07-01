@@ -81,6 +81,15 @@ export const EnvSchema = z.object({
   // Mock-gateway chaos knob: fraction (0..1) of created links that simulate a FAILED payment.
   PAYMENT_MOCK_FAILURE_RATE: z.coerce.number().min(0).max(1).default(0),
 
+  // WhatsApp (Phase 9). `mock` returns deterministic sends/webhooks (dev/tests); `aisensy` calls the
+  // real AiSensy WhatsApp Business API. Same provider-abstraction pattern as STT/AI/Payments.
+  WHATSAPP_PROVIDER: z.enum(['mock', 'aisensy']).default('mock'),
+  AISENSY_API_KEY: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  AISENSY_WEBHOOK_SECRET: z.string().optional().or(z.literal('')).transform((v) => v || undefined),
+  AISENSY_BASE_URL: z.string().url().default('https://backend.aisensy.com'),
+  // Mock-provider chaos knob: fraction (0..1) of sends that simulate a FAILED delivery.
+  MOCK_WHATSAPP_FAILURE_RATE: z.coerce.number().min(0).max(1).default(0),
+
   SENTRY_DSN: z.string().url().optional().or(z.literal('')).transform((v) => v || undefined),
 })
   .refine(
@@ -106,6 +115,15 @@ export const EnvSchema = z.object({
       message:
         'RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET are required when PAYMENT_PROVIDER=razorpay',
       path: ['PAYMENT_PROVIDER'],
+    },
+  )
+  .refine(
+    (env) =>
+      env.WHATSAPP_PROVIDER !== 'aisensy' ||
+      (!!env.AISENSY_API_KEY && !!env.AISENSY_WEBHOOK_SECRET),
+    {
+      message: 'AISENSY_API_KEY and AISENSY_WEBHOOK_SECRET are required when WHATSAPP_PROVIDER=aisensy',
+      path: ['WHATSAPP_PROVIDER'],
     },
   );
 
