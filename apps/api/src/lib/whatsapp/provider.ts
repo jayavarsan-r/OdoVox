@@ -46,6 +46,8 @@ export type InboundKind = 'text' | 'button_reply' | 'list_reply' | 'image' | 'do
 export interface InboundEvent {
   /** Raw sender phone in E.164. */
   fromPhone: string;
+  /** The clinic's WhatsApp business number the message was sent to (resolves which clinic owns it). */
+  toPhone?: string;
   type: InboundKind;
   text?: string;
   /** Quick-reply / list-reply payload id (e.g. '1' = confirm, '2' = reschedule). */

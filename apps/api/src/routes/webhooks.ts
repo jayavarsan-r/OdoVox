@@ -6,6 +6,8 @@ import { requireRole } from '../lib/rbac.js';
 import { loadEnv } from '../lib/env.js';
 import { getPaymentGateway } from '../lib/payments/index.js';
 import { processRazorpayWebhook } from '../lib/billing/webhook-service.js';
+import { getWhatsAppProvider } from '../lib/whatsapp/index.js';
+import { processInboundWebhook, processStatusWebhook } from '../lib/whatsapp/webhook-service.js';
 
 export async function webhookRoutes(fastify: FastifyInstance): Promise<void> {
   const { prisma } = fastify;
@@ -47,6 +49,40 @@ export async function webhookRoutes(fastify: FastifyInstance): Promise<void> {
     });
     await fastify.audit('WEBHOOK_RECEIVED', 'WebhookEvent', eventId, { source: 'razorpay', eventType, outcome: result.outcome });
     return ok({ received: true, outcome: result.outcome });
+  });
+
+  // POST /webhooks/whatsapp/incoming — patient replies. No JWT; authenticity is the HMAC signature.
+  fastify.post('/webhooks/whatsapp/incoming', RATE, async (req, reply) => {
+    const raw = req.rawBody ?? '';
+    const signature = (req.headers['x-aisensy-signature'] as string | undefined) ?? '';
+    const provider = getWhatsAppProvider(req.log);
+    if (!provider.verifyWebhookSignature(raw, signature)) {
+      await fastify.audit('WEBHOOK_SIGNATURE_INVALID', 'WebhookEvent', null, { source: 'whatsapp_inbound' });
+      reply.status(401);
+      return { ok: false, error: { code: 'INVALID_SIGNATURE', message: 'Invalid webhook signature' } };
+    }
+    const eventId =
+      (req.headers['x-aisensy-event-id'] as string | undefined) ?? createHash('sha256').update(raw).digest('hex');
+    const events = provider.parseInboundWebhook(req.body ?? {});
+    const result = await processInboundWebhook(prisma, { eventId, events, payload: req.body ?? {}, signature });
+    return ok({ received: true, outcome: result.outcome, created: result.created });
+  });
+
+  // POST /webhooks/whatsapp/status — delivery status updates (sent/delivered/read/failed).
+  fastify.post('/webhooks/whatsapp/status', RATE, async (req, reply) => {
+    const raw = req.rawBody ?? '';
+    const signature = (req.headers['x-aisensy-signature'] as string | undefined) ?? '';
+    const provider = getWhatsAppProvider(req.log);
+    if (!provider.verifyWebhookSignature(raw, signature)) {
+      await fastify.audit('WEBHOOK_SIGNATURE_INVALID', 'WebhookEvent', null, { source: 'whatsapp_status' });
+      reply.status(401);
+      return { ok: false, error: { code: 'INVALID_SIGNATURE', message: 'Invalid webhook signature' } };
+    }
+    const eventId =
+      (req.headers['x-aisensy-event-id'] as string | undefined) ?? createHash('sha256').update(raw).digest('hex');
+    const events = provider.parseStatusWebhook(req.body ?? {});
+    const result = await processStatusWebhook(prisma, { eventId, events, payload: req.body ?? {}, signature });
+    return ok({ received: true, outcome: result.outcome, updated: result.updated });
   });
 
   // Non-prod only: simulate a successful Razorpay payment for a PENDING link, for local testing

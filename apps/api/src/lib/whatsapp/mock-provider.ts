@@ -99,8 +99,12 @@ export class MockWhatsAppProvider implements IWhatsAppProvider {
 // ---------------------------------------------------------------------------
 
 interface AiSensyInboundPayload {
+  /** Business number the messages were sent to (Meta: metadata.display_phone_number). */
+  to?: string;
+  metadata?: { display_phone_number?: string };
   messages?: Array<{
     from?: string;
+    to?: string;
     type?: string;
     id?: string;
     timestamp?: string | number;
@@ -116,17 +120,20 @@ interface AiSensyInboundPayload {
 export function parseAiSensyInbound(payload: unknown): InboundEvent[] {
   const p = (payload ?? {}) as AiSensyInboundPayload;
   const messages = Array.isArray(p.messages) ? p.messages : [];
+  const businessNumber = p.to ?? p.metadata?.display_phone_number;
   const events: InboundEvent[] = [];
   for (const m of messages) {
     if (!m.from) continue;
+    const toPhone = m.to ?? businessNumber;
     const ts = m.timestamp != null ? new Date(Number(m.timestamp) * (String(m.timestamp).length <= 10 ? 1000 : 1)) : undefined;
     if (m.interactive?.button_reply || m.button) {
       const id = m.interactive?.button_reply?.id ?? m.button?.payload ?? m.button?.text;
       const text = m.interactive?.button_reply?.title ?? m.button?.text;
-      events.push({ fromPhone: m.from, type: 'button_reply', buttonId: id, text, providerMessageId: m.id, timestamp: ts });
+      events.push({ fromPhone: m.from, toPhone, type: 'button_reply', buttonId: id, text, providerMessageId: m.id, timestamp: ts });
     } else if (m.interactive?.list_reply) {
       events.push({
         fromPhone: m.from,
+        toPhone,
         type: 'list_reply',
         buttonId: m.interactive.list_reply.id,
         text: m.interactive.list_reply.title,
@@ -134,9 +141,9 @@ export function parseAiSensyInbound(payload: unknown): InboundEvent[] {
         timestamp: ts,
       });
     } else if (m.type === 'image' || m.type === 'document') {
-      events.push({ fromPhone: m.from, type: m.type, providerMessageId: m.id, timestamp: ts });
+      events.push({ fromPhone: m.from, toPhone, type: m.type, providerMessageId: m.id, timestamp: ts });
     } else {
-      events.push({ fromPhone: m.from, type: 'text', text: m.text?.body ?? '', providerMessageId: m.id, timestamp: ts });
+      events.push({ fromPhone: m.from, toPhone, type: 'text', text: m.text?.body ?? '', providerMessageId: m.id, timestamp: ts });
     }
   }
   return events;

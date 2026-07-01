@@ -40,6 +40,20 @@ export {
   startOfMonth,
   type MessageAttachmentShape,
 } from './render.js';
+export {
+  categorize,
+  windowOpen,
+  upsertConversationOnInbound,
+  touchConversationOnOutbound,
+  serializeConversationListItem,
+} from './conversation.js';
+export {
+  processInboundWebhook,
+  processStatusWebhook,
+  type WebhookOutcome as WhatsAppWebhookOutcome,
+} from './webhook-service.js';
+export { notifyLabCaseReady, notifyPaymentReceipt } from './cross-wire.js';
+export { whatsappSendDeps } from './deps.js';
 
 let cached: IWhatsAppProvider | null = null;
 
