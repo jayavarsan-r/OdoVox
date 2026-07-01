@@ -24,6 +24,7 @@ import { storage, extForMime } from '../lib/storage.js';
 import { broadcastToClinic } from '../lib/realtime/broadcast.js';
 import { generateUniqueCaseNumber } from '../lib/lab/case-number.js';
 import { assertTransition } from '../lib/lab/transitions.js';
+import { notifyLabCaseReady } from '../lib/whatsapp/cross-wire.js';
 import {
   LAB_CASE_DETAIL_INCLUDE,
   LAB_CASE_SUMMARY_INCLUDE,
@@ -325,6 +326,8 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     });
     await fastify.audit('LAB_CASE_RECEIVED', 'LabCase', id, {});
     await broadcastCase(clinicId, id, 'lab.case.updated');
+    // Phase 9: notify the patient their case is ready for fitting (best-effort, consent-gated).
+    await notifyLabCaseReady(fastify, clinicId, id);
     return ok(await caseDetail(clinicId, id));
   });
 

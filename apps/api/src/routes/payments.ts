@@ -16,6 +16,7 @@ import { broadcastBill, broadcastPayment } from '../lib/billing/service.js';
 import { recordManualPayment, type RecordPaymentInput } from '../lib/billing/payment-service.js';
 import { toPaymentResponse } from '../lib/billing/serialize.js';
 import { getPaymentGateway } from '../lib/payments/index.js';
+import { notifyPaymentReceipt } from '../lib/whatsapp/cross-wire.js';
 
 export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
   const { prisma } = fastify;
@@ -43,6 +44,18 @@ export async function paymentRoutes(fastify: FastifyInstance): Promise<void> {
         amountPaise: input.amountPaise,
         method: input.method,
       });
+      // Phase 9: WhatsApp the patient their receipt (best-effort, consent-gated). ADJUSTMENT rows
+      // aren't real money movements, so they're skipped by the caller (they use their own endpoint).
+      const payment = await prisma.payment.findFirst({ where: { id: result.paymentId, clinicId } });
+      if (payment) {
+        await notifyPaymentReceipt(fastify, {
+          clinicId,
+          patientId: payment.patientId,
+          paymentId: payment.id,
+          amountPaise: payment.amountPaise,
+          receiptNumber: payment.paymentNumber,
+        });
+      }
       reply.status(201);
     }
     return ok(await paymentDetail(clinicId, result.paymentId));

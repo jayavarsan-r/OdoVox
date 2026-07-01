@@ -41,6 +41,7 @@ import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
 import { startScheduleCron } from './queues/schedule-cron.js';
+import { startReminderCron } from './queues/reminder-sweep-worker.js';
 import { closeQueues } from './queues/index.js';
 
 // Load .env in non-production (repo root).
@@ -114,12 +115,14 @@ async function start(): Promise<void> {
 
   let workers: { stop: () => Promise<void> } | null = null;
   let scheduleCron: { stop: () => Promise<void> } | null = null;
+  let reminderCron: { stop: () => Promise<void> } | null = null;
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down…`);
     try {
       await workers?.stop(); // drain in-process voice workers first
       await scheduleCron?.stop();
+      await reminderCron?.stop();
       await closeQueues();
       await app.close(); // closes server + triggers onClose (prisma, redis, sentry flush)
       process.exit(0);
@@ -141,6 +144,8 @@ async function start(): Promise<void> {
     workers = startWorkers(app);
     // Repeating NO_SHOW sweep (every 5 min). Only here in start() → never under tests.
     scheduleCron = startScheduleCron(app);
+    // Repeating WhatsApp reminder sweep (every 5 min) — sends due appointment + balance reminders.
+    reminderCron = startReminderCron(app);
     // Make the active STT / AI / OTP providers impossible to miss at boot.
     printBootBanner(env);
   } catch (err) {
