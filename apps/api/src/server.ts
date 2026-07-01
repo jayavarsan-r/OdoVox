@@ -37,11 +37,13 @@ import { refundRoutes } from './routes/refunds.js';
 import { reportRoutes } from './routes/reports.js';
 import { whatsappConsentRoutes } from './routes/whatsapp-consent.js';
 import { whatsappRoutes } from './routes/whatsapp.js';
+import { whatsappSettingsRoutes } from './routes/whatsapp-settings.js';
 import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
 import { startScheduleCron } from './queues/schedule-cron.js';
 import { startReminderCron } from './queues/reminder-sweep-worker.js';
+import { startCostCron } from './lib/whatsapp/cost.js';
 import { closeQueues } from './queues/index.js';
 
 // Load .env in non-production (repo root).
@@ -105,6 +107,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await app.register(reportRoutes);
   await app.register(whatsappConsentRoutes);
   await app.register(whatsappRoutes);
+  await app.register(whatsappSettingsRoutes);
 
   return app;
 }
@@ -116,6 +119,7 @@ async function start(): Promise<void> {
   let workers: { stop: () => Promise<void> } | null = null;
   let scheduleCron: { stop: () => Promise<void> } | null = null;
   let reminderCron: { stop: () => Promise<void> } | null = null;
+  let costCron: { stop: () => Promise<void> } | null = null;
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down…`);
@@ -123,6 +127,7 @@ async function start(): Promise<void> {
       await workers?.stop(); // drain in-process voice workers first
       await scheduleCron?.stop();
       await reminderCron?.stop();
+      await costCron?.stop();
       await closeQueues();
       await app.close(); // closes server + triggers onClose (prisma, redis, sentry flush)
       process.exit(0);
@@ -146,6 +151,8 @@ async function start(): Promise<void> {
     scheduleCron = startScheduleCron(app);
     // Repeating WhatsApp reminder sweep (every 5 min) — sends due appointment + balance reminders.
     reminderCron = startReminderCron(app);
+    // Daily WhatsApp cost aggregation → WhatsAppCostLog.
+    costCron = startCostCron(app);
     // Make the active STT / AI / OTP providers impossible to miss at boot.
     printBootBanner(env);
   } catch (err) {
