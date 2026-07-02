@@ -1,5 +1,5 @@
 import { ClinicalExtraction } from '@odovox/types';
-import { buildSafetyView, type SafetyPayload, type SafetyViewItem } from './safety-view.js';
+import { buildSafetyView, type SafetyPayload, type SafetyViewItem, type SafetyWarning } from './safety-view.js';
 import { extractSafetyPayload, type ConsultationView, type ConsultEvent } from './types.js';
 
 /**
@@ -41,6 +41,7 @@ export type ConsultAction =
   | { type: 'CONFIRM_START' }
   | { type: 'CONFIRM_DONE' }
   | { type: 'CONFIRM_FAILED' }
+  | { type: 'BLOCKING_ERRORS_SURFACED'; errors: SafetyWarning[] }
   | { type: 'REJECT'; reason?: string }
   | { type: 'FAIL'; step: string; error: string }
   | { type: 'HYDRATE'; view: ConsultationView };
@@ -99,6 +100,18 @@ export function consultReducer(state: ConsultState, action: ConsultAction): Cons
       return { kind: 'CONFIRMED' };
     case 'CONFIRM_FAILED':
       return state.kind === 'CONFIRMING' ? { kind: 'VERIFY', data: state.data, safety: state.safety } : state;
+    case 'BLOCKING_ERRORS_SURFACED': {
+      // The server re-ran safety on the final data and refused the confirm (422). Its blocking list
+      // is authoritative — replace ours with it, keep existing warnings, and return to VERIFY so the
+      // card renders each error and the CTA stays gated until the doctor fixes the fields.
+      if (state.kind !== 'CONFIRMING' && state.kind !== 'VERIFY') return state;
+      const { warnings } = viewToPayload(state.safety);
+      return {
+        kind: 'VERIFY',
+        data: state.data,
+        safety: buildSafetyView({ warnings, blockingErrors: action.errors }, state.data),
+      };
+    }
     case 'EDIT': {
       if (state.kind !== 'VERIFY' && state.kind !== 'CONFIRMING') return state;
       return { kind: 'VERIFY', data: action.data, safety: buildSafetyView(viewToPayload(state.safety), action.data) };

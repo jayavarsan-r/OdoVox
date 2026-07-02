@@ -278,6 +278,24 @@ export function useVisits(patientId: string) {
   });
 }
 
+// ---- Completed procedures ("Previous work") ---------------------------------
+export interface CompletedProcedureRow {
+  id: string;
+  planId: string;
+  name: string;
+  toothNumbers: number[];
+  completedAt: string;
+}
+
+/** COMPLETED procedures across the patient's plans — what "Previous work" actually means. */
+export function useCompletedProcedures(patientId: string) {
+  return useQuery({
+    queryKey: ['completed-procedures', patientId],
+    queryFn: () => api.get<CompletedProcedureRow[]>(`/patients/${patientId}/procedures`),
+    enabled: !!patientId,
+  });
+}
+
 export function useCreateVisit(patientId: string) {
   const qc = useQueryClient();
   return useMutation({

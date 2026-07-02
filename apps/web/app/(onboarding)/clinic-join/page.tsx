@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/forms/FormField';
 import { ChipMultiSelect } from '@/components/forms/ChipMultiSelect';
 import { api } from '@/lib/api-client';
+import { landingRoute, type Role } from '@/lib/rbac';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/lib/onboarding-store';
@@ -44,13 +45,17 @@ export default function ClinicJoinPage() {
   const toast = useToast();
   const role = useOnboarding((s) => s.role);
   const setMembership = useAuth((s) => s.setMembership);
+  const setAccessToken = useAuth((s) => s.setAccessToken);
   const resetOnboarding = useOnboarding((s) => s.reset);
 
   const [lookup, setLookup] = useState<LookupResult | null>(null);
   const [joining, setJoining] = useState(false);
+  // Set on a successful join, BEFORE resetOnboarding() clears `role` — otherwise the effect below
+  // re-fires on the reset and bounces the just-joined user back to /role (the P0.4 loop).
+  const joinedRef = useRef(false);
 
   useEffect(() => {
-    if (!role) router.replace('/role');
+    if (!role && !joinedRef.current) router.replace('/role');
   }, [role, router]);
 
   const isDoctor = role === 'DOCTOR';
@@ -95,7 +100,12 @@ export default function ClinicJoinPage() {
       const data = await api.post<{
         clinic: { id: string; name: string; city: string; state: string };
         membership: ClinicMemberResponse;
+        accessToken: string;
       }>('/clinics/join', values);
+      joinedRef.current = true;
+      // Adopt the clinic-scoped token first: the pre-join token carries no clinicId claim, so
+      // every clinic-scoped request (the entire app) would 403 until the next refresh.
+      setAccessToken(data.accessToken);
       setMembership(data.membership, {
         id: data.clinic.id,
         name: data.clinic.name,
@@ -103,7 +113,7 @@ export default function ClinicJoinPage() {
         state: data.clinic.state,
       });
       resetOnboarding();
-      router.replace('/home');
+      router.replace(landingRoute(data.membership.role as Role));
     } catch (err) {
       toast.apiError(err);
     } finally {

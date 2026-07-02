@@ -48,6 +48,7 @@ export default function ClinicProfileStep() {
   const setDoctorProfile = useOnboarding((s) => s.setDoctorProfile);
   const resetOnboarding = useOnboarding((s) => s.reset);
   const setMembership = useAuth((s) => s.setMembership);
+  const setAccessToken = useAuth((s) => s.setAccessToken);
   const currentUser = useAuth((s) => s.user);
   const setResult = useClinicResult((s) => s.set);
 
@@ -96,7 +97,11 @@ export default function ClinicProfileStep() {
         clinic: { id: string; name: string; city: string; state: string };
         membership: ClinicMemberResponse;
         joinCode: string;
+        accessToken: string;
       }>('/clinics', parsed.data);
+      // Adopt the clinic-scoped token: the pre-create token has no clinicId claim, so every
+      // clinic-scoped request after onboarding would 403 until the next refresh.
+      setAccessToken(data.accessToken);
       setMembership(data.membership, {
         id: data.clinic.id,
         name: data.clinic.name,

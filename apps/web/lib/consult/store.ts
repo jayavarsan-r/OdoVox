@@ -12,6 +12,7 @@ import {
   type ConsultState,
 } from './machine';
 import { toPatchBody } from './editors';
+import { blockingErrorsFromError } from './confirm-errors';
 import { activeWarningCodes, hasUnresolvedBlocking } from './safety-view';
 import type { ConsultationView, ConsultEvent } from './types';
 import { openConsultStream } from './sse';
@@ -230,6 +231,13 @@ export const useConsultStore = create<ConsultStore>((set, get) => ({
       });
       get().dispatch({ type: 'CONFIRM_DONE' });
     } catch (err) {
+      // A 422 BLOCKING_ERRORS is not an exception — it's the safety gate. Feed the server's errors
+      // back into the machine so the card surfaces them; only unexpected failures propagate.
+      const blocking = blockingErrorsFromError(err);
+      if (blocking) {
+        get().dispatch({ type: 'BLOCKING_ERRORS_SURFACED', errors: blocking });
+        return;
+      }
       get().dispatch({ type: 'CONFIRM_FAILED' });
       throw err;
     }

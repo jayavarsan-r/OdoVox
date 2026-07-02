@@ -74,6 +74,9 @@ describe('commitConsultation — atomic confirm', () => {
       const visit = await app.prisma.visit.findUniqueOrThrow({ where: { id: visitId } });
       expect(visit.status).toBe('CHECKOUT');
       expect(visit.endedAt).not.toBeNull();
+      // Phase 9.5 regression: the receptionist's "Ready for Checkout" list sorts on this — the
+      // manual queue transition sets it, and confirm must too.
+      expect(visit.checkoutStartedAt).not.toBeNull();
     });
   });
 

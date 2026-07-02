@@ -64,6 +64,27 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     );
   });
 
+  // Completed work, flat — feeds the patient Overview's "Previous work" section (Phase 9.5 P1.3:
+  // it used to render visits' chief complaints; previous work means procedures actually done).
+  fastify.get('/patients/:id/procedures', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    await assertPatient(id);
+    const procedures = await prisma.procedure.findMany({
+      where: { plan: { patientId: id, deletedAt: null }, status: 'COMPLETED', deletedAt: null },
+      include: { sittings: { where: { completedAt: { not: null } }, orderBy: { completedAt: 'desc' }, take: 1 } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return ok(
+      procedures.map((p) => ({
+        id: p.id,
+        planId: p.planId,
+        name: p.name,
+        toothNumbers: p.toothNumbers,
+        completedAt: p.sittings[0]?.completedAt ?? p.updatedAt,
+      })),
+    );
+  });
+
   fastify.post('/patients/:id/plans', doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     await assertPatient(id);

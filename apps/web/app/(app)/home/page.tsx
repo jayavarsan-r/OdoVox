@@ -23,6 +23,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
 import { useNeedsYou, useRecentVisits } from '@/lib/queries';
+import { useQueueStore } from '@/lib/queue/store';
+import { getInChair, getWaiting } from '@/lib/queue/selectors';
+import { useQueueSnapshot } from '@/lib/queue/mutations';
+import { consultHeroSubtitle } from '@/lib/queue/home-summary';
 import { cn } from '@/lib/utils';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -78,6 +82,13 @@ export default function DoctorHomePage() {
   const needsYou = useNeedsYou();
   const recent = useRecentVisits();
 
+  // Same source of truth as /consult: snapshot hydrates the queue store, realtime keeps it live.
+  useQueueSnapshot('me');
+  const queueState = useQueueStore((s) => s.state);
+  const myDoctorId = useQueueStore((s) => s.myDoctorId) ?? undefined;
+  const inChair = getInChair(queueState, myDoctorId);
+  const waitingCount = getWaiting(queueState, myDoctorId).length;
+
   const now = new Date();
   const dateLabel = `${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}`;
   const raw = (user?.name || 'Doctor').replace(/^Dr\.?\s*/i, '').split(' ')[0] || 'Doctor';
@@ -114,7 +125,7 @@ export default function DoctorHomePage() {
         variant="dark"
         icon={<Stethoscope />}
         title="Start consultation"
-        subtitle="Queue is clear"
+        subtitle={consultHeroSubtitle(inChair?.patient.name ?? null, waitingCount)}
         trailing={<ArrowRight />}
         onClick={() => router.push('/consult')}
       />

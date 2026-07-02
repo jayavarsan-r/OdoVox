@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Calendar, IndianRupee, CircleDot, MessageCircle, ChevronRight } from 'lucide-react';
+import { UserPlus, Calendar, IndianRupee, CircleDot, MessageCircle, ChevronRight, Mic } from 'lucide-react';
 import type { VisitWithPatient } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
@@ -34,6 +34,7 @@ export default function TodayPage() {
   const state = useQueueStore((s) => s.state);
 
   const [walkInOpen, setWalkInOpen] = useState(false);
+  const [walkInVoice, setWalkInVoice] = useState(false);
   const [checkoutVisit, setCheckoutVisit] = useState<VisitWithPatient | null>(null);
   const [actionVisit, setActionVisit] = useState<VisitWithPatient | null>(null);
 
@@ -176,13 +177,14 @@ export default function TodayPage() {
       <FabMenu
         items={[
           { id: 'walk-in', label: 'Add walk-in', tone: 'lime', icon: <UserPlus />, onClick: () => setWalkInOpen(true) },
+          { id: 'voice-walk-in', label: 'Voice walk-in', tone: 'lime', icon: <Mic />, onClick: () => { setWalkInVoice(true); setWalkInOpen(true); } },
           { id: 'new-patient', label: 'New patient', tone: 'peach', icon: <UserPlus />, onClick: () => router.push('/patients/new') },
           { id: 'add-payment', label: 'Add payment', tone: 'sage', icon: <IndianRupee />, onClick: () => toast.info('Payments arrive in Phase 8.') },
           { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: () => toast.info('Scheduling arrives in Phase 6.') },
         ]}
       />
 
-      <WalkInSheet open={walkInOpen} onClose={() => setWalkInOpen(false)} />
+      <WalkInSheet open={walkInOpen} voice={walkInVoice} onClose={() => { setWalkInOpen(false); setWalkInVoice(false); }} />
       <CheckoutSheet visit={checkoutVisit} open={!!checkoutVisit} onClose={() => setCheckoutVisit(null)} />
       <QueueActionSheet visit={actionVisit} open={!!actionVisit} onClose={() => setActionVisit(null)} />
     </AnimatedPage>

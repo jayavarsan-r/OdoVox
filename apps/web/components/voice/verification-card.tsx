@@ -16,6 +16,7 @@ import {
   setTeeth,
 } from '@/lib/consult/editors';
 import { hasUnresolvedBlocking, type SafetyViewItem } from '@/lib/consult/safety-view';
+import { useToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 
 const FREQ: MedicineFrequency[] = ['OD', 'BD', 'TID', 'QID', 'SOS'];
@@ -24,20 +25,29 @@ function Row({
   label,
   value,
   confirmed,
+  invalid,
   onEdit,
   children,
 }: {
   label: string;
   value: string;
   confirmed?: boolean;
+  invalid?: boolean;
   onEdit?: () => void;
   children?: React.ReactNode;
 }) {
   return (
-    <div className="border-b border-border/60 py-3 last:border-0">
+    <div
+      className={cn(
+        'border-b border-border/60 py-3 last:border-0',
+        invalid && 'rounded-xl border border-danger/40 bg-danger/5 px-3',
+      )}
+    >
       <div className="flex items-center gap-3">
         <span className="w-28 shrink-0 text-[13px] text-text-muted">{label}</span>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{value}</span>
+        <span className={cn('min-w-0 flex-1 truncate text-sm font-medium', invalid ? 'text-danger' : 'text-ink')}>
+          {value}
+        </span>
         {confirmed ? <Check className="size-4 text-sage-deep" /> : null}
         {onEdit ? (
           <button type="button" onClick={onEdit} aria-label={`Edit ${label}`} className="text-text-subtle">
@@ -51,22 +61,23 @@ function Row({
 }
 
 function SafetyCard({ item }: { item: SafetyViewItem }) {
+  const blockingActive = item.blocking && !item.resolved;
   return (
     <div
       className={cn(
         'rounded-2xl p-3',
-        item.resolved ? 'bg-sage-tint' : 'bg-warning-soft',
+        item.resolved ? 'bg-sage-tint' : blockingActive ? 'bg-danger/10' : 'bg-warning-soft',
       )}
     >
       <div className="flex items-start gap-2">
         {item.resolved ? (
           <Check className="mt-0.5 size-4 shrink-0 text-sage-deep" />
         ) : (
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+          <AlertTriangle className={cn('mt-0.5 size-4 shrink-0', blockingActive ? 'text-danger' : 'text-warning')} />
         )}
         <p className={cn('text-[13px]', item.resolved ? 'text-sage-deep line-through' : 'text-ink')}>
           {item.message}
-          {item.blocking && !item.resolved ? ' (must fix before confirming)' : ''}
+          {blockingActive ? ' (must fix before confirming)' : ''}
         </p>
       </div>
     </div>
@@ -82,9 +93,12 @@ function SafetyCard({ item }: { item: SafetyViewItem }) {
 export function VerificationCard({ data, safety }: { data: ClinicalExtraction; safety: SafetyViewItem[] }) {
   const { edit, confirm, rerecord } = useConsultStore.getState();
   const state = useConsultStore((s) => s.state);
+  const toast = useToast();
   const confirming = state.kind === 'CONFIRMING';
   const [editing, setEditing] = useState<string | null>(null);
   const blocked = hasUnresolvedBlocking(safety);
+  // Fields the server (or client) flagged with an unresolved BLOCKING error — their rows go red.
+  const invalidFields = new Set(safety.filter((s) => s.blocking && !s.resolved && s.field).map((s) => s.field));
 
   const apply = (next: ClinicalExtraction) => {
     edit(next);
@@ -124,7 +138,8 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
         <Row
           label="Tooth / teeth"
           value={data.teeth.length ? data.teeth.join(', ') : '—'}
-          confirmed={data.teeth.length > 0}
+          confirmed={data.teeth.length > 0 && !invalidFields.has('teeth')}
+          invalid={invalidFields.has('teeth')}
           onEdit={() => setEditing(editing === 'teeth' ? null : 'teeth')}
         >
           {editing === 'teeth' ? (
@@ -151,7 +166,8 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
         <Row
           label="Sittings"
           value={data.sittingCurrent != null ? `${data.sittingCurrent} / ${data.sittingTotal ?? '?'}` : '—'}
-          confirmed={data.sittingCurrent != null}
+          confirmed={data.sittingCurrent != null && !invalidFields.has('sittings')}
+          invalid={invalidFields.has('sittings')}
           onEdit={() => setEditing(editing === 'sittings' ? null : 'sittings')}
         >
           {editing === 'sittings' ? (
@@ -284,7 +300,7 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
           size="lg"
           loading={confirming}
           disabled={blocked || confirming}
-          onClick={() => void confirm()}
+          onClick={() => confirm().catch((err) => toast.apiError(err))}
           className="w-full shadow-lime-glow"
         >
           {blocked ? 'Resolve safety issues to confirm' : 'Confirm & send to front desk'}

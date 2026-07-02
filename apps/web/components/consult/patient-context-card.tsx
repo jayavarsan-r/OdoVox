@@ -52,22 +52,23 @@ export function PatientContextCard({ ctx }: { ctx: ConsultationContext }) {
           <button
             type="button"
             onClick={() => router.push(`/patients/${patient.id}`)}
-            className="flex items-center gap-1 text-left text-xl font-semibold text-ink"
+            className="flex items-center gap-1 text-left text-2xl font-semibold text-ink"
           >
             <span className="truncate">{patient.name}</span>
             <ChevronRight className="size-4 shrink-0 text-text-subtle" />
           </button>
           <p className="text-sm text-text-muted">
-            {patient.age} · {genderLabel(patient.gender)} · <span className="font-mono tabular-nums">{patient.patientCode}</span>
+            {patient.age} · {genderLabel(patient.gender)} ·{' '}
+            <span className="font-mono tabular-nums">{patient.patientCode}</span> ·{' '}
+            <span className="font-medium text-sage-deep">Token {visit.tokenNumber}</span>
           </p>
-          <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-text-subtle">
-            <span className="text-sage-deep">Token {visit.tokenNumber}</span>
-            {timer ? <span className="text-text-muted"> · {timer} in chair</span> : null}
-          </p>
+          {timer ? (
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-text-muted">{timer} in chair</p>
+          ) : null}
         </div>
       </div>
 
-      <div className="my-4 border-t border-border" />
+      <div className="my-6 border-t border-border" />
 
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Chief complaint</p>
@@ -82,7 +83,7 @@ export function PatientContextCard({ ctx }: { ctx: ConsultationContext }) {
       </div>
 
       {patient.allergies.length > 0 || patient.medicalFlags.length > 0 ? (
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3">
           {patient.allergies.length > 0 ? (
             <div>
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-danger">
@@ -115,7 +116,7 @@ export function PatientContextCard({ ctx }: { ctx: ConsultationContext }) {
       ) : null}
 
       {xrays.length > 0 ? (
-        <div className="mt-4">
+        <div className="mt-6">
           <XrayStrip xrays={xrays} />
         </div>
       ) : null}

@@ -41,7 +41,7 @@ import {
   useUpsertTooth,
   usePlans,
   useCreatePlan,
-  useVisits,
+  useCompletedProcedures,
   useCreateVisit,
   useCreatePrescription,
   useMedia,
@@ -236,7 +236,7 @@ export default function PatientDetailPage() {
 function OverviewTab({ patientId, patientName, records, onOpenTeeth }: { patientId: string; patientName: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void }) {
   const toast = useToast();
   const router = useRouter();
-  const visits = useVisits(patientId);
+  const completedProcedures = useCompletedProcedures(patientId);
   const plans = usePlans(patientId);
   const [rx, setRx] = useState(false);
   const [visitOpen, setVisitOpen] = useState(false);
@@ -299,14 +299,17 @@ function OverviewTab({ patientId, patientName, records, onOpenTeeth }: { patient
       </Section>
 
       <Section title="Previous work">
-        {(visits.data?.length ?? 0) === 0 ? (
-          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No visits recorded yet.</div>
+        {(completedProcedures.data?.length ?? 0) === 0 ? (
+          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No completed procedures yet.</div>
         ) : (
           <div className="space-y-2">
-            {visits.data!.slice(0, 5).map((v) => (
-              <div key={v.id} className="rounded-lg border border-border bg-surface p-3">
-                <p className="text-sm font-medium">{v.chiefComplaint ?? 'Visit'}</p>
-                <p className="text-xs text-muted-foreground">{new Date(v.createdAt).toLocaleDateString('en-IN')}</p>
+            {completedProcedures.data!.slice(0, 5).map((p) => (
+              <div key={p.id} className="rounded-lg border border-border bg-surface p-3">
+                <p className="text-sm font-medium">
+                  {p.name}
+                  {p.toothNumbers.length ? ` · Tooth ${p.toothNumbers.join(', ')}` : ''}
+                </p>
+                <p className="text-xs text-muted-foreground">{new Date(p.completedAt).toLocaleDateString('en-IN')}</p>
               </div>
             ))}
           </div>
@@ -369,8 +372,9 @@ function CasesTab({ patientId }: { patientId: string }) {
       ) : (
         (() => {
           const all = plans.data!;
-          const activePlans = all.filter((p) => p.status === 'ACTIVE');
-          const pastPlans = all.filter((p) => p.status !== 'ACTIVE');
+          // DRAFT is "not started", never "past" — it sits with active work until it begins.
+          const activePlans = all.filter((p) => p.status === 'ACTIVE' || p.status === 'DRAFT');
+          const pastPlans = all.filter((p) => p.status !== 'ACTIVE' && p.status !== 'DRAFT');
           const goTo = (id: string) => router.push(`/patients/${patientId}/plans/${id}`);
           return (
             <>
@@ -381,10 +385,18 @@ function CasesTab({ patientId }: { patientId: string }) {
                     <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-lg border border-sage/40 bg-sage-tint/40 p-4 text-left active:scale-[0.99]">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-ink">{pl.name}</p>
-                        <span className="rounded-pill bg-sage-tint px-2 py-0.5 text-xs text-sage-deep">Active</span>
+                        <span className="rounded-pill bg-sage-tint px-2 py-0.5 text-xs text-sage-deep">
+                          {pl.status === 'DRAFT' ? 'Not started' : 'Active'}
+                        </span>
                       </div>
                       <ProgressBar percent={pl.progress.percent} />
-                      <p className="mt-1 text-xs text-text-muted">{pl.progress.completedSittings} of {pl.progress.totalSittings} sittings completed · {rupees(pl.estimatedCostPaise)}</p>
+                      <p className="mt-1 text-xs text-text-muted">
+                        {pl.progress.completedSittings} of {pl.progress.totalSittings} sittings completed
+                        {pl.progress.completedSittings < pl.progress.totalSittings
+                          ? ` · Next: sitting ${pl.progress.completedSittings + 1}`
+                          : ''}{' '}
+                        · {rupees(pl.estimatedCostPaise)}
+                      </p>
                     </button>
                   ))}
                 </div>

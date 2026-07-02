@@ -76,6 +76,18 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ intake, transcript });
   });
 
+  // Walk-in dictation (Phase 9.5 P1.6) — the receptionist speaks a walk-in ("new patient Ramesh
+  // Kumar, 98765..., tooth pain") and the walk-in sheet prefills. Same intake extractor as the
+  // doctor's new-patient flow, but reception-scoped.
+  fastify.post('/queue/walkin/dictate', anyClinical, async (req) => {
+    const { storageKey } = parse(IntakeInput, req.body);
+    assertOwnKey(storageKey, req.clinicId!);
+    const transcript = await transcribeAndPurge(storageKey);
+    const intake = await getExtractor(fastify.log).extractPatientIntake(transcript);
+    await fastify.audit('DICTATE_WALKIN', 'Dictation', null);
+    return ok({ intake, transcript });
+  });
+
   // Prescription dictation — medicines only, with the allergy/interaction safety check. Phase 5: the
   // doctor can invoke a clinic template by name ("apply RCT pack") — the server populates the
   // template's medicines and merges any explicitly dictated additions.

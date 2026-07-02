@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Mic, Square } from 'lucide-react';
 import type { VisitWithPatient } from '@odovox/types';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,8 @@ import {
   rupees,
   type CheckoutForm,
 } from '@/lib/queue/checkout-form';
+import { useVisitBill } from '@/lib/billing/api';
+import { useDictation } from '@/lib/voice/use-dictation';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -31,17 +34,28 @@ export function CheckoutSheet({
 }) {
   const toast = useToast();
   const complete = useCompleteVisit();
+  // Ensure the itemized bill exists the moment the sheet opens — its items carry the doctor's
+  // dictated costs, so "Due" is never "—" (Phase 9.5 Issue 3).
+  const { data: bill } = useVisitBill(visit?.id ?? null, open);
   const [form, setForm] = useState<CheckoutForm>(defaultCheckoutForm(visit?.billDuePaise ?? null));
   const [error, setError] = useState<string | null>(null);
+  // Voice checkout notes (Phase 9.5 P1.6): dictate "patient will pay balance in two weeks" straight
+  // into the Notes field. STT only — the note flows into the payment via buildCompleteBody.
+  const noteDictation = useDictation<{ transcript: string }>('/dictate/transcribe', ({ transcript }) =>
+    setForm((f) => ({ ...f, notes: [f.notes, transcript.trim()].filter(Boolean).join(' ') })),
+  );
 
-  // Re-seed the form whenever a different visit opens.
+  // Re-seed the form whenever a different visit opens, then again when its bill arrives (the
+  // bill's balance is the real due; the snapshot's billDuePaise is null until the bill exists).
   const [seededFor, setSeededFor] = useState<string | null>(null);
-  if (visit && seededFor !== visit.id) {
-    setSeededFor(visit.id);
-    setForm(defaultCheckoutForm(visit.billDuePaise));
+  const seedKey = visit ? `${visit.id}:${bill?.id ?? 'pending'}` : null;
+  if (visit && seedKey && seededFor !== seedKey) {
+    setSeededFor(seedKey);
+    setForm(defaultCheckoutForm(bill?.balancePaise ?? visit.billDuePaise));
   }
 
   if (!visit) return null;
+  const duePaise = bill?.balancePaise ?? visit.billDuePaise;
   const set = (patch: Partial<CheckoutForm>) => setForm((f) => ({ ...f, ...patch }));
 
   async function submit() {
@@ -68,9 +82,19 @@ export function CheckoutSheet({
             <span className="font-medium text-ink">{visit.patient.name}</span>
             <span className="text-sm text-text-muted">{visit.doctorName}</span>
           </div>
+          {bill?.items.length ? (
+            <div className="mt-2 space-y-1 border-t border-border pt-2">
+              {bill.items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between text-sm">
+                  <span className="min-w-0 flex-1 truncate text-text-muted">{item.description}</span>
+                  <span className="font-mono tabular-nums text-ink">{rupees(item.subtotalPaise)}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-sm">
             <span className="text-text-muted">Due</span>
-            <span className="font-mono text-lg font-semibold tabular-nums text-ink">{rupees(visit.billDuePaise)}</span>
+            <span className="font-mono text-lg font-semibold tabular-nums text-ink">{rupees(duePaise)}</span>
           </div>
         </div>
 
@@ -105,7 +129,32 @@ export function CheckoutSheet({
                 onChange={(e) => set({ amountPaise: Math.round(Number(e.target.value) * 100) })}
               />
             </div>
-            <Input placeholder="Notes (optional)" value={form.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Notes (optional)"
+                value={form.notes ?? ''}
+                onChange={(e) => set({ notes: e.target.value })}
+                className="flex-1"
+              />
+              <button
+                type="button"
+                aria-label={noteDictation.state.kind === 'recording' ? 'Stop dictation' : 'Dictate note'}
+                onClick={() =>
+                  noteDictation.state.kind === 'recording' ? noteDictation.stop() : void noteDictation.start()
+                }
+                disabled={noteDictation.state.kind === 'processing'}
+                className={cn(
+                  'flex size-10 shrink-0 items-center justify-center rounded-pill',
+                  noteDictation.state.kind === 'recording' ? 'bg-ink text-paper' : 'bg-lime-soft text-ink',
+                )}
+              >
+                {noteDictation.state.kind === 'recording' ? (
+                  <Square className="size-4 fill-current" />
+                ) : (
+                  <Mic className="size-5" />
+                )}
+              </button>
+            </div>
           </div>
         ) : null}
 

@@ -105,7 +105,7 @@ export function Recorder() {
             Re-record
           </Button>
           <Button variant="primary" onClick={() => void sendForReview()}>
-            Send for review
+            Save findings
           </Button>
         </div>
       </div>

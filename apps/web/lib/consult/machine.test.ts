@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ClinicalExtraction } from '@odovox/types';
 import { consultReducer, deriveStateFromView, initialState } from './machine.js';
 import type { ConsultState } from './machine.js';
+import { hasUnresolvedBlocking } from './safety-view.js';
 
 function run(actions: Parameters<typeof consultReducer>[1][], from: ConsultState = initialState): ConsultState {
   return actions.reduce((s, a) => consultReducer(s, a), from);
@@ -70,6 +71,68 @@ describe('consult state machine — verify + confirm', () => {
     const edited = ClinicalExtraction.parse({ prescriptions: [] }); // removed Amoxicillin
     const s = consultReducer(verify, { type: 'EDIT', data: edited }) as Extract<ConsultState, { kind: 'VERIFY' }>;
     expect(s.safety[0]!.resolved).toBe(true); // warning persists but is now resolved
+  });
+});
+
+describe('consult state machine — SSE server events drive the pipeline (Phase 9.5 regression)', () => {
+  const asEvent = (event: Parameters<typeof consultReducer>[1] extends never ? never : { type: string; data?: unknown }) =>
+    ({ type: 'SERVER_EVENT', event } as Parameters<typeof consultReducer>[1]);
+
+  it('RECORDED → TRANSCRIBING → TRANSCRIBED → EXTRACTING → READY advances to VERIFY with the payload', () => {
+    const structuredData = { procedure: 'RCT', teeth: [26], safety: { warnings: [], blockingErrors: [] } };
+    let s: ConsultState = { kind: 'TRANSCRIBING' };
+    s = consultReducer(s, asEvent({ type: 'RECORDED' }));
+    expect(s.kind).toBe('TRANSCRIBING');
+    s = consultReducer(s, asEvent({ type: 'TRANSCRIBED', data: { transcript: 'RCT on 26' } }));
+    expect(s).toMatchObject({ kind: 'TRANSCRIBED', transcript: 'RCT on 26' });
+    s = consultReducer(s, asEvent({ type: 'EXTRACTING' }));
+    expect(s.kind).toBe('EXTRACTING');
+    s = consultReducer(s, asEvent({ type: 'READY', data: { structuredData } }));
+    expect(s.kind).toBe('VERIFY');
+    expect((s as Extract<ConsultState, { kind: 'VERIFY' }>).data.procedure).toBe('RCT');
+    expect((s as Extract<ConsultState, { kind: 'VERIFY' }>).data.teeth).toEqual([26]);
+  });
+
+  it('a FAILED server event moves the pipeline to FAILED with the stage', () => {
+    const s = consultReducer({ kind: 'EXTRACTING' }, asEvent({ type: 'FAILED', data: { stage: 'extraction', message: 'boom' } }));
+    expect(s).toMatchObject({ kind: 'FAILED', step: 'extraction', error: 'boom' });
+  });
+});
+
+describe('consult state machine — server blocking errors on confirm (Phase 9.5 P0.2)', () => {
+  const serverError = {
+    code: 'invalid_tooth',
+    message: 'Tooth 19 is not a valid FDI number',
+    field: 'teeth',
+    detail: '19',
+  };
+
+  it('BLOCKING_ERRORS_SURFACED during CONFIRMING drops to VERIFY with the errors gating the CTA', () => {
+    const data = ClinicalExtraction.parse({ procedure: 'RCT', teeth: [19] });
+    const s = consultReducer(
+      { kind: 'CONFIRMING', data, safety: [] },
+      { type: 'BLOCKING_ERRORS_SURFACED', errors: [serverError] },
+    ) as Extract<ConsultState, { kind: 'VERIFY' }>;
+    expect(s.kind).toBe('VERIFY');
+    expect(s.data.teeth).toEqual([19]);
+    expect(s.safety[0]).toMatchObject({ code: 'invalid_tooth', field: 'teeth', blocking: true, resolved: false });
+    expect(hasUnresolvedBlocking(s.safety)).toBe(true);
+  });
+
+  it('keeps prior warnings, and editing the offending field resolves the surfaced error', () => {
+    const data = ClinicalExtraction.parse({ procedure: 'RCT', teeth: [19] });
+    const warning = { code: 'sitting_jump', message: 'Sitting jumped', blocking: false, resolved: false };
+    let s = consultReducer(
+      { kind: 'CONFIRMING', data, safety: [warning] },
+      { type: 'BLOCKING_ERRORS_SURFACED', errors: [serverError] },
+    ) as Extract<ConsultState, { kind: 'VERIFY' }>;
+    expect(s.safety).toHaveLength(2); // server error + preserved warning
+    // Doctor fixes the tooth → the blocking error resolves and Confirm unlocks.
+    s = consultReducer(s, { type: 'EDIT', data: ClinicalExtraction.parse({ procedure: 'RCT', teeth: [16] }) }) as Extract<
+      ConsultState,
+      { kind: 'VERIFY' }
+    >;
+    expect(hasUnresolvedBlocking(s.safety)).toBe(false);
   });
 });
 

@@ -95,9 +95,8 @@ export async function billRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ items, nextCursor: hasMore ? items[items.length - 1]!.id : null });
   });
 
-  fastify.post('/bills', anyRole, async (req, reply) => {
-    const body = parse(CreateBillInput, req.body);
-    const clinicId = req.clinicId!;
+  /** Shared DRAFT-bill creation (POST /bills and the checkout "ensure" endpoint below). */
+  async function createDraftBill(clinicId: string, userId: string, body: CreateBillInput) {
     const patient = await prisma.patient.findFirst({ where: { id: body.patientId, clinicId, deletedAt: null } });
     if (!patient) throw new NotFoundError('Patient not found');
     const clinic = await prisma.clinic.findFirstOrThrow({ where: { id: clinicId } });
@@ -125,7 +124,7 @@ export async function billRoutes(fastify: FastifyInstance): Promise<void> {
       'bill number',
     );
 
-    const bill = await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       const created = await tx.bill.create({
         data: {
           clinicId,
@@ -139,7 +138,7 @@ export async function billRoutes(fastify: FastifyInstance): Promise<void> {
           gstPercent: clinic.gstPercent,
           notes: body.notes ?? null,
           status: 'DRAFT',
-          createdById: req.user!.id,
+          createdById: userId,
           items: { create: allItems.map((i) => itemCreateData(clinicId, i)) },
         },
       });
@@ -152,7 +151,30 @@ export async function billRoutes(fastify: FastifyInstance): Promise<void> {
       await broadcastBill(tx, clinicId, created.id, 'billing.bill.created');
       return created;
     });
-    await fastify.audit('BILL_CREATED', 'Bill', bill.id, { billNumber, fromVisit: body.visitId ?? null });
+  }
+
+  fastify.post('/bills', anyRole, async (req, reply) => {
+    const body = parse(CreateBillInput, req.body);
+    const clinicId = req.clinicId!;
+    const bill = await createDraftBill(clinicId, req.user!.id, body);
+    await fastify.audit('BILL_CREATED', 'Bill', bill.id, { billNumber: bill.billNumber, fromVisit: body.visitId ?? null });
+    reply.status(201);
+    return ok(await billDetail(clinicId, bill.id));
+  });
+
+  // Ensure the visit's checkout bill exists (idempotent). The Take Payment sheet calls this on
+  // open, so "Due" always reflects the doctor's dictated costs instead of "—" (Phase 9.5 P1.5).
+  fastify.post('/visits/:id/bill', anyRole, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const clinicId = req.clinicId!;
+    const visit = await prisma.visit.findFirst({ where: { id, clinicId, deletedAt: null } });
+    if (!visit) throw new NotFoundError('Visit not found');
+
+    const existing = await prisma.bill.findFirst({ where: { clinicId, visitId: id, deletedAt: null } });
+    if (existing) return ok(await billDetail(clinicId, existing.id));
+
+    const bill = await createDraftBill(clinicId, req.user!.id, { patientId: visit.patientId, visitId: id } as CreateBillInput);
+    await fastify.audit('BILL_CREATED', 'Bill', bill.id, { billNumber: bill.billNumber, fromVisit: id, ensured: true });
     reply.status(201);
     return ok(await billDetail(clinicId, bill.id));
   });

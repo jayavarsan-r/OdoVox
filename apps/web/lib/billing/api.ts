@@ -43,6 +43,19 @@ export function useBill(id: string | null) {
   });
 }
 
+/**
+ * Ensure + fetch the visit's checkout bill. Idempotent POST: first open creates the DRAFT bill
+ * auto-populated from the visit's procedures + lab charges; later opens return the same bill.
+ * This is what puts the doctor's dictated cost in front of the receptionist (Phase 9.5 P1.5).
+ */
+export function useVisitBill(visitId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ['visit-bill', visitId],
+    queryFn: () => api.post<BillResponse>(`/visits/${visitId}/bill`),
+    enabled: !!visitId && enabled,
+  });
+}
+
 export function useCreateBill() {
   const qc = useQueryClient();
   return useMutation({

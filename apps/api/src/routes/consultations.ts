@@ -157,6 +157,21 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     await loadInClinic(id, req.clinicId!);
     const since = Number((req.query as { since?: string }).since ?? 0) || 0;
 
+    // @fastify/cors sets Access-Control-Allow-Origin/-Credentials on the reply during onRequest, but
+    // those are only flushed by Fastify's normal onSend path — which reply.hijack() skips. Carry them
+    // (and Vary) onto the raw response by hand; without them the browser blocks the cross-origin
+    // stream, the fetch rejects, and the consult UI freezes on "Transcribing" (Phase 9.5 regression).
+    const corsHeaders: Record<string, string> = {};
+    for (const name of [
+      'access-control-allow-origin',
+      'access-control-allow-credentials',
+      'access-control-expose-headers',
+      'vary',
+    ]) {
+      const value = reply.getHeader(name);
+      if (typeof value === 'string') corsHeaders[name] = value;
+    }
+
     reply.hijack();
     const raw = reply.raw;
     raw.writeHead(200, {
@@ -164,6 +179,7 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
       'X-Accel-Buffering': 'no', // never let Nginx buffer an SSE stream
+      ...corsHeaders,
     });
     raw.write('retry: 3000\n\n');
 

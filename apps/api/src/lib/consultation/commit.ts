@@ -204,6 +204,19 @@ export async function commitConsultation(
           });
           const status = completedSittings >= totalSittings ? 'COMPLETED' : 'IN_PROGRESS';
           await tx.procedure.update({ where: { id: procedure.id }, data: { completedSittings, status } });
+          // Final sitting done → close the plan too (mirrors the multi-sitting branch above).
+          // Guarded on ALL procedures: a manual plan may carry other still-open procedures.
+          if (status === 'COMPLETED') {
+            const openProcedures = await tx.procedure.count({
+              where: { planId: plan.id, deletedAt: null, status: { not: 'COMPLETED' } },
+            });
+            if (openProcedures === 0) {
+              await tx.treatmentPlan.update({
+                where: { id: plan.id },
+                data: { status: 'COMPLETED', completedAt: new Date() },
+              });
+            }
+          }
         }
       }
 
@@ -305,8 +318,12 @@ export async function commitConsultation(
         }
       }
 
-      // 8. Visit → CHECKOUT.
-      await tx.visit.update({ where: { id: visitId }, data: { status: 'CHECKOUT', endedAt: new Date() } });
+      // 8. Visit → CHECKOUT. checkoutStartedAt orders the receptionist's "Ready for Checkout"
+      // list (queue selectors sort on it), exactly like the manual queue transition.
+      await tx.visit.update({
+        where: { id: visitId },
+        data: { status: 'CHECKOUT', checkoutStartedAt: new Date(), endedAt: new Date() },
+      });
 
       // 9. Audit (atomic with the writes above).
       await tx.auditLog.create({

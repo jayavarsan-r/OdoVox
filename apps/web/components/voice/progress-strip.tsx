@@ -7,10 +7,11 @@ import { cn } from '@/lib/utils';
 
 type StepState = 'done' | 'active' | 'pending' | 'failed';
 
+// Friendly, human copy — provider names never surface to the clinic (Phase 9.5 Issue 5).
 const STEPS = [
-  { key: 'upload', label: 'Uploading' },
-  { key: 'stt', label: 'Transcribing', note: 'Sarvam · saarika:v2.5' },
-  { key: 'extract', label: 'Understanding', note: 'Gemini Flash' },
+  { key: 'upload', label: 'Sent' },
+  { key: 'stt', label: 'Listening…' },
+  { key: 'extract', label: 'Making sense of it…' },
 ] as const;
 
 function stepStates(kind: ConsultState['kind']): StepState[] {
@@ -67,9 +68,6 @@ export function ProgressStrip({ state }: { state: ConsultState }) {
                 <p className={cn('text-sm font-medium', st === 'pending' ? 'text-text-subtle' : 'text-ink')}>
                   {step.label}
                 </p>
-                {'note' in step && st === 'active' ? (
-                  <p className="text-xs text-text-muted">{step.note}</p>
-                ) : null}
               </div>
             </div>
           );

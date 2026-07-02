@@ -62,9 +62,9 @@ export default function ConsultDetailPage() {
         <button type="button" onClick={() => router.back()} aria-label="Back" className="text-text-muted">
           <ChevronLeft className="size-6" />
         </button>
+        {/* Static title — the patient's name renders once, inside the context card (§4.1). */}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-ink">{context?.patient.name ?? 'Consultation'}</p>
-          {context ? <p className="text-xs text-text-muted">{context.patient.age} yrs</p> : null}
+          <p className="truncate text-sm font-semibold text-ink">Consultation</p>
         </div>
         <span className="flex items-center gap-1.5 text-xs font-medium text-text-subtle">
           <span className="size-2 rounded-pill bg-lime" /> LIVE
