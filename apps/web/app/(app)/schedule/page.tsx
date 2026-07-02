@@ -41,10 +41,13 @@ export default function SchedulePage() {
 
   const searchParams = useSearchParams();
   const dateParam = searchParams.get('date');
+  // Home voice command "book…" lands here with ?dictate=1 (+ the spoken command in ?q=).
+  const voiceParam = searchParams.get('dictate') === '1';
+  const voiceText = searchParams.get('q') ?? undefined;
   const [focusISO, setFocusISO] = useState(() =>
     dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : localDateISO(new Date(), FALLBACK_TZ),
   );
-  const [newOpen, setNewOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(voiceParam);
   const [prefillDoctorId, setPrefillDoctorId] = useState<string | undefined>(undefined);
   const [detail, setDetail] = useState<ScheduleAppointment | null>(null);
 
@@ -121,6 +124,8 @@ export default function SchedulePage() {
         doctors={doctors}
         lockedDoctorId={isDoctor ? myDoctorId ?? undefined : undefined}
         defaultDoctorId={prefillDoctorId}
+        voice={voiceParam}
+        voiceText={voiceText}
       />
       <AppointmentDetailSheet appt={detail} tz={tz} onClose={() => setDetail(null)} />
     </AnimatedPage>

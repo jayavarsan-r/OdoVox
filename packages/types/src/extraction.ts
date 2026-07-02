@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gender, ToothStatus } from './common.js';
+import { Gender, RecurringInterval, ToothStatus } from './common.js';
 
 /**
  * Structured output of the AI extractors. These are the schemas the verification card edits and
@@ -186,6 +186,25 @@ export const BillItemsExtraction = z.object({
   clarifications: z.array(z.string()).default([]),
 });
 export type BillItemsExtraction = z.infer<typeof BillItemsExtraction>;
+
+/**
+ * "Book cleaning for Ramesh with Dr Asha next Monday 10am, every week for 6 weeks" →
+ * appointment draft. The extractor returns the raw `dateTimePhrase`; the SERVER resolves it to an
+ * ISO instant with chrono-node in the clinic's timezone (LLMs are unreliable at date arithmetic).
+ */
+export const AppointmentExtraction = z.object({
+  patientName: z.string().nullable().default(null),
+  doctorName: z.string().nullable().default(null),
+  dateTimePhrase: z.string().nullable().default(null),
+  durationMinutes: z.number().int().positive().nullable().default(null),
+  procedureHint: z.string().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  isRecurring: z.boolean().default(false),
+  recurringInterval: RecurringInterval.nullable().default(null),
+  recurringCount: z.number().int().min(2).max(12).nullable().default(null),
+  clarifications: z.array(z.string()).default([]),
+});
+export type AppointmentExtraction = z.infer<typeof AppointmentExtraction>;
 
 /** Server-side fuzzy match of a spoken item name against the clinic's catalog. */
 export interface InventoryItemMatch {

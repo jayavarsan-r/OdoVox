@@ -29,6 +29,18 @@ import {
 } from '../lib/schedule/index.js';
 import { APPOINTMENT_INCLUDE, serializeAppointment } from '../lib/schedule/serialize.js';
 import { reminderDrafts } from '../lib/schedule/reminders.js';
+import { parseNaturalDate } from '../lib/schedule/natural-date.js';
+import { extractFromTranscript } from '../lib/ai/extractors/index.js';
+import { appointmentExtractor } from '../lib/ai/extractors/appointment.js';
+import { assertOwnDictationKey, transcribeAndPurgeDictation } from '../lib/voice/dictation.js';
+
+const DictateApptInput = z
+  .object({
+    // Audio path (normal), or a pre-transcribed text (home voice hero hand-off).
+    storageKey: z.string().min(1).optional(),
+    text: z.string().min(1).max(2000).optional(),
+  })
+  .refine((b) => b.storageKey || b.text, { message: 'storageKey or text required' });
 
 const DateQuery = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -354,6 +366,86 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
 
     reply.status(201);
     return ok({ appointment: payload, conflicts });
+  });
+
+  // ── POST /appointments/dictate (Phase 9.7 W1.2.5) ─────────────────────────────────────────────
+  // "Book cleaning for Ramesh with Dr Asha next Monday 10am" → extraction + chrono-resolved
+  // datetime + patient/doctor candidates + an immediate Phase 6 conflict check. The verification
+  // card books via POST /appointments (same gate as manual booking).
+  fastify.post('/appointments/dictate', anyRole, async (req) => {
+    const body = parse(DictateApptInput, req.body);
+    const clinicId = req.clinicId!;
+
+    let transcript: string;
+    if (body.storageKey) {
+      assertOwnDictationKey(body.storageKey, clinicId);
+      transcript = await transcribeAndPurgeDictation(body.storageKey, fastify.log);
+    } else {
+      transcript = body.text!;
+    }
+
+    const doctors = await prisma.clinicMember.findMany({
+      where: { clinicId, role: 'DOCTOR', status: 'ACTIVE' },
+      include: { user: { select: { id: true, name: true } } },
+    });
+    const extraction = await extractFromTranscript(
+      appointmentExtractor,
+      transcript,
+      { doctorNames: doctors.map((d) => d.user.name) },
+      fastify.log,
+    );
+
+    // Natural date → UTC instant in the clinic's timezone. The extractor's verbatim phrase is
+    // preferred; the raw transcript is the fallback (the mock never emits a phrase).
+    const hours = await clinicHoursOf(clinicId);
+    const parsed =
+      (extraction.dateTimePhrase ? parseNaturalDate(extraction.dateTimePhrase, hours.timezone) : null) ??
+      parseNaturalDate(transcript, hours.timezone);
+
+    // Candidate patients by spoken name (top 3; the card renders a picker when ambiguous).
+    const patientMatches = extraction.patientName
+      ? (
+          await prisma.patient.findMany({
+            where: { clinicId, deletedAt: null, name: { contains: extraction.patientName.split(/\s+/)[0]!, mode: 'insensitive' } },
+            select: { id: true, name: true, phone: true, age: true },
+            take: 3,
+          })
+        ).sort((a, b) => Number(b.name.toLowerCase().startsWith(extraction.patientName!.toLowerCase())) - Number(a.name.toLowerCase().startsWith(extraction.patientName!.toLowerCase())))
+      : [];
+
+    const spokenDoctor = extraction.doctorName?.replace(/^dr\.?\s*/i, '').toLowerCase() ?? null;
+    const doctorMatches = spokenDoctor
+      ? doctors
+          .filter((d) => d.user.name.toLowerCase().replace(/^dr\.?\s*/, '').includes(spokenDoctor))
+          .map((d) => ({ id: d.user.id, name: d.user.name }))
+      : [];
+    // A doctor dictating without naming one books into their own book.
+    const resolvedDoctor = doctorMatches[0] ?? (req.role === 'DOCTOR' && !spokenDoctor ? { id: req.user!.id, name: '' } : null);
+
+    const durationMinutes = extraction.durationMinutes ?? 30;
+    let conflicts = null;
+    if (parsed && resolvedDoctor) {
+      const endsAt = new Date(parsed.date.getTime() + durationMinutes * 60_000);
+      conflicts = await runConflicts(clinicId, {
+        doctorId: resolvedDoctor.id,
+        patientId: patientMatches[0]?.id,
+        startsAt: parsed.date,
+        endsAt,
+      });
+    }
+
+    await fastify.audit('DICTATE_APPOINTMENT', 'Dictation', null, { hasDate: !!parsed });
+    return ok({
+      extraction,
+      suggestedDateTime: parsed?.date.toISOString() ?? null,
+      dateMatchedText: parsed?.matchedText ?? null,
+      dateHasTime: parsed?.hasTime ?? false,
+      durationMinutes,
+      patientMatches,
+      doctorMatches,
+      conflicts,
+      transcript,
+    });
   });
 
   // ── PATCH /appointments/:id (non-time edit) ───────────────────────────────────────────────────

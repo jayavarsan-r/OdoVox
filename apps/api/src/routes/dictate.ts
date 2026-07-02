@@ -7,12 +7,12 @@ import {
   type ExtractedPrescription,
   type TemplateMedicine,
 } from '@odovox/types';
-import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
+import { NotFoundError, ValidationError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
 import { requireAdmin, requireRole } from '../lib/rbac.js';
 import { storage, isAllowedAudioMime, MAX_AUDIO_BYTES } from '../lib/storage.js';
-import { getSttProvider } from '../lib/stt/index.js';
 import { getExtractor } from '../lib/ai/index.js';
+import { assertOwnDictationKey, transcribeAndPurgeDictation } from '../lib/voice/dictation.js';
 import { extractFromTranscript } from '../lib/ai/extractors/index.js';
 import { inventoryPurchaseExtractor } from '../lib/ai/extractors/inventory-purchase.js';
 import { inventoryConsumeExtractor } from '../lib/ai/extractors/inventory-consume.js';
@@ -48,20 +48,10 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
     return rows;
   }
 
-  /** Reject a storage key that doesn't belong to the caller's clinic (no cross-clinic audio reads). */
-  function assertOwnKey(storageKey: string, clinicId: string): void {
-    if (!storageKey.startsWith(`clinics/${clinicId}/dictation/`)) {
-      throw new ForbiddenError('That audio key does not belong to your clinic');
-    }
-  }
-
-  /** Download → transcribe → delete (best-effort). Returns the transcript. */
-  async function transcribeAndPurge(storageKey: string): Promise<string> {
-    const audio = await storage.getObject(storageKey);
-    const result = await getSttProvider(fastify.log).transcribe(audio, { language: 'auto', mimeType: 'audio/webm' });
-    await storage.deleteObject(storageKey).catch(() => undefined);
-    return result.transcript;
-  }
+  // Shared plumbing (lib/voice/dictation.ts) — same clinic scoping + transient-audio guarantee
+  // as the domain-hosted dictate endpoints (appointments, lab).
+  const assertOwnKey = assertOwnDictationKey;
+  const transcribeAndPurge = (storageKey: string) => transcribeAndPurgeDictation(storageKey, fastify.log);
 
   // Shared presign for all dictation surfaces.
   fastify.post('/dictate/presign', anyClinical, async (req) => {

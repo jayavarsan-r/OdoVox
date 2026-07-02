@@ -65,6 +65,9 @@ importers:
       bullmq:
         specifier: ^5.53.0
         version: 5.79.1
+      chrono-node:
+        specifier: ^2.9.1
+        version: 2.9.1
       dotenv:
         specifier: ^16.5.0
         version: 16.6.1
@@ -2263,6 +2266,10 @@ packages:
   chokidar@4.0.3:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
     engines: {node: '>= 14.16.0'}
+
+  chrono-node@2.9.1:
+    resolution: {integrity: sha512-nqP8Zp11efCYQIESXPxeDM8ikzN5BDb3Zzou+a66fZq+X2hzKFdsNLQE2/uBAh//BZEMbaMo1eTnagK7hOenAg==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   citty@0.1.6:
     resolution: {integrity: sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ==}
@@ -5606,6 +5613,8 @@ snapshots:
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.1.2
+
+  chrono-node@2.9.1: {}
 
   citty@0.1.6:
     dependencies:
