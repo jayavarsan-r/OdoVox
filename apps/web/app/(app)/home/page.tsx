@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
+import { VoiceCommandHero } from '@/components/voice/voice-command-hero';
 import { VoiceSearchInput } from '@/components/voice-search-input';
 import { EmptyState, FabMenu, HeroCard } from '@/components/ds';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -129,6 +130,9 @@ export default function DoctorHomePage() {
         trailing={<ArrowRight />}
         onClick={() => router.push('/consult')}
       />
+
+      {/* Voice command hero (Phase 9.7 W1.3) — speak once, land on the right screen */}
+      <VoiceCommandHero />
 
       {/* Quick tools */}
       <div className="grid grid-cols-2 gap-3">

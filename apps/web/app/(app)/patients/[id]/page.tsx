@@ -33,7 +33,7 @@ import {
   type ToothStatus,
 } from '@/components/odontogram/odontogram';
 import { api } from '@/lib/api-client';
-import { useDictation } from '@/lib/voice/use-dictation';
+import { VoiceInput } from '@/components/voice/voice-input';
 import { useToast } from '@/lib/toast';
 import {
   usePatient,
@@ -757,29 +757,24 @@ function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; op
   }
 
   // Dictation (Phase 3) now also recognises a spoken template name → applied pill.
-  const dictate = useDictation<{
+  const onRxExtraction = ({ prescription, templateUsed, safetyWarnings }: {
     prescription: { prescriptions: { name: string; dosage: string | null; frequency: string | null; durationDays: number | null }[] };
     templateUsed: { id: string; name: string } | null;
     safetyWarnings: string[];
-  }>(
-    '/prescriptions/dictate',
-    ({ prescription, templateUsed, safetyWarnings }) => {
-      setMeds(
-        prescription.prescriptions.map((p) => ({
-          name: p.name,
-          dosage: p.dosage ?? '1 tab',
-          frequency: (p.frequency ?? 'BD') as Med['frequency'],
-          durationDays: p.durationDays ?? 5,
-        })),
-      );
-      setApplied(templateUsed);
-      if (safetyWarnings.length) toast.info(`Safety: ${safetyWarnings.join(', ')} — verify before saving.`);
-      else if (templateUsed) toast.info(`Applied “${templateUsed.name}” from your voice — review and edit.`);
-      else toast.info('Filled from your voice — review and edit.');
-    },
-    { patientId },
-  );
-  const dictateBusy = dictate.state.kind === 'recording' || dictate.state.kind === 'processing';
+  }) => {
+    setMeds(
+      prescription.prescriptions.map((p) => ({
+        name: p.name,
+        dosage: p.dosage ?? '1 tab',
+        frequency: (p.frequency ?? 'BD') as Med['frequency'],
+        durationDays: p.durationDays ?? 5,
+      })),
+    );
+    setApplied(templateUsed);
+    if (safetyWarnings.length) toast.info(`Safety: ${safetyWarnings.join(', ')} — verify before saving.`);
+    else if (templateUsed) toast.info(`Applied “${templateUsed.name}” from your voice — review and edit.`);
+    else toast.info('Filled from your voice — review and edit.');
+  };
 
   const save = async () => {
     try {
@@ -806,17 +801,15 @@ function PrescriptionSheet({ patientId, open, onClose }: { patientId: string; op
         </div>
       ) : (
         <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => !dictateBusy && void dictate.start()}
-            disabled={dictateBusy}
-            className={cn(
-              'flex w-full items-center justify-center gap-2 rounded-pill py-2.5 text-sm font-medium transition-colors',
-              dictateBusy ? 'animate-pulse bg-ink text-lime' : 'bg-lime text-ink shadow-lime-glow',
-            )}
-          >
-            <Mic className="size-4" /> {dictateBusy ? 'Listening… (auto-stops)' : 'Dictate prescription'}
-          </button>
+          <VoiceInput
+            mode="extraction"
+            endpoint="/prescriptions/dictate"
+            extraBody={{ patientId }}
+            placement="sheet"
+            label="Dictate prescription"
+            hint="Medicines · dosage · duration (auto-stops)"
+            onExtraction={onRxExtraction}
+          />
 
           {/* Phase 5: template picker — one tap fills the medicines below. */}
           {applied ? (

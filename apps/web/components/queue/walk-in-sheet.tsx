@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, ImagePlus, Mic, Square, X } from 'lucide-react';
+import { FileText, ImagePlus, X } from 'lucide-react';
 import type { PatientListItem } from '@odovox/types';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { useWalkIn, uploadVisitXray, XRAY_ACCEPT } from '@/lib/queue/mutations';
 import { useQueueStore } from '@/lib/queue/store';
 import { waitingCountByDoctor } from '@/lib/queue/selectors';
 import { buildWalkInBody, defaultDoctorId, doctorChoices } from '@/lib/queue/walk-in';
-import { useDictation } from '@/lib/voice/use-dictation';
+import { VoiceInput } from '@/components/voice/voice-input';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -38,31 +38,6 @@ export function WalkInSheet({ open, voice = false, onClose }: { open: boolean; v
   const patients = usePatients(search, 'all');
   const list = patients.data?.pages.flatMap((p) => p.items) ?? [];
   const choices = doctorChoices(state.doctors, waitingCountByDoctor(state));
-
-  // Voice walk-in (Phase 9.5 P1.6): dictate "new patient Ramesh, 98765…, tooth pain" — the name
-  // drives the patient search, the complaint prefills. Everything stays editable in the form.
-  const dictation = useDictation<{
-    intake: { name: string | null; phone: string | null; chiefComplaint: string | null };
-    transcript: string;
-  }>('/queue/walkin/dictate', ({ intake, transcript }) => {
-    setSearch(intake.name ?? intake.phone ?? transcript.trim());
-    if (intake.chiefComplaint) setComplaint(intake.chiefComplaint);
-    toast.info('Filled from your voice — pick the patient to continue.');
-  });
-
-  // "Voice walk-in" FAB: begin listening the moment the sheet opens (once per open).
-  const autoStarted = useRef(false);
-  const startDictation = dictation.start;
-  useEffect(() => {
-    if (!open) {
-      autoStarted.current = false;
-      return;
-    }
-    if (voice && !autoStarted.current) {
-      autoStarted.current = true;
-      void startDictation();
-    }
-  }, [open, voice, startDictation]);
 
   function reset() {
     setStep('patient');
@@ -118,31 +93,26 @@ export function WalkInSheet({ open, voice = false, onClose }: { open: boolean; v
               autoFocus
               className="flex-1"
             />
-            <button
-              type="button"
-              aria-label={dictation.state.kind === 'recording' ? 'Stop dictation' : 'Dictate walk-in'}
-              onClick={() =>
-                dictation.state.kind === 'recording' ? dictation.stop() : void dictation.start()
-              }
-              disabled={dictation.state.kind === 'processing'}
-              className={cn(
-                'flex size-10 shrink-0 items-center justify-center rounded-pill',
-                dictation.state.kind === 'recording' ? 'bg-ink text-paper' : 'bg-lime-soft text-ink',
-              )}
-            >
-              {dictation.state.kind === 'recording' ? (
-                <Square className="size-4 fill-current" />
-              ) : (
-                <Mic className="size-5" />
-              )}
-            </button>
+            {/* Voice walk-in (Phase 9.5 P1.6, migrated to <VoiceInput>): dictate "new patient
+                Ramesh, 98765…, tooth pain" — the name drives the search, the complaint prefills. */}
+            <VoiceInput<{
+              intake: { name: string | null; phone: string | null; chiefComplaint: string | null };
+              transcript: string;
+            }>
+              mode="extraction"
+              endpoint="/queue/walkin/dictate"
+              size="md"
+              label="Dictate walk-in"
+              hint="name · phone · complaint"
+              showStatus
+              autoStart={open && voice}
+              onExtraction={({ intake, transcript }) => {
+                setSearch(intake.name ?? intake.phone ?? transcript.trim());
+                if (intake.chiefComplaint) setComplaint(intake.chiefComplaint);
+                toast.info('Filled from your voice — pick the patient to continue.');
+              }}
+            />
           </div>
-          {dictation.state.kind === 'recording' ? (
-            <p className="text-center text-xs text-text-muted">Listening… name · phone · complaint</p>
-          ) : null}
-          {dictation.state.kind === 'processing' ? (
-            <p className="text-center text-xs text-text-muted">Making sense of it…</p>
-          ) : null}
           <div className="max-h-80 space-y-2 overflow-y-auto">
             {list.map((p) => (
               <button

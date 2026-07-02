@@ -89,7 +89,12 @@ export class GeminiExtractor implements IClinicalExtractor {
     };
   }
 
-  private async generate(
+  /**
+   * Generic structured generation — systemInstruction + transcript + responseSchema → parsed JSON.
+   * The named extract* methods below and the Phase 9.7 extractor runner both go through here, so
+   * retry/backoff/logging behavior is identical for every surface.
+   */
+  async generateStructured(
     systemInstruction: string,
     transcript: string,
     responseSchema: GeminiSchema,
@@ -166,7 +171,7 @@ export class GeminiExtractor implements IClinicalExtractor {
     transcript: string,
     ctx: ClinicalExtractionContext,
   ): Promise<ClinicalExtraction> {
-    const raw = await this.generate(
+    const raw = await this.generateStructured(
       buildClinicalSystemInstruction(ctx),
       transcript,
       CLINICAL_RESPONSE_SCHEMA,
@@ -178,7 +183,7 @@ export class GeminiExtractor implements IClinicalExtractor {
     transcript: string,
     ctx: PrescriptionContext,
   ): Promise<PrescriptionExtraction> {
-    const raw = await this.generate(
+    const raw = await this.generateStructured(
       buildPrescriptionSystemInstruction(ctx),
       transcript,
       PRESCRIPTION_RESPONSE_SCHEMA,
@@ -187,7 +192,7 @@ export class GeminiExtractor implements IClinicalExtractor {
   }
 
   async extractPatientIntake(transcript: string): Promise<PatientIntakeExtraction> {
-    const raw = await this.generate(
+    const raw = await this.generateStructured(
       PATIENT_INTAKE_SYSTEM_INSTRUCTION,
       transcript,
       INTAKE_RESPONSE_SCHEMA,

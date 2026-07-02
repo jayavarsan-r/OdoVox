@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Mic, Square } from 'lucide-react';
 import type { VisitWithPatient } from '@odovox/types';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,8 @@ import {
   type CheckoutForm,
 } from '@/lib/queue/checkout-form';
 import { useVisitBill } from '@/lib/billing/api';
-import { useDictation } from '@/lib/voice/use-dictation';
+import { VoiceInput } from '@/components/voice/voice-input';
+import { appendTranscript } from '@/lib/voice/voice-input';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -39,11 +39,6 @@ export function CheckoutSheet({
   const { data: bill } = useVisitBill(visit?.id ?? null, open);
   const [form, setForm] = useState<CheckoutForm>(defaultCheckoutForm(visit?.billDuePaise ?? null));
   const [error, setError] = useState<string | null>(null);
-  // Voice checkout notes (Phase 9.5 P1.6): dictate "patient will pay balance in two weeks" straight
-  // into the Notes field. STT only — the note flows into the payment via buildCompleteBody.
-  const noteDictation = useDictation<{ transcript: string }>('/dictate/transcribe', ({ transcript }) =>
-    setForm((f) => ({ ...f, notes: [f.notes, transcript.trim()].filter(Boolean).join(' ') })),
-  );
 
   // Re-seed the form whenever a different visit opens, then again when its bill arrives (the
   // bill's balance is the real due; the snapshot's billDuePaise is null until the bill exists).
@@ -136,24 +131,14 @@ export function CheckoutSheet({
                 onChange={(e) => set({ notes: e.target.value })}
                 className="flex-1"
               />
-              <button
-                type="button"
-                aria-label={noteDictation.state.kind === 'recording' ? 'Stop dictation' : 'Dictate note'}
-                onClick={() =>
-                  noteDictation.state.kind === 'recording' ? noteDictation.stop() : void noteDictation.start()
-                }
-                disabled={noteDictation.state.kind === 'processing'}
-                className={cn(
-                  'flex size-10 shrink-0 items-center justify-center rounded-pill',
-                  noteDictation.state.kind === 'recording' ? 'bg-ink text-paper' : 'bg-lime-soft text-ink',
-                )}
-              >
-                {noteDictation.state.kind === 'recording' ? (
-                  <Square className="size-4 fill-current" />
-                ) : (
-                  <Mic className="size-5" />
-                )}
-              </button>
+              {/* Voice checkout notes (Phase 9.5 P1.6, migrated to <VoiceInput>): dictate "patient
+                  will pay balance in two weeks" straight into the Notes field. STT only. */}
+              <VoiceInput
+                mode="notes"
+                size="md"
+                label="Dictate note"
+                onTranscript={(t) => setForm((f) => ({ ...f, notes: appendTranscript(f.notes ?? '', t) }))}
+              />
             </div>
           </div>
         ) : null}

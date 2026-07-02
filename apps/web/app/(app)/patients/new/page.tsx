@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X, RefreshCw, Mic, Square } from 'lucide-react';
+import { X, RefreshCw, Mic } from 'lucide-react';
 import { CreatePatientInput } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { HeroCard } from '@/components/ds';
@@ -16,7 +16,7 @@ import { PhoneInput } from '@/components/forms/PhoneInput';
 import { ChipMultiSelect } from '@/components/forms/ChipMultiSelect';
 import { useToast } from '@/lib/toast';
 import { useCreatePatient } from '@/lib/queries';
-import { useDictation } from '@/lib/voice/use-dictation';
+import { VoiceInput } from '@/components/voice/voice-input';
 import { cn } from '@/lib/utils';
 
 const GENDERS = [
@@ -54,9 +54,12 @@ export default function NewPatientPage() {
     defaultValues: { name: '', phone: '', age: 0, gender: 'MALE', medicalFlags: [] },
   });
 
-  // Stub swap (Phase 3): "Speak patient details" → real intake extraction. Prefills the form,
-  // which is itself the review surface — the doctor edits any field before Create.
-  const intake = useDictation<{
+  // Home voice command "new patient …" routes here with ?voice=1 → start listening immediately.
+  const voiceParam = useSearchParams().get('voice') === '1';
+
+  // "Speak patient details" → intake extraction prefills the form, which is itself the review
+  // surface — the doctor edits any field before Create.
+  const onIntake = ({ intake: i }: {
     intake: {
       name: string | null;
       phone: string | null;
@@ -64,7 +67,7 @@ export default function NewPatientPage() {
       gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
       medicalFlags: string[];
     };
-  }>('/patients/intake/dictate', ({ intake: i }) => {
+  }) => {
     const opts = { shouldValidate: true, shouldDirty: true } as const;
     if (i.name) setValue('name', i.name, opts);
     if (i.phone) setValue('phone', i.phone, opts);
@@ -72,7 +75,7 @@ export default function NewPatientPage() {
     if (i.gender) setValue('gender', i.gender, opts);
     if (i.medicalFlags.length) setValue('medicalFlags', i.medicalFlags, opts);
     toast.info('Filled from your voice — review and edit before saving.');
-  });
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -103,29 +106,24 @@ export default function NewPatientPage() {
             </button>
           </div>
 
-          {/* Speak hero — single-shot intake dictation (Phase 3) */}
+          {/* Speak hero — intake dictation via the shared <VoiceInput> (Phase 9.7 W1.1) */}
           <HeroCard
             variant="dark"
             icon={<Mic />}
-            title={intake.state.kind === 'recording' ? 'Listening…' : intake.state.kind === 'processing' ? 'Processing…' : 'Speak patient details'}
-            subtitle={
-              intake.state.kind === 'recording'
-                ? 'Tap Stop when you’re done'
-                : intake.state.kind === 'processing'
-                  ? 'Filling the form…'
-                  : 'Name · phone · age · complaint'
-            }
-            onClick={() => intake.state.kind === 'idle' && void intake.start()}
-          />
-          {intake.state.kind === 'recording' && (
-            <button
-              type="button"
-              onClick={() => intake.stop()}
-              className="flex w-full items-center justify-center gap-2 rounded-pill bg-ink py-3 text-sm font-semibold text-paper"
-            >
-              <Square className="size-4 fill-current" /> Stop recording
-            </button>
-          )}
+            title="Speak patient details"
+            subtitle="Name · phone · age · complaint"
+          >
+            <VoiceInput
+              mode="extraction"
+              endpoint="/patients/intake/dictate"
+              placement="sheet"
+              label="Speak patient details"
+              hint="Tap Stop when you’re done"
+              autoStart={voiceParam}
+              onExtraction={onIntake}
+              className="mt-3"
+            />
+          </HeroCard>
 
           {/* Identity */}
           <div className="space-y-4 rounded-2xl bg-paper-warm p-5 shadow-elev-1">

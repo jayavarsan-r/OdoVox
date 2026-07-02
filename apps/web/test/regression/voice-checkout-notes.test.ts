@@ -26,11 +26,12 @@ describe('Take Payment sheet — notes mic wiring', () => {
   const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
   const sheet = readFileSync(join(webRoot, 'components', 'queue', 'checkout-sheet.tsx'), 'utf8');
 
-  it('uses the shared single-shot dictation against the STT-only endpoint', () => {
-    expect(sheet).toMatch(/useDictation<\{ transcript: string \}>\('\/dictate\/transcribe'/);
+  it('uses the shared <VoiceInput> in notes mode (Phase 9.7 migration of the 9.5 mic)', () => {
+    expect(sheet).toMatch(/<VoiceInput\s/);
+    expect(sheet).toMatch(/mode="notes"/);
   });
 
   it('appends the transcript into the notes field', () => {
-    expect(sheet).toMatch(/notes: \[f\.notes, transcript\.trim\(\)\]\.filter\(Boolean\)\.join\(' '\)/);
+    expect(sheet).toMatch(/notes: appendTranscript\(f\.notes \?\? '', t\)/);
   });
 });
