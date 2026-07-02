@@ -9,21 +9,28 @@ import {
   CreateLabVendorInput,
   DeliverLabCaseInput,
   LabPhotoPresignInput,
+  LabVendorAutomationInput,
+  LabVendorConsentInput,
   ListLabCasesQuery,
   ReceiveLabCaseInput,
   ReworkLabCaseInput,
   SendLabCaseInput,
+  TransitionLabCaseInput,
   UpdateLabCaseInput,
   UpdateLabVendorInput,
 } from '@odovox/types';
-import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
+import { ForbiddenError, NotFoundError, UnprocessableError, ValidationError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
 import { requireRole } from '../lib/rbac.js';
 import { encryptField } from '../lib/encryption.js';
 import { storage, extForMime } from '../lib/storage.js';
 import { broadcastToClinic } from '../lib/realtime/broadcast.js';
 import { generateUniqueCaseNumber } from '../lib/lab/case-number.js';
+import { allocateCaseCode } from '../lib/lab/case-code.js';
 import { assertTransition } from '../lib/lab/transitions.js';
+import { transitionLabCase } from '../lib/lab/transition-service.js';
+import { sendLabTemplate } from '../lib/lab-transport/send-service.js';
+import { normalizeIndianPhone } from '../lib/whatsapp/render.js';
 import { notifyLabCaseReady } from '../lib/whatsapp/cross-wire.js';
 import {
   LAB_CASE_DETAIL_INCLUDE,
@@ -92,6 +99,10 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ items: rows.map((r) => toLabVendorResponse(r, false)) });
   });
 
+  /** WhatsApp numbers stored normalized to E.164 (+91…) — the inbound router matches on them. */
+  const normalizeWaNumbers = (numbers: string[]): string[] =>
+    [...new Set(numbers.map((n) => normalizeIndianPhone(n) ?? n).filter(Boolean))];
+
   fastify.post('/lab/vendors', doctorAdmin, async (req, reply) => {
     const body = parse(CreateLabVendorInput, req.body);
     const vendor = await prisma.labVendor.create({
@@ -105,12 +116,48 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
         defaultTurnaroundDays: body.defaultTurnaroundDays,
         specialties: body.specialties,
         notes: body.notes ?? null,
+        whatsappPhoneNumbers: normalizeWaNumbers(body.whatsappPhoneNumbers),
+        preferredLanguage: body.preferredLanguage,
         createdById: req.user!.id,
       },
     });
     await fastify.audit('LAB_VENDOR_CREATED', 'LabVendor', vendor.id, { name: body.name });
     reply.status(201);
     return ok(toLabVendorResponse(vendor, true));
+  });
+
+  // ── Phase 9.7 §2.11 — one-time consent + per-lab automation kill switch ─────
+  fastify.post('/lab/vendors/:id/consent', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    const body = parse(LabVendorConsentInput, req.body);
+    const vendor = await loadVendorOr404(req.clinicId!, id);
+
+    if (body.action === 'send_optin') {
+      // T-consent is the one template allowed pre-consent; consentLoggedAt is stamped when the
+      // lab replies YES (inbound router) or when reception marks it confirmed manually.
+      const result = await sendLabTemplate(prisma, {
+        clinicId: req.clinicId!,
+        vendorId: vendor.id,
+        templateKey: 'lab_t_consent',
+        automated: false,
+        throwOnBlock: true,
+      });
+      await fastify.audit('LAB_VENDOR_CONSENT_OPTIN_SENT', 'LabVendor', id, {});
+      return ok({ sent: result.sent, consentLoggedAt: vendor.consentLoggedAt });
+    }
+
+    const updated = await prisma.labVendor.update({ where: { id }, data: { consentLoggedAt: new Date() } });
+    await fastify.audit('LAB_VENDOR_CONSENT_CONFIRMED', 'LabVendor', id, { via: 'reception_manual' });
+    return ok({ sent: false, consentLoggedAt: updated.consentLoggedAt });
+  });
+
+  fastify.post('/lab/vendors/:id/automation', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    const body = parse(LabVendorAutomationInput, req.body);
+    await loadVendorOr404(req.clinicId!, id);
+    const updated = await prisma.labVendor.update({ where: { id }, data: { automationPaused: body.paused } });
+    await fastify.audit('LAB_VENDOR_AUTOMATION_TOGGLED', 'LabVendor', id, { paused: body.paused });
+    return ok(toLabVendorResponse(updated, false));
   });
 
   // Detail reveals the decrypted phone/address — audited.
@@ -140,6 +187,8 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
         ...(body.defaultTurnaroundDays !== undefined ? { defaultTurnaroundDays: body.defaultTurnaroundDays } : {}),
         ...(body.specialties !== undefined ? { specialties: body.specialties } : {}),
         ...(body.notes !== undefined ? { notes: body.notes } : {}),
+        ...(body.whatsappPhoneNumbers !== undefined ? { whatsappPhoneNumbers: normalizeWaNumbers(body.whatsappPhoneNumbers) } : {}),
+        ...(body.preferredLanguage !== undefined ? { preferredLanguage: body.preferredLanguage } : {}),
       },
     });
     await fastify.audit('LAB_VENDOR_UPDATED', 'LabVendor', id, {});
@@ -189,39 +238,44 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     const doctorId = body.doctorId ?? req.user!.id;
     assertDoctorOwns(req, doctorId);
 
-    // Validate FK targets are in this clinic.
+    // Validate FK targets are in this clinic (vendor optional — DRAFTs may pick a lab later).
     const [patient, vendor, clinic] = await Promise.all([
       prisma.patient.findFirst({ where: { id: body.patientId, clinicId } }),
-      prisma.labVendor.findFirst({ where: { id: body.vendorId, clinicId } }),
+      body.vendorId ? prisma.labVendor.findFirst({ where: { id: body.vendorId, clinicId } }) : Promise.resolve(null),
       prisma.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: { joinCode: true } }),
     ]);
     if (!patient) throw new NotFoundError('Patient not found');
-    if (!vendor) throw new NotFoundError('Lab vendor not found');
+    if (body.vendorId && !vendor) throw new NotFoundError('Lab vendor not found');
 
     const caseNumber = await generateUniqueCaseNumber(prisma, clinicId, clinic.joinCode);
 
-    const created = await prisma.labCase.create({
-      data: {
-        clinicId,
-        patientId: body.patientId,
-        doctorId,
-        vendorId: body.vendorId,
-        caseNumber,
-        type: body.type,
-        teeth: body.teeth,
-        material: body.material ?? null,
-        shade: body.shade ?? null,
-        description: body.description ?? null,
-        impressionTakenAt: body.impressionTakenAt ?? new Date(),
-        expectedReturnAt: body.expectedReturnAt ?? null,
-        costPaise: body.costPaise ?? null,
-        patientChargePaise: body.patientChargePaise ?? null,
-        notesEnc: body.notes ? encryptField(body.notes) : null,
-        treatmentPlanId: body.treatmentPlanId ?? null,
-        visitId: body.visitId ?? null,
-        status: 'DRAFT',
-        createdById: req.user!.id,
-      },
+    const created = await prisma.$transaction(async (tx) => {
+      // Human case code (DK-0042) allocated atomically — in every WhatsApp message from day one.
+      const caseCode = await allocateCaseCode(tx, clinicId);
+      return tx.labCase.create({
+        data: {
+          clinicId,
+          patientId: body.patientId,
+          doctorId,
+          vendorId: body.vendorId ?? null,
+          caseNumber,
+          caseCode,
+          type: body.type,
+          teeth: body.teeth,
+          material: body.material ?? null,
+          shade: body.shade ?? null,
+          description: body.description ?? null,
+          impressionTakenAt: body.impressionTakenAt ?? new Date(),
+          expectedReturnAt: body.expectedReturnAt ?? null,
+          costPaise: body.costPaise ?? null,
+          patientChargePaise: body.patientChargePaise ?? null,
+          notesEnc: body.notes ? encryptField(body.notes) : null,
+          treatmentPlanId: body.treatmentPlanId ?? null,
+          visitId: body.visitId ?? null,
+          status: 'DRAFT',
+          createdById: req.user!.id,
+        },
+      });
     });
     await fastify.audit('LAB_CASE_CREATED', 'LabCase', created.id, { caseNumber, type: body.type });
     await broadcastCase(clinicId, created.id, 'lab.case.created');
@@ -271,7 +325,59 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     return ok(await caseDetail(clinicId, id));
   });
 
-  // ── Transitions ──────────────────────────────────────────────────────────────
+  // ── Phase 9.7 §2.3 — generic manual transition (reception status buttons) ────
+  // ALL 9.7 status moves go through transitionLabCase (matrix + history + idempotency).
+  // Side effects after commit: T1 on → SENT (consent-gated, blocking for manual sends unless
+  // skipWhatsApp), T4 auto-fires on → RECEIVED, patient notification on → READY.
+  fastify.post('/lab/cases/:id/transition', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    const body = parse(TransitionLabCaseInput, req.body);
+    const clinicId = req.clinicId!;
+    const existing = await loadCaseOr404(clinicId, id);
+    if (req.role === 'DOCTOR') assertDoctorOwns(req, existing.doctorId);
+
+    // A case can't go to the lab without a lab (voice-suggested DRAFTs start vendorless).
+    if (body.to === 'SENT' && !existing.vendorId) {
+      throw new UnprocessableError('Pick a lab before sending this case.', 'LAB_SEND_NO_VENDOR');
+    }
+    // §2.11 — a manual Send for a non-consented lab blocks BEFORE the status moves, so the UI
+    // can show the consent modal and the case stays DRAFT. skipWhatsApp = "sent by other means".
+    if (body.to === 'SENT' && !body.skipWhatsApp) {
+      const vendor = await prisma.labVendor.findUniqueOrThrow({ where: { id: existing.vendorId! } });
+      if (!vendor.consentLoggedAt) {
+        throw new UnprocessableError(
+          'This lab hasn’t opted in to WhatsApp. Confirm consent first, or mark as sent without WhatsApp.',
+          'LAB_SEND_NO_CONSENT',
+        );
+      }
+    }
+
+    const { labCase } = await transitionLabCase(prisma, {
+      clinicId,
+      caseId: id,
+      to: body.to,
+      trigger: 'reception_manual',
+      note: body.note ?? null,
+      byUserId: req.user!.id,
+    });
+
+    // Post-commit side effects (best-effort — the status change is already durable).
+    if (body.to === 'SENT' && !body.skipWhatsApp && labCase.vendorId) {
+      await sendLabTemplate(prisma, { clinicId, vendorId: labCase.vendorId, caseId: id, templateKey: 'lab_t1_new_case', automated: false, throwOnBlock: false });
+    }
+    if (body.to === 'RECEIVED' && labCase.vendorId) {
+      await sendLabTemplate(prisma, { clinicId, vendorId: labCase.vendorId, caseId: id, templateKey: 'lab_t4_receipt', automated: true, throwOnBlock: false });
+    }
+    if (body.to === 'READY') {
+      await notifyLabCaseReady(fastify, clinicId, id); // Phase 9 patient notification (consent-gated)
+    }
+
+    await fastify.audit('LAB_CASE_TRANSITION', 'LabCase', id, { to: body.to, trigger: 'reception_manual' });
+    await broadcastCase(clinicId, id, 'lab.case.updated');
+    return ok(await caseDetail(clinicId, id));
+  });
+
+  // ── Transitions (legacy Phase 7 endpoints — still served for the existing UI) ─
   // Each: load → ownership → assertTransition → update → audit → broadcast.
 
   fastify.post('/lab/cases/:id/send', doctorAdmin, async (req) => {
@@ -281,6 +387,7 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     const existing = await loadCaseOr404(clinicId, id);
     assertDoctorOwns(req, existing.doctorId);
     assertTransition(existing.status, 'SENT');
+    if (!existing.vendorId) throw new UnprocessableError('Pick a lab before sending this case.', 'LAB_SEND_NO_VENDOR');
 
     const vendor = await prisma.labVendor.findUniqueOrThrow({ where: { id: existing.vendorId } });
     const sentAt = body.sentAt ?? new Date();

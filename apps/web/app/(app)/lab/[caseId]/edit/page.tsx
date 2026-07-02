@@ -25,7 +25,7 @@ export default function EditLabCasePage() {
 
   useEffect(() => {
     if (c) {
-      setVendorId(c.vendorId);
+      setVendorId(c.vendorId ?? '');
       setMaterial(c.material ?? '');
       setShade(c.shade ?? '');
       setDescription(c.description ?? '');

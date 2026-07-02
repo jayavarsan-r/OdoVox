@@ -7,6 +7,8 @@ export const NeedsYouKind = z.enum([
   'ALLERGY_TODAY',
   'LAB_READY',
   'LAB_OVERDUE',
+  'LAB_STUCK_READY', // Phase 9.7 §2.10: READY > 3 days, not dispatched — call the lab
+  'LAB_ISSUE_STALE', // Phase 9.7 §2.10: ISSUE_RAISED > 24h unactioned
   'LOW_STOCK',
   'MISSED_APPOINTMENT',
   'TREATMENT_STALLED',

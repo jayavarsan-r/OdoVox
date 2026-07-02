@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   expectedReturnInfo,
-  labCaseActions,
   labCaseTypeLabel,
+  labNextStatuses,
   labStatusStyle,
+  labTriggerLabel,
   maskPhone,
   validateNewCase,
 } from './lab-ui';
@@ -51,13 +52,22 @@ describe('expectedReturnInfo', () => {
   });
 });
 
-describe('labCaseActions', () => {
-  it('returns status-appropriate actions', () => {
-    expect(labCaseActions('DRAFT')).toEqual(['edit', 'send', 'cancel']);
-    expect(labCaseActions('READY')).toEqual(['deliver', 'rework', 'cancel']);
-    expect(labCaseActions('DELIVERED')).toEqual(['complete', 'rework']);
-    expect(labCaseActions('COMPLETED')).toEqual([]);
-    expect(labCaseActions('CANCELLED')).toEqual([]);
+describe('labNextStatuses (Phase 9.7 §2.3 manual buttons)', () => {
+  it('offers the matrix-forward moves per status', () => {
+    expect(labNextStatuses('DRAFT')).toEqual(['SENT', 'CANCELLED']);
+    expect(labNextStatuses('SENT')).toContain('ACKNOWLEDGED');
+    expect(labNextStatuses('READY')).toContain('DISPATCHED');
+    expect(labNextStatuses('RECEIVED')).toEqual(['FITTED', 'ISSUE_RAISED', 'CANCELLED']);
+    expect(labNextStatuses('ISSUE_RAISED')).toEqual(['IN_PROGRESS', 'CANCELLED']);
+    expect(labNextStatuses('FITTED')).toEqual([]);
+    expect(labNextStatuses('COMPLETED')).toEqual([]);
+    expect(labNextStatuses('CANCELLED')).toEqual([]);
+  });
+  it('styles the 9.7 states and labels triggers for the timeline', () => {
+    expect(labStatusStyle('ISSUE_RAISED').bar).toBe('bg-peach');
+    expect(labStatusStyle('RECEIVED').bar).toBe('bg-sage');
+    expect(labTriggerLabel('lab_button')).toBe('Via button reply');
+    expect(labTriggerLabel('llm_parse')).toBe('AI-parsed');
   });
 });
 

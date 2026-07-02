@@ -10,18 +10,29 @@ export interface LabStatusStyle {
   strikethrough?: boolean;
 }
 
-/** Status colour map (§4.1). DRAFT gray · SENT sky · IN_PROGRESS lavender · READY lime ·
- *  DELIVERED sage · REWORK peach · COMPLETED/CANCELLED muted. */
+/** Status colour map (§4.1 + Phase 9.7 tracker states). DRAFT gray · SENT sky · ACK sky ·
+ *  IN_PROGRESS lavender · READY lime · DISPATCHED sky · RECEIVED sage · FITTED sage ·
+ *  ISSUE peach · DELIVERED sage · REWORK peach · COMPLETED/CANCELLED muted. */
 export function labStatusStyle(status: LabCaseStatus): LabStatusStyle {
   switch (status) {
     case 'DRAFT':
       return { bar: 'bg-border-strong', pill: 'bg-paper-warm text-text-subtle', label: 'Draft' };
     case 'SENT':
       return { bar: 'bg-sky', pill: 'bg-sky-soft text-ink', label: 'Sent' };
+    case 'ACKNOWLEDGED':
+      return { bar: 'bg-sky', pill: 'bg-sky-soft text-ink', label: 'Acknowledged' };
     case 'IN_PROGRESS':
       return { bar: 'bg-lavender', pill: 'bg-lavender-soft text-ink', label: 'In progress' };
     case 'READY':
       return { bar: 'bg-lime', pill: 'bg-lime-soft text-ink', label: 'Ready' };
+    case 'DISPATCHED':
+      return { bar: 'bg-sky', pill: 'bg-sky-soft text-ink', label: 'Dispatched' };
+    case 'RECEIVED':
+      return { bar: 'bg-sage', pill: 'bg-sage-soft text-ink', label: 'Received' };
+    case 'FITTED':
+      return { bar: 'bg-sage', pill: 'bg-sage-soft text-ink', label: 'Fitted' };
+    case 'ISSUE_RAISED':
+      return { bar: 'bg-peach', pill: 'bg-peach-soft text-ink', label: 'Issue raised' };
     case 'DELIVERED':
       return { bar: 'bg-sage', pill: 'bg-sage-soft text-ink', label: 'Delivered' };
     case 'RETURNED_FOR_REWORK':
@@ -30,6 +41,59 @@ export function labStatusStyle(status: LabCaseStatus): LabStatusStyle {
       return { bar: 'bg-muted', pill: 'bg-muted text-muted-foreground', label: 'Completed' };
     case 'CANCELLED':
       return { bar: 'bg-muted', pill: 'bg-muted text-muted-foreground', label: 'Cancelled', strikethrough: true };
+  }
+}
+
+/**
+ * Phase 9.7 §2.3 — forward moves the manual status buttons offer per current status. Mirrors the
+ * server matrix (lib/lab/transitions.ts); the server remains the enforcement point.
+ */
+export function labNextStatuses(status: LabCaseStatus): LabCaseStatus[] {
+  switch (status) {
+    case 'DRAFT':
+      return ['SENT', 'CANCELLED'];
+    case 'SENT':
+      return ['ACKNOWLEDGED', 'IN_PROGRESS', 'READY', 'ISSUE_RAISED', 'CANCELLED'];
+    case 'ACKNOWLEDGED':
+      return ['IN_PROGRESS', 'READY', 'ISSUE_RAISED', 'CANCELLED'];
+    case 'IN_PROGRESS':
+      return ['READY', 'ISSUE_RAISED', 'CANCELLED'];
+    case 'READY':
+      return ['DISPATCHED', 'RECEIVED', 'ISSUE_RAISED', 'CANCELLED'];
+    case 'DISPATCHED':
+      return ['RECEIVED', 'ISSUE_RAISED', 'CANCELLED'];
+    case 'RECEIVED':
+      return ['FITTED', 'ISSUE_RAISED', 'CANCELLED'];
+    case 'ISSUE_RAISED':
+      return ['IN_PROGRESS', 'CANCELLED'];
+    case 'DELIVERED':
+      return ['COMPLETED', 'RETURNED_FOR_REWORK'];
+    case 'RETURNED_FOR_REWORK':
+      return ['SENT', 'CANCELLED'];
+    case 'FITTED':
+    case 'COMPLETED':
+    case 'CANCELLED':
+      return [];
+  }
+}
+
+/** Timeline copy for a transition trigger (§2.13 — provenance is user-facing). */
+export function labTriggerLabel(trigger: string): string {
+  switch (trigger) {
+    case 'lab_button':
+      return 'Via button reply';
+    case 'lab_text':
+      return 'Via lab message (case code match)';
+    case 'llm_parse':
+      return 'AI-parsed';
+    case 'reception_manual':
+      return 'Manual';
+    case 'reception_voice':
+      return 'Via voice';
+    case 'timeout_job':
+      return 'Automated check';
+    default:
+      return trigger;
   }
 }
 
@@ -73,27 +137,6 @@ export function expectedReturnInfo(expectedReturnAt: Date | string | null, now: 
   }
   if (diffDays === 0) return { label: 'Due today', tone: 'warning' };
   return { label: `${diffDays} day${diffDays === 1 ? '' : 's'} left`, tone: diffDays < 2 ? 'warning' : 'normal' };
-}
-
-/** Which action buttons a case detail shows for its current status (§4.3). */
-export function labCaseActions(status: LabCaseStatus): string[] {
-  switch (status) {
-    case 'DRAFT':
-      return ['edit', 'send', 'cancel'];
-    case 'SENT':
-      return ['confirm-received', 'receive', 'cancel'];
-    case 'IN_PROGRESS':
-      return ['receive', 'cancel'];
-    case 'READY':
-      return ['deliver', 'rework', 'cancel'];
-    case 'DELIVERED':
-      return ['complete', 'rework'];
-    case 'RETURNED_FOR_REWORK':
-      return ['send', 'cancel'];
-    case 'COMPLETED':
-    case 'CANCELLED':
-      return [];
-  }
 }
 
 export interface NewCaseForm {

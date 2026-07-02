@@ -21,6 +21,9 @@ export const CreateLabVendorInput = z.object({
   defaultTurnaroundDays: z.number().int().min(1).max(120).default(7),
   specialties: z.array(z.string().min(1).max(40)).max(20).default([]),
   notes: z.string().max(2000).optional(),
+  // Phase 9.7 WhatsApp tracker — multiple numbers (owner + technician + pickup boy).
+  whatsappPhoneNumbers: z.array(IndianPhone).max(5).default([]),
+  preferredLanguage: z.enum(['en', 'ta', 'hi']).default('en'),
 });
 export type CreateLabVendorInput = z.infer<typeof CreateLabVendorInput>;
 
@@ -42,9 +45,25 @@ export const LabVendorResponse = z
     notes: z.string().nullable(),
     isArchived: z.boolean(),
     createdById: z.string(),
+    // Phase 9.7 WhatsApp tracker.
+    whatsappPhoneNumbers: z.array(z.string()),
+    preferredLanguage: z.string(),
+    consentLoggedAt: z.coerce.date().nullable(),
+    automationPaused: z.boolean(),
   })
   .merge(Timestamps.omit({ deletedAt: true }));
 export type LabVendorResponse = z.infer<typeof LabVendorResponse>;
+
+// Phase 9.7 §2.11 — one-time lab consent actions.
+export const LabVendorConsentInput = z.object({
+  action: z.enum(['mark_confirmed', 'send_optin']),
+});
+export type LabVendorConsentInput = z.infer<typeof LabVendorConsentInput>;
+
+export const LabVendorAutomationInput = z.object({
+  paused: z.boolean(),
+});
+export type LabVendorAutomationInput = z.infer<typeof LabVendorAutomationInput>;
 
 // ===========================================================================
 // Lab cases
@@ -53,7 +72,8 @@ export type LabVendorResponse = z.infer<typeof LabVendorResponse>;
 export const CreateLabCaseInput = z.object({
   patientId: z.string().min(1),
   doctorId: z.string().min(1).optional(), // defaults to current user
-  vendorId: z.string().min(1),
+  // Optional since 9.7 — a voice-suggested DRAFT is created before reception picks the lab.
+  vendorId: z.string().min(1).optional(),
   type: LabCaseType,
   teeth: z.array(FdiToothNumber).default([]),
   material: z.string().max(120).optional(),
@@ -129,6 +149,15 @@ export const CancelLabCaseInput = z.object({
 });
 export type CancelLabCaseInput = z.infer<typeof CancelLabCaseInput>;
 
+// Phase 9.7 §2.3 — the one generic manual transition (reception status buttons). `skipWhatsApp`
+// suppresses the outbound side effect (e.g. marking SENT for a lab that isn't on WhatsApp).
+export const TransitionLabCaseInput = z.object({
+  to: LabCaseStatus,
+  note: z.string().max(1000).optional(),
+  skipWhatsApp: z.boolean().default(false),
+});
+export type TransitionLabCaseInput = z.infer<typeof TransitionLabCaseInput>;
+
 // --- Query ------------------------------------------------------------------
 
 export const ListLabCasesQuery = z.object({
@@ -152,15 +181,30 @@ export const LabCasePhoto = z.object({
 });
 export type LabCasePhoto = z.infer<typeof LabCasePhoto>;
 
+// Phase 9.7 §2.13 — one timeline entry (immutable status history with source + undo affordance).
+export const LabCaseEventView = z.object({
+  id: z.string(),
+  fromStatus: z.string().nullable(),
+  toStatus: z.string(),
+  trigger: z.string(),
+  sourceLabMessageId: z.string().nullable(),
+  note: z.string().nullable(),
+  byUserId: z.string().nullable(),
+  undoneAt: z.coerce.date().nullable(),
+  createdAt: z.coerce.date(),
+});
+export type LabCaseEventView = z.infer<typeof LabCaseEventView>;
+
 // Compact row for lists, patient Cases tab, realtime broadcasts.
 export const LabCaseSummary = z.object({
   id: z.string(),
   clinicId: z.string(),
   caseNumber: z.string(),
+  caseCode: z.string().nullable(),
   patientId: z.string(),
   patientName: z.string(),
   doctorId: z.string(),
-  vendorId: z.string(),
+  vendorId: z.string().nullable(),
   vendorName: z.string().nullable(),
   type: LabCaseType,
   teeth: z.array(FdiToothNumber),
@@ -204,5 +248,9 @@ export const LabCaseResponse = LabCaseSummary.extend({
   createdById: z.string(),
   updatedAt: z.coerce.date(),
   photos: z.array(LabCasePhoto),
+  // Phase 9.7 — timeline + last-transition provenance.
+  statusUpdatedAt: z.coerce.date(),
+  statusUpdatedBy: z.string(),
+  events: z.array(LabCaseEventView),
 });
 export type LabCaseResponse = z.infer<typeof LabCaseResponse>;

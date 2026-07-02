@@ -54,6 +54,20 @@ export const CLINICAL_RESPONSE_SCHEMA: GeminiSchema = {
         required: ['tooth', 'status'],
       },
     },
+    // Phase 9.7 — impression + prosthetic timeline → draft lab case (never invented).
+    labCaseSuggestion: {
+      type: 'OBJECT',
+      nullable: true,
+      properties: {
+        type: {
+          type: 'STRING',
+          enum: ['CROWN', 'BRIDGE', 'DENTURE_FULL', 'DENTURE_PARTIAL', 'ALIGNER', 'NIGHT_GUARD', 'OCCLUSAL_SPLINT', 'VENEER', 'INLAY_ONLAY', 'RPD', 'OTHER'],
+        },
+        teeth: { type: 'ARRAY', items: { type: 'INTEGER' } },
+        dueInDays: { type: 'INTEGER', nullable: true },
+      },
+      required: ['type'],
+    },
     notes: { type: 'STRING', nullable: true },
     clarifications: { type: 'ARRAY', items: { type: 'STRING' } },
     safetyWarnings: { type: 'ARRAY', items: { type: 'STRING' } },

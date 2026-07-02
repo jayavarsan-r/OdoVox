@@ -154,15 +154,22 @@ enum LabCaseType {
   OTHER
 }
 
-// Phase 7 lab-case lifecycle. See lab routes for the allowed transition matrix.
+// Phase 7 lab-case lifecycle, extended in Phase 9.7 for the WhatsApp tracker. The Phase 7 values
+// (DELIVERED / RETURNED_FOR_REWORK / COMPLETED) stay valid for existing data; new tracking flows
+// through the 9.7 states. See lib/lab/transitions.ts for the reconciled matrix.
 enum LabCaseStatus {
   DRAFT // not yet sent
   SENT // sent to vendor
-  IN_PROGRESS // vendor confirmed receipt / working
-  READY // returned, awaiting try-in/delivery
-  DELIVERED // delivered to patient (try-in or final)
-  RETURNED_FOR_REWORK // sent back to vendor for adjustments
-  COMPLETED // patient happy, case closed
+  ACKNOWLEDGED // 9.7: lab confirmed receipt (button or text)
+  IN_PROGRESS // lab working
+  READY // lab finished the work
+  DISPATCHED // 9.7: lab has sent it back; en route
+  RECEIVED // 9.7: reached the clinic
+  FITTED // 9.7: delivered to the patient (from an Odovox visit, not WhatsApp)
+  ISSUE_RAISED // 9.7: remake / query / missing info — resolves back to IN_PROGRESS
+  DELIVERED // legacy Phase 7: delivered to patient (try-in or final)
+  RETURNED_FOR_REWORK // legacy Phase 7: sent back to vendor for adjustments
+  COMPLETED // legacy Phase 7: patient happy, case closed
   CANCELLED // cancelled before completion
 }
 
@@ -358,6 +365,9 @@ model Clinic {
   timezone           String    @default("Asia/Kolkata")
   // Grace window (minutes) after startsAt before the NO_SHOW cron marks a SCHEDULED appointment. (Phase 6)
   noShowGraceMinutes Int       @default(30)
+  // Phase 9.7 lab WhatsApp tracker: human case codes 'DK-0042' = prefix + per-clinic sequence.
+  caseCodePrefix     String? // 2-3 letters; derived from the clinic name on first use
+  labCaseSeq         Int       @default(0) // atomic per-clinic counter for case codes
   // Phase 9 WhatsApp config.
   whatsappAccountStatus          String? // 'connected' | 'disconnected' | 'pending'
   whatsappAccountPhoneNumber     String? // clinic's verified WhatsApp business number
@@ -397,6 +407,8 @@ model Clinic {
   whatsappMessages      WhatsAppMessage[]
   patientConversations  PatientConversation[]
   whatsappCostLogs      WhatsAppCostLog[]
+  labMessages           LabMessage[]
+  labCaseEvents         LabCaseEvent[]
 
   @@index([joinCode])
 }
@@ -958,13 +970,20 @@ model LabVendor {
   specialties           String[] // ["crown", "bridge", "denture", "aligner"]
   notes                 String?
   isArchived            Boolean  @default(false)
+  // Phase 9.7 WhatsApp tracker. Multiple numbers: owner + technician + pickup boy — technician
+  // SIMs change; reception edits this list instantly.
+  whatsappPhoneNumbers  String[] @default([])
+  preferredLanguage     String   @default("en") // 'en' | 'ta' | 'hi'
+  consentLoggedAt       DateTime? // one-time opt-in; null = no outbound sends, ever
+  automationPaused      Boolean  @default(false) // per-lab kill switch — manual tracking still works
   createdById           String
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  clinic    Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  createdBy User      @relation(fields: [createdById], references: [id])
+  clinic    Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  createdBy User         @relation(fields: [createdById], references: [id])
   cases     LabCase[]
+  messages  LabMessage[]
 
   @@index([clinicId, isArchived, name])
 }
@@ -972,11 +991,12 @@ model LabVendor {
 // Phase 7. A single lab job (crown, denture, …) tracked through its lifecycle. Lab events are
 // recorded in AuditLog (no dedicated event-log model). Photos reuse Media (type=LAB_PHOTO).
 model LabCase {
-  id         String @id @default(cuid())
+  id         String  @id @default(cuid())
   clinicId   String
   patientId  String
   doctorId   String
-  vendorId   String
+  // Nullable since Phase 9.7: a voice-suggested DRAFT is created before reception picks the lab.
+  vendorId   String?
   caseNumber String // auto-generated: LC-{first2OfClinicCode}{6 alnum}
 
   type     LabCaseType
@@ -995,6 +1015,13 @@ model LabCase {
 
   status          LabCaseStatus @default(DRAFT)
   rejectionReason String? // when RETURNED_FOR_REWORK or CANCELLED
+  // Phase 9.7: human-readable code 'DK-0042' — present in EVERY WhatsApp message about the case;
+  // the threading key (one lab serves many clinics, chat context can't be trusted). Null on
+  // pre-9.7 cases until their next transition.
+  caseCode        String?
+  statusUpdatedAt DateTime      @default(now())
+  // 'lab_button' | 'lab_text' | 'llm_parse' | 'reception_manual' | 'reception_voice' | 'timeout_job'
+  statusUpdatedBy String        @default("reception_manual")
 
   costPaise          Int? // clinic pays lab
   patientChargePaise Int? // clinic charges patient
@@ -1012,20 +1039,74 @@ model LabCase {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  clinic    Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor    User      @relation("LabCaseDoctor", fields: [doctorId], references: [id])
-  createdBy User      @relation("LabCaseCreatedBy", fields: [createdById], references: [id])
-  vendor    LabVendor @relation(fields: [vendorId], references: [id])
-  reworkOf  LabCase?  @relation("LabCaseRework", fields: [reworkOfId], references: [id], onDelete: SetNull)
-  reworks   LabCase[] @relation("LabCaseRework")
+  clinic    Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient   Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor    User           @relation("LabCaseDoctor", fields: [doctorId], references: [id])
+  createdBy User           @relation("LabCaseCreatedBy", fields: [createdById], references: [id])
+  vendor    LabVendor?     @relation(fields: [vendorId], references: [id])
+  reworkOf  LabCase?       @relation("LabCaseRework", fields: [reworkOfId], references: [id], onDelete: SetNull)
+  reworks   LabCase[]      @relation("LabCaseRework")
   photos    Media[]
+  events    LabCaseEvent[]
+  messages  LabMessage[]
 
   @@unique([clinicId, caseNumber])
+  @@unique([clinicId, caseCode])
   @@index([clinicId, status, expectedReturnAt])
   @@index([clinicId, patientId, createdAt(sort: Desc)])
   @@index([clinicId, vendorId, status])
   @@index([doctorId])
+}
+
+// Phase 9.7 — one WhatsApp message between the clinic and a lab. Mirrors WhatsAppMessage but kept
+// separate: different lifecycle (parse tiers, resolution), different query patterns, and lab
+// traffic must never pollute patient conversation queries.
+model LabMessage {
+  id              String           @id @default(cuid())
+  clinicId        String
+  labVendorId     String?
+  labCaseId       String?
+  direction       MessageDirection // OUTBOUND | INBOUND
+  waMessageId     String           @unique // BSP message id — the webhook idempotency key
+  body            String?
+  mediaPaths      String[] // storage keys of inbound media awaiting attachment
+  parseTier       String? // 'button' | 'case_code' | 'llm' | 'manual'
+  parseConfidence Decimal?
+  resolved        Boolean          @default(false)
+  buttonPayload   Json? // structured quick-reply data from the BSP
+  fromPhone       String? // inbound sender in E.164 (kept for unknown-sender review)
+  templateKey     String? // outbound: which template fired (T1/T2/T3/T4/T-consent)
+  costPaise       Int              @default(0)
+  createdAt       DateTime         @default(now())
+
+  clinic  Clinic     @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  vendor  LabVendor? @relation(fields: [labVendorId], references: [id], onDelete: SetNull)
+  labCase LabCase?   @relation(fields: [labCaseId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId, labVendorId, createdAt(sort: Desc)])
+  @@index([clinicId, resolved, createdAt])
+}
+
+// Phase 9.7 — immutable status history per lab case. Separate from AuditLog because this is
+// user-facing timeline data (source links, undo affordances), not a compliance trail.
+model LabCaseEvent {
+  id                 String   @id @default(cuid())
+  clinicId           String
+  labCaseId          String
+  fromStatus         String?
+  toStatus           String
+  trigger            String // same vocabulary as LabCase.statusUpdatedBy
+  sourceLabMessageId String? // links the timeline entry to the WhatsApp message that caused it
+  note               String?
+  byUserId           String? // set for reception_manual / reception_voice
+  undoneAt           DateTime? // set when a reception undo reverses this (LLM) transition
+  createdAt          DateTime @default(now())
+
+  clinic  Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  labCase LabCase @relation(fields: [labCaseId], references: [id], onDelete: Cascade)
+
+  @@index([labCaseId, createdAt(sort: Desc)])
+  @@index([clinicId, createdAt])
 }
 
 // ===========================================================================
@@ -1376,6 +1457,7 @@ model Media {
   visitId      String?
   labCaseId    String? // Phase 7 — set for type=LAB_PHOTO
   type         MediaType
+  source       String    @default("clinic_upload") // 'clinic_upload' | 'lab_whatsapp' (Phase 9.7)
   storageKey   String // opaque S3/MinIO object key
   url          String? // cached signed URL — regenerated on read
   mimeType     String

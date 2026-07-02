@@ -5,13 +5,22 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
+import { VoiceInput } from '@/components/voice/voice-input';
 import { useToast } from '@/lib/toast';
 import { usePatients } from '@/lib/queries';
 import { api } from '@/lib/api-client';
 import { useCreateLabCase, useLabVendors } from '@/lib/lab-queries';
 import { labCaseTypeLabel, validateNewCase } from '@/lib/lab-ui';
-import type { CreateLabCaseInput, LabCaseType } from '@odovox/types';
+import type { CreateLabCaseInput, LabCaseType, LabNewCaseExtraction } from '@odovox/types';
 import { cn } from '@/lib/utils';
+
+/** /lab/dictate/new-case response (Phase 9.7 W1.2.4). */
+interface LabDictateResponse {
+  extraction: LabNewCaseExtraction;
+  patientMatches: Array<{ id: string; name: string; phone: string; age: number }>;
+  vendorMatch: { id: string; name: string } | null;
+  transcript: string;
+}
 
 const TYPES: LabCaseType[] = [
   'CROWN',
@@ -71,6 +80,27 @@ export default function NewLabCasePage() {
 
   const patientList = patients.data?.pages.flatMap((p) => p.items) ?? [];
 
+  // Voice new case (W1.2.4) — extraction fills the form; unmatched entities stay as pickers.
+  function applyDictation(data: LabDictateResponse) {
+    const x = data.extraction;
+    if (data.patientMatches.length === 1) {
+      setPatientId(data.patientMatches[0]!.id);
+      setPatientLabel(data.patientMatches[0]!.name);
+    } else if (x.patientName) {
+      setPatientSearch(x.patientName);
+    }
+    if (data.vendorMatch) setVendorId(data.vendorMatch.id);
+    if (x.type) setType(x.type);
+    if (x.teeth.length) setTeethRaw(x.teeth.join(', '));
+    if (x.material) setMaterial(x.material.replace(/\b\w/g, (c) => c.toUpperCase()));
+    if (x.shade) setShade(x.shade);
+    if (x.description) setDescription(x.description);
+    if (x.costPaise != null) setCostRupees(String(x.costPaise / 100));
+    if (x.patientChargePaise != null) setChargeRupees(String(x.patientChargePaise / 100));
+    if (x.clarifications.length) toast.info(x.clarifications.join(' '));
+    else toast.info('Filled from your voice — review and save.');
+  }
+
   // Create the DRAFT, then optionally send it (the send needs the created id, so it runs inline).
   async function save(send: boolean) {
     if (!valid || !patientId || !vendorId || !type) {
@@ -106,6 +136,16 @@ export default function NewLabCasePage() {
         </button>
         <h1 className="text-lg font-semibold">New lab case</h1>
       </div>
+
+      {/* Speak the whole brief — the form below is the verification card. */}
+      <VoiceInput<LabDictateResponse>
+        mode="extraction"
+        endpoint="/lab/dictate/new-case"
+        placement="sheet"
+        label="Speak the case"
+        hint="“Zirconia crown for Ramesh, tooth 26, shade A2, Saveetha lab, one week”"
+        onExtraction={applyDictation}
+      />
 
       <Field label="Patient">
         {patientId ? (

@@ -18,6 +18,8 @@ import { inventoryPurchaseExtractor } from '../lib/ai/extractors/inventory-purch
 import { inventoryConsumeExtractor } from '../lib/ai/extractors/inventory-consume.js';
 import { inventoryAdjustExtractor } from '../lib/ai/extractors/inventory-adjust.js';
 import { billItemsExtractor } from '../lib/ai/extractors/bill-items.js';
+import { labNewCaseExtractor } from '../lib/ai/extractors/lab-new-case.js';
+import { scoreItemMatch } from '../lib/inventory/fuzzy.js';
 import { fuzzyMatchInventoryItem, type CatalogItem } from '../lib/inventory/fuzzy.js';
 import { parseAllergies } from '../lib/consultation/context.js';
 import { runSafetyChecks, serializeSafetyWarnings } from '../lib/ai/safety.js';
@@ -214,6 +216,42 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
     const items = extraction.items.map((it) => ({ ...it, match: fuzzyMatchInventoryItem(it.name, catalog) }));
     await fastify.audit('DICTATE_INVENTORY_ADJUST', 'Dictation', null, { items: items.length });
     return ok({ extraction: { ...extraction, items }, transcript });
+  });
+
+  // Lab new case (W1.2.4) — "Zirconia crown for Ramesh tooth 26 shade A2, Saveetha lab, one
+  // week". Patient + vendor fuzzy-match against clinic records; the card renders pickers for
+  // whatever stayed unmatched, then creates via POST /lab/cases.
+  fastify.post('/lab/dictate/new-case', doctorOnly, async (req) => {
+    const { storageKey } = parse(TranscribeInput, req.body);
+    assertOwnKey(storageKey, req.clinicId!);
+    const vendors = await prisma.labVendor.findMany({
+      where: { clinicId: req.clinicId!, isArchived: false },
+      select: { id: true, name: true, defaultTurnaroundDays: true },
+    });
+    const transcript = await transcribeAndPurge(storageKey);
+    const extraction = await extractFromTranscript(
+      labNewCaseExtractor,
+      transcript,
+      { vendorNames: vendors.map((v) => v.name) },
+      fastify.log,
+    );
+
+    const patientMatches = extraction.patientName
+      ? await prisma.patient.findMany({
+          where: { clinicId: req.clinicId!, deletedAt: null, name: { contains: extraction.patientName.split(/\s+/)[0]!, mode: 'insensitive' } },
+          select: { id: true, name: true, phone: true, age: true },
+          take: 3,
+        })
+      : [];
+    const vendorMatch = extraction.vendorName
+      ? (vendors
+          .map((v) => ({ ...v, score: scoreItemMatch(extraction.vendorName!, v.name) }))
+          .filter((v) => v.score >= 0.4)
+          .sort((a, b) => b.score - a.score)[0] ?? null)
+      : null;
+
+    await fastify.audit('DICTATE_LAB_NEW_CASE', 'Dictation', null, {});
+    return ok({ extraction, patientMatches, vendorMatch, transcript });
   });
 
   // Bill line items (W1.2.6) — extraction only; the card applies via POST /bills/:id/items

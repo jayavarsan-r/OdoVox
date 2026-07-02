@@ -176,18 +176,35 @@ export type DayOffScope = z.infer<typeof DayOffScope>;
 export const RecurringInterval = z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY']);
 export type RecurringInterval = z.infer<typeof RecurringInterval>;
 
-// Phase 7 — lab-case lifecycle. Transition matrix enforced in apps/api lab routes.
+// Phase 7 lab-case lifecycle, extended by the Phase 9.7 WhatsApp tracker. Legacy Phase 7 values
+// (DELIVERED / RETURNED_FOR_REWORK / COMPLETED) stay valid for existing data.
 export const LabCaseStatus = z.enum([
   'DRAFT',
   'SENT',
+  'ACKNOWLEDGED',
   'IN_PROGRESS',
   'READY',
+  'DISPATCHED',
+  'RECEIVED',
+  'FITTED',
+  'ISSUE_RAISED',
   'DELIVERED',
   'RETURNED_FOR_REWORK',
   'COMPLETED',
   'CANCELLED',
 ]);
 export type LabCaseStatus = z.infer<typeof LabCaseStatus>;
+
+// Phase 9.7 — who/what moved a lab case (LabCase.statusUpdatedBy + LabCaseEvent.trigger).
+export const LabTransitionTrigger = z.enum([
+  'lab_button',
+  'lab_text',
+  'llm_parse',
+  'reception_manual',
+  'reception_voice',
+  'timeout_job',
+]);
+export type LabTransitionTrigger = z.infer<typeof LabTransitionTrigger>;
 
 export const LabCaseType = z.enum([
   'CROWN',

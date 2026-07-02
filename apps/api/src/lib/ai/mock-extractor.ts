@@ -253,6 +253,38 @@ function detectTemplate(transcript: string, templates: TemplateHint[]): string |
  * pattern-matches realistic dental vocabulary; it never invents a medicine or diagnosis the
  * doctor didn't say. Latency defaults to 0 (fast tests); the factory adds ~1200ms in dev.
  */
+/**
+ * Phase 9.7 §2.5.1 — lab-case suggestion: only when the doctor spoke an impression AND a
+ * prosthetic keyword; the timeline ("after one week", "in 15 days") sets dueInDays. Mirrors the
+ * real prompt's "never invent this" rule: no impression mention → null.
+ */
+const LAB_SUGGESTION_TYPES: Array<[RegExp, string]> = [
+  [/\bbridge\b/i, 'BRIDGE'],
+  [/\bpartial\s+denture\b/i, 'DENTURE_PARTIAL'],
+  [/\bdenture\b/i, 'DENTURE_FULL'],
+  [/\baligner\b/i, 'ALIGNER'],
+  [/\bveneer\b/i, 'VENEER'],
+  [/\bnight\s*guard\b/i, 'NIGHT_GUARD'],
+  [/\bcrown\b/i, 'CROWN'],
+];
+
+function parseLabCaseSuggestion(
+  transcript: string,
+  teeth: number[],
+): { type: string; teeth: number[]; dueInDays: number | null } | null {
+  if (!/\bimpression\b/i.test(transcript)) return null;
+  const type = LAB_SUGGESTION_TYPES.find(([re]) => re.test(transcript))?.[1];
+  if (!type) return null;
+  const days = transcript.match(/\b(?:after|in|within)\s+(\d+)\s+days?\b/i)?.[1];
+  const weeks = transcript.match(/\b(?:after|in|within)\s+(?:(one|a|two|three)\s+)?weeks?\b/i)?.[1];
+  const dueInDays = days
+    ? Number.parseInt(days, 10)
+    : weeks
+      ? (weeks === 'two' ? 14 : weeks === 'three' ? 21 : 7)
+      : null;
+  return { type, teeth, dueInDays };
+}
+
 export class MockExtractor implements IClinicalExtractor {
   constructor(private readonly opts: { latencyMs?: number } = {}) {}
 
@@ -302,6 +334,7 @@ export class MockExtractor implements IClinicalExtractor {
       prescriptions,
       followUp,
       toothStatusUpdates,
+      labCaseSuggestion: parseLabCaseSuggestion(transcript, teeth),
       notes: null,
       clarifications,
       safetyWarnings: [],

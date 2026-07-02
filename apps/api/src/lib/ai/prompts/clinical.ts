@@ -5,7 +5,7 @@ import type { ActivePlanContext, ClinicalExtractionContext, PrescriptionContext 
  * quality with prompt revisions (stored alongside the consultation provider tag). The base
  * instructions are constant; only the PATIENT CONTEXT block is interpolated per request.
  */
-export const CLINICAL_PROMPT_VERSION = 'clinical-v3';
+export const CLINICAL_PROMPT_VERSION = 'clinical-v4'; // v4: lab-case suggestion (Phase 9.7)
 export const PRESCRIPTION_PROMPT_VERSION = 'prescription-v2';
 export const INTAKE_PROMPT_VERSION = 'intake-v1';
 
@@ -60,7 +60,14 @@ HARDENING RULES (be conservative — when in doubt, null):
 - COST (estimatedCostPaise): if the doctor mentions a cost for the procedure, extract it. Indian dental costs are quoted in rupees (₹) — convert to paise (×100). "Five thousand rupees for the RCT" -> 500000; "₹3,500 for cleaning" -> 350000. Never invent a cost — leave null if not mentioned.
 - READ-ONLY CONTEXT: do NOT copy any medicine, diagnosis, plan detail, or follow-up from PATIENT CONTEXT or ACTIVE TREATMENT PLANS into the output. That block is background only — output must come from today's transcript alone.
 
-LANGUAGE NOTE: For Hindi/Tamil clinical terms, translate to English in the output (e.g. "extracted", "scaling").`;
+LANGUAGE NOTE: For Hindi/Tamil clinical terms, translate to English in the output (e.g. "extracted", "scaling").
+
+LAB CASE SUGGESTION (optional):
+If the doctor mentions taking an impression AND a prosthetic timeline, set \`labCaseSuggestion\`:
+- "crown after one week for tooth 26" → {"type": "CROWN", "teeth": [26], "dueInDays": 7}
+- "denture in 15 days" → {"type": "DENTURE_FULL", "teeth": [], "dueInDays": 15}
+Types: CROWN, BRIDGE, DENTURE_FULL, DENTURE_PARTIAL, ALIGNER, NIGHT_GUARD, OCCLUSAL_SPLINT, VENEER, INLAY_ONLAY, RPD, OTHER.
+Never invent this. Only extract when explicitly mentioned; otherwise leave labCaseSuggestion null.`;
 
 export function buildClinicalSystemInstruction(ctx: ClinicalExtractionContext): string {
   return `You are a clinical transcription assistant for an Indian dental clinic. Convert a dentist's voice note into a strict JSON object that fits the Odovox schema. NEVER invent data; if unsure, leave the field null. Decline silently — do not fabricate.

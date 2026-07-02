@@ -16,6 +16,8 @@ export const LAB_CASE_DETAIL_INCLUDE = {
     orderBy: { uploadedAt: 'asc' },
     select: { id: true, url: true, thumbnailKey: true, mimeType: true, uploadedAt: true },
   },
+  // Phase 9.7 timeline — newest first, capped (a case rarely has more than a dozen events).
+  events: { orderBy: { createdAt: 'desc' as const }, take: 50 },
 } satisfies Prisma.LabCaseInclude;
 
 type LabCaseSummaryRow = Prisma.LabCaseGetPayload<{ include: typeof LAB_CASE_SUMMARY_INCLUDE }>;
@@ -26,6 +28,7 @@ export function toLabCaseSummary(row: LabCaseSummaryRow): LabCaseSummary {
     id: row.id,
     clinicId: row.clinicId,
     caseNumber: row.caseNumber,
+    caseCode: row.caseCode,
     patientId: row.patientId,
     patientName: row.patient.name,
     doctorId: row.doctorId,
@@ -67,6 +70,19 @@ export function toLabCaseResponse(row: LabCaseDetailRow): LabCaseResponse {
     createdById: row.createdById,
     updatedAt: row.updatedAt,
     photos,
+    statusUpdatedAt: row.statusUpdatedAt,
+    statusUpdatedBy: row.statusUpdatedBy,
+    events: row.events.map((e) => ({
+      id: e.id,
+      fromStatus: e.fromStatus,
+      toStatus: e.toStatus,
+      trigger: e.trigger,
+      sourceLabMessageId: e.sourceLabMessageId,
+      note: e.note,
+      byUserId: e.byUserId,
+      undoneAt: e.undoneAt,
+      createdAt: e.createdAt,
+    })),
   };
 }
 
@@ -87,6 +103,10 @@ export function toLabVendorResponse(row: VendorRow, revealContact: boolean): Lab
     notes: row.notes,
     isArchived: row.isArchived,
     createdById: row.createdById,
+    whatsappPhoneNumbers: row.whatsappPhoneNumbers,
+    preferredLanguage: row.preferredLanguage,
+    consentLoggedAt: row.consentLoggedAt,
+    automationPaused: row.automationPaused,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

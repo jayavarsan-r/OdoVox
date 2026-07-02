@@ -2,36 +2,51 @@
 
 import { useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Eye, ImagePlus, Phone } from 'lucide-react';
+import { ChevronLeft, Eye, ImagePlus, Pencil, Phone } from 'lucide-react';
+import type { LabCaseStatus } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { EmptyState } from '@/components/ds';
 import { useToast } from '@/lib/toast';
+import { ApiError } from '@/lib/api-client';
 import {
   useLabCase,
-  useLabCaseAction,
   useLabPhotos,
+  useLabTransition,
+  useLabVendorConsent,
   useLabVendorDetail,
   useUploadLabPhoto,
 } from '@/lib/lab-queries';
-import { expectedReturnInfo, labCaseActions, labCaseTypeLabel, labStatusStyle, maskPhone } from '@/lib/lab-ui';
+import { expectedReturnInfo, labCaseTypeLabel, labNextStatuses, labStatusStyle, labTriggerLabel, maskPhone } from '@/lib/lab-ui';
 import { rupees } from '@/lib/patient-ui';
 import { cn } from '@/lib/utils';
 
-const ACTION_LABEL: Record<string, string> = {
-  edit: 'Edit case',
-  send: 'Send to vendor',
-  'confirm-received': 'Mark received',
-  receive: 'Mark ready',
-  deliver: 'Deliver',
-  complete: 'Mark complete',
-  rework: 'Send for rework',
-  cancel: 'Cancel',
+/** Button copy per target status — reception's manual tracker (§2.16 sub-stage 2.A). */
+const TO_LABEL: Record<string, string> = {
+  SENT: 'Send to lab',
+  ACKNOWLEDGED: 'Lab confirmed',
+  IN_PROGRESS: 'In progress',
+  READY: 'Mark ready',
+  DISPATCHED: 'Dispatched',
+  RECEIVED: 'Received at clinic',
+  FITTED: 'Fitted',
+  ISSUE_RAISED: 'Raise issue',
+  DELIVERED: 'Deliver',
+  COMPLETED: 'Mark complete',
+  RETURNED_FOR_REWORK: 'Send for rework',
+  CANCELLED: 'Cancel',
 };
+
+/** Targets that need a spoken/typed reason before they apply. */
+const NEEDS_NOTE = new Set(['ISSUE_RAISED', 'CANCELLED', 'RETURNED_FOR_REWORK']);
 
 function fmt(d: string | Date | null): string {
   if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+function fmtDateTime(d: string | Date): string {
   return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
@@ -50,12 +65,14 @@ export default function LabCaseDetailPage() {
   const toast = useToast();
   const { data: c, isLoading } = useLabCase(caseId);
   const photos = useLabPhotos(caseId);
-  const action = useLabCaseAction(caseId);
+  const transition = useLabTransition(caseId);
   const upload = useUploadLabPhoto(caseId);
   const [revealVendor, setRevealVendor] = useState(false);
-  const vendorDetail = useLabVendorDetail(revealVendor && c ? c.vendorId : null);
-  const [reasonSheet, setReasonSheet] = useState<null | 'rework' | 'cancel'>(null);
+  const vendorDetail = useLabVendorDetail(revealVendor && c?.vendorId ? c.vendorId : null);
+  const consent = useLabVendorConsent(c?.vendorId ?? '');
+  const [reasonFor, setReasonFor] = useState<LabCaseStatus | null>(null);
   const [reason, setReason] = useState('');
+  const [consentModal, setConsentModal] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (isLoading || !c) {
@@ -64,33 +81,39 @@ export default function LabCaseDetailPage() {
 
   const s = labStatusStyle(c.status);
   const due = expectedReturnInfo(c.expectedReturnAt);
-  const actions = labCaseActions(c.status);
+  const nextStatuses = labNextStatuses(c.status);
+  const canEdit = c.status === 'DRAFT' || c.status === 'SENT';
   const margin = c.costPaise != null && c.patientChargePaise != null ? c.patientChargePaise - c.costPaise : null;
 
-  async function runAction(a: string) {
-    if (a === 'edit') {
-      router.push(`/lab/${caseId}/edit`);
-      return;
-    }
-    if (a === 'rework' || a === 'cancel') {
-      setReason('');
-      setReasonSheet(a);
-      return;
-    }
+  async function move(to: LabCaseStatus, note?: string, skipWhatsApp?: boolean) {
     try {
-      await action.mutateAsync({ action: a });
-      toast.success('Updated');
+      await transition.mutateAsync({ to, ...(note ? { note } : {}), ...(skipWhatsApp ? { skipWhatsApp } : {}) });
+      toast.success(to === 'CANCELLED' ? 'Case cancelled' : `Marked ${TO_LABEL[to]?.toLowerCase() ?? to}`);
+      setReasonFor(null);
+      setConsentModal(false);
     } catch (err) {
+      // §2.11 — the blocking consent modal: confirm consent or mark sent without WhatsApp.
+      if (err instanceof ApiError && err.code === 'LAB_SEND_NO_CONSENT') {
+        setConsentModal(true);
+        return;
+      }
       toast.apiError(err);
     }
   }
 
-  async function submitReason() {
-    if (!reasonSheet || reason.trim().length === 0) return;
+  function runAction(to: LabCaseStatus) {
+    if (NEEDS_NOTE.has(to)) {
+      setReason('');
+      setReasonFor(to);
+      return;
+    }
+    void move(to);
+  }
+
+  async function confirmConsentAndSend() {
     try {
-      await action.mutateAsync({ action: reasonSheet, body: { reason } });
-      toast.success(reasonSheet === 'cancel' ? 'Case cancelled' : 'Sent for rework');
-      setReasonSheet(null);
+      await consent.mutateAsync('mark_confirmed');
+      await move('SENT');
     } catch (err) {
       toast.apiError(err);
     }
@@ -112,10 +135,18 @@ export default function LabCaseDetailPage() {
         <button type="button" onClick={() => router.back()} aria-label="Back" className="flex size-9 items-center justify-center rounded-pill hover:bg-muted">
           <ChevronLeft className="size-5" />
         </button>
-        <h1 className="font-mono text-sm font-semibold">Case {c.caseNumber}</h1>
+        <h1 className="font-mono text-sm font-semibold">
+          {c.caseCode ?? c.caseNumber}
+          {c.caseCode ? <span className="ml-2 text-xs font-normal text-text-subtle">{c.caseNumber}</span> : null}
+        </h1>
+        {canEdit ? (
+          <button type="button" aria-label="Edit case" onClick={() => router.push(`/lab/${caseId}/edit`)} className="ml-auto flex size-9 items-center justify-center rounded-pill hover:bg-muted">
+            <Pencil className="size-4" />
+          </button>
+        ) : null}
       </div>
 
-      {/* STATUS CARD */}
+      {/* STATUS CARD — manual tracker buttons (works with zero WhatsApp parsing, §2.15) */}
       <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-elev-1">
         <div className="flex items-center gap-2">
           <span className={cn('size-2.5 rounded-pill', s.bar)} />
@@ -126,17 +157,17 @@ export default function LabCaseDetailPage() {
           {c.expectedReturnAt ? ` · Expected ${fmt(c.expectedReturnAt)}` : ''}
           {due ? ` · ${due.label}` : ''}
         </p>
-        {actions.length > 0 ? (
+        {nextStatuses.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {actions.map((a) => (
+            {nextStatuses.map((to) => (
               <Button
-                key={a}
+                key={to}
                 size="sm"
-                variant={a === 'cancel' ? 'destructive' : a === 'rework' || a === 'edit' ? 'outline' : 'primary'}
-                disabled={action.isPending}
-                onClick={() => runAction(a)}
+                variant={to === 'CANCELLED' ? 'destructive' : to === 'ISSUE_RAISED' || to === 'RETURNED_FOR_REWORK' ? 'outline' : 'primary'}
+                disabled={transition.isPending}
+                onClick={() => runAction(to)}
               >
-                {ACTION_LABEL[a]}
+                {TO_LABEL[to] ?? to}
               </Button>
             ))}
           </div>
@@ -188,13 +219,32 @@ export default function LabCaseDetailPage() {
       </Section>
 
       <Section title="Timeline">
-        <ul className="flex flex-col gap-1 text-sm">
-          <li>{fmt(c.impressionTakenAt)} · Impression taken</li>
-          <li>{fmt(c.sentAt)} · Sent to vendor</li>
-          <li>{fmt(c.returnedAt)} · Returned (ready)</li>
-          <li>{fmt(c.deliveredAt)} · Delivered</li>
-          <li>{fmt(c.completedAt)} · Completed</li>
-        </ul>
+        {c.events.length === 0 ? (
+          <ul className="flex flex-col gap-1 text-sm">
+            <li>{fmt(c.impressionTakenAt)} · Impression taken</li>
+            <li>{fmt(c.sentAt)} · Sent to vendor</li>
+          </ul>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {c.events.map((e) => {
+              const style = labStatusStyle(e.toStatus as LabCaseStatus);
+              return (
+                <li key={e.id} className={cn('flex gap-3 text-sm', e.undoneAt && 'opacity-45 line-through')}>
+                  <span className={cn('mt-1.5 size-2 shrink-0 rounded-pill', style.bar)} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-ink">
+                      {fmtDateTime(e.createdAt)} · {style.label}
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {labTriggerLabel(e.trigger)}
+                      {e.note ? ` · “${e.note}”` : ''}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </Section>
 
       {c.costPaise != null || c.patientChargePaise != null ? (
@@ -242,7 +292,11 @@ export default function LabCaseDetailPage() {
 
       {photos.data && photos.data.items.length === 0 ? null : null}
 
-      <BottomSheet open={reasonSheet !== null} onClose={() => setReasonSheet(null)} title={reasonSheet === 'cancel' ? 'Cancel case' : 'Send for rework'}>
+      <BottomSheet
+        open={reasonFor !== null}
+        onClose={() => setReasonFor(null)}
+        title={reasonFor === 'CANCELLED' ? 'Cancel case' : reasonFor === 'ISSUE_RAISED' ? 'Raise issue' : 'Send for rework'}
+      >
         <div className="flex flex-col gap-3 p-5">
           <textarea
             value={reason}
@@ -251,8 +305,23 @@ export default function LabCaseDetailPage() {
             rows={3}
             className="w-full rounded-lg border border-border bg-paper-warm px-3 py-2 text-sm outline-none focus:border-border-strong"
           />
-          <Button disabled={reason.trim().length === 0 || action.isPending} onClick={submitReason}>
+          <Button disabled={reason.trim().length === 0 || transition.isPending} onClick={() => reasonFor && void move(reasonFor, reason.trim())}>
             Confirm
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* §2.11 blocking consent modal — shown when Send hits LAB_SEND_NO_CONSENT. */}
+      <BottomSheet open={consentModal} onClose={() => setConsentModal(false)} title="Lab hasn’t opted in">
+        <div className="flex flex-col gap-3 p-5">
+          <p className="text-sm text-text-muted">
+            {c.vendorName ?? 'This lab'} hasn’t confirmed receiving cases on WhatsApp. Have you spoken to them about it?
+          </p>
+          <Button onClick={confirmConsentAndSend} loading={consent.isPending || transition.isPending}>
+            Yes — confirm consent &amp; send
+          </Button>
+          <Button variant="outline" onClick={() => void move('SENT', undefined, true)} disabled={transition.isPending}>
+            Mark sent without WhatsApp
           </Button>
         </div>
       </BottomSheet>

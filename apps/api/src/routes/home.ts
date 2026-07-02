@@ -50,9 +50,12 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
       });
     }
 
-    // 3b. Lab cases overdue (sent/in-progress, expected return already passed).
+    // 3b. Lab cases overdue (open at the lab, expected return already passed).
     const labOverdue = await prisma.labCase.findMany({
-      where: { status: { in: ['SENT', 'IN_PROGRESS'] }, expectedReturnAt: { lt: new Date(now) } },
+      where: {
+        status: { in: ['SENT', 'ACKNOWLEDGED', 'IN_PROGRESS', 'ISSUE_RAISED'] },
+        expectedReturnAt: { lt: new Date(now) },
+      },
       include: { patient: true },
       orderBy: { expectedReturnAt: 'asc' },
       take: 5,
@@ -60,7 +63,40 @@ export async function homeRoutes(fastify: FastifyInstance): Promise<void> {
     for (const c of labOverdue) {
       items.push({
         kind: 'LAB_OVERDUE',
-        title: `Lab overdue: ${c.patient.name} (${labCaseTypeLabel(c.type)})`,
+        title: `Lab overdue: ${c.patient.name} (${labCaseTypeLabel(c.type)}${c.caseCode ? ` · ${c.caseCode}` : ''})`,
+        patientId: c.patientId,
+        patientName: c.patient.name,
+        href: `/lab/${c.id}`,
+      });
+    }
+
+    // 3b-ii (Phase 9.7 §2.10, in-app only — timeouts NEVER change status). READY > 3 days without
+    // dispatch = call the lab / arrange pickup. ISSUE_RAISED > 24h unactioned = re-alert.
+    const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const stuckReady = await prisma.labCase.findMany({
+      where: { status: 'READY', statusUpdatedAt: { lt: new Date(now - THREE_DAYS) } },
+      include: { patient: true },
+      take: 5,
+    });
+    for (const c of stuckReady) {
+      items.push({
+        kind: 'LAB_STUCK_READY',
+        title: `Lab ready 3+ days: ${c.caseCode ?? c.caseNumber} — call the lab / arrange pickup`,
+        patientId: c.patientId,
+        patientName: c.patient.name,
+        href: `/lab/${c.id}`,
+      });
+    }
+    const staleIssues = await prisma.labCase.findMany({
+      where: { status: 'ISSUE_RAISED', statusUpdatedAt: { lt: new Date(now - ONE_DAY) } },
+      include: { patient: true },
+      take: 5,
+    });
+    for (const c of staleIssues) {
+      items.push({
+        kind: 'LAB_ISSUE_STALE',
+        title: `Lab issue unresolved: ${c.caseCode ?? c.caseNumber} (${c.patient.name})`,
         patientId: c.patientId,
         patientName: c.patient.name,
         href: `/lab/${c.id}`,

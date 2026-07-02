@@ -81,6 +81,55 @@ export function useLabCaseAction(id: string) {
   });
 }
 
+/** Phase 9.7 §2.3 — the one generic manual transition (reception status buttons). */
+export function useLabTransition(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { to: LabCaseStatus; note?: string; skipWhatsApp?: boolean }) =>
+      api.post<LabCaseResponse>(`/lab/cases/${id}/transition`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['lab-case', id] });
+      qc.invalidateQueries({ queryKey: ['lab-cases'] });
+      qc.invalidateQueries({ queryKey: ['needs-you'] });
+    },
+  });
+}
+
+/** Phase 9.7 §2.11 — consent actions + the per-lab automation kill switch. */
+export function useLabVendorConsent(vendorId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (action: 'mark_confirmed' | 'send_optin') =>
+      api.post<{ sent: boolean; consentLoggedAt: string | null }>(`/lab/vendors/${vendorId}/consent`, { action }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['lab-vendors'] });
+      qc.invalidateQueries({ queryKey: ['lab-vendor', vendorId] });
+    },
+  });
+}
+
+export function useLabVendorAutomation(vendorId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (paused: boolean) => api.post<LabVendorResponse>(`/lab/vendors/${vendorId}/automation`, { paused }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['lab-vendors'] });
+      qc.invalidateQueries({ queryKey: ['lab-vendor', vendorId] });
+    },
+  });
+}
+
+export function useUpdateLabVendor(vendorId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.patch<LabVendorResponse>(`/lab/vendors/${vendorId}`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['lab-vendors'] });
+      qc.invalidateQueries({ queryKey: ['lab-vendor', vendorId] });
+    },
+  });
+}
+
 export function useLabVendors() {
   return useQuery({
     queryKey: ['lab-vendors'],

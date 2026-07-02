@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
-import { ClinicalExtraction, type ClinicalExtraction as ClinicalExtractionType } from '@odovox/types';
+import { ClinicalExtraction, type ClinicalExtraction as ClinicalExtractionType, type LabCaseType } from '@odovox/types';
 import { AppError, NotFoundError } from '../errors.js';
 import { encryptField } from '../encryption.js';
 import { runWithContext } from '../request-context.js';
 import { resolveFollowUpSlot } from '../schedule/follow-up.js';
 import { reminderDrafts } from '../schedule/reminders.js';
+import { generateUniqueCaseNumber } from '../lab/case-number.js';
+import { allocateCaseCode } from '../lab/case-code.js';
 import type { ExtendedPrismaClient } from '../../plugins/prisma.js';
 
 export interface CommitParams {
@@ -21,6 +23,8 @@ export interface CommitResult {
   procedureId?: string;
   prescriptionId?: string;
   appointmentId?: string;
+  /** Phase 9.7: DRAFT lab case created from the doctor's spoken suggestion (reception completes it). */
+  labCaseId?: string;
   /** Set when the follow-up could not be slotted and fell back to 10:00 (spec §5.2). */
   appointmentWarning?: string | null;
 }
@@ -316,6 +320,45 @@ export async function commitConsultation(
             },
           });
         }
+      }
+
+      // 7.5 (Phase 9.7 §2.5.1). Doctor kept the lab-case suggestion → a vendorless DRAFT case.
+      // Reception completes shade + photos + lab picker before Send; no WhatsApp fires here.
+      if (data.labCaseSuggestion) {
+        const s = data.labCaseSuggestion;
+        const clinic = await tx.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: { joinCode: true } });
+        const caseNumber = await generateUniqueCaseNumber(tx, clinicId, clinic.joinCode);
+        const caseCode = await allocateCaseCode(tx, clinicId);
+        const labCase = await tx.labCase.create({
+          data: {
+            clinicId,
+            patientId,
+            doctorId: userId,
+            vendorId: null,
+            caseNumber,
+            caseCode,
+            type: s.type as LabCaseType,
+            teeth: s.teeth,
+            description: data.procedure ? `From consultation: ${data.procedure}` : null,
+            impressionTakenAt: new Date(),
+            expectedReturnAt: s.dueInDays ? new Date(Date.now() + s.dueInDays * 24 * 60 * 60 * 1000) : null,
+            visitId,
+            status: 'DRAFT',
+            createdById: userId,
+          },
+        });
+        await tx.labCaseEvent.create({
+          data: {
+            clinicId,
+            labCaseId: labCase.id,
+            fromStatus: null,
+            toStatus: 'DRAFT',
+            trigger: 'reception_voice',
+            note: 'Created from voice consultation',
+            byUserId: userId,
+          },
+        });
+        result.labCaseId = labCase.id;
       }
 
       // 8. Visit → CHECKOUT. checkoutStartedAt orders the receptionist's "Ready for Checkout"

@@ -236,8 +236,13 @@ describe('clinical extraction — 20 dictation fixtures', () => {
 describe('clinical prompt — hardening guardrails are present', () => {
   const prompt = buildClinicalSystemInstruction(ctx());
 
-  it('is versioned v3', () => {
-    expect(CLINICAL_PROMPT_VERSION).toBe('clinical-v3');
+  it('is versioned v4 (9.7 lab-case suggestion)', () => {
+    expect(CLINICAL_PROMPT_VERSION).toBe('clinical-v4');
+  });
+
+  it('lab-case suggestion is opt-in and never invented', () => {
+    expect(prompt).toContain('LAB CASE SUGGESTION');
+    expect(prompt).toContain('Never invent this');
   });
 
   it('states the valid FDI ranges and forbids silent correction', () => {

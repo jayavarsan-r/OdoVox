@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gender, RecurringInterval, ToothStatus } from './common.js';
+import { Gender, LabCaseType, RecurringInterval, ToothStatus } from './common.js';
 
 /**
  * Structured output of the AI extractors. These are the schemas the verification card edits and
@@ -39,6 +39,18 @@ export const ExtractedToothStatusUpdate = z.object({
 });
 export type ExtractedToothStatusUpdate = z.infer<typeof ExtractedToothStatusUpdate>;
 
+/**
+ * Phase 9.7 §2.5.1 — optional lab-case suggestion inside the CLINICAL extraction: the doctor
+ * mentioned an impression + a prosthetic timeline ("crown after one week for tooth 26").
+ * Never invented; null unless explicitly spoken.
+ */
+export const LabCaseSuggestion = z.object({
+  type: LabCaseType,
+  teeth: z.array(z.number().int()).default([]),
+  dueInDays: z.number().int().positive().nullable().default(null),
+});
+export type LabCaseSuggestion = z.infer<typeof LabCaseSuggestion>;
+
 export const ClinicalExtraction = z.object({
   procedure: z.string().nullable().default(null),
   teeth: z.array(z.number().int()).default([]),
@@ -55,6 +67,8 @@ export const ClinicalExtraction = z.object({
   prescriptions: z.array(ExtractedPrescription).default([]),
   followUp: ExtractedFollowUp.nullable().default(null),
   toothStatusUpdates: z.array(ExtractedToothStatusUpdate).default([]),
+  // Phase 9.7: draft lab case when the doctor spoke an impression + prosthetic timeline.
+  labCaseSuggestion: LabCaseSuggestion.nullable().default(null),
   notes: z.string().nullable().default(null),
   clarifications: z.array(z.string()).default([]),
   safetyWarnings: z.array(z.string()).default([]),
@@ -205,6 +219,26 @@ export const AppointmentExtraction = z.object({
   clarifications: z.array(z.string()).default([]),
 });
 export type AppointmentExtraction = z.infer<typeof AppointmentExtraction>;
+
+/**
+ * "Zirconia crown for Ramesh, tooth 26, shade A2, Saveetha lab, one week, three thousand" →
+ * lab-case draft (Phase 9.7 W1.2.4). Patient + vendor names fuzzy-match server-side.
+ */
+export const LabNewCaseExtraction = z.object({
+  patientName: z.string().nullable().default(null),
+  type: LabCaseType.nullable().default(null),
+  teeth: z.array(z.number().int()).default([]),
+  material: z.string().nullable().default(null),
+  shade: z.string().nullable().default(null),
+  description: z.string().nullable().default(null),
+  vendorName: z.string().nullable().default(null),
+  expectedTurnaroundDays: z.number().int().positive().nullable().default(null),
+  costPaise: z.number().int().nonnegative().nullable().default(null),
+  patientChargePaise: z.number().int().nonnegative().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  clarifications: z.array(z.string()).default([]),
+});
+export type LabNewCaseExtraction = z.infer<typeof LabNewCaseExtraction>;
 
 /** Server-side fuzzy match of a spoken item name against the clinic's catalog. */
 export interface InventoryItemMatch {

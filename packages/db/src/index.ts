@@ -21,6 +21,8 @@ export const CLINIC_SCOPED_MODELS = [
   'AppointmentReminder',
   'LabVendor',
   'LabCase',
+  'LabMessage',
+  'LabCaseEvent',
   'InventoryCategory',
   'InventoryItem',
   'InventoryMovement',
