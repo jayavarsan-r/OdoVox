@@ -126,3 +126,73 @@ export interface PrescriptionContext {
   /** Phase 5: the clinic's active templates the doctor can invoke by name. */
   templates: TemplateHint[];
 }
+
+// ---------------------------------------------------------------------------
+// Phase 9.7 — voice-everywhere extraction schemas. One Zod contract per dictate
+// surface; the Gemini responseSchemas in apps/api mirror these.
+// ---------------------------------------------------------------------------
+
+/** "Bought 5 boxes of gloves at ₹200 each from Meditrade" → purchase rows. */
+export const InventoryPurchaseExtraction = z.object({
+  items: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        quantity: z.number().int().positive(),
+        unitPricePaise: z.number().int().nonnegative().nullable().default(null),
+        batchNumber: z.string().nullable().default(null),
+        expiryDate: z.string().nullable().default(null), // ISO date if spoken
+        vendorName: z.string().nullable().default(null),
+      }),
+    )
+    .default([]),
+  totalCostPaise: z.number().int().nonnegative().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  clarifications: z.array(z.string()).default([]),
+});
+export type InventoryPurchaseExtraction = z.infer<typeof InventoryPurchaseExtraction>;
+
+/** "Used 5 gloves and 2 carpules for this filling" → consumption rows. */
+export const InventoryConsumeExtraction = z.object({
+  items: z.array(z.object({ name: z.string().min(1), quantity: z.number().int().positive() })).default([]),
+  procedureName: z.string().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  clarifications: z.array(z.string()).default([]),
+});
+export type InventoryConsumeExtraction = z.infer<typeof InventoryConsumeExtraction>;
+
+/** "Gloves are actually 40, burs 12 — quarterly stock count" → corrected counts (ADMIN). */
+export const InventoryAdjustExtraction = z.object({
+  items: z.array(z.object({ name: z.string().min(1), newCount: z.number().int().nonnegative() })).default([]),
+  reason: z.string().nullable().default(null),
+  clarifications: z.array(z.string()).default([]),
+});
+export type InventoryAdjustExtraction = z.infer<typeof InventoryAdjustExtraction>;
+
+/** "X-ray 300 rupees, scaling 1500, give 10% discount for the senior citizen" → bill lines. */
+export const BillItemsExtraction = z.object({
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1),
+        quantity: z.number().int().positive().default(1),
+        unitPricePaise: z.number().int().nonnegative(),
+      }),
+    )
+    .default([]),
+  discountPaise: z.number().int().nonnegative().nullable().default(null),
+  discountReason: z.string().nullable().default(null),
+  notes: z.string().nullable().default(null),
+  clarifications: z.array(z.string()).default([]),
+});
+export type BillItemsExtraction = z.infer<typeof BillItemsExtraction>;
+
+/** Server-side fuzzy match of a spoken item name against the clinic's catalog. */
+export interface InventoryItemMatch {
+  itemId: string;
+  name: string;
+  unitOfMeasure: string;
+  currentStock: number;
+  /** 0-1 similarity; 1 = exact normalized match. */
+  score: number;
+}

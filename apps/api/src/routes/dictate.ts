@@ -9,10 +9,16 @@ import {
 } from '@odovox/types';
 import { ForbiddenError, NotFoundError, ValidationError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
-import { requireRole } from '../lib/rbac.js';
+import { requireAdmin, requireRole } from '../lib/rbac.js';
 import { storage, isAllowedAudioMime, MAX_AUDIO_BYTES } from '../lib/storage.js';
 import { getSttProvider } from '../lib/stt/index.js';
 import { getExtractor } from '../lib/ai/index.js';
+import { extractFromTranscript } from '../lib/ai/extractors/index.js';
+import { inventoryPurchaseExtractor } from '../lib/ai/extractors/inventory-purchase.js';
+import { inventoryConsumeExtractor } from '../lib/ai/extractors/inventory-consume.js';
+import { inventoryAdjustExtractor } from '../lib/ai/extractors/inventory-adjust.js';
+import { billItemsExtractor } from '../lib/ai/extractors/bill-items.js';
+import { fuzzyMatchInventoryItem, type CatalogItem } from '../lib/inventory/fuzzy.js';
 import { parseAllergies } from '../lib/consultation/context.js';
 import { runSafetyChecks, serializeSafetyWarnings } from '../lib/ai/safety.js';
 
@@ -31,6 +37,16 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
   const { prisma } = fastify;
   const anyClinical = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')] };
   const doctorOnly = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] };
+  const adminOnly = { preHandler: [fastify.authenticate, requireAdmin()] };
+
+  /** The clinic's live item catalog — extractor spelling hints + server-side fuzzy matching. */
+  async function loadCatalog(clinicId: string): Promise<CatalogItem[]> {
+    const rows = await prisma.inventoryItem.findMany({
+      where: { clinicId, isArchived: false },
+      select: { id: true, name: true, unitOfMeasure: true, currentStock: true },
+    });
+    return rows;
+  }
 
   /** Reject a storage key that doesn't belong to the caller's clinic (no cross-clinic audio reads). */
   function assertOwnKey(storageKey: string, clinicId: string): void {
@@ -146,6 +162,90 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
       safetyWarnings: serializeSafetyWarnings(safety),
       safety: { warnings: safety.warnings, blockingErrors: safety.blockingErrors },
     });
+  });
+
+  // ==========================================================================
+  // Phase 9.7 W1.2 — voice everywhere. Each endpoint: transcribe → shared
+  // extractor runner → server-side enrichment (fuzzy matches) → the client's
+  // verification card applies via the existing mutation endpoints.
+  // ==========================================================================
+
+  // Inventory purchase (W1.2.1) — matched items apply via /inventory/items/:id/purchase;
+  // unmatched surface as "New item — will create?" on the verification card.
+  fastify.post('/inventory/dictate/purchase', anyClinical, async (req) => {
+    const { storageKey } = parse(TranscribeInput, req.body);
+    assertOwnKey(storageKey, req.clinicId!);
+    const catalog = await loadCatalog(req.clinicId!);
+    const transcript = await transcribeAndPurge(storageKey);
+    const extraction = await extractFromTranscript(
+      inventoryPurchaseExtractor,
+      transcript,
+      { knownItemNames: catalog.map((c) => c.name) },
+      fastify.log,
+    );
+    const items = extraction.items.map((it) => ({ ...it, match: fuzzyMatchInventoryItem(it.name, catalog) }));
+    await fastify.audit('DICTATE_INVENTORY_PURCHASE', 'Dictation', null, { items: items.length });
+    return ok({ extraction: { ...extraction, items }, transcript });
+  });
+
+  // Inventory consumption (W1.2.2) — "used 5 gloves and 2 carpules for this filling".
+  // Stock never goes below zero: the apply path (/inventory/items/:id/consume) 422s.
+  fastify.post('/inventory/dictate/consume', doctorOnly, async (req) => {
+    const { storageKey } = parse(TranscribeInput, req.body);
+    assertOwnKey(storageKey, req.clinicId!);
+    const catalog = await loadCatalog(req.clinicId!);
+    const transcript = await transcribeAndPurge(storageKey);
+    const extraction = await extractFromTranscript(
+      inventoryConsumeExtractor,
+      transcript,
+      { knownItemNames: catalog.map((c) => c.name) },
+      fastify.log,
+    );
+    const items = extraction.items.map((it) => {
+      const match = fuzzyMatchInventoryItem(it.name, catalog);
+      return { ...it, match, insufficientStock: match !== null && match.currentStock < it.quantity };
+    });
+    await fastify.audit('DICTATE_INVENTORY_CONSUME', 'Dictation', null, { items: items.length });
+    return ok({ extraction: { ...extraction, items }, transcript });
+  });
+
+  // Inventory stock-count adjustment (W1.2.3) — ADMIN only, absolute newCount per item.
+  fastify.post('/inventory/dictate/adjust', adminOnly, async (req) => {
+    const { storageKey } = parse(TranscribeInput, req.body);
+    assertOwnKey(storageKey, req.clinicId!);
+    const catalog = await loadCatalog(req.clinicId!);
+    const transcript = await transcribeAndPurge(storageKey);
+    const extraction = await extractFromTranscript(
+      inventoryAdjustExtractor,
+      transcript,
+      { knownItemNames: catalog.map((c) => c.name) },
+      fastify.log,
+    );
+    const items = extraction.items.map((it) => ({ ...it, match: fuzzyMatchInventoryItem(it.name, catalog) }));
+    await fastify.audit('DICTATE_INVENTORY_ADJUST', 'Dictation', null, { items: items.length });
+    return ok({ extraction: { ...extraction, items }, transcript });
+  });
+
+  // Bill line items (W1.2.6) — extraction only; the card applies via POST /bills/:id/items
+  // (DRAFT-gating and totals recompute live there).
+  fastify.post('/bills/:id/dictate/items', anyClinical, async (req) => {
+    const { id } = req.params as { id: string };
+    const { storageKey } = parse(TranscribeInput, req.body);
+    assertOwnKey(storageKey, req.clinicId!);
+    const bill = await prisma.bill.findFirst({
+      where: { id, clinicId: req.clinicId! },
+      include: { patient: { select: { name: true } } },
+    });
+    if (!bill) throw new NotFoundError('Bill not found');
+    const transcript = await transcribeAndPurge(storageKey);
+    const extraction = await extractFromTranscript(
+      billItemsExtractor,
+      transcript,
+      { patientName: bill.patient.name },
+      fastify.log,
+    );
+    await fastify.audit('DICTATE_BILL_ITEMS', 'Bill', id, { items: extraction.items.length });
+    return ok({ extraction, transcript });
   });
 }
 

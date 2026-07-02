@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Boxes, ChevronRight, FolderPlus, PackagePlus } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Boxes, ChevronRight, ClipboardCheck, FolderPlus, Mic, PackagePlus } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
 import { EditorialHeading, EmptyState, FabMenu } from '@/components/ds';
 import { ListSkeleton } from '@/components/ui/skeleton';
+import { VoiceAdjustSheet, VoiceConsumeSheet, VoicePurchaseSheet } from '@/components/inventory/voice-sheets';
+import { useAuth } from '@/lib/auth';
 import { useInventoryCategories, useInventoryItems, type ItemFilters } from '@/lib/inventory-queries';
 import { expiryWarning, reorderDeficitLabel, splitLowStock, stockBarClass, stockTone } from '@/lib/inventory-ui';
 import type { InventoryItemSummary } from '@odovox/types';
@@ -48,6 +50,12 @@ function ItemCard({ item, onClick }: { item: InventoryItemSummary; onClick: () =
 
 export default function InventoryPage() {
   const router = useRouter();
+  // Home voice command "add 100 gloves…" lands here with ?dictate=purchase|consume.
+  const dictateParam = useSearchParams().get('dictate');
+  const isAdmin = !!useAuth((s) => s.activeMembership)?.isAdmin;
+  const [voiceSheet, setVoiceSheet] = useState<'purchase' | 'consume' | 'adjust' | null>(
+    dictateParam === 'purchase' || dictateParam === 'consume' ? dictateParam : null,
+  );
   const [category, setCategory] = useState<string | undefined>();
   const [search, setSearch] = useState('');
   const [lowOnly, setLowOnly] = useState(false);
@@ -123,10 +131,19 @@ export default function InventoryPage() {
 
       <FabMenu
         items={[
+          { id: 'voice-purchase', label: 'Voice log purchase', tone: 'lime', icon: <Mic />, onClick: () => setVoiceSheet('purchase') },
+          { id: 'voice-consume', label: 'Voice log usage', tone: 'lime', icon: <Mic />, onClick: () => setVoiceSheet('consume') },
+          ...(isAdmin
+            ? [{ id: 'voice-adjust', label: 'Voice stock count', tone: 'peach' as const, icon: <ClipboardCheck />, onClick: () => setVoiceSheet('adjust') }]
+            : []),
           { id: 'new-item', label: 'New item', tone: 'sage', icon: <PackagePlus />, onClick: () => router.push('/inventory/new') },
           { id: 'new-category', label: 'New category', tone: 'sky', icon: <FolderPlus />, onClick: () => router.push('/inventory/categories') },
         ]}
       />
+
+      <VoicePurchaseSheet open={voiceSheet === 'purchase'} onClose={() => setVoiceSheet(null)} />
+      <VoiceConsumeSheet open={voiceSheet === 'consume'} onClose={() => setVoiceSheet(null)} />
+      <VoiceAdjustSheet open={voiceSheet === 'adjust'} onClose={() => setVoiceSheet(null)} />
     </AnimatedPage>
   );
 }

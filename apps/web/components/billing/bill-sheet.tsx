@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import type { PaymentMethod } from '@odovox/types';
+import { useQueryClient } from '@tanstack/react-query';
+import type { BillItemsExtraction, PaymentMethod } from '@odovox/types';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import { VoiceInput } from '@/components/voice/voice-input';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
-import { ApiError } from '@/lib/api-client';
+import { api, ApiError } from '@/lib/api-client';
 import { useBill, useBillActions, usePayments, useRefund } from '@/lib/billing/api';
 import { CHECKOUT_METHODS, billStatusStyle, canAddPayment, canRefund, checkoutStep, methodLabel, rupees, waMeLink } from '@/lib/billing/format';
 import { cn } from '@/lib/utils';
@@ -21,7 +23,37 @@ import { cn } from '@/lib/utils';
 export function BillSheet({ billId, onClose }: { billId: string | null; onClose: () => void }) {
   const isAdmin = !!useAuth((s) => s.activeMembership)?.isAdmin;
   const toast = useToast();
+  const qc = useQueryClient();
   const { data: bill, isLoading } = useBill(billId);
+
+  // Phase 9.7 W1.2.6 — dictate line items onto a DRAFT bill: extraction → apply through the
+  // existing DRAFT-gated item endpoint (totals recompute there), then refetch.
+  async function onItemsDictated({ extraction }: { extraction: BillItemsExtraction; transcript: string }) {
+    if (!bill) return;
+    if (extraction.clarifications.length) toast.info(extraction.clarifications.join(' '));
+    if (!extraction.items.length) return;
+    try {
+      for (const item of extraction.items) {
+        await api.post(`/bills/${bill.id}/items`, {
+          kind: 'PROCEDURE',
+          description: item.description,
+          quantity: item.quantity,
+          unitPricePaise: item.unitPricePaise,
+        });
+      }
+      if (extraction.discountPaise) {
+        await api.patch(`/bills/${bill.id}`, {
+          discountPaise: extraction.discountPaise,
+          ...(extraction.discountReason ? { discountReason: extraction.discountReason } : {}),
+        });
+      }
+      toast.success(`Added ${extraction.items.length} item${extraction.items.length > 1 ? 's' : ''} — review before finalizing.`);
+      void qc.invalidateQueries({ queryKey: ['bill', bill.id] });
+      void qc.invalidateQueries({ queryKey: ['bills'] });
+    } catch (e) {
+      toast.apiError(e);
+    }
+  }
   const actions = useBillActions(billId ?? '');
   const pay = usePayments(billId ?? '');
   const refund = useRefund();
@@ -82,9 +114,19 @@ export function BillSheet({ billId, onClose }: { billId: string | null; onClose:
           </div>
 
           {step === 'edit' && (
-            <Button className="w-full" onClick={() => actions.finalize.mutate(undefined, { onError })} disabled={actions.finalize.isPending}>
-              Finalize bill
-            </Button>
+            <>
+              <VoiceInput
+                mode="extraction"
+                endpoint={`/bills/${bill.id}/dictate/items`}
+                placement="sheet"
+                label="Dictate line items"
+                hint="“X-ray 300, scaling 1500, discount 200”"
+                onExtraction={onItemsDictated}
+              />
+              <Button className="w-full" onClick={() => actions.finalize.mutate(undefined, { onError })} disabled={actions.finalize.isPending}>
+                Finalize bill
+              </Button>
+            </>
           )}
 
           {canAddPayment(bill.status) && (

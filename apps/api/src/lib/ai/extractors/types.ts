@@ -1,4 +1,4 @@
-import type { ZodType } from 'zod';
+import type { ZodType, ZodTypeDef } from 'zod';
 import type { GeminiSchema } from '../response-schema.js';
 
 /**
@@ -17,7 +17,8 @@ export interface Extractor<T, C> {
   promptVersion: string;
   buildSystemInstruction(ctx: C): string;
   responseSchema: GeminiSchema;
-  zodSchema: ZodType<T>;
+  /** Input side is `unknown` — schemas with `.default()` diverge between input and output. */
+  zodSchema: ZodType<T, ZodTypeDef, unknown>;
   /** Deterministic keyword mock — same contract as real Gemini (AI_PROVIDER != 'gemini'). */
   mockExtract(transcript: string, ctx: C): T;
 }
