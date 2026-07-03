@@ -409,6 +409,7 @@ model Clinic {
   whatsappCostLogs      WhatsAppCostLog[]
   labMessages           LabMessage[]
   labCaseEvents         LabCaseEvent[]
+  labParseExamples      LabParseTrainingExample[]
 
   @@index([joinCode])
 }
@@ -1074,6 +1075,9 @@ model LabMessage {
   parseConfidence Decimal?
   resolved        Boolean          @default(false)
   buttonPayload   Json? // structured quick-reply data from the BSP
+  // Tier-3 suggestion that did NOT clear the auto-apply gates — rendered in the reception inbox
+  // as "AI suggestion: → IN_PROGRESS (92%)" with Apply/Ignore. Null once resolved.
+  llmSuggestion   Json?
   fromPhone       String? // inbound sender in E.164 (kept for unknown-sender review)
   templateKey     String? // outbound: which template fired (T1/T2/T3/T4/T-consent)
   costPaise       Int              @default(0)
@@ -1085,6 +1089,23 @@ model LabMessage {
 
   @@index([clinicId, labVendorId, createdAt(sort: Desc)])
   @@index([clinicId, resolved, createdAt])
+}
+
+// Phase 9.7 §2.9 tier 4 — every reception resolution of an ambiguous lab message becomes a
+// labeled example, the raw material for improving tiers 2–3 over time.
+model LabParseTrainingExample {
+  id             String   @id @default(cuid())
+  clinicId       String
+  labMessageId   String
+  body           String?
+  resolvedCaseId String?
+  resolvedStatus String?
+  action         String // 'link' | 'link_status' | 'handled' | 'apply_suggestion' | 'ignore_suggestion'
+  createdAt      DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, createdAt])
 }
 
 // Phase 9.7 — immutable status history per lab case. Separate from AuditLog because this is

@@ -11,6 +11,9 @@ import type { InboundEvent } from '../whatsapp/provider.js';
 import { parseButtonPayload } from './adapters.js';
 import { sendLabTemplate } from './send-service.js';
 import { extractCaseCode, matchConsentReply, matchStatusKeyword } from './keywords.js';
+import { extractFromTranscript } from '../ai/extractors/index.js';
+import { labReplyExtractor, type LabReplyContext } from '../ai/extractors/lab-reply.js';
+import { LLM_CONFIDENCE_GATE } from '../lab/transition-service.js';
 
 /**
  * Phase 9.7 §2.9 — the four-tier lab parser, tiers 1–2 (sub-stage 2.B). Each inbound lab message
@@ -27,7 +30,7 @@ export interface LabInboundResult {
   labMessageId?: string;
   caseId?: string;
   newStatus?: LabCaseStatus;
-  parseTier?: 'button' | 'case_code';
+  parseTier?: 'button' | 'case_code' | 'llm';
 }
 
 /** Download inbound media into our bucket. `mock://` URLs short-circuit (hermetic tests). */
@@ -87,20 +90,22 @@ export async function processLabInbound(
   const finalize = async (
     caseId: string,
     to: LabCaseStatus,
-    tier: 'button' | 'case_code',
+    tier: 'button' | 'case_code' | 'llm',
+    confidence = 1,
   ): Promise<LabInboundResult> => {
-    const trigger = tier === 'button' ? ('lab_button' as const) : ('lab_text' as const);
+    const trigger = tier === 'button' ? ('lab_button' as const) : tier === 'llm' ? ('llm_parse' as const) : ('lab_text' as const);
     const { labCase } = await transitionLabCase(prisma, {
       clinicId,
       caseId,
       to,
       trigger,
-      note: tier === 'case_code' ? text.slice(0, 300) : null,
+      note: tier === 'button' ? null : text.slice(0, 300),
       sourceLabMessageId: message.id,
+      parseConfidence: confidence,
     });
     await prisma.labMessage.update({
       where: { id: message.id },
-      data: { labCaseId: caseId, parseTier: tier, parseConfidence: 1, resolved: true },
+      data: { labCaseId: caseId, parseTier: tier, parseConfidence: confidence, resolved: true },
     });
     await attachMediaToCase(prisma, { clinicId, caseId, message: { id: message.id, mediaPaths } });
     if (to === 'READY') {
@@ -142,7 +147,68 @@ export async function processLabInbound(
     if (target) return finalize(target.id, keyword.status, 'case_code');
   }
 
-  // ── Unresolved → tiers 3/4. Media may still auto-attach when unambiguous. ──
+  // ── Tier 3 — LLM fallback (§2.9), scoped to this lab's OPEN cases. Strict gates: both
+  // confidences ≥ 0.85 AND exactly one plausible case; anything less becomes an inbox
+  // suggestion (tier 4), never an auto-transition.
+  if (text.trim()) {
+    const openCases = await prisma.labCase.findMany({
+      where: { clinicId, vendorId: vendor.id, status: { in: OPEN_LAB_STATUSES } },
+      include: { patient: { select: { name: true } } },
+      take: 20,
+    });
+    if (openCases.length > 0) {
+      const ctx: LabReplyContext = {
+        vendorName: vendor.name,
+        openCases: openCases.map((c) => ({
+          id: c.id,
+          caseCode: c.caseCode,
+          caseType: c.type,
+          teeth: c.teeth,
+          patientInitials: c.patient.name.split(/\s+/).map((w) => w[0]!.toUpperCase()).join(''),
+          status: c.status,
+        })),
+      };
+      try {
+        const reply = await extractFromTranscript(labReplyExtractor, text, ctx);
+        const candidate =
+          reply.caseCode !== null
+            ? openCases.filter((c) => c.caseCode === reply.caseCode)
+            : openCases.length === 1
+              ? openCases
+              : [];
+        const gatesPass =
+          !reply.requiresManualHandling &&
+          reply.newStatus !== null &&
+          candidate.length === 1 && // single-candidate rule
+          reply.caseCodeConfidence >= LLM_CONFIDENCE_GATE &&
+          reply.statusConfidence >= LLM_CONFIDENCE_GATE;
+        if (gatesPass) {
+          return finalize(candidate[0]!.id, reply.newStatus as LabCaseStatus, 'llm', Math.min(reply.caseCodeConfidence, reply.statusConfidence));
+        }
+        // Below the gate but not empty-handed → inbox suggestion for one-tap Apply.
+        if (reply.newStatus || reply.issueRaised) {
+          await prisma.labMessage.update({
+            where: { id: message.id },
+            data: {
+              llmSuggestion: {
+                caseId: candidate.length === 1 ? candidate[0]!.id : null,
+                caseCode: reply.caseCode,
+                newStatus: reply.newStatus,
+                confidence: Math.min(reply.caseCodeConfidence, reply.statusConfidence),
+                issueRaised: reply.issueRaised,
+              },
+              parseTier: 'llm',
+              parseConfidence: Math.min(reply.caseCodeConfidence, reply.statusConfidence),
+            },
+          });
+        }
+      } catch {
+        // Extraction failure is never fatal — the message simply lands in the inbox.
+      }
+    }
+  }
+
+  // ── Tier 4 — reception inbox. Media may still auto-attach when unambiguous. ──
   const attached = await autoAttachByContext(prisma, { clinicId, vendorId: vendor.id, messageId: message.id, caseCode, mediaPaths });
   return { outcome: 'unresolved', labMessageId: message.id, caseId: attached ?? undefined };
 }

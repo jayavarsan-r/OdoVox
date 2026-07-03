@@ -23,6 +23,7 @@ export const CLINIC_SCOPED_MODELS = [
   'LabCase',
   'LabMessage',
   'LabCaseEvent',
+  'LabParseTrainingExample',
   'InventoryCategory',
   'InventoryItem',
   'InventoryMovement',

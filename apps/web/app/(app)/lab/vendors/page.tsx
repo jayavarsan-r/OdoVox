@@ -16,7 +16,36 @@ import {
   useLabVendors,
   useUpdateLabVendor,
 } from '@/lib/lab-queries';
+import { useLabVendorAnalytics } from '@/lib/lab-inbox-queries';
 import { cn } from '@/lib/utils';
+
+/** §2.14 — the sales-asset numbers: clinics can see which labs deliver on time. */
+function VendorPerformance({ vendorId }: { vendorId: string }) {
+  const { data: a } = useLabVendorAnalytics(vendorId);
+  if (!a) return null;
+  if (a.volume90 === 0) return <p className="text-xs text-text-muted">No cases in the last 90 days yet.</p>;
+  const rows: Array<[string, string]> = [
+    ['Turnaround', a.turnaroundDaysAvg !== null ? `${a.turnaroundDaysAvg} days avg (target ${a.targetTurnaroundDays})` : '—'],
+    ['On-time delivery', a.onTimeRate !== null ? `${Math.round(a.onTimeRate * 100)}%` : '—'],
+    ['Response time', a.medianReplyHours !== null ? `${a.medianReplyHours}h median` : '—'],
+    ['Volume', `${a.volume90} cases (90d) · ${a.volume30} (30d)`],
+    ['Issues raised', `${a.issuesRaised}${a.issueRate !== null ? ` (${Math.round(a.issueRate * 100)}%)` : ''}`],
+    ['Overdue now', String(a.overdueOpenCount)],
+    ['WhatsApp cost', `₹${(a.monthCostPaise / 100).toFixed(0)} this month · ₹${(a.costPerCasePaise / 100).toFixed(2)}/case`],
+  ];
+  return (
+    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+      {rows.map(([label, value]) => (
+        <div key={label} className="contents">
+          <dt className="text-text-subtle">{label}</dt>
+          <dd className={cn('text-right font-mono text-xs tabular-nums text-ink', label === 'WhatsApp cost' && a.costPerCasePaise > 200 && 'text-danger')}>
+            {value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 const inputCls = 'w-full rounded-lg border border-border bg-paper-warm px-3 py-2 text-sm outline-none focus:border-border-strong';
 
@@ -125,6 +154,11 @@ function VendorSheet({ vendor, onClose }: { vendor: LabVendorResponse | null; on
               </div>
             </>
           )}
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-subtle">Performance (last 90 days)</p>
+          <VendorPerformance vendorId={vendor.id} />
         </div>
 
         <label className="flex items-center justify-between">

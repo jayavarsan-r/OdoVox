@@ -91,6 +91,16 @@ export default function MessagesPage() {
     <AnimatedPage className="flex flex-1 flex-col gap-4 px-5 pt-6 pb-28">
       <EditorialHeading title="Messages" trailing={<ProfileButton />} />
 
+      {/* Lab conversations live in their own inbox (Phase 9.7 §2.12) — different lifecycle. */}
+      <button
+        type="button"
+        onClick={() => router.push('/messages/lab')}
+        className="flex items-center justify-between rounded-xl border border-border bg-lavender-soft/50 px-4 py-3 text-left shadow-elev-1"
+      >
+        <span className="text-sm font-semibold text-ink">Lab conversations</span>
+        <ChevronRight className="size-4 text-text-subtle" />
+      </button>
+
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f, i) => (
           <button

@@ -18,6 +18,7 @@ import {
   useLabVendorDetail,
   useUploadLabPhoto,
 } from '@/lib/lab-queries';
+import { useUndoLabEvent } from '@/lib/lab-inbox-queries';
 import { expectedReturnInfo, labCaseTypeLabel, labNextStatuses, labStatusStyle, labTriggerLabel, maskPhone } from '@/lib/lab-ui';
 import { rupees } from '@/lib/patient-ui';
 import { cn } from '@/lib/utils';
@@ -66,6 +67,7 @@ export default function LabCaseDetailPage() {
   const { data: c, isLoading } = useLabCase(caseId);
   const photos = useLabPhotos(caseId);
   const transition = useLabTransition(caseId);
+  const undoEvent = useUndoLabEvent();
   const upload = useUploadLabPhoto(caseId);
   const [revealVendor, setRevealVendor] = useState(false);
   const vendorDetail = useLabVendorDetail(revealVendor && c?.vendorId ? c.vendorId : null);
@@ -228,6 +230,8 @@ export default function LabCaseDetailPage() {
           <ul className="flex flex-col gap-2.5">
             {c.events.map((e) => {
               const style = labStatusStyle(e.toStatus as LabCaseStatus);
+              const undoable =
+                e.trigger === 'llm_parse' && !e.undoneAt && Date.now() - new Date(e.createdAt).getTime() < 24 * 60 * 60 * 1000;
               return (
                 <li key={e.id} className={cn('flex gap-3 text-sm', e.undoneAt && 'opacity-45 line-through')}>
                   <span className={cn('mt-1.5 size-2 shrink-0 rounded-pill', style.bar)} />
@@ -240,6 +244,15 @@ export default function LabCaseDetailPage() {
                       {e.note ? ` · “${e.note}”` : ''}
                     </p>
                   </div>
+                  {undoable ? (
+                    <button
+                      type="button"
+                      onClick={() => void undoEvent.mutateAsync(e.id).then(() => toast.success('Undone')).catch(toast.apiError)}
+                      className="shrink-0 self-start text-xs font-medium text-danger underline-offset-2 hover:underline"
+                    >
+                      Undo
+                    </button>
+                  ) : null}
                 </li>
               );
             })}

@@ -112,6 +112,16 @@ export async function transitionLabCase(
     // Legacy cases get their human code on first 9.7 transition (new cases get it at creation).
     const caseCode = existing.caseCode ?? (await allocateCaseCode(tx, clinicId));
 
+    // → SENT defaults the expected return from the vendor's turnaround (same as the legacy
+    // send endpoint) — the timeout sweep and analytics both key off expectedReturnAt.
+    let expectedReturnPatch: Record<string, Date> = {};
+    if (to === 'SENT' && !existing.expectedReturnAt && existing.vendorId) {
+      const vendor = await tx.labVendor.findFirst({ where: { id: existing.vendorId, clinicId }, select: { defaultTurnaroundDays: true } });
+      if (vendor) {
+        expectedReturnPatch = { expectedReturnAt: new Date(Date.now() + vendor.defaultTurnaroundDays * 24 * 60 * 60 * 1000) };
+      }
+    }
+
     const labCase = await tx.labCase.update({
       where: { id: caseId },
       data: {
@@ -120,6 +130,7 @@ export async function transitionLabCase(
         statusUpdatedAt: new Date(),
         statusUpdatedBy: trigger,
         ...timestampPatch(to),
+        ...expectedReturnPatch,
         ...(to === 'CANCELLED' || to === 'ISSUE_RAISED' ? { rejectionReason: input.note ?? existing.rejectionReason } : {}),
       },
     });
