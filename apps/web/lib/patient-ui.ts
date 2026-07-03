@@ -30,4 +30,4 @@ export function statusStyle(status: PatientStatus): StatusStyle {
   }
 }
 
-export const rupees = (paise: number): string => `₹${Math.round(paise / 100).toLocaleString('en-IN')}`;
+export { formatINR as rupees } from './format';

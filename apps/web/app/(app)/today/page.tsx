@@ -21,11 +21,9 @@ import { useTodayStats } from '@/lib/queries';
 import { useDailyCollection } from '@/lib/billing/api';
 import { collectionStatTiles } from '@/lib/billing/format';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/lib/toast';
 
 export default function TodayPage() {
   const router = useRouter();
-  const toast = useToast();
   const { clinic } = useAuth();
   const stats = useTodayStats();
   const collection = useDailyCollection();
@@ -179,8 +177,8 @@ export default function TodayPage() {
           { id: 'walk-in', label: 'Add walk-in', tone: 'lime', icon: <UserPlus />, onClick: () => setWalkInOpen(true) },
           { id: 'voice-walk-in', label: 'Voice walk-in', tone: 'lime', icon: <Mic />, onClick: () => { setWalkInVoice(true); setWalkInOpen(true); } },
           { id: 'new-patient', label: 'New patient', tone: 'peach', icon: <UserPlus />, onClick: () => router.push('/patients/new') },
-          { id: 'add-payment', label: 'Add payment', tone: 'sage', icon: <IndianRupee />, onClick: () => toast.info('Payments arrive in Phase 8.') },
-          { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: () => toast.info('Scheduling arrives in Phase 6.') },
+          { id: 'add-payment', label: 'Add payment', tone: 'sage', icon: <IndianRupee />, onClick: () => router.push('/billing') },
+          { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: () => router.push('/schedule?dictate=1') },
         ]}
       />
 

@@ -7,8 +7,8 @@ import { apiErrorToMessage } from './error-messages';
  * The single toast entry point for the whole app. Wraps sonner so callers never import it
  * directly, and gives us one place to route API errors through `apiErrorToMessage`.
  *
- * Toasts render as a fixed overlay (configured on <Toaster/> in providers.tsx: top-center,
- * offset for the safe-area, 5s auto-dismiss) so they never push content.
+ * Toasts render as a fixed overlay (configured on <Toaster/> in providers.tsx: bottom-center
+ * above the tab bar, safe-area aware, 3s auto-dismiss, one at a time) so they never push content.
  */
 export function useToast() {
   return {

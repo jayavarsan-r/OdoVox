@@ -7,6 +7,7 @@ import type { LabCaseStatus } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ds';
 import { useToast } from '@/lib/toast';
 import { ApiError } from '@/lib/api-client';
@@ -78,7 +79,14 @@ export default function LabCaseDetailPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (isLoading || !c) {
-    return <AnimatedPage className="flex flex-1 items-center justify-center px-5">Loading…</AnimatedPage>;
+    return (
+      <AnimatedPage className="flex flex-1 flex-col gap-4 px-5 pt-4">
+        <Skeleton className="h-9 w-40" />
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </AnimatedPage>
+    );
   }
 
   const s = labStatusStyle(c.status);

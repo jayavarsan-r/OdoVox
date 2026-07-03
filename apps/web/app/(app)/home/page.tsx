@@ -21,9 +21,10 @@ import { VoiceCommandHero } from '@/components/voice/voice-command-hero';
 import { VoiceSearchInput } from '@/components/voice-search-input';
 import { EmptyState, FabMenu, HeroCard } from '@/components/ds';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/lib/toast';
 import { useAuth } from '@/lib/auth';
 import { useNeedsYou, useRecentVisits } from '@/lib/queries';
+import { useSchedule } from '@/lib/schedule/api';
+import { formatLocalTime, localDateISO } from '@/lib/schedule/tz';
 import { useQueueStore } from '@/lib/queue/store';
 import { getInChair, getWaiting } from '@/lib/queue/selectors';
 import { useQueueSnapshot } from '@/lib/queue/mutations';
@@ -77,11 +78,18 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export default function DoctorHomePage() {
   const router = useRouter();
-  const toast = useToast();
   const { user, clinic } = useAuth();
   const [search, setSearch] = useState('');
   const needsYou = useNeedsYou();
   const recent = useRecentVisits();
+
+  // Today's appointments (Phase 6 schedule, surfaced on Home since 9.7 — no more placeholder).
+  const todayISO = localDateISO(new Date(), 'Asia/Kolkata');
+  const todaySchedule = useSchedule(todayISO, todayISO, 'me');
+  const tz = todaySchedule.data?.clinicHours.timezone ?? 'Asia/Kolkata';
+  const todaysAppointments = (todaySchedule.data?.appointments ?? [])
+    .filter((a) => a.status === 'SCHEDULED' || a.status === 'CHECKED_IN')
+    .slice(0, 3);
 
   // Same source of truth as /consult: snapshot hydrates the queue store, realtime keeps it live.
   useQueueSnapshot('me');
@@ -94,7 +102,6 @@ export default function DoctorHomePage() {
   const dateLabel = `${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}`;
   const raw = (user?.name || 'Doctor').replace(/^Dr\.?\s*/i, '').split(' ')[0] || 'Doctor';
   const firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
-  const soon = (phase: string) => () => toast.info(`Coming in ${phase}.`);
   const needsCount = needsYou.data?.items.length ?? 0;
 
   return (
@@ -137,27 +144,50 @@ export default function DoctorHomePage() {
       {/* Quick tools */}
       <div className="grid grid-cols-2 gap-3">
         <QuickTile label="New patient" subtitle="Add a new patient" icon={<UserPlus />} accent="bg-peach-soft" iconColor="text-tool-patient" onClick={() => router.push('/patients/new')} />
-        <QuickTile label="Appointment" subtitle="View & manage" icon={<Calendar />} accent="bg-sky-soft" iconColor="text-info" onClick={soon('Phase 6')} />
+        <QuickTile label="Appointment" subtitle="View & manage" icon={<Calendar />} accent="bg-sky-soft" iconColor="text-info" onClick={() => router.push('/schedule')} />
         <QuickTile label="Inventory" subtitle="Stock & supplies" icon={<Boxes />} accent="bg-sage-tint" iconColor="text-tool-inventory" onClick={() => router.push('/inventory')} />
         <QuickTile label="Lab tracker" subtitle="Track lab cases" icon={<FlaskConical />} accent="bg-lavender-soft" iconColor="text-tool-lab" onClick={() => router.push('/lab')} />
-        <QuickTile label="Day off" subtitle="Manage leaves" icon={<CalendarOff />} accent="bg-lime-soft" iconColor="text-tool-dayoff" onClick={soon('Phase 6')} />
+        <QuickTile label="Day off" subtitle="Manage leaves" icon={<CalendarOff />} accent="bg-lime-soft" iconColor="text-tool-dayoff" onClick={() => router.push('/clinic/day-off')} />
       </div>
 
       {/* Today */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <SectionLabel>TODAY · 0</SectionLabel>
+          <SectionLabel>TODAY · {todaysAppointments.length}</SectionLabel>
           <button onClick={() => router.push('/schedule')} className="text-sm font-medium text-info">
             Schedule →
           </button>
         </div>
-        <EmptyState
-          variant="inline"
-          icon={<Calendar />}
-          iconTone="sky"
-          title="No appointments scheduled."
-          body="Scheduling arrives in Phase 6."
-        />
+        {todaySchedule.isLoading ? (
+          <Skeleton className="h-16 w-full rounded-2xl" />
+        ) : todaysAppointments.length === 0 ? (
+          <EmptyState
+            variant="inline"
+            icon={<Calendar />}
+            iconTone="sky"
+            title="No appointments today."
+            body="Tap Schedule to book one — or just say “Book…” above."
+          />
+        ) : (
+          <div className="space-y-2">
+            {todaysAppointments.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => router.push(`/schedule?date=${todayISO}`)}
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left shadow-elev-1"
+              >
+                <span className="font-mono text-sm font-semibold tabular-nums text-ink">
+                  {formatLocalTime(new Date(a.startsAt), tz)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{a.patientName}</span>
+                  {a.procedureHint ? <span className="block truncate text-xs text-text-muted">{a.procedureHint}</span> : null}
+                </span>
+                <ChevronRight className="size-4 shrink-0 text-text-subtle" />
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Needs you */}
@@ -238,8 +268,8 @@ export default function DoctorHomePage() {
       <FabMenu
         items={[
           { id: 'new-patient', label: 'New patient', tone: 'peach', icon: <UserPlus />, onClick: () => router.push('/patients/new') },
-          { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: soon('Phase 6') },
-          { id: 'quick-rx', label: 'Quick prescription', tone: 'sage', icon: <Pill />, onClick: soon('Phase 3') },
+          { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: () => router.push('/schedule?dictate=1') },
+          { id: 'quick-rx', label: 'Quick prescription', tone: 'sage', icon: <Pill />, onClick: () => router.push('/patients') },
         ]}
       />
     </AnimatedPage>
