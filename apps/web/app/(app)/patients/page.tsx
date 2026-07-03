@@ -9,7 +9,6 @@ import { VoiceSearchInput } from '@/components/voice-search-input';
 import { EditorialHeading, EmptyState, FabMenu } from '@/components/ds';
 import { IlluHappyTooth } from '@/components/illustrations';
 import { ListSkeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/lib/toast';
 import { usePatients } from '@/lib/queries';
 import { initials, statusStyle, rupees } from '@/lib/patient-ui';
 import type { PatientFilter, PatientListItem } from '@odovox/types';
@@ -58,7 +57,6 @@ function PatientCard({ p, onClick }: { p: PatientListItem; onClick: () => void }
 
 function PatientsInner() {
   const router = useRouter();
-  const toast = useToast();
   const params = useSearchParams();
   const [search, setSearch] = useState(params.get('search') ?? '');
   const [filter, setFilter] = useState<PatientFilter>('all');
@@ -136,7 +134,7 @@ function PatientsInner() {
             label: 'New appointment',
             tone: 'sky',
             icon: <Calendar />,
-            onClick: () => toast.info('Coming in Phase 6.'),
+            onClick: () => router.push('/schedule?dictate=1'),
           },
         ]}
       />

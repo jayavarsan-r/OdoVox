@@ -212,7 +212,7 @@ export default function PatientDetailPage() {
       </div>
 
       <div className="flex-1 px-5 py-4">
-        {tab === 'overview' && <OverviewTab patientId={id} patientName={patient.data?.name ?? ''} records={records} onOpenTeeth={() => setTab('teeth')} />}
+        {tab === 'overview' && <OverviewTab patientId={id} patientName={patient.data?.name ?? ''} records={records} onOpenTeeth={() => setTab('teeth')} onOpenBilling={() => setTab('billing')} />}
         {tab === 'cases' && <CasesTab patientId={id} />}
         {tab === 'teeth' && <TeethTab patientId={id} records={records} />}
         {tab === 'media' && <MediaTab patientId={id} />}
@@ -233,7 +233,7 @@ export default function PatientDetailPage() {
 }
 
 // ===== Overview ==============================================================
-function OverviewTab({ patientId, patientName, records, onOpenTeeth }: { patientId: string; patientName: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void }) {
+function OverviewTab({ patientId, patientName, records, onOpenTeeth, onOpenBilling }: { patientId: string; patientName: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void; onOpenBilling: () => void }) {
   const toast = useToast();
   const router = useRouter();
   const completedProcedures = useCompletedProcedures(patientId);
@@ -268,7 +268,7 @@ function OverviewTab({ patientId, patientName, records, onOpenTeeth }: { patient
       <div className="grid grid-cols-3 gap-2">
         <QuickAction label="Prescribe" icon={<Pill className="size-5" />} accent="bg-peach-soft" onClick={() => setRx(true)} />
         <QuickAction label="New visit" icon={<CalendarPlus className="size-5" />} accent="bg-sky-soft" onClick={() => setVisitOpen(true)} />
-        <QuickAction label="Collect" icon={<IndianRupee className="size-5" />} accent="bg-lime-soft" onClick={() => toast.info('Payments land in Phase 8.')} />
+        <QuickAction label="Collect" icon={<IndianRupee className="size-5" />} accent="bg-lime-soft" onClick={onOpenBilling} />
       </div>
 
       <Section title="Current treatment">

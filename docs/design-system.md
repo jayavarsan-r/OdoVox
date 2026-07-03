@@ -1,7 +1,7 @@
 # Odovox Design System
 
 > Every UI work — every screen, every component, every retrofit — reads this
-> document first. No exceptions. If something here conflicts with a phase prompt,
+> document first. No exceptions. Last updated: 2026-07-03 (Phase 9.7). If something here conflicts with a phase prompt,
 > raise the conflict; don't deviate silently.
 >
 > **Locked at Phase 2.5.** Source of truth for tokens is

@@ -128,10 +128,6 @@ export default function ClinicProfileStep() {
               <span className="flex size-14 items-center justify-center rounded-pill bg-paper-warm text-lg font-semibold text-muted-foreground">
                 {(currentUser?.name || 'Dr').slice(0, 2).toUpperCase()}
               </span>
-              {/* TODO(Phase 3): wire S3 photo upload. Placeholder only. */}
-              <button type="button" className="text-sm font-medium text-muted-foreground underline underline-offset-2">
-                Add photo
-              </button>
             </div>
 
             <FormField label="Your name" htmlFor="doctorName" required error={errors.doctorName?.message}>

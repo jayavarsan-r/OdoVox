@@ -1,5 +1,8 @@
 # Odovox Voice + AI Pipeline
 
+> Last updated: 2026-07-03 (Phase 9.7 — voice-everywhere extractors live in `apps/api/src/lib/ai/extractors/`,
+> all running through the shared `extractFromTranscript` runner; UI mics are the one `<VoiceInput>` component).
+
 > Started in the Phase 3 prologue with the provider-mocking policy below. Phase 3 expands
 > this file with the full pipeline: the STT/AI provider abstractions (`ISttProvider`,
 > `IClinicalExtractor`), the BullMQ queues, the SSE state machine, the safety layer, prompt
