@@ -1,6 +1,7 @@
 import type { ExtendedPrismaClient } from '../../plugins/prisma.js';
 import { runAsSystem } from '../../lib/request-context.js';
 import { broadcastToClinic } from '../realtime/broadcast.js';
+import { processLabInbound } from '../lab-transport/inbound-service.js';
 import type { InboundEvent, StatusEvent } from './provider.js';
 import { normalizeIndianPhone, serializeMessage } from './render.js';
 import { serializeConversationListItem, upsertConversationOnInbound } from './conversation.js';
@@ -93,6 +94,19 @@ export async function processInboundWebhook(prisma: ExtendedPrismaClient, args: 
   return runAsSystem(async () => {
     let created = 0;
     for (const event of args.events) {
+      // Phase 9.7 §2.8 — route by sender FIRST: a lab's WhatsApp number is more specific than a
+      // patient phone (a technician could also be a patient). Lab traffic never touches patient
+      // conversations.
+      const senderE164 = normalizeIndianPhone(event.fromPhone) ?? event.fromPhone;
+      const labVendor = await prisma.labVendor.findFirst({
+        where: { isArchived: false, whatsappPhoneNumbers: { has: senderE164 } },
+      });
+      if (labVendor) {
+        await processLabInbound(prisma, { vendor: labVendor, event });
+        created++;
+        continue;
+      }
+
       const resolved = await resolve(prisma, event);
       if (!resolved) continue; // can't attribute to any clinic → drop (logged upstream)
       const { clinicId, patientId } = resolved;

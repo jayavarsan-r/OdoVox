@@ -369,7 +369,11 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
       await sendLabTemplate(prisma, { clinicId, vendorId: labCase.vendorId, caseId: id, templateKey: 'lab_t4_receipt', automated: true, throwOnBlock: false });
     }
     if (body.to === 'READY') {
-      await notifyLabCaseReady(fastify, clinicId, id); // Phase 9 patient notification (consent-gated)
+      await notifyLabCaseReady(fastify, clinicId, id); // Phase 9 patient T5 (consent-gated)
+      if (labCase.vendorId) {
+        // T3 — "when will it reach the clinic?" (automated → respects pause + consent).
+        await sendLabTemplate(prisma, { clinicId, vendorId: labCase.vendorId, caseId: id, templateKey: 'lab_t3_dispatch', automated: true, throwOnBlock: false });
+      }
     }
 
     await fastify.audit('LAB_CASE_TRANSITION', 'LabCase', id, { to: body.to, trigger: 'reception_manual' });

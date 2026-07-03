@@ -52,6 +52,8 @@ export interface InboundEvent {
   text?: string;
   /** Quick-reply / list-reply payload id (e.g. '1' = confirm, '2' = reschedule). */
   buttonId?: string;
+  /** Phase 9.7 — download URL for image/document messages (BSP-hosted, short-lived). */
+  mediaUrl?: string;
   providerMessageId?: string;
   timestamp?: Date;
 }

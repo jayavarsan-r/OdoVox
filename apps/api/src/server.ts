@@ -42,6 +42,7 @@ import { preflight } from './lib/preflight.js';
 import { printBootBanner } from './lib/boot-banner.js';
 import { startWorkers } from './queues/start-workers.js';
 import { startScheduleCron } from './queues/schedule-cron.js';
+import { startLabTimeoutCron } from './queues/lab-timeout-sweep.js';
 import { startReminderCron } from './queues/reminder-sweep-worker.js';
 import { startCostCron } from './lib/whatsapp/cost.js';
 import { closeQueues } from './queues/index.js';
@@ -120,6 +121,7 @@ async function start(): Promise<void> {
   let scheduleCron: { stop: () => Promise<void> } | null = null;
   let reminderCron: { stop: () => Promise<void> } | null = null;
   let costCron: { stop: () => Promise<void> } | null = null;
+  let labTimeoutCron: { stop: () => Promise<void> } | null = null;
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info(`Received ${signal}, shutting down…`);
@@ -128,6 +130,7 @@ async function start(): Promise<void> {
       await scheduleCron?.stop();
       await reminderCron?.stop();
       await costCron?.stop();
+      await labTimeoutCron?.stop();
       await closeQueues();
       await app.close(); // closes server + triggers onClose (prisma, redis, sentry flush)
       process.exit(0);
@@ -153,6 +156,8 @@ async function start(): Promise<void> {
     reminderCron = startReminderCron(app);
     // Daily WhatsApp cost aggregation → WhatsAppCostLog.
     costCron = startCostCron(app);
+    // Phase 9.7: lab timeout sweep (T2 nudges only — never changes case status).
+    labTimeoutCron = startLabTimeoutCron(app);
     // Make the active STT / AI / OTP providers impossible to miss at boot.
     printBootBanner(env);
   } catch (err) {

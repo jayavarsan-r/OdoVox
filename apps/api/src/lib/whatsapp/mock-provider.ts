@@ -114,6 +114,8 @@ interface AiSensyInboundPayload {
       button_reply?: { id?: string; title?: string };
       list_reply?: { id?: string; title?: string };
     };
+    image?: { link?: string; caption?: string };
+    document?: { link?: string; caption?: string };
   }>;
 }
 
@@ -141,7 +143,15 @@ export function parseAiSensyInbound(payload: unknown): InboundEvent[] {
         timestamp: ts,
       });
     } else if (m.type === 'image' || m.type === 'document') {
-      events.push({ fromPhone: m.from, toPhone, type: m.type, providerMessageId: m.id, timestamp: ts });
+      events.push({
+        fromPhone: m.from,
+        toPhone,
+        type: m.type,
+        text: m.image?.caption ?? m.document?.caption ?? '',
+        mediaUrl: m.image?.link ?? m.document?.link,
+        providerMessageId: m.id,
+        timestamp: ts,
+      });
     } else {
       events.push({ fromPhone: m.from, toPhone, type: 'text', text: m.text?.body ?? '', providerMessageId: m.id, timestamp: ts });
     }
