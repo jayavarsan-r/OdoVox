@@ -92,6 +92,14 @@ export async function runExtractionJob(deps: ExtractionDeps, data: ExtractionJob
 
       const extracted = await deps.extractor.extractClinical(transcript, ctx);
 
+      // Phase 9.6 Issue 12: a continuation dictated without tooth numbers ("same tooth,
+      // second sitting") inherits the plan's teeth — the verification card must never show an
+      // empty Tooth field for a plan the patient already has.
+      if (extracted.continuesPlanId && extracted.teeth.length === 0) {
+        const plan = activePlans.find((p) => p.planId === extracted.continuesPlanId);
+        if (plan && plan.teeth.length > 0) extracted.teeth = [...plan.teeth];
+      }
+
       // Safety layer runs after extraction, before the verification card.
       const safety = runSafetyChecks(
         extracted,

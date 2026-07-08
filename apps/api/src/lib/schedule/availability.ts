@@ -89,17 +89,25 @@ export function getAvailableSlots(input: GetAvailableSlotsInput): Slot[] {
   };
 
   // 4. Doctor's working windows for this dayOfWeek, intersected with clinic hours.
+  // Phase 9.6 Issue 10.2: a doctor with NO configured availability works the clinic's open
+  // hours. Most small clinics never fill in weekly windows — without this default, "Schedule
+  // all" 409s on every plan (manual booking already allows it as a SOFT conflict; slot search
+  // must agree).
+  const doctorRows = doctorAvailability.filter((w) => w.doctorId === doctorId);
   let windows: Interval[] = [];
-  for (const w of doctorAvailability) {
-    if (w.doctorId !== doctorId) continue;
-    if (w.dayOfWeek !== dow) continue;
-    if (!windowInEffect(w, dayStartUtc)) continue;
-    const win: Interval = {
-      start: localDateTimeToUtc(dateISO, w.startTime, tz).getTime(),
-      end: localDateTimeToUtc(dateISO, w.endTime, tz).getTime(),
-    };
-    const clipped = intersect(win, clinicEnvelope);
-    if (clipped) windows.push(clipped);
+  if (doctorRows.length === 0) {
+    windows = [clinicEnvelope];
+  } else {
+    for (const w of doctorRows) {
+      if (w.dayOfWeek !== dow) continue;
+      if (!windowInEffect(w, dayStartUtc)) continue;
+      const win: Interval = {
+        start: localDateTimeToUtc(dateISO, w.startTime, tz).getTime(),
+        end: localDateTimeToUtc(dateISO, w.endTime, tz).getTime(),
+      };
+      const clipped = intersect(win, clinicEnvelope);
+      if (clipped) windows.push(clipped);
+    }
   }
   if (windows.length === 0) return [];
 

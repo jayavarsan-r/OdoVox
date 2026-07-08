@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ChevronLeft } from 'lucide-react';
 import type { ConsultationContext } from '@odovox/types';
@@ -39,8 +39,24 @@ export default function ConsultDetailPage() {
   }, [id]);
 
   // On CONFIRMED, celebrate briefly then return to the patient detail with fresh data.
+  // Phase 9.6 Issue 13: the confirm wrote plans/sittings/visits — the 30s staleTime would
+  // otherwise show the doctor a pre-confirm Overview ("0 of 4 sittings"). Invalidate everything
+  // the patient page reads, plus the queue snapshot the front desk watches.
+  const queryClient = useQueryClient();
   useEffect(() => {
     if (state.kind === 'CONFIRMED') {
+      if (patientId) {
+        for (const key of [
+          ['patient', patientId],
+          ['plans', patientId],
+          ['completed-procedures', patientId],
+          ['visits', patientId],
+          ['teeth', patientId],
+        ]) {
+          void queryClient.invalidateQueries({ queryKey: key });
+        }
+      }
+      void queryClient.invalidateQueries({ queryKey: ['queue'] });
       const t = setTimeout(() => router.replace(patientId ? `/patients/${patientId}` : '/consult'), 1800);
       return () => clearTimeout(t);
     }
@@ -49,7 +65,7 @@ export default function ConsultDetailPage() {
       return () => clearTimeout(t);
     }
     return undefined;
-  }, [state.kind, patientId, router]);
+  }, [state.kind, patientId, router, queryClient]);
 
   const isRecorder = ['IDLE', 'REQUESTING_PERMISSION', 'RECORDING', 'PAUSED', 'STOPPED'].includes(state.kind);
   const isPipeline = ['UPLOADING', 'TRANSCRIBING', 'TRANSCRIBED', 'EXTRACTING'].includes(state.kind);

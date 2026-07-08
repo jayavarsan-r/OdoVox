@@ -212,10 +212,12 @@ describe('recurring series', () => {
   });
 
   it('returns 409 SERIES_UNSCHEDULED when occurrences cannot be placed', async () => {
-    // No availability → every occurrence is unschedulable.
+    // Windows entirely before the clinic opens → every occurrence is unschedulable. (No rows at
+    // all now defaults to clinic hours — Phase 9.6 Issue 10.2.)
     const c = await createDoctorWithClinic(app);
     phones.push(c.phone);
     clinicIds.push(c.clinicId);
+    await seedDoctorAvailability(app, c.clinicId, c.userId, { startTime: '05:00', endTime: '07:00' });
     const patientId = await createPatient(app, c.clinicId, c.userId);
     const res = await app.inject({
       method: 'POST',

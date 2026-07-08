@@ -107,6 +107,16 @@ export async function commitConsultation(
           throw new AppError('Plan has no procedure to advance', 422, 'PLAN_NOT_ACTIVE');
         }
 
+        // Phase 9.6 Issue 12: continuation confirmed without spoken teeth — persist the plan's
+        // teeth on the consultation so the timeline/record never shows a tooth-less sitting.
+        if (data.teeth.length === 0 && procedure.toothNumbers.length > 0) {
+          data.teeth = [...procedure.toothNumbers];
+          await tx.consultation.update({
+            where: { id: consult.id },
+            data: { structuredData: data as object },
+          });
+        }
+
         const nextSittingNum = procedure.completedSittings + 1;
         // Safety: a doctor can't skip sittings — sitting N must follow N-1.
         if (data.sittingCurrent != null && data.sittingCurrent > nextSittingNum) {
@@ -125,7 +135,10 @@ export async function commitConsultation(
             procedureId: procedure.id,
             visitId,
             sittingNumber: nextSittingNum,
-            completedAt: data.status === 'COMPLETED' ? new Date() : null,
+            // Phase 9.6 Issue 10.1: a dictated sitting is work performed TODAY — it counts as
+            // completed unless the doctor aborted it. `data.status` is the PROCEDURE's overall
+            // status; gating on COMPLETED left multi-sitting plans stuck at "0 of N".
+            completedAt: data.status === 'ABORTED' ? null : new Date(),
             notesEnc: data.notes ? encryptField(data.notes) : null,
           },
         });
@@ -199,7 +212,9 @@ export async function commitConsultation(
               procedureId: procedure.id,
               visitId,
               sittingNumber,
-              completedAt: data.status === 'COMPLETED' ? new Date() : null,
+              // Same Issue 10.1 rule as the continuation branch: dictated = done today,
+              // unless aborted.
+              completedAt: data.status === 'ABORTED' ? null : new Date(),
               notesEnc: data.notes ? encryptField(data.notes) : null,
             },
           });

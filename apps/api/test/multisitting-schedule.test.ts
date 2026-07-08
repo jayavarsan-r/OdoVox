@@ -100,10 +100,13 @@ describe('multi-sitting auto-schedule', () => {
   });
 
   it('returns a preview of placed + unscheduled occurrences when some cannot be slotted (409)', async () => {
-    // Doctor with no availability → nothing can be placed.
+    // Doctor whose configured windows fall entirely OUTSIDE clinic hours → nothing can be placed.
+    // (Phase 9.6 Issue 10.2: a doctor with NO rows now defaults to clinic hours — see
+    // schedule-all-remaining-sittings.test.ts — so the 409 path needs an explicit bad window.)
     const c = await createDoctorWithClinic(app);
     phones.push(c.phone);
     clinicIds.push(c.clinicId);
+    await seedDoctorAvailability(app, c.clinicId, c.userId, { startTime: '05:00', endTime: '07:00' });
     const patientId = await createPatient(app, c.clinicId, c.userId);
     const plan = await seedActivePlan(app, c.clinicId, c.userId, patientId, { procedure: 'RCT', totalSittings: 3, completedSittings: 0 });
     const res = await app.inject({

@@ -72,7 +72,9 @@ describe('voice follow-up → availability-aware appointment', () => {
   });
 
   it('surfaces a NO_AVAILABLE_SLOT warning when no slot can be found', async () => {
-    const c = await base(false); // no availability at all
+    // Windows entirely before the clinic opens → never a slot. (No rows at all now defaults to
+    // clinic hours — Phase 9.6 Issue 10.2 — so the warning path needs an explicit bad window.)
+    const c = await base(true, { startTime: '05:00', endTime: '07:00' });
     const res = await commit(c, extraction());
     expect(res.appointmentWarning).toMatch(/NO_AVAILABLE_SLOT/);
     const consult = await scoped(c.clinicId, () =>

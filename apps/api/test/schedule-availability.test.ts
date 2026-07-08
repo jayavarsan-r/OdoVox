@@ -145,6 +145,13 @@ describe('getAvailableSlots', () => {
   });
 
   it('returns no slots when the doctor has no window that weekday', () => {
-    expect(getAvailableSlots({ ...base, dateISO: THU, doctorAvailability: [] }).length).toBe(0);
+    // A CONFIGURED doctor (windows exist, just not this weekday) gets nothing. An empty
+    // availability list now means "unconfigured — works clinic hours" (Phase 9.6 Issue 10.2).
+    const friOnly = { ...fullThu, dayOfWeek: 5 };
+    expect(getAvailableSlots({ ...base, dateISO: THU, doctorAvailability: [friOnly] }).length).toBe(0);
+  });
+
+  it('an UNCONFIGURED doctor (no rows at all) defaults to clinic hours (Phase 9.6 Issue 10.2)', () => {
+    expect(getAvailableSlots({ ...base, dateISO: THU, doctorAvailability: [] }).length).toBeGreaterThan(0);
   });
 });
