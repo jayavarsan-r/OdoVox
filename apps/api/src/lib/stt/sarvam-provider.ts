@@ -1,4 +1,5 @@
 import { AppError } from '../errors.js';
+import { chunkPlan, mergeTranscripts, type SttAudioTools } from './audio-chunker.js';
 import type {
   ISttProvider,
   SttLanguage,
@@ -7,6 +8,11 @@ import type {
 } from './sender.js';
 
 const SARVAM_STT_URL = 'https://api.sarvam.ai/speech-to-text';
+
+/** Sarvam's batch cap is ~30s; stay under it with headroom (Phase 9.6 Issue 7). */
+const SINGLE_SHOT_MAX_MS = 28_000;
+const CHUNK_MS = 25_000;
+const CHUNK_OVERLAP_MS = 3_000;
 
 /** Minimal logger shape so the provider can take a Fastify/Pino logger without a hard dep. */
 export interface SttLogger {
@@ -51,9 +57,17 @@ export class SarvamSttProvider implements ISttProvider {
   private readonly model: string;
   private readonly maxRetries: number;
   private readonly backoffBaseMs: number;
+  private readonly audioTools?: SttAudioTools;
 
   constructor(
-    opts?: { apiKey?: string; model?: string; maxRetries?: number; backoffBaseMs?: number },
+    opts?: {
+      apiKey?: string;
+      model?: string;
+      maxRetries?: number;
+      backoffBaseMs?: number;
+      /** Enables >30s chunking (Issue 7). Omitted → single-shot only (short dictation surfaces). */
+      audioTools?: SttAudioTools;
+    },
     private readonly logger?: SttLogger,
   ) {
     const apiKey = opts?.apiKey ?? process.env.SARVAM_API_KEY;
@@ -68,6 +82,7 @@ export class SarvamSttProvider implements ISttProvider {
     this.model = opts?.model ?? process.env.SARVAM_MODEL ?? 'saarika:v2.5';
     this.maxRetries = opts?.maxRetries ?? 2;
     this.backoffBaseMs = opts?.backoffBaseMs ?? 250;
+    this.audioTools = opts?.audioTools;
   }
 
   /** Build the multipart form. Exposed for tests (assert the file/model/language fields). */
@@ -82,6 +97,50 @@ export class SarvamSttProvider implements ISttProvider {
   }
 
   async transcribe(audio: Buffer, opts: SttTranscribeOptions): Promise<SttResult> {
+    // Phase 9.6 Issue 7: Sarvam's batch endpoint rejects >30s audio. When audio tools are wired
+    // (the consultation pipeline), probe the duration and chunk long recordings; a probe failure
+    // degrades to the old single-shot path rather than blocking the doctor.
+    if (this.audioTools) {
+      let durationMs: number | null = null;
+      try {
+        durationMs = await this.audioTools.getDurationMs(audio, opts.mimeType);
+      } catch (err) {
+        this.logger?.error({ provider: 'sarvam', err }, 'audio duration probe failed — sending single-shot');
+      }
+      if (durationMs != null && durationMs > SINGLE_SHOT_MAX_MS) {
+        return this.transcribeChunked(audio, opts, durationMs);
+      }
+    }
+    return this.transcribeSingle(audio, opts);
+  }
+
+  /** Split → transcribe each chunk (sequentially, kind to rate limits) → merge transcripts. */
+  private async transcribeChunked(
+    audio: Buffer,
+    opts: SttTranscribeOptions,
+    durationMs: number,
+  ): Promise<SttResult> {
+    const startedAt = Date.now();
+    const plan = chunkPlan(durationMs, CHUNK_MS, CHUNK_OVERLAP_MS);
+    this.logger?.info(
+      { provider: 'sarvam', durationMs, chunks: plan.length },
+      'Sarvam STT — chunking long audio',
+    );
+    const results: SttResult[] = [];
+    for (const chunk of plan) {
+      const slice = await this.audioTools!.sliceAudio(audio, opts.mimeType, chunk);
+      results.push(await this.transcribeSingle(slice.audio, { ...opts, mimeType: slice.mimeType }));
+    }
+    const detected = results.find((r) => r.languageCode && r.languageCode !== 'unknown');
+    return {
+      providerId: results[0]?.providerId ?? 'sarvam',
+      transcript: mergeTranscripts(results.map((r) => r.transcript)),
+      languageCode: detected?.languageCode ?? results[0]?.languageCode ?? toSarvamLanguage(opts.language),
+      durationMs: Date.now() - startedAt,
+    };
+  }
+
+  private async transcribeSingle(audio: Buffer, opts: SttTranscribeOptions): Promise<SttResult> {
     const startedAt = Date.now();
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {

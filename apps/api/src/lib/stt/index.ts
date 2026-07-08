@@ -1,3 +1,4 @@
+import { ffmpegAudioTools } from './audio-chunker.js';
 import { MockSttProvider } from './mock-provider.js';
 import { SarvamSttProvider, type SttLogger } from './sarvam-provider.js';
 import type { ISttProvider } from './sender.js';
@@ -18,7 +19,11 @@ export { SarvamSttProvider, type SttLogger } from './sarvam-provider.js';
  * latency so the progress UI feels real; tests construct the mock directly with 0ms.
  */
 export function getSttProvider(logger?: SttLogger): ISttProvider {
-  if (process.env.STT_PROVIDER === 'sarvam') return new SarvamSttProvider(undefined, logger);
+  // audioTools enables >30s chunking via ffmpeg (Phase 9.6 Issue 7); a missing binary degrades
+  // to single-shot inside the provider rather than failing the pipeline.
+  if (process.env.STT_PROVIDER === 'sarvam') {
+    return new SarvamSttProvider({ audioTools: ffmpegAudioTools }, logger);
+  }
   const latencyMs = process.env.NODE_ENV === 'test' ? 0 : 800;
   return new MockSttProvider({ latencyMs });
 }
