@@ -5,9 +5,9 @@ import type { ActivePlanContext, ClinicalExtractionContext, PrescriptionContext 
  * quality with prompt revisions (stored alongside the consultation provider tag). The base
  * instructions are constant; only the PATIENT CONTEXT block is interpolated per request.
  */
-export const CLINICAL_PROMPT_VERSION = 'clinical-v4'; // v4: lab-case suggestion (Phase 9.7)
+export const CLINICAL_PROMPT_VERSION = 'clinical-v5'; // v5: Tamil/Tanglish patterns + identity hard-strip (Phase 9.6)
 export const PRESCRIPTION_PROMPT_VERSION = 'prescription-v2';
-export const INTAKE_PROMPT_VERSION = 'intake-v1';
+export const INTAKE_PROMPT_VERSION = 'intake-v2'; // v2: allergies extraction (Phase 9.6 Issue 2)
 
 const list = (xs: string[]): string => (xs.length ? xs.join(', ') : 'none');
 const orNone = (s: string | null): string => s ?? 'none';
@@ -47,7 +47,7 @@ const CLINICAL_INSTRUCTIONS = `INSTRUCTIONS:
 3. Return ONLY a JSON object that conforms to the provided responseSchema. Do not include explanations, markdown, or extra prose.
 4. NEVER prescribe medicines the doctor didn't explicitly mention.
 5. NEVER include diagnosis the doctor didn't state.
-6. NEVER include patient identifiers — the patient context is metadata only, not output.
+6. NEVER extract patient identity fields (name, phone, age, gender) — those come from the current patient record, not from the transcript. NEVER extract or infer patient age from context; age is entered separately via patient records. Only extract clinical content: procedure, teeth, medications, findings, cost, follow-up.
 7. If the transcript is ambiguous, set the field to null and add a clarification to \`clarifications: string[]\`.
 
 ALLERGY GUARDRAIL: If the doctor prescribes a medicine that contains an ingredient the patient is allergic to (cross-check the allergies above), set \`safetyWarnings: ["allergy_conflict:<medicine>"]\`. Do NOT remove the prescription — flag it; the doctor decides.
@@ -61,6 +61,21 @@ HARDENING RULES (be conservative — when in doubt, null):
 - READ-ONLY CONTEXT: do NOT copy any medicine, diagnosis, plan detail, or follow-up from PATIENT CONTEXT or ACTIVE TREATMENT PLANS into the output. That block is background only — output must come from today's transcript alone.
 
 LANGUAGE NOTE: For Hindi/Tamil clinical terms, translate to English in the output (e.g. "extracted", "scaling").
+
+TAMIL/TANGLISH TOOTH NUMBER PATTERNS:
+Indian dentists dictate teeth as separated digits: "3 6" means tooth 36, NOT teeth 3 and 6.
+- "3 6 la" or "3 6 tooth" -> tooth 36
+- "1 6" -> tooth 16; "4 7" -> tooth 47
+- "2 6 aur 2 7" / "2 6 and 2 7" -> teeth 26 and 27
+Only when digits are clearly enumerated ("upper right 1, 2, 3") treat them as multiple teeth.
+An STT transcript may also join the digits ("36 la") — same tooth 36.
+
+TAMIL/TANGLISH DENTAL PHRASES:
+- "panniaachu" / "pannitaachu" = done/completed (e.g. "1st sitting panniaachu" -> sittingCurrent 1, that sitting is completed today)
+- "pannanum" / "panna vendum" = needs to be done (planned, not yet performed)
+- "vechikalam" / "vaikalam" = will schedule for (e.g. "next sitting 7th July vechikalam" -> followUp)
+- "fees 5000 collect" / "5000 vaangunga" = the procedure cost (estimatedCostPaise 500000)
+- "valikardhu" / "vali" = pain (chief complaint context)
 
 LAB CASE SUGGESTION (optional):
 If the doctor mentions taking an impression AND a prosthetic timeline, set \`labCaseSuggestion\`:
@@ -117,4 +132,4 @@ TEMPLATE INSTRUCTIONS:
 For each medicine capture: name, dosage (mg), frequency (OD/BD/TID/QID/SOS), durationDays, instructions. If an ingredient conflicts with an allergy above, add "allergy_conflict:<medicine>" to safetyWarnings — flag, never remove. Return ONLY JSON matching the responseSchema.`;
 }
 
-export const PATIENT_INTAKE_SYSTEM_INSTRUCTION = `You are a patient-intake assistant for an Indian dental clinic. Convert a spoken patient introduction into a strict JSON object: name, phone (10-digit Indian mobile), age, gender (MALE/FEMALE/OTHER), chiefComplaint, and medicalFlags (e.g. diabetes, hypertension, pregnancy). Leave any field null if not stated; never invent data. Return ONLY JSON matching the responseSchema.`;
+export const PATIENT_INTAKE_SYSTEM_INSTRUCTION = `You are a patient-intake assistant for an Indian dental clinic. Convert a spoken patient introduction into a strict JSON object: name, phone (10-digit Indian mobile), age, gender (MALE/FEMALE/OTHER), chiefComplaint, medicalFlags (e.g. diabetes, hypertension, pregnancy), and allergies (e.g. "allergic to penicillin" -> ["Penicillin"]). Leave any field null (arrays empty) if not stated; never invent data. Return ONLY JSON matching the responseSchema.`;

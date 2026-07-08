@@ -56,7 +56,10 @@ export async function runSttJob(deps: SttDeps, data: SttJobData): Promise<void> 
     const startedAt = Date.now();
     try {
       const audio = await deps.loadAudio(consult.audioStorageKey);
-      const result = await deps.stt.transcribe(audio, { language: 'auto', mimeType: 'audio/webm' });
+      // STT_LANGUAGE pins the clinic's dictation language (e.g. ta-IN) — Sarvam's auto-detect
+      // garbles Tamil dental terms far more than the explicit hint (Phase 9.6 Issue 8).
+      const language = (['en-IN', 'hi-IN', 'ta-IN'] as const).find((l) => l === process.env.STT_LANGUAGE) ?? 'auto';
+      const result = await deps.stt.transcribe(audio, { language, mimeType: 'audio/webm' });
       const sttLatencyMs = Date.now() - startedAt;
 
       await prisma.consultation.update({

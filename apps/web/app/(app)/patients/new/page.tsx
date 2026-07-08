@@ -69,14 +69,17 @@ export default function NewPatientPage() {
   const offerQueue = walkinParam || role === 'RECEPTIONIST' || role === 'ADMIN';
 
   // "Speak patient details" → intake extraction prefills the form, which is itself the review
-  // surface — the doctor edits any field before Create.
+  // surface — the doctor edits any field before Create. Phase 9.6 Issue 2: chief complaint and
+  // allergies come through too; flags not matching a known chip render as custom chips below.
   const onIntake = ({ intake: i }: {
     intake: {
       name: string | null;
       phone: string | null;
       age: number | null;
       gender: 'MALE' | 'FEMALE' | 'OTHER' | null;
+      chiefComplaint: string | null;
       medicalFlags: string[];
+      allergies: string[];
     };
   }) => {
     const opts = { shouldValidate: true, shouldDirty: true } as const;
@@ -84,7 +87,9 @@ export default function NewPatientPage() {
     if (i.phone) setValue('phone', i.phone, opts);
     if (i.age) setValue('age', i.age, opts);
     if (i.gender) setValue('gender', i.gender, opts);
+    if (i.chiefComplaint) setValue('chiefComplaint', i.chiefComplaint, opts);
     if (i.medicalFlags.length) setValue('medicalFlags', i.medicalFlags, opts);
+    if (i.allergies.length) setValue('allergies', i.allergies.join(', '), opts);
     toast.info('Filled from your voice — review and edit before saving.');
   };
 
@@ -195,7 +200,18 @@ export default function NewPatientPage() {
           <div className="space-y-4 rounded-2xl bg-paper-warm p-5 shadow-elev-1">
             <FormField label="Medical flags">
               <Controller control={control} name="medicalFlags" render={({ field }) => (
-                <ChipMultiSelect options={FLAGS} selected={field.value ?? []} onChange={field.onChange} />
+                // Voice-extracted flags outside the standard list render as custom chips,
+                // pre-selected — nothing the patient said gets silently dropped (Issue 2).
+                <ChipMultiSelect
+                  options={[
+                    ...FLAGS,
+                    ...(field.value ?? [])
+                      .filter((v) => !FLAGS.some((f) => f.value === v))
+                      .map((v) => ({ label: v, value: v })),
+                  ]}
+                  selected={field.value ?? []}
+                  onChange={field.onChange}
+                />
               )} />
             </FormField>
 

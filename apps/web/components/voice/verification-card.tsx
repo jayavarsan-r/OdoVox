@@ -9,7 +9,9 @@ import { useConsultStore } from '@/lib/consult/store';
 import {
   addMedicine,
   removeMedicine,
+  setCost,
   setFollowUp,
+  setNotes,
   setProcedure,
   setSittings,
   setStatus,
@@ -84,11 +86,26 @@ function SafetyCard({ item }: { item: SafetyViewItem }) {
   );
 }
 
+/** One line of the pre-save preview — label + value, values from the FINAL edited data. */
+function PreviewLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-3 py-1.5">
+      <span className="w-24 shrink-0 text-[13px] text-text-muted">{label}</span>
+      <span className="min-w-0 flex-1 text-sm font-medium text-ink">{value}</span>
+    </div>
+  );
+}
+
+const rupees = (paise: number): string => `₹${(paise / 100).toLocaleString('en-IN')}`;
+
 /**
- * The verification card — the gate. Nothing commits until the doctor taps Confirm. Three invariants:
- * (a) Re-record is always available (header link → resets to recording, audits the reject).
+ * The verification card — the doctor's main working surface (Phase 9.6 Issue 6/16), full-page on
+ * the consult route. Nothing commits until Save. Invariants:
+ * (a) Re-record stays available, but a card with edits asks before discarding them.
  * (b) Safety warnings are never silently dismissed — resolved ones re-render with a check, not gone.
- * (c) Per-field editors expand inline (no modal stacking).
+ * (c) Per-field editors expand inline (no modal stacking); every edit PATCHes the draft to the
+ *     server immediately, so partial work survives a dropped tab or a failed confirm.
+ * (d) Saving passes through a Preview step — the doctor sees the exact summary before it commits.
  */
 export function VerificationCard({ data, safety }: { data: ClinicalExtraction; safety: SafetyViewItem[] }) {
   const { edit, confirm, rerecord } = useConsultStore.getState();
@@ -96,25 +113,48 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
   const toast = useToast();
   const confirming = state.kind === 'CONFIRMING';
   const [editing, setEditing] = useState<string | null>(null);
+  const [edited, setEdited] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const [confirmRerecord, setConfirmRerecord] = useState(false);
   const blocked = hasUnresolvedBlocking(safety);
   // Fields the server (or client) flagged with an unresolved BLOCKING error — their rows go red.
   const invalidFields = new Set(safety.filter((s) => s.blocking && !s.resolved && s.field).map((s) => s.field));
 
-  const apply = (next: ClinicalExtraction) => {
+  // Every card edit funnels through here: marks the draft dirty (guards Re-record) and
+  // autosaves via the store's PATCH.
+  const applyEdit = (next: ClinicalExtraction) => {
+    setEdited(true);
     edit(next);
+  };
+  const apply = (next: ClinicalExtraction) => {
+    applyEdit(next);
     setEditing(null);
+  };
+
+  // Smart re-record: an untouched card re-records immediately; an edited one asks first (two-tap).
+  const onRerecord = () => {
+    if (edited && !confirmRerecord) {
+      setConfirmRerecord(true);
+      return;
+    }
+    void rerecord();
   };
 
   return (
     <GlassCard
       tone="light"
       border="soft"
-      className="flex max-h-[88vh] flex-col overflow-hidden rounded-t-3xl rounded-b-none"
+      className="relative flex max-h-full min-h-0 flex-1 flex-col overflow-hidden rounded-3xl"
     >
       <header className="flex items-center justify-between px-5 pb-2 pt-4">
         <h2 className="text-lg font-semibold text-ink">Here&apos;s what I understood</h2>
-        <button type="button" onClick={() => void rerecord()} className="text-sm font-medium text-text-muted">
-          Re-record
+        <button
+          type="button"
+          onClick={onRerecord}
+          onBlur={() => setConfirmRerecord(false)}
+          className={cn('text-sm font-medium', confirmRerecord ? 'text-danger' : 'text-text-muted')}
+        >
+          {confirmRerecord ? 'Discard edits & re-record?' : 'Re-record'}
         </button>
       </header>
 
@@ -247,6 +287,49 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
           ) : null}
         </Row>
 
+        {/* Fee + Notes rows (Phase 9.6 Issue 8/16) — dictated cost and advice were extracted but
+            had no home on the card, so the doctor couldn't see or fix them before saving. */}
+        <Row
+          label="Fee"
+          value={data.estimatedCostPaise != null ? rupees(data.estimatedCostPaise) : '—'}
+          confirmed={data.estimatedCostPaise != null}
+          onEdit={() => setEditing(editing === 'fee' ? null : 'fee')}
+        >
+          {editing === 'fee' ? (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-sm text-text-muted">₹</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                defaultValue={data.estimatedCostPaise != null ? data.estimatedCostPaise / 100 : ''}
+                onBlur={(e) => {
+                  const n = Number(e.target.value);
+                  apply(setCost(data, n > 0 ? Math.round(n * 100) : null));
+                }}
+                className="w-32 rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+              />
+            </div>
+          ) : null}
+        </Row>
+
+        <Row
+          label="Notes"
+          value={data.notes ?? '—'}
+          confirmed={!!data.notes}
+          onEdit={() => setEditing(editing === 'notes' ? null : 'notes')}
+        >
+          {editing === 'notes' ? (
+            <textarea
+              autoFocus
+              defaultValue={data.notes ?? ''}
+              rows={2}
+              placeholder="e.g. Patient advised no hot or cold foods"
+              onBlur={(e) => apply(setNotes(data, e.target.value.trim() || null))}
+              className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+            />
+          ) : null}
+        </Row>
+
         {/* Prescription section */}
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between">
@@ -256,7 +339,7 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
             <button
               type="button"
               onClick={() =>
-                edit(addMedicine(data, { name: 'New medicine', dosage: null, frequency: null, durationDays: null, instructions: null }))
+                applyEdit(addMedicine(data, { name: 'New medicine', dosage: null, frequency: null, durationDays: null, instructions: null }))
               }
               className="flex items-center gap-1 text-sm font-medium text-info"
             >
@@ -273,8 +356,8 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
                 <MedicineRow
                   key={i}
                   rx={rx}
-                  onChange={(next) => edit({ ...data, prescriptions: data.prescriptions.map((p, j) => (j === i ? next : p)) })}
-                  onRemove={() => edit(removeMedicine(data, i))}
+                  onChange={(next) => applyEdit({ ...data, prescriptions: data.prescriptions.map((p, j) => (j === i ? next : p)) })}
+                  onRemove={() => applyEdit(removeMedicine(data, i))}
                 />
               ))}
             </div>
@@ -296,7 +379,7 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
                 <span className="rounded-pill bg-lime px-3 py-1 text-xs font-medium text-ink">Keep draft</span>
                 <button
                   type="button"
-                  onClick={() => edit({ ...data, labCaseSuggestion: null })}
+                  onClick={() => applyEdit({ ...data, labCaseSuggestion: null })}
                   className="rounded-pill bg-paper-warm px-3 py-1 text-xs font-medium text-text-muted"
                 >
                   Skip
@@ -325,12 +408,71 @@ export function VerificationCard({ data, safety }: { data: ClinicalExtraction; s
           size="lg"
           loading={confirming}
           disabled={blocked || confirming}
-          onClick={() => confirm().catch((err) => toast.apiError(err))}
+          onClick={() => setPreview(true)}
           className="w-full shadow-lime-glow"
         >
-          {blocked ? 'Resolve safety issues to confirm' : 'Confirm & send to front desk'}
+          {blocked ? 'Resolve safety issues to confirm' : 'Save findings'}
         </Button>
       </div>
+
+      {/* Preview step (Issue 16): the doctor sees the exact summary before anything commits.
+          A server-surfaced blocking error dismisses it so the red rows are visible. */}
+      {preview && !blocked ? (
+        <div className="absolute inset-0 z-10 flex flex-col justify-end bg-ink/30">
+          <div className="rounded-t-3xl bg-surface p-5" style={{ paddingBottom: 'calc(20px + var(--safe-bottom))' }}>
+            <h3 className="mb-2 text-base font-semibold text-ink">Preview</h3>
+            <PreviewLine
+              label="Procedure"
+              value={[
+                data.procedure ?? '—',
+                data.teeth.length ? `Tooth ${data.teeth.join(', ')}` : null,
+                data.sittingCurrent != null ? `Sitting ${data.sittingCurrent} of ${data.sittingTotal ?? '?'}` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            />
+            <PreviewLine
+              label="Prescription"
+              value={
+                data.prescriptions.length
+                  ? data.prescriptions
+                      .map((rx) =>
+                        [rx.name, rx.dosage, rx.frequency, rx.durationDays ? `${rx.durationDays} days` : null]
+                          .filter(Boolean)
+                          .join(' '),
+                      )
+                      .join('; ')
+                  : '—'
+              }
+            />
+            <PreviewLine
+              label="Follow-up"
+              value={data.followUp?.afterDays != null ? `In ${data.followUp.afterDays} days` : '—'}
+            />
+            <PreviewLine label="Fee" value={data.estimatedCostPaise != null ? rupees(data.estimatedCostPaise) : '—'} />
+            <PreviewLine label="Notes" value={data.notes ?? '—'} />
+            <div className="mt-4 flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setPreview(false)}>
+                Edit more
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1"
+                loading={confirming}
+                disabled={confirming}
+                onClick={() =>
+                  confirm().catch((err) => {
+                    setPreview(false);
+                    toast.apiError(err);
+                  })
+                }
+              >
+                Save &amp; send to front desk
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </GlassCard>
   );
 }

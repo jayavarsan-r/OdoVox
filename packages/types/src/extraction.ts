@@ -94,6 +94,9 @@ export const PatientIntakeExtraction = z.object({
   gender: Gender.nullable().default(null),
   chiefComplaint: z.string().nullable().default(null),
   medicalFlags: z.array(z.string()).default([]),
+  // Phase 9.6 Issue 2: spoken allergies ("allergic to penicillin") must reach the patient form —
+  // they feed the clinical safety layer on every later prescription.
+  allergies: z.array(z.string()).default([]),
   clarifications: z.array(z.string()).default([]),
 });
 export type PatientIntakeExtraction = z.infer<typeof PatientIntakeExtraction>;

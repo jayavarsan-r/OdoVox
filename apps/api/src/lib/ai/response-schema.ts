@@ -95,7 +95,8 @@ export const INTAKE_RESPONSE_SCHEMA: GeminiSchema = {
     gender: { type: 'STRING', enum: ['MALE', 'FEMALE', 'OTHER'], nullable: true },
     chiefComplaint: { type: 'STRING', nullable: true },
     medicalFlags: { type: 'ARRAY', items: { type: 'STRING' } },
+    allergies: { type: 'ARRAY', items: { type: 'STRING' } },
     clarifications: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  required: ['medicalFlags', 'clarifications'],
+  required: ['medicalFlags', 'allergies', 'clarifications'],
 };

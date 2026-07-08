@@ -10,7 +10,8 @@ import { PatientIntakeExtraction } from '@odovox/types';
  */
 
 // The fields the form actually consumes (keep in lockstep with patients/new/page.tsx).
-const FORM_READS = ['name', 'phone', 'age', 'gender', 'medicalFlags'] as const;
+// Phase 9.6 Issue 2 added chiefComplaint + allergies — the form now reads all seven.
+const FORM_READS = ['name', 'phone', 'age', 'gender', 'chiefComplaint', 'medicalFlags', 'allergies'] as const;
 
 describe('intake extraction shape ↔ new-patient form contract', () => {
   it('a realistic extractor response carries every field the form reads', () => {
@@ -22,6 +23,7 @@ describe('intake extraction shape ↔ new-patient form contract', () => {
       gender: 'MALE',
       chiefComplaint: 'tooth pain left side',
       medicalFlags: ['Diabetes'],
+      allergies: ['Penicillin'],
     });
 
     for (const key of FORM_READS) {
@@ -34,14 +36,18 @@ describe('intake extraction shape ↔ new-patient form contract', () => {
     if (intake.phone) filled.phone = intake.phone;
     if (intake.age) filled.age = intake.age;
     if (intake.gender) filled.gender = intake.gender;
+    if (intake.chiefComplaint) filled.chiefComplaint = intake.chiefComplaint;
     if (intake.medicalFlags.length) filled.medicalFlags = intake.medicalFlags;
+    if (intake.allergies.length) filled.allergies = intake.allergies.join(', ');
 
     expect(filled).toEqual({
       name: 'Ramesh Kumar',
       phone: '9876543210',
       age: 34,
       gender: 'MALE',
+      chiefComplaint: 'tooth pain left side',
       medicalFlags: ['Diabetes'],
+      allergies: 'Penicillin',
     });
   });
 

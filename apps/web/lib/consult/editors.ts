@@ -57,6 +57,10 @@ export function setNotes(data: ClinicalExtraction, notes: string | null): Clinic
   return { ...data, notes };
 }
 
+export function setCost(data: ClinicalExtraction, estimatedCostPaise: number | null): ClinicalExtraction {
+  return { ...data, estimatedCostPaise };
+}
+
 export function toPatchBody(data: ClinicalExtraction): { structuredData: ClinicalExtraction } {
   return { structuredData: data };
 }

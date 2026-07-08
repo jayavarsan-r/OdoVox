@@ -71,8 +71,10 @@ export default function ConsultDetailPage() {
         </span>
       </header>
 
-      {/* Full patient context on the idle/ready states; a compact strip while recording (§2.2–2.3). */}
-      {context && isRecorder && !recording ? (
+      {/* Full patient context on the idle/ready states; a compact strip while recording (§2.2–2.3).
+          On the verification surface it stays visible — the identity line (name · age · token)
+          always renders from the patient DB record, never from extraction (Issue 5). */}
+      {context && ((isRecorder && !recording) || isVerify) ? (
         <div className="px-5 pt-3">
           <PatientContextCard ctx={context} />
         </div>
@@ -83,8 +85,22 @@ export default function ConsultDetailPage() {
         </div>
       ) : null}
 
-      <main className="flex flex-1 flex-col items-center justify-center px-5 py-8">
+      <main className={cn('flex flex-1 flex-col px-5', isVerify ? 'min-h-0 py-3' : 'items-center justify-center py-8')}>
         {isRecorder ? <Recorder /> : null}
+
+        {/* Verification card — the main working surface (Phase 9.6 Issue 6): full-page and
+            in-flow, not a sheet over a dimmed recorder. All fields edit inline; every edit
+            autosaves; Save runs through the Preview step. */}
+        {isVerify ? (
+          <motion.div
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 32 }}
+            className="flex min-h-0 w-full flex-1 flex-col"
+          >
+            <VerificationCard data={state.data} safety={state.safety} />
+          </motion.div>
+        ) : null}
 
         {isPipeline ? (
           <div className="w-full max-w-mobile">
@@ -116,20 +132,8 @@ export default function ConsultDetailPage() {
         ) : null}
       </main>
 
-      {/* Next-up hint (§6.3) — only while recording/processing, never over the verification sheet. */}
+      {/* Next-up hint (§6.3) — only while recording/processing, never over the verification card. */}
       {isRecorder || isPipeline ? <NextUpHint /> : null}
-
-      {/* Verification card — bottom sheet sliding up over a dimmed recorder. */}
-      {isVerify ? (
-        <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 32 }}
-          className="fixed inset-x-0 bottom-0 z-50"
-        >
-          <VerificationCard data={state.data} safety={state.safety} />
-        </motion.div>
-      ) : null}
     </div>
   );
 }

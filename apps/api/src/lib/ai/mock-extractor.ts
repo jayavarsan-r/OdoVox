@@ -90,6 +90,9 @@ function spokenToothToDigits(text: string): string {
     /\b(eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen)\b/gi,
     (m) => String(TEENS[m.toLowerCase()]!),
   );
+  // Tanglish separated digits (Phase 9.6 Issue 8): dentists dictate "3 6 la" for tooth 36 —
+  // join quadrant-digit pairs the way the real prompt instructs Gemini to.
+  out = out.replace(/\b([1-4])\s+([1-8])\b(?!\s*(?:days?|sittings?|sessions?|weeks?|months?))/g, '$1$2');
   return out;
 }
 
@@ -98,6 +101,17 @@ function parseTeeth(transcript: string): number[] {
   const teeth = new Set<number>();
   for (const m of normalized.matchAll(/\b([1-4][1-8])\b/g)) teeth.add(Number(m[1]));
   return [...teeth];
+}
+
+/** "fees 5000 collect" / "5000 rupees" / "₹3,500" → paise. Null when no cost was spoken. */
+function parseCost(transcript: string): number | null {
+  const m =
+    transcript.match(/\b(?:fees?|cost|charge[sd]?)\s+(?:is\s+|of\s+)?(?:₹\s*)?([\d,]+)\b/i) ??
+    transcript.match(/₹\s*([\d,]+)/) ??
+    transcript.match(/\b([\d,]+)\s*(?:rupees|rs\.?)\b/i);
+  if (!m) return null;
+  const rupees = Number(m[1]!.replaceAll(',', ''));
+  return Number.isFinite(rupees) && rupees > 0 ? rupees * 100 : null;
 }
 
 function parseProcedure(transcript: string): string | null {
@@ -114,6 +128,10 @@ function parseSitting(transcript: string): { current: number | null; total: numb
   );
   if (ordinal) current = ORDINALS[ordinal[1]!.toLowerCase()]!;
 
+  // Numeric ordinals ("1st sitting panniaachu") — common in Tanglish dictation (Issue 8).
+  const numOrdinal = transcript.match(/\b(\d+)(?:st|nd|rd|th)\s+(?:sitting|session)\b/i);
+  if (numOrdinal) current = Number(numOrdinal[1]);
+
   const numeric = transcript.match(/\b(?:sitting|session)\s+(\d+)\b/i);
   if (numeric) current = Number(numeric[1]);
 
@@ -129,7 +147,8 @@ function parseSitting(transcript: string): { current: number | null; total: numb
 }
 
 function parseStatus(transcript: string): 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED' | null {
-  if (/\b(completed|complete|finished|done)\b/i.test(transcript)) return 'COMPLETED';
+  // Tanglish (Phase 9.6 Issue 8): "panniaachu"/"pannitaachu" = done today.
+  if (/\b(completed|complete|finished|done|panniaachu|pannitaachu|pannitachu)\b/i.test(transcript)) return 'COMPLETED';
   if (/\b(aborted|stopped|abandoned|cancelled)\b/i.test(transcript)) return 'ABORTED';
   if (/\b(in[-\s]?progress|ongoing|continuing)\b/i.test(transcript)) return 'IN_PROGRESS';
   return null;
@@ -146,7 +165,11 @@ function parseFrequency(window: string): MedicineFrequency | null {
 
 function parseDosage(window: string): string | null {
   const m = window.match(/(\d+(?:\.\d+)?)\s*mg\b/i);
-  return m ? `${m[1]}mg` : null;
+  if (m) return `${m[1]}mg`;
+  // Spoken shorthand drops the unit ("paracetamol 650 bd") — a bare 2-4 digit number right after
+  // the medicine name is its strength in mg, as long as it isn't a duration (Phase 9.6 Issue 8).
+  const bare = window.match(/^[a-z][a-z-]*\s+(\d{2,4})\b(?!\s*(?:days?|weeks?|times|%))/i);
+  return bare ? `${bare[1]}mg` : null;
 }
 
 function parseDuration(window: string): number | null {
@@ -178,8 +201,30 @@ function parseMedicines(transcript: string): ExtractedPrescription[] {
   });
 }
 
+const MONTHS: Record<string, number> = {
+  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+  july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+};
+
+/** "7th July" / "July 7" → days from now until the next such date (min 1). */
+function absoluteDateToAfterDays(window: string, now = new Date()): number | null {
+  const m =
+    window.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/i) ??
+    window.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?\b/i);
+  if (!m) return null;
+  const [a, b] = [m[1]!, m[2]!];
+  const day = Number(/^\d/.test(a) ? a : b);
+  const month = MONTHS[(/^\d/.test(a) ? b : a).toLowerCase()]!;
+  const target = new Date(now.getFullYear(), month, day);
+  if (target.getTime() <= now.getTime()) target.setFullYear(target.getFullYear() + 1);
+  return Math.max(1, Math.round((target.getTime() - now.getTime()) / 86_400_000));
+}
+
 function parseFollowUp(transcript: string): { afterDays: number | null; procedureHint: string | null } | null {
-  const triggerIdx = transcript.search(/\b(review|follow[-\s]?up|recall|come back|next visit|revisit)\b/i);
+  // "next sitting … vechikalam" (Tanglish: will schedule) counts as a follow-up cue (Issue 8).
+  const triggerIdx = transcript.search(
+    /\b(review|follow[-\s]?up|recall|come back|next visit|revisit|next sitting|vechikalam|vaikalam)\b/i,
+  );
   if (triggerIdx < 0) return null;
   const window = transcript.slice(triggerIdx);
 
@@ -190,6 +235,7 @@ function parseFollowUp(transcript: string): { afterDays: number | null; procedur
   else if (inWeeks) afterDays = Number(inWeeks[1]) * 7;
   else if (inDays) afterDays = Number(inDays[1]);
   else if (/\bnext month\b|\ba month\b/i.test(window)) afterDays = 30;
+  else afterDays = absoluteDateToAfterDays(window);
 
   if (afterDays === null) return null;
   return { afterDays, procedureHint: null };
@@ -199,6 +245,22 @@ function parseMedicalFlags(transcript: string): string[] {
   const flags = new Set<string>();
   for (const [pattern, label] of MEDICAL_FLAGS) if (pattern.test(transcript)) flags.add(label);
   return [...flags];
+}
+
+/** "allergic to penicillin and latex" / "penicillin allergy" → ["Penicillin", "Latex"]. */
+function parseIntakeAllergies(transcript: string): string[] {
+  const out = new Set<string>();
+  const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  const listMatch = transcript.match(/\ballerg(?:ic|y|ies)\s+(?:to\s+)?([^.,;]+)/i);
+  if (listMatch) {
+    for (const item of listMatch[1]!.split(/\s+and\s+|\s*,\s*/i)) {
+      const cleaned = item.trim().replace(/\ballerg(?:ic|y|ies)\b/gi, '').trim();
+      if (cleaned && cleaned.length <= 40) out.add(cap(cleaned));
+    }
+  }
+  const suffixMatch = transcript.match(/\b([a-z]+)\s+allerg(?:y|ies)\b/i);
+  if (suffixMatch) out.add(cap(suffixMatch[1]!));
+  return [...out];
 }
 
 /**
@@ -331,6 +393,7 @@ export class MockExtractor implements IClinicalExtractor {
       sittingTotal: total,
       continuesPlanId,
       status,
+      estimatedCostPaise: parseCost(transcript),
       prescriptions,
       followUp,
       toothStatusUpdates,
@@ -378,6 +441,7 @@ export class MockExtractor implements IClinicalExtractor {
       gender,
       chiefComplaint: complaintMatch ? complaintMatch[0]!.trim() : null,
       medicalFlags: parseMedicalFlags(transcript),
+      allergies: parseIntakeAllergies(transcript),
       clarifications: [],
     });
   }
