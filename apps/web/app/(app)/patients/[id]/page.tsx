@@ -34,6 +34,7 @@ import {
 } from '@/components/odontogram/odontogram';
 import { api } from '@/lib/api-client';
 import { VoiceInput } from '@/components/voice/voice-input';
+import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import {
   usePatient,
@@ -242,6 +243,10 @@ function OverviewTab({ patientId, patientName, records, onOpenTeeth, onOpenBilli
   const [visitOpen, setVisitOpen] = useState(false);
   const [starting, setStarting] = useState(false);
   const activePlan = plans.data?.find((pl) => pl.status === 'ACTIVE');
+  // Phase 9.6 Issue 14: recording clinical findings is a doctor act (regulatory). Receptionists
+  // never see the record surface — the server 403s POST /consultations for them anyway.
+  const role = useAuth((s) => s.activeMembership?.role);
+  const canRecordFindings = role === 'DOCTOR' || role === 'ADMIN';
 
   const startConsultation = async () => {
     if (starting) return;
@@ -257,13 +262,15 @@ function OverviewTab({ patientId, patientName, records, onOpenTeeth, onOpenBilli
 
   return (
     <div className="space-y-5">
-      <HeroCard
-        variant="dark"
-        icon={<Mic />}
-        title="Record findings"
-        subtitle="Voice consultation"
-        onClick={() => void startConsultation()}
-      />
+      {canRecordFindings ? (
+        <HeroCard
+          variant="dark"
+          icon={<Mic />}
+          title="Record findings"
+          subtitle="Voice consultation"
+          onClick={() => void startConsultation()}
+        />
+      ) : null}
 
       <div className="grid grid-cols-3 gap-2">
         <QuickAction label="Prescribe" icon={<Pill className="size-5" />} accent="bg-peach-soft" onClick={() => setRx(true)} />
@@ -279,9 +286,11 @@ function OverviewTab({ patientId, patientName, records, onOpenTeeth, onOpenBilli
               <ProgressBar percent={activePlan.progress.percent} />
               <p className="mt-1 text-xs text-text-muted">{activePlan.progress.completedSittings} of {activePlan.progress.totalSittings} sittings completed</p>
             </button>
-            <Button variant="ghost" size="sm" className="mt-2 w-full" loading={starting} onClick={() => void startConsultation()}>
-              <Mic className="size-4" /> Continue treatment
-            </Button>
+            {canRecordFindings ? (
+              <Button variant="ghost" size="sm" className="mt-2 w-full" loading={starting} onClick={() => void startConsultation()}>
+                <Mic className="size-4" /> Continue treatment
+              </Button>
+            ) : null}
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No active treatment yet.</div>

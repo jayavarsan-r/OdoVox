@@ -17,6 +17,8 @@ import { ChipMultiSelect } from '@/components/forms/ChipMultiSelect';
 import { useToast } from '@/lib/toast';
 import { useCreatePatient } from '@/lib/queries';
 import { VoiceInput } from '@/components/voice/voice-input';
+import { AddToQueueSheet } from '@/components/queue/add-to-queue-sheet';
+import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 
 const GENDERS = [
@@ -39,6 +41,11 @@ export default function NewPatientPage() {
   const toast = useToast();
   const createPatient = useCreatePatient();
   const [code, setCode] = useState(genCode);
+  // Phase 9.6 Issue 15: creation flows straight into the queue. Receptionists (and the walk-in
+  // entry ?walkin=1) get an "Add to queue?" sheet after create; doctors keep the direct route
+  // (POST /visits is reception-side — doctors queue via consultations).
+  const role = useAuth((s) => s.activeMembership?.role);
+  const [queueFor, setQueueFor] = useState<{ id: string; name: string; complaint: string | null } | null>(null);
 
   const {
     register,
@@ -55,7 +62,11 @@ export default function NewPatientPage() {
   });
 
   // Home voice command "new patient …" routes here with ?voice=1 → start listening immediately.
-  const voiceParam = useSearchParams().get('voice') === '1';
+  const searchParams = useSearchParams();
+  const voiceParam = searchParams.get('voice') === '1';
+  // "+ walk-in" entry (?walkin=1/true) — force the add-to-queue step even for doctors' view.
+  const walkinParam = searchParams.get('walkin') === '1' || searchParams.get('walkin') === 'true';
+  const offerQueue = walkinParam || role === 'RECEPTIONIST' || role === 'ADMIN';
 
   // "Speak patient details" → intake extraction prefills the form, which is itself the review
   // surface — the doctor edits any field before Create.
@@ -81,7 +92,11 @@ export default function NewPatientPage() {
     try {
       const patient = await createPatient.mutateAsync({ ...values, patientCode: code });
       toast.success('Patient created.');
-      router.replace(`/patients/${patient.id}`);
+      if (offerQueue) {
+        setQueueFor({ id: patient.id, name: patient.name, complaint: values.chiefComplaint ?? null });
+      } else {
+        router.replace(`/patients/${patient.id}`);
+      }
     } catch (err) {
       toast.apiError(err);
     }
@@ -142,7 +157,9 @@ export default function NewPatientPage() {
                 <Input id="age" type="number" inputMode="numeric" {...register('age', { valueAsNumber: true })} />
               </FormField>
               <FormField label="Blood group" error={errors.bloodGroup?.message}>
-                <Select defaultValue="" {...register('bloodGroup')}>
+                {/* '' (untouched select) fails the BloodGroup enum and used to block Create —
+                    coerce to undefined so an empty pick never invalidates the form (Issue 3). */}
+                <Select defaultValue="" {...register('bloodGroup', { setValueAs: (v) => (v === '' ? undefined : v) })}>
                   <option value="">—</option>
                   {BLOOD_GROUPS.map((b) => <option key={b} value={b}>{b}</option>)}
                 </Select>
@@ -194,6 +211,17 @@ export default function NewPatientPage() {
           </Button>
         </div>
       </form>
+
+      <AddToQueueSheet
+        open={!!queueFor}
+        patient={queueFor}
+        defaultComplaint={queueFor?.complaint}
+        onDone={(added) => {
+          const id = queueFor?.id;
+          setQueueFor(null);
+          router.replace(added ? '/today' : id ? `/patients/${id}` : '/patients');
+        }}
+      />
     </AnimatedPage>
   );
 }

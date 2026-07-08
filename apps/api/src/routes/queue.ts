@@ -179,8 +179,10 @@ export async function queueRoutes(fastify: FastifyInstance): Promise<void> {
     return ok(serializeQueueVisit(updated));
   });
 
-  // ---- POST /visits/:id/call-in — doctor moves a waiting patient to the chair ----
-  fastify.post('/visits/:id/call-in', doctorOnly, async (req) => {
+  // ---- POST /visits/:id/call-in — waiting patient moves to the chair. Phase 9.6 Issue 1: the
+  // receptionist calls patients in for ANY doctor (their core job); a doctor only into their OWN
+  // queue (null assignedDoctorId = unassigned walk-in, claimable). ADMIN unrestricted. ----
+  fastify.post('/visits/:id/call-in', anyRole, async (req) => {
     const { id } = req.params as { id: string };
     const body = parse(CallInInput, req.body);
     const visit = await loadVisit(id);

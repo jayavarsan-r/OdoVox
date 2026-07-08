@@ -40,7 +40,9 @@ describe('queue RBAC matrix', () => {
     expect(denied).toBeTruthy();
   });
 
-  it('a receptionist cannot call-in a patient (403)', async () => {
+  // Phase 9.6 Issue 1: the Phase 4 matrix (call-in = doctor-only) was wrong — calling patients
+  // in is the receptionist's core job. See call-in-rbac-receptionist-allowed.test.ts.
+  it('a receptionist CAN call-in a patient (200)', async () => {
     const doctor = await createDoctorWithClinic(app);
     const recp = await joinReceptionist(app, doctor.joinCode);
     const patientId = await createPatient(app, doctor.clinicId, doctor.userId);
@@ -52,7 +54,7 @@ describe('queue RBAC matrix', () => {
       headers: authHeader(recp.accessToken),
       payload: {},
     });
-    expect(res.statusCode).toBe(403);
+    expect(res.statusCode).toBe(200);
   });
 
   it('a doctor cannot reassign a visit (receptionist-only) (403)', async () => {
