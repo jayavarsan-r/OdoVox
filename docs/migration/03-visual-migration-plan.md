@@ -145,6 +145,42 @@ Also in Stage 0: `docs/design-system.md` §12.1 rewritten, and these four tests
 repointed — `no-wash-on-app-routes`, `no-mascot-on-home` → `no-mascot-on-money-or-safety`,
 `progress-strip-copy`, `bottom-tabs-active-only-label`.
 
+### 2.1 · Which tokens are retuned in Stage 0b, and which are only _added_
+
+Measured usage across `apps/web` before deciding:
+
+| Utility        | Uses | Utility         | Uses |
+| -------------- | ---: | --------------- | ---: |
+| `bg-sage`      |   40 | `bg-peach`      |   21 |
+| `text-danger`  |   35 | `bg-sage-tint`  |   16 |
+| `text-sage`    |   25 | `bg-sky`        |   13 |
+| `bg-sage-soft` |   12 | `bg-peach-soft` |   11 |
+| `bg-lavender`  |    8 | `bg-sky-soft`   |    7 |
+
+The four **semantic inversions** (§2.1 of the report) cannot be done by swapping a
+value. `--color-sky` is currently a pale _background_ used 13 times; the spec's
+`--sky` is a saturated _foreground_. Flipping the value would turn 13 surfaces
+saturated blue in a commit that contains no page work to correct them — a visible
+regression introduced by the "safe" token stage.
+
+**So Stage 0b splits token work by risk:**
+
+**Retuned in place** (unambiguous — same role, new value):
+`--color-ink` → pine · `--color-paper` → canvas · `--color-text-muted/-subtle` →
+pine-2/-3 · `--color-border/-strong` → hair/hair-2 · `--color-lime`/`-soft` → spec
+values · `--color-danger` → crit · all elevation, radius, glass, blur, gradient,
+motion, type, icon and touch-target tokens.
+
+**Added alongside, not swapped** (the inversions):
+`--sky`/`--sky-soft` · `--live`/`--live-soft` · `--warn`/`--warn-soft` ·
+`--lav`/`--lav-soft` · `--crit`/`--crit-soft`. The existing pastel tokens keep their
+current values and callers.
+
+Each page stage then migrates its own call sites from the old pastel to the canonical
+pair, where the change can be seen in that page's screenshot diff and reverted alone
+if wrong. When a legacy token reaches zero call sites it is deleted — tracked as a
+running count in each stage report.
+
 **Commit. Nothing else.**
 
 ---

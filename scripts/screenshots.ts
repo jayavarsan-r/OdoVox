@@ -4,7 +4,7 @@ import {
   request as pwRequest,
   type BrowserContext,
 } from "@playwright/test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SESSIONS, active, type Role, type Shot } from "./screenshot-routes.js";
 
@@ -27,15 +27,54 @@ const WEB = process.env.SHOTS_WEB_URL ?? "http://localhost:3000";
 const API = process.env.SHOTS_API_URL ?? "http://localhost:4000";
 const MOCK_OTP = process.env.SHOTS_OTP ?? "123456";
 const OUT_ROOT = join(process.cwd(), "docs", "migration", "screenshots");
+/** Pace requests under the API's 100 req/min per-IP limit. */
+const SHOT_DELAY_MS = Number(process.env.SHOTS_DELAY_MS ?? 1500);
+const RATE_WINDOW_MS = Number(process.env.SHOTS_RATE_WINDOW_MS ?? 62_000);
 
 const mode = (process.argv[2] ?? "current") as "baseline" | "current";
 const filters = process.argv.slice(3);
 
-/** Log in over the API and return the refresh cookie the web app bootstraps from. */
-async function login(role: Exclude<Role, "anon">) {
+type Cookies = Parameters<BrowserContext["addCookies"]>[0];
+
+const SESSION_CACHE = join(OUT_ROOT, ".sessions.json");
+
+/**
+ * Sessions are cached between runs on purpose.
+ *
+ * `/auth/otp/request` is capped at FIVE PER HOUR PER PHONE via a Redis counter
+ * (routes/auth.ts) — a cap that a few debug runs exhaust, after which every run 429s
+ * for the next hour regardless of how long you wait. Refresh tokens outlive that
+ * window, so reusing them keeps the harness usable. `SHOTS_RELOGIN=1` forces fresh.
+ */
+async function readCache(): Promise<Record<string, Cookies>> {
+  if (process.env.SHOTS_RELOGIN === "1") return {};
+  try {
+    return JSON.parse(await readFile(SESSION_CACHE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+async function login(
+  role: Exclude<Role, "anon">,
+  attempt = 0,
+): Promise<Cookies> {
+  const cache = await readCache();
+  const cached = cache[role];
+  if (cached?.length) return cached;
+
   const { phone } = SESSIONS[role];
   const ctx = await pwRequest.newContext({ baseURL: API });
   const req = await ctx.post("/auth/otp/request", { data: { phone } });
+  if (req.status() === 429 && attempt < 2) {
+    await ctx.dispose();
+    console.log(
+      `  … otp/request rate-limited for ${role} — note the cap is 5/HOUR/phone, ` +
+        `so this may not clear by waiting. Retrying once.`,
+    );
+    await new Promise((res) => setTimeout(res, RATE_WINDOW_MS));
+    return login(role, attempt + 1);
+  }
   if (!req.ok())
     throw new Error(`otp/request failed for ${phone}: ${req.status()}`);
   const verify = await ctx.post("/auth/otp/verify", {
@@ -48,6 +87,10 @@ async function login(role: Exclude<Role, "anon">) {
   }
   const { cookies } = await ctx.storageState();
   await ctx.dispose();
+
+  const cache2 = await readCache();
+  cache2[role] = cookies;
+  await writeFile(SESSION_CACHE, JSON.stringify(cache2, null, 2));
   return cookies;
 }
 
@@ -66,6 +109,14 @@ async function stabilise(ctx: BrowserContext) {
       }
     }
     globalThis.Date = PinnedDate as DateConstructor;
+    // Dismiss the dev banner — it is 24px of dev-only chrome that shifts every page
+    // down and would pollute every diff. Uses the component's own dismissal key, so
+    // no app change is needed.
+    try {
+      sessionStorage.setItem("odovox-dev-banner-dismissed", "1");
+    } catch {
+      /* storage unavailable — banner just stays, still deterministic */
+    }
     // Kill animations so a capture is never mid-transition.
     const style = document.createElement("style");
     style.textContent = `*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}`;
@@ -73,18 +124,38 @@ async function stabilise(ctx: BrowserContext) {
   });
 }
 
+/**
+ * Console noise that is the app working as designed, not a defect.
+ * api-client fires a request, takes a 401, silently refreshes and retries — so every
+ * authenticated page load logs exactly one 401. Reporting it would bury real errors.
+ */
+const BENIGN = [/Failed to load resource.*401 \(Unauthorized\)/];
+
 async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
   const page = await ctx.newPage();
   const consoleErrors: string[] = [];
-  page.on(
-    "console",
-    (m) => m.type() === "error" && consoleErrors.push(m.text()),
-  );
+  page.on("console", (m) => {
+    if (m.type() !== "error") return;
+    const text = m.text();
+    if (!BENIGN.some((re) => re.test(text))) consoleErrors.push(text);
+  });
   try {
     await page.goto(`${WEB}${shot.path}`, {
       waitUntil: "networkidle",
       timeout: 30_000,
     });
+    // An expired session bounces to /welcome. Without this guard the run "succeeds"
+    // while every authenticated shot silently captures the sign-in screen — the same
+    // plausible-but-wrong failure openFirstRow guards against.
+    if (
+      shot.role !== "anon" &&
+      /\/(welcome|phone|otp)(\?|$)/.test(page.url())
+    ) {
+      throw new Error(
+        `bounced to ${new URL(page.url()).pathname} — session invalid. ` +
+          `Re-run with SHOTS_RELOGIN=1.`,
+      );
+    }
     if (shot.prepare) await shot.prepare(page);
     await page.waitForTimeout(500); // let the last layout settle
     await page.screenshot({ path: join(outDir, `${shot.slug}.png`) });
@@ -128,13 +199,26 @@ async function main() {
     if (role !== "anon") await ctx.addCookies(await login(role));
 
     for (const shot of group) {
-      const r = await capture(ctx, shot, outDir);
+      let r = await capture(ctx, shot, outDir);
+
+      // The API allows 100 req/min per IP (plugins/rate-limit.ts) and each page load
+      // costs several calls, so a full run WILL trip the limiter. Rather than weaken
+      // the app's limiter for a dev tool, wait out the window and retry once.
+      const rateLimited =
+        !r.ok || r.consoleErrors.some((e) => e.includes("429"));
+      if (rateLimited) {
+        console.log(`  … ${shot.slug} rate-limited, waiting out the window`);
+        await new Promise((res) => setTimeout(res, RATE_WINDOW_MS));
+        r = await capture(ctx, shot, outDir);
+      }
+
       results.push(r);
       const mark = r.ok ? "✓" : "✗";
       const noise = r.consoleErrors.length
         ? `  (${r.consoleErrors.length} console errors)`
         : "";
       console.log(`  ${mark} ${r.slug}${noise}`);
+      await new Promise((res) => setTimeout(res, SHOT_DELAY_MS));
     }
     await ctx.close();
   }

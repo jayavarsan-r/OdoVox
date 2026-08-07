@@ -36,18 +36,48 @@ const patientTab = (label: string) => async (page: Page) => {
   await page.waitForTimeout(400);
 };
 
-/** Open the first row of a list and wait for the detail route. */
-const openFirstRow = async (page: Page, urlPart: string) => {
-  await page
-    .locator("a, button")
-    .filter({ hasText: /./ })
-    .first()
-    .waitFor({ state: "visible" });
-  const link = page.locator(`a[href*="${urlPart}"]`).first();
-  if (await link.count()) {
-    await link.click();
-    await page.waitForLoadState("networkidle");
+/**
+ * Open the first row of a list that actually navigates, then ASSERT we landed.
+ *
+ * List rows here are `<button onClick={router.push}>`, not anchors — an href-based
+ * selector silently matches nothing and captures the LIST page while looking like a
+ * success. A plausible-but-wrong screenshot is worse than a crash, so this throws
+ * when nothing navigates.
+ */
+const ROW_MIN_HEIGHT = 56; // rows are >=56px tall; filter chips and nav are ~40px
+
+const openFirstRow = (urlPattern: RegExp) => async (page: Page) => {
+  const start = page.url();
+  const candidates = page.locator("a, button");
+  const n = Math.min(await candidates.count(), 60);
+
+  for (let i = 0; i < n; i++) {
+    const el = candidates.nth(i);
+    if (!(await el.isVisible().catch(() => false))) continue;
+
+    // Height is what separates a list row from a filter chip. Clicking chips is
+    // actively harmful here: "Lab pending" re-filters the list out from under us,
+    // so a click-everything strategy destroys the very rows it is looking for.
+    const box = await el.boundingBox().catch(() => null);
+    if (!box || box.height < ROW_MIN_HEIGHT) continue;
+
+    const text = ((await el.textContent().catch(() => "")) ?? "").trim();
+    if (text.length < 4) continue;
+
+    await el.click({ timeout: 3000 }).catch(() => undefined);
+    await page.waitForURL(urlPattern, { timeout: 4000 }).catch(() => undefined);
+
+    if (urlPattern.test(page.url())) {
+      await page.waitForLoadState("networkidle").catch(() => undefined);
+      return;
+    }
+    if (page.url() !== start) {
+      await page.goBack({ waitUntil: "networkidle" }).catch(() => undefined);
+    }
   }
+  throw new Error(
+    `openFirstRow: no row >=${ROW_MIN_HEIGHT}px navigated to ${urlPattern} from ${start}`,
+  );
 };
 
 export const SHOTS: Shot[] = [
@@ -144,7 +174,7 @@ export const SHOTS: Shot[] = [
     path: "/patients",
     role: "doctor",
     frame: "v9-37",
-    prepare: (page) => openFirstRow(page, "/patients/"),
+    prepare: openFirstRow(/\/patients\/[^/]+$/),
   },
   {
     slug: "E7-patient-cases",
@@ -152,7 +182,7 @@ export const SHOTS: Shot[] = [
     role: "doctor",
     frame: "v9-38",
     prepare: async (page) => {
-      await openFirstRow(page, "/patients/");
+      await openFirstRow(/\/patients\/[^/]+$/)(page);
       await patientTab("Cases")(page);
     },
   },
@@ -162,8 +192,8 @@ export const SHOTS: Shot[] = [
     role: "doctor",
     frame: "v9-40",
     prepare: async (page) => {
-      await openFirstRow(page, "/patients/");
-      await patientTab("Teeth")(page);
+      await openFirstRow(/\/patients\/[^/]+$/)(page);
+      await patientTab("Tooth Map")(page);
     },
   },
   {
@@ -172,7 +202,7 @@ export const SHOTS: Shot[] = [
     role: "doctor",
     frame: "—",
     prepare: async (page) => {
-      await openFirstRow(page, "/patients/");
+      await openFirstRow(/\/patients\/[^/]+$/)(page);
       await patientTab("Media")(page);
     },
   },
@@ -182,7 +212,7 @@ export const SHOTS: Shot[] = [
     role: "doctor",
     frame: "v9-41",
     prepare: async (page) => {
-      await openFirstRow(page, "/patients/");
+      await openFirstRow(/\/patients\/[^/]+$/)(page);
       await patientTab("Billing")(page);
     },
   },
@@ -230,7 +260,7 @@ export const SHOTS: Shot[] = [
     path: "/lab",
     role: "doctor",
     frame: "v9-58",
-    prepare: (page) => openFirstRow(page, "/lab/"),
+    prepare: openFirstRow(/\/lab\/[^/]+$/),
   },
   { slug: "I4-lab-new", path: "/lab/new", role: "doctor", frame: "v9-59" },
   { slug: "I6-vendors", path: "/lab/vendors", role: "doctor", frame: "v9-61" },
@@ -258,7 +288,7 @@ export const SHOTS: Shot[] = [
     path: "/inventory",
     role: "doctor",
     frame: "v9-68",
-    prepare: (page) => openFirstRow(page, "/inventory/"),
+    prepare: openFirstRow(/\/inventory\/[^/]+$/),
   },
   { slug: "K4-item-new", path: "/inventory/new", role: "doctor", frame: "—" },
   {

@@ -47,3 +47,6 @@ docs/migration/screenshots/compare.json
 # Misc
 *.tsbuildinfo
 .cache/
+
+# screenshot session cache (refresh cookies)
+docs/migration/screenshots/.sessions.json
