@@ -19,15 +19,22 @@
     "db:seed": "pnpm --filter @odovox/db seed && pnpm --filter @odovox/api storage:init",
     "storage:init": "pnpm --filter @odovox/api storage:init",
     "db:studio": "pnpm --filter @odovox/db studio",
+    "shots:baseline": "tsx scripts/screenshots.ts baseline",
+    "shots:current": "tsx scripts/screenshots.ts current",
+    "shots:compare": "tsx scripts/screenshot-compare.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,css}\"",
     "prepare": "husky"
   },
   "devDependencies": {
     "@odovox/config": "workspace:*",
     "@playwright/test": "^1.61.1",
+    "@types/pngjs": "^6.0.5",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.5.3",
+    "tsx": "^4.22.4",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },

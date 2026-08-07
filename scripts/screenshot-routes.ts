@@ -1,0 +1,338 @@
+import type { Page } from "@playwright/test";
+
+/**
+ * The screenshot route table — the single source of truth for what gets captured.
+ *
+ * Slugs are stable and match the "Shot" column in docs/migration/03-visual-migration-plan.md.
+ * Renaming a slug orphans its baseline, so don't: add a new one instead.
+ */
+
+export type Role = "doctor" | "receptionist" | "anon";
+
+export interface Shot {
+  /** Stable id — becomes <slug>.png. Matches Doc 3's Shot column. */
+  slug: string;
+  /** Web path to visit. */
+  path: string;
+  /** Which seeded session to use. */
+  role: Role;
+  /** Design frame this shot is compared against (documentation only). */
+  frame: string;
+  /**
+   * Optional: drive the page into a sub-state (open a sheet, switch a tab).
+   * Runs after navigation settles. Throwing here fails just this shot.
+   */
+  prepare?: (page: Page) => Promise<void>;
+  /**
+   * Set when the surface does not exist yet (spec-only frames, stages 14–17).
+   * Skipped by the capture run until the stage that builds it flips this off.
+   */
+  pending?: true;
+}
+
+/** Tap a tab by its visible label on the patient-detail page. */
+const patientTab = (label: string) => async (page: Page) => {
+  await page.getByRole("button", { name: label, exact: true }).first().click();
+  await page.waitForTimeout(400);
+};
+
+/** Open the first row of a list and wait for the detail route. */
+const openFirstRow = async (page: Page, urlPart: string) => {
+  await page
+    .locator("a, button")
+    .filter({ hasText: /./ })
+    .first()
+    .waitFor({ state: "visible" });
+  const link = page.locator(`a[href*="${urlPart}"]`).first();
+  if (await link.count()) {
+    await link.click();
+    await page.waitForLoadState("networkidle");
+  }
+};
+
+export const SHOTS: Shot[] = [
+  // ── A · Entry ────────────────────────────────────────────────────────────
+  { slug: "A1-splash", path: "/", role: "anon", frame: "v9-01" },
+  { slug: "A2-welcome", path: "/welcome", role: "anon", frame: "v9-02" },
+  { slug: "A3-phone", path: "/phone", role: "anon", frame: "v9-03" },
+  {
+    slug: "A4-otp",
+    path: "/otp?phone=9000000001",
+    role: "anon",
+    frame: "v9-04",
+  },
+  {
+    slug: "A6-unlock",
+    path: "/unlock",
+    role: "anon",
+    frame: "v9-06",
+    pending: true,
+  },
+
+  // ── B · Clinic setup ─────────────────────────────────────────────────────
+  { slug: "B1-role", path: "/role", role: "anon", frame: "v9-07" },
+  {
+    slug: "B2-clinic-choice",
+    path: "/clinic-choice",
+    role: "anon",
+    frame: "—",
+  },
+  {
+    slug: "B3-create-1",
+    path: "/clinic-create/step-1-basics",
+    role: "anon",
+    frame: "v9-08",
+  },
+  {
+    slug: "B4-create-2",
+    path: "/clinic-create/step-2-hours",
+    role: "anon",
+    frame: "v9-08",
+  },
+  {
+    slug: "B5-create-3",
+    path: "/clinic-create/step-3-profile",
+    role: "anon",
+    frame: "v9-08",
+  },
+  { slug: "B6-join", path: "/clinic-join", role: "anon", frame: "v9-09" },
+  { slug: "B7-done", path: "/done", role: "doctor", frame: "v9-11" },
+  {
+    slug: "B8-first-day",
+    path: "/first-day",
+    role: "doctor",
+    frame: "v9-12",
+    pending: true,
+  },
+  {
+    slug: "B9-pending",
+    path: "/clinic-join?state=pending",
+    role: "anon",
+    frame: "v9-10",
+    pending: true,
+  },
+
+  // ── C · Home / Flow ──────────────────────────────────────────────────────
+  { slug: "C1-home-inchair", path: "/home", role: "doctor", frame: "v9-13" },
+  {
+    slug: "C7-week-review",
+    path: "/week",
+    role: "doctor",
+    frame: "v9-20",
+    pending: true,
+  },
+
+  // ── D · Consult pipeline ─────────────────────────────────────────────────
+  { slug: "D1-consult", path: "/consult", role: "doctor", frame: "v9-21" },
+
+  // ── E · Patients & cases ─────────────────────────────────────────────────
+  { slug: "E1-patients", path: "/patients", role: "doctor", frame: "v9-32" },
+  {
+    slug: "E2-search",
+    path: "/patients?search=a",
+    role: "doctor",
+    frame: "v9-33",
+  },
+  {
+    slug: "E4-new-patient",
+    path: "/patients/new",
+    role: "doctor",
+    frame: "v9-35",
+  },
+  {
+    slug: "E6-patient-overview",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-37",
+    prepare: (page) => openFirstRow(page, "/patients/"),
+  },
+  {
+    slug: "E7-patient-cases",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-38",
+    prepare: async (page) => {
+      await openFirstRow(page, "/patients/");
+      await patientTab("Cases")(page);
+    },
+  },
+  {
+    slug: "E8-patient-teeth",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-40",
+    prepare: async (page) => {
+      await openFirstRow(page, "/patients/");
+      await patientTab("Teeth")(page);
+    },
+  },
+  {
+    slug: "E9-patient-media",
+    path: "/patients",
+    role: "doctor",
+    frame: "—",
+    prepare: async (page) => {
+      await openFirstRow(page, "/patients/");
+      await patientTab("Media")(page);
+    },
+  },
+  {
+    slug: "E10-patient-billing",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-41",
+    prepare: async (page) => {
+      await openFirstRow(page, "/patients/");
+      await patientTab("Billing")(page);
+    },
+  },
+  {
+    slug: "E12-history",
+    path: "/patients/history",
+    role: "doctor",
+    frame: "v9-42",
+    pending: true,
+  },
+
+  // ── G · Schedule ─────────────────────────────────────────────────────────
+  {
+    slug: "G1-schedule-day",
+    path: "/schedule",
+    role: "doctor",
+    frame: "v9-46",
+  },
+  {
+    slug: "G2-schedule-multi",
+    path: "/schedule",
+    role: "receptionist",
+    frame: "v9-47",
+  },
+
+  // ── H · Reception & money ────────────────────────────────────────────────
+  { slug: "H1-today", path: "/today", role: "receptionist", frame: "v9-50" },
+  {
+    slug: "H5-billing",
+    path: "/billing",
+    role: "receptionist",
+    frame: "v9-54",
+  },
+  {
+    slug: "H6-outstanding",
+    path: "/billing/outstanding",
+    role: "receptionist",
+    frame: "v9-55",
+  },
+
+  // ── I · Lab ──────────────────────────────────────────────────────────────
+  { slug: "I1-lab", path: "/lab", role: "doctor", frame: "v9-56" },
+  {
+    slug: "I3-lab-case",
+    path: "/lab",
+    role: "doctor",
+    frame: "v9-58",
+    prepare: (page) => openFirstRow(page, "/lab/"),
+  },
+  { slug: "I4-lab-new", path: "/lab/new", role: "doctor", frame: "v9-59" },
+  { slug: "I6-vendors", path: "/lab/vendors", role: "doctor", frame: "v9-61" },
+
+  // ── J · Messages ─────────────────────────────────────────────────────────
+  { slug: "J1-messages", path: "/messages", role: "doctor", frame: "v9-62" },
+  {
+    slug: "J4-lab-inbox",
+    path: "/messages/lab",
+    role: "doctor",
+    frame: "v9-65",
+  },
+  {
+    slug: "J5-followups",
+    path: "/follow-ups",
+    role: "doctor",
+    frame: "v9-66",
+    pending: true,
+  },
+
+  // ── K · Inventory ────────────────────────────────────────────────────────
+  { slug: "K1-inventory", path: "/inventory", role: "doctor", frame: "v9-67" },
+  {
+    slug: "K2-item",
+    path: "/inventory",
+    role: "doctor",
+    frame: "v9-68",
+    prepare: (page) => openFirstRow(page, "/inventory/"),
+  },
+  { slug: "K4-item-new", path: "/inventory/new", role: "doctor", frame: "—" },
+  {
+    slug: "K5-categories",
+    path: "/inventory/categories",
+    role: "doctor",
+    frame: "—",
+  },
+
+  // ── L · Management ───────────────────────────────────────────────────────
+  {
+    slug: "L1-more",
+    path: "/more",
+    role: "doctor",
+    frame: "v9-70",
+    pending: true,
+  },
+  { slug: "L2-clinic", path: "/clinic", role: "doctor", frame: "v9-70" },
+  {
+    slug: "L3-whatsapp",
+    path: "/clinic/whatsapp",
+    role: "doctor",
+    frame: "v9-72",
+  },
+  {
+    slug: "L4-availability",
+    path: "/clinic/availability",
+    role: "doctor",
+    frame: "v9-73",
+  },
+  {
+    slug: "L5-dayoff",
+    path: "/clinic/day-off",
+    role: "doctor",
+    frame: "v9-74",
+  },
+  {
+    slug: "L6-templates",
+    path: "/clinic/templates",
+    role: "doctor",
+    frame: "v9-75",
+  },
+  {
+    slug: "L7-account",
+    path: "/account",
+    role: "doctor",
+    frame: "v9-76",
+    pending: true,
+  },
+  {
+    slug: "L9-team",
+    path: "/clinic/team",
+    role: "doctor",
+    frame: "v9-71",
+    pending: true,
+  },
+
+  // ── M · System ───────────────────────────────────────────────────────────
+  {
+    slug: "M3-notifications",
+    path: "/notifications",
+    role: "doctor",
+    frame: "v9-80",
+    pending: true,
+  },
+];
+
+/** Seeded logins (packages/db/prisma/seed.ts). */
+export const SESSIONS: Record<
+  Exclude<Role, "anon">,
+  { phone: string; label: string }
+> = {
+  doctor: { phone: "9000000001", label: "Dr. Asha Menon" },
+  receptionist: { phone: "9000000002", label: "Ravi Kumar" },
+};
+
+export const active = (): Shot[] => SHOTS.filter((s) => !s.pending);

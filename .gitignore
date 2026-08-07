@@ -36,6 +36,14 @@ pnpm-debug.log*
 !.vscode/extensions.json
 *.swp
 
+# UI migration screenshots
+# baseline/ IS committed — it is the reference the whole migration compares against.
+# current/ and diff/ are regenerated on every page commit, so they stay out of git.
+docs/migration/screenshots/current/
+docs/migration/screenshots/diff/
+docs/migration/screenshots/*-run.json
+docs/migration/screenshots/compare.json
+
 # Misc
 *.tsbuildinfo
 .cache/
