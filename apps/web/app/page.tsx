@@ -1,15 +1,13 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { api, ApiError } from '@/lib/api-client';
-import { useAuth, type SessionClinic, type SessionUser } from '@/lib/auth';
-import { MobileShell } from '@/components/mobile-shell';
-import { GradientMesh } from '@/components/gradient-mesh';
-import { MascotMoment } from '@/components/illustrations';
-import { LogoLockup } from '@/components/ui/logo';
-import { Spinner } from '@/components/ui/spinner';
-import type { ClinicMemberResponse } from '@odovox/types';
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api-client";
+import { useAuth, type SessionClinic, type SessionUser } from "@/lib/auth";
+import { MobileShell } from "@/components/mobile-shell";
+import { GradientMesh } from "@/components/gradient-mesh";
+import { MascotMoment } from "@/components/illustrations";
+import type { ClinicMemberResponse } from "@odovox/types";
 
 interface MeResponse {
   user: SessionUser;
@@ -36,36 +34,50 @@ export default function SplashPage() {
     (async () => {
       try {
         const { accessToken } = await api.post<{ accessToken: string }>(
-          '/auth/refresh',
+          "/auth/refresh",
           undefined,
           { skipAuth: true },
         );
         useAuth.getState().setAccessToken(accessToken);
-        const me = await api.get<MeResponse>('/auth/me');
+        const me = await api.get<MeResponse>("/auth/me");
         useAuth.getState().setSession({
           accessToken,
           user: me.user,
           activeMembership: me.activeMembership,
           clinic: me.clinic,
         });
-        router.replace(me.activeMembership ? '/home' : '/role');
+        router.replace(me.activeMembership ? "/home" : "/role");
       } catch (err) {
         if (!(err instanceof ApiError)) {
           // Network or unexpected — still send the user somewhere usable.
         }
         useAuth.getState().clearSession();
-        router.replace('/welcome');
+        router.replace("/welcome");
       }
     })();
   }, [router]);
 
+  /**
+   * Frame 01. The spec is explicit that this screen has NO spinner: "Odo + a 4px
+   * progress hairline." A spinner says "something is happening"; the hairline says
+   * "this is nearly done", which is the honest message for a token refresh that
+   * usually completes in well under a second.
+   */
   return (
     <MobileShell className="items-center justify-center">
       <GradientMesh variant="warm" />
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center">
         <MascotMoment pose="hero" size="lg" animation="float" />
-        <LogoLockup />
-        <Spinner className="size-5 text-muted-foreground" />
+        <p className="mt-4 text-base font-heavy tracking-logo text-pine">
+          ODOVOX
+        </p>
+        <div
+          role="progressbar"
+          aria-label="Signing you in"
+          className="mt-[22px] h-1 w-[120px] overflow-hidden rounded-sm bg-hair-2"
+        >
+          <span className="block h-full w-[55%] rounded-sm bg-lime" />
+        </div>
       </div>
     </MobileShell>
   );

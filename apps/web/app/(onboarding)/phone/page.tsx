@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { IndianPhone } from '@odovox/types';
 import { MobileShell } from '@/components/mobile-shell';
 import { AnimatedPage } from '@/components/animated-page';
-import { ToothMark, Wordmark } from '@/components/ui/logo';
-import { DecorativeFooter } from '@/components/ds';
-import { MascotMoment } from '@/components/illustrations';
+import { DecorativeFooter, IconCircle } from '@/components/ds';
+import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PhoneInput } from '@/components/forms/PhoneInput';
 import { FormField } from '@/components/forms/FormField';
@@ -38,49 +37,59 @@ export default function PhonePage() {
     }
   };
 
+  /**
+   * Frame 03. The `.ob` onboarding layout: back chevron, a 27px question, a 56px hero
+   * field with the +91 prefix and a mic affordance, then the CTA. All auth logic,
+   * validation and rate-limit handling are untouched — presentation only.
+   *
+   * The spec renders a summoned keypad. This page uses the native keyboard (there was
+   * never a custom pad here), so building one would ADD a surface rather than migrate
+   * one. Recorded as a deliberate deviation.
+   */
   return (
-    <MobileShell className="bg-paper px-7">
-      <AnimatedPage className="flex flex-1 flex-col">
-        {/* Centered logo with glow + Odo peeking to the right */}
-        <div className="flex flex-col items-center pt-20">
-          <div className="relative flex size-16 items-center justify-center">
-            <span className="absolute inset-0 rounded-pill bg-lime-soft blur-xl" aria-hidden />
-            <span className="relative flex size-14 items-center justify-center rounded-pill bg-ink text-lime">
-              <ToothMark className="size-8" />
-            </span>
-            <div className="absolute -right-12 -top-2 rotate-[8deg]">
-              <MascotMoment pose="smile" size="sm" animation="float" />
-            </div>
-          </div>
-          <Wordmark className="mt-3 text-[28px]" />
+    <MobileShell className="bg-paper">
+      <AnimatedPage className="flex flex-1 flex-col px-gutter-onboarding">
+        <div className="flex pt-0.5">
+          <IconCircle size="md" aria-label="Back" onClick={() => router.back()}>
+            <ChevronLeft />
+          </IconCircle>
         </div>
 
-        <div className="mt-12 flex flex-1 flex-col">
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome to Odovox</h1>
-          <p className="mt-1.5 text-base text-muted-foreground">
-            Enter your mobile number to sign in or create an account.
+        <div className="mt-6">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+            What&apos;s your number?
+          </h1>
+          <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+            We&apos;ll send a 6-digit code. No passwords, ever.
           </p>
+        </div>
 
-          <form
-            className="mt-8 space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void submit();
-            }}
+        <form
+          className="mt-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <FormField label="Mobile number" htmlFor="phone">
+            <PhoneInput id="phone" value={digits} onChange={setDigits} autoFocus invalid={false} />
+          </FormField>
+          <Button
+            type="submit"
+            size="lg"
+            block
+            className="mt-4"
+            disabled={!valid}
+            loading={loading}
           >
-            <FormField label="Mobile number" htmlFor="phone">
-              <PhoneInput id="phone" value={digits} onChange={setDigits} autoFocus invalid={false} />
-            </FormField>
-            <Button type="submit" size="lg" className="w-full" disabled={!valid} loading={loading}>
-              Continue
-            </Button>
-          </form>
+            Send code
+          </Button>
+        </form>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing you agree to our{' '}
-            <span className="underline underline-offset-2">terms</span>.
-          </p>
-        </div>
+        <p className="mt-6 text-center text-xs text-pine-3">
+          By continuing you agree to our{' '}
+          <span className="underline underline-offset-2">terms</span>.
+        </p>
       </AnimatedPage>
       <DecorativeFooter variant="waveform" className="pb-6" />
     </MobileShell>
