@@ -58,10 +58,12 @@ async function readCache(): Promise<Record<string, Cookies>> {
 async function login(
   role: Exclude<Role, "anon">,
   attempt = 0,
+  /** Skip the cache — used when a rotated token has invalidated the cached session. */
+  force = false,
 ): Promise<Cookies> {
   const cache = await readCache();
   const cached = cache[role];
-  if (cached?.length) return cached;
+  if (cached?.length && !force) return cached;
 
   const { phone } = SESSIONS[role];
   const ctx = await pwRequest.newContext({ baseURL: API });
@@ -206,8 +208,30 @@ async function main() {
     await stabilise(ctx);
     if (role !== "anon") await ctx.addCookies(await login(role));
 
+    let reloggedIn = false;
+
     for (const shot of group) {
       let r = await capture(ctx, shot, outDir);
+
+      // The app ROTATES its refresh token on every /auth/refresh, so a cached cookie
+      // dies as soon as a previous run used it. That is inherent to the auth design,
+      // not an anomaly — so heal instead of failing: drop the cached session, log in
+      // once more, and retry. Only once per role, so a genuinely broken login still
+      // surfaces as a failure rather than looping.
+      if (
+        !r.ok &&
+        role !== "anon" &&
+        !reloggedIn &&
+        /session invalid/.test(r.error ?? "")
+      ) {
+        console.log(
+          `  … ${shot.slug}: session rotated, re-authenticating ${role}`,
+        );
+        reloggedIn = true;
+        await ctx.clearCookies();
+        await ctx.addCookies(await login(role, 0, true));
+        r = await capture(ctx, shot, outDir);
+      }
 
       // The API allows 100 req/min per IP (plugins/rate-limit.ts) and each page load
       // costs several calls, so a full run WILL trip the limiter. Rather than weaken

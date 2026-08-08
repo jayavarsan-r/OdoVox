@@ -58,7 +58,19 @@ const statTile = cva("", {
     { shape: "tile", size: "sm", class: "p-3" },
     { shape: "tile", size: "md", class: "p-4" },
   ],
-  defaultVariants: { shape: "pill", variant: "default", size: "md" },
+  /**
+   * `tile` is the DEFAULT, not `pill`.
+   *
+   * Frame 56 makes the pill the target shape, but a pill is INLINE — it sizes to its
+   * content. Defaulting to it silently reshaped the seven StatTiles already sitting in
+   * /today's 4- and 3-column grids, and at 390px the cell is narrower than the pill's
+   * content: "Collected" rendered as "Colle…", "Appointments" as "Appointm…". Clipped
+   * labels are structural loss; the screenshot gate caught it at 6.5% on H1-today.
+   *
+   * Pages opt into `pill` as they adopt the spec's own layout (a bento pair plus a flex
+   * stat row — never a 4-column grid). /today does that in Task 26.
+   */
+  defaultVariants: { shape: "tile", variant: "default", size: "md" },
 });
 
 /** Tinted tones colour the figure and its label; the default tone stays ink-on-white. */
@@ -95,7 +107,24 @@ export function StatTile({
   className,
 }: StatTileProps) {
   const tone = variant ?? "default";
-  const isPill = (shape ?? "pill") === "pill";
+  const isPill = shape === "pill";
+
+  // The legacy tile keeps its ORIGINAL typography (mono value, 650-weight label).
+  // The spec's 800 weight belongs to the pill: at 800 the label is materially wider
+  // per character, and inside /today's 4-column grid that clipped "Collected" to
+  // "Collecte…". A shape change must not silently truncate a label.
+  if (!isPill) {
+    return (
+      <div className={cn(statTile({ shape, variant, size }), className)}>
+        <p className="font-mono text-2xl font-semibold tabular-nums tracking-tight text-pine">
+          {value}
+        </p>
+        <p className={cn("mt-0.5 text-xs font-medium", LABEL_TEXT[tone])}>
+          {label}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(statTile({ shape, variant, size }), className)}>
