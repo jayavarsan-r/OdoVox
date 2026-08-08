@@ -14,6 +14,15 @@ export {
   type BentoTileProps,
   type BentoTileTone,
 } from "./bento-tile";
+export { QuickTile, type QuickTileProps } from "./quick-tile";
+export {
+  PaperBlock,
+  PaperSection,
+  VerifyChip,
+  type PaperBlockProps,
+  type PaperSectionProps,
+  type VerifyChipProps,
+} from "./paper-block";
 export { ListRow, type ListRowProps } from "./list-row";
 export { SectionHeader, type SectionHeaderProps } from "./section-header";
 export { SettingRow, type SettingRowProps } from "./setting-row";
