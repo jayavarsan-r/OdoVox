@@ -8,7 +8,12 @@ export { EmptyState } from "./empty-state";
 export { StepperHeader } from "./stepper-header";
 export { FAB, FabMenu, type FabMenuItem } from "./fab";
 export { EditorialHeading } from "./editorial-heading";
-export { StatTile, type StatTileProps } from "./stat-tile";
+export { StatTile, StatPill, type StatTileProps } from "./stat-tile";
+export {
+  BentoTile,
+  type BentoTileProps,
+  type BentoTileTone,
+} from "./bento-tile";
 export {
   DecorativeFooter,
   type DecorativeFooterVariant,
