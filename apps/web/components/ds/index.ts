@@ -38,6 +38,19 @@ export { DayRiver, type DayRiverProps } from "./day-river";
 export { JourneyRail, type JourneyRailProps, type JourneyStep } from "./journey-rail";
 export { VerticalJourney, type JourneySitting } from "./vertical-journey";
 export { Timeline, type TimelineEntry } from "./timeline";
+
+/* --- Wave 3 · domain surfaces ----------------------------------------------- */
+export { MedicineList, MedicineRow, type MedicineRowProps } from "./medicine-row";
+export {
+  AppointmentBlock,
+  SlotHint,
+  LunchBand,
+  NowLine,
+  type AppointmentBlockProps,
+  type ApptState,
+} from "./appointment-block";
+export { Checklist, ChecklistItem, type ChecklistItemProps } from "./checklist";
+export { Bars, type BarDatum } from "./bars";
 export {
   DecorativeFooter,
   type DecorativeFooterVariant,
