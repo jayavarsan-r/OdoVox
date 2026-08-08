@@ -151,8 +151,37 @@ export const SHOTS: Shot[] = [
     role: "anon",
     frame: "v9-08",
   },
-  { slug: "B6-join", path: "/clinic-join", role: "anon", frame: "v9-09" },
-  { slug: "B7-done", path: "/done", role: "doctor", frame: "v9-11" },
+  {
+    /**
+     * /clinic-join needs a role in the onboarding store, so a direct visit bounces to
+     * /role. Reached the way a user reaches it: pick the front-desk role, which routes
+     * here. (Found by the redirect guard — this shot had been capturing /role.)
+     */
+    slug: "B6-join",
+    path: "/role",
+    role: "anon",
+    frame: "v9-09",
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /front desk/i }).click();
+      await page.waitForURL(/\/clinic-join$/, { timeout: 8000 });
+      await page.waitForTimeout(400);
+    },
+  },
+  {
+    /**
+     * PENDING: /done reads the just-created clinic from the onboarding result store,
+     * so it is only reachable by completing the create wizard in-session — a seeded
+     * doctor who already has a clinic bounces to /welcome. Capturing it truthfully
+     * means driving the whole wizard, which also creates a clinic per run.
+     * Left pending rather than shipping another screenshot of the wrong screen: the
+     * redirect guard found this one had been capturing /welcome all along.
+     */
+    slug: "B7-done",
+    path: "/done",
+    role: "doctor",
+    frame: "v9-11",
+    pending: true,
+  },
   {
     slug: "B8-first-day",
     path: "/first-day",
