@@ -154,7 +154,7 @@ export default function WelcomePage() {
         <button
           type="button"
           onClick={() => router.push('/phone')}
-          className="rounded-pill px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+          className="min-h-target rounded-pill px-3 py-1.5 text-body font-semibold text-pine-2"
         >
           Skip
         </button>
@@ -174,14 +174,16 @@ export default function WelcomePage() {
                 <div className="mx-2 flex items-center justify-center rounded-3xl bg-paper-cream py-6">
                   {slide.hero}
                 </div>
-                <h1 className="mt-8 text-3xl font-semibold tracking-tight">{slide.heading}</h1>
-                <p className="mt-3 text-base leading-relaxed text-muted-foreground">{slide.body}</p>
+                <h1 className="mt-8 text-[29px] font-heavy leading-[1.15] tracking-tight text-pine">
+                  {slide.heading}
+                </h1>
+                <p className="mt-2 text-sm leading-[1.5] text-pine-2">{slide.body}</p>
                 {'chips' in slide && slide.chips ? (
                   <div className="mt-5 flex flex-wrap gap-2">
                     {slide.chips.map((c) => (
                       <span
                         key={c}
-                        className="rounded-pill border border-border bg-surface/70 px-3 py-1 text-sm font-medium backdrop-blur"
+                        className="inline-flex h-7 items-center rounded-pill bg-[rgba(31,42,35,0.05)] px-[11px] text-xs font-semibold text-pine"
                       >
                         {c}
                       </span>
@@ -203,15 +205,19 @@ export default function WelcomePage() {
               aria-label={`Go to slide ${i + 1}`}
               onClick={() => embla?.scrollTo(i)}
               className={cn(
-                'h-2 rounded-pill transition-all',
-                index === i ? 'w-6 bg-ink' : 'w-2 bg-border-strong',
+                'h-1.5 rounded-sm transition-all duration-state',
+                index === i ? 'w-[18px] bg-pine' : 'w-1.5 bg-hair-2',
               )}
             />
           ))}
         </div>
-        <Button size="lg" className="w-full" onClick={onContinue}>
-          {isLast ? 'Get started' : 'Continue'}
+        <Button size="lg" block onClick={onContinue}>
+          {isLast ? 'Continue with phone' : 'Continue'}
         </Button>
+        {/* Frame 02's reassurance line — the pricing promise belongs on the front door. */}
+        <p className="text-center text-xs font-semibold text-pine-3">
+          Free for your first 50 patients
+        </p>
       </div>
     </MobileShell>
   );

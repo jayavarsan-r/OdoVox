@@ -86,10 +86,36 @@ export const SHOTS: Shot[] = [
   { slug: "A2-welcome", path: "/welcome", role: "anon", frame: "v9-02" },
   { slug: "A3-phone", path: "/phone", role: "anon", frame: "v9-03" },
   {
+    /**
+     * /otp reads its number from the onboarding store, not the URL, so it cannot be
+     * reached by direct navigation — it redirects to /phone. The shot has to walk the
+     * form, which is also a truer capture: this is how a user actually arrives.
+     */
     slug: "A4-otp",
-    path: "/otp?phone=9000000001",
+    path: "/phone",
     role: "anon",
     frame: "v9-04",
+    prepare: async (page) => {
+      await page.getByLabel("Mobile number").fill("9000000001");
+      await page.getByRole("button", { name: "Send code" }).click();
+      await page.waitForURL(/\/otp$/, { timeout: 8000 });
+      await page.waitForTimeout(400);
+    },
+  },
+  {
+    slug: "A5-otp-error",
+    path: "/phone",
+    role: "anon",
+    frame: "v9-05",
+    prepare: async (page) => {
+      await page.getByLabel("Mobile number").fill("9000000001");
+      await page.getByRole("button", { name: "Send code" }).click();
+      await page.waitForURL(/\/otp$/, { timeout: 8000 });
+      // A deliberately wrong code drives the error state: crit outlines, the factual
+      // line, and resend unlocked immediately (frame 05).
+      await page.getByLabel(/verification code/i).fill("000000").catch(() => undefined);
+      await page.waitForTimeout(1500);
+    },
   },
   {
     slug: "A6-unlock",

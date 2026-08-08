@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MobileShell } from '@/components/mobile-shell';
 import { AnimatedPage } from '@/components/animated-page';
-import { BackHeader } from '@/components/onboarding/back-header';
-import { DecorativeFooter, EditorialHeading } from '@/components/ds';
+import { DecorativeFooter, IconCircle } from '@/components/ds';
+import { AlertTriangle, ChevronLeft, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OtpInput } from '@/components/forms/OtpInput';
 import { api } from '@/lib/api-client';
@@ -66,6 +66,10 @@ export default function OtpPage() {
     } catch (err) {
       setInvalid(true);
       setOtp('');
+      // Frame 05: "Resend unlocks immediately on a failed attempt." A wrong code often
+      // means the SMS never arrived, so making the user wait out the original
+      // countdown strands them on a screen with no way forward.
+      setSecondsLeft(0);
       toast.apiError(err);
     } finally {
       setLoading(false);
@@ -84,16 +88,38 @@ export default function OtpPage() {
     }
   };
 
+  const countdown = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`;
+
+  /**
+   * Frames 04 and 05. The `.ob` layout, with the error state doing real work:
+   * crit outlines on every box, a factual line, and resend unlocked at once.
+   */
   return (
     <MobileShell className="bg-paper">
-      <BackHeader />
-      <AnimatedPage className="flex flex-1 flex-col px-7 pt-6">
-        <EditorialHeading
-          title="Verify your number"
-          subtitle={`We sent a 6-digit code to ${masked}`}
-        />
+      <AnimatedPage className="flex flex-1 flex-col px-gutter-onboarding">
+        <div className="flex pt-0.5">
+          <IconCircle size="md" aria-label="Back" onClick={() => router.replace('/phone')}>
+            <ChevronLeft />
+          </IconCircle>
+        </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+            Enter the code
+          </h1>
+          <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+            Sent to {masked} ·{' '}
+            <button
+              type="button"
+              onClick={() => router.replace('/phone')}
+              className="font-heavy text-pine underline underline-offset-2"
+            >
+              Edit
+            </button>
+          </p>
+        </div>
+
+        <div className="mt-5">
           <OtpInput
             value={otp}
             onChange={(v) => {
@@ -107,30 +133,22 @@ export default function OtpPage() {
           />
         </div>
 
-        <div className="mt-5 flex items-center justify-between text-sm">
-          {secondsLeft > 0 ? (
-            <span className="text-muted-foreground">Resend in {secondsLeft}s</span>
-          ) : (
-            <button
-              type="button"
-              onClick={resend}
-              className="font-medium text-foreground underline underline-offset-2"
-            >
-              Resend code
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => router.replace('/phone')}
-            className="font-medium text-muted-foreground"
-          >
-            Wrong number? Edit
-          </button>
-        </div>
+        {invalid ? (
+          <p className="mt-3.5 flex items-center gap-2 text-body font-heavy text-crit" role="alert">
+            <AlertTriangle className="size-[15px] shrink-0" />
+            That code didn&apos;t match — try again
+          </p>
+        ) : (
+          <p className="mt-4 flex items-center gap-2 text-body font-medium text-pine-2">
+            <MessageSquare className="size-[15px] shrink-0 text-live" />
+            Reading SMS automatically…
+          </p>
+        )}
 
         <Button
           size="lg"
-          className="mt-8 w-full"
+          block
+          className="mt-6"
           disabled={otp.length !== 6}
           loading={loading}
           onClick={() => verify(otp)}
@@ -138,13 +156,25 @@ export default function OtpPage() {
           Verify
         </Button>
 
-        {isDev ? (
-          <div className="pt-6 text-center">
-            <span className="rounded-pill border border-border bg-surface/70 px-3 py-1 font-mono text-xs text-muted-foreground backdrop-blur">
-              Dev mode: use 123456
-            </span>
-          </div>
-        ) : null}
+        <div className="mt-auto pb-6 text-center">
+          {secondsLeft > 0 ? (
+            <p className="text-body font-semibold text-pine-3">
+              Resend in{' '}
+              <b className="font-heavy tabular-nums text-pine">{countdown}</b>
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={resend}
+              className="text-body font-heavy text-pine underline underline-offset-2"
+            >
+              Resend code
+            </button>
+          )}
+          {isDev ? (
+            <p className="mt-3 font-mono text-xs text-pine-3">Dev mode: use 123456</p>
+          ) : null}
+        </div>
       </AnimatedPage>
       <DecorativeFooter variant="dots" className="pb-6" />
     </MobileShell>

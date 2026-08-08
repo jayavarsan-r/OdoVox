@@ -154,16 +154,23 @@ async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
       waitUntil: "networkidle",
       timeout: 30_000,
     });
-    // An expired session bounces to /welcome. Without this guard the run "succeeds"
-    // while every authenticated shot silently captures the sign-in screen — the same
-    // plausible-but-wrong failure openFirstRow guards against.
-    if (
-      shot.role !== "anon" &&
-      /\/(welcome|phone|otp)(\?|$)/.test(page.url())
-    ) {
+    // Landing somewhere other than the requested path means a redirect happened, and
+    // the shot is now of a different screen than its slug claims. This applies to
+    // ANON shots too: /otp reads its number from the onboarding store, not the URL,
+    // so visiting it directly bounces to /phone — which silently produced a "phone"
+    // screenshot labelled A4-otp for the entire baseline before this check existed.
+    //
+    // `prepare` steps are allowed to navigate deliberately, so only the pre-prepare
+    // landing is checked.
+    const landed = new URL(page.url()).pathname;
+    const wanted = new URL(shot.path, WEB).pathname;
+    if (landed !== wanted) {
       throw new Error(
-        `bounced to ${new URL(page.url()).pathname} — session invalid. ` +
-          `Re-run with SHOTS_RELOGIN=1.`,
+        `redirected ${wanted} -> ${landed}. The shot would not be of the screen its ` +
+          `slug names.` +
+          (shot.role !== "anon"
+            ? " If the session expired, re-run with SHOTS_RELOGIN=1."
+            : ""),
       );
     }
     if (shot.prepare) await shot.prepare(page);
