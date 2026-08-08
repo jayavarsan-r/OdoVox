@@ -299,13 +299,7 @@ export const SHOTS: Shot[] = [
   },
 
   // ── L · Management ───────────────────────────────────────────────────────
-  {
-    slug: "L1-more",
-    path: "/more",
-    role: "doctor",
-    frame: "v9-70",
-    pending: true,
-  },
+  { slug: "L1-more", path: "/more", role: "doctor", frame: "v9-70" },
   { slug: "L2-clinic", path: "/clinic", role: "doctor", frame: "v9-70" },
   {
     slug: "L3-whatsapp",
