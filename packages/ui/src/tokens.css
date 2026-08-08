@@ -2,142 +2,400 @@
  * Odovox design tokens — the single source of truth for color, radius, shadow,
  * type, motion, and layout. Consumed by apps/web (and any future app) via the
  * Tailwind preset so every surface shares the same scale.
+ *
+ * ── Phase 10 · UI migration to the v9/v10 design language ────────────────────
+ * The v9 spec is a different design system, not a recolor: pine ink on a cooler
+ * canvas, every muted text and hairline expressed as ALPHA OVER PINE rather than a
+ * grey, saturated foreground colors each paired with a soft background, and a white
+ * inner top-highlight on every raised surface.
+ *
+ * Stage 0b splits the work by risk (docs/migration/03-visual-migration-plan.md §2.1):
+ *   • RETUNED IN PLACE — tokens whose role is unambiguous, so a value swap is safe.
+ *   • ADDED ALONGSIDE  — the four semantic inversions. `--color-sky` is currently a
+ *     pale BACKGROUND used 13×; the spec's `--sky` is a saturated FOREGROUND. Swapping
+ *     the value would turn 13 surfaces blue in a commit that contains no page work to
+ *     fix them. The canonical pairs are added; pages adopt them stage by stage, where
+ *     each change is visible in that page's screenshot diff and revertable alone.
+ *
+ * A legacy token is deleted only when its call count reaches zero.
  */
 :root {
-  /* Brand */
-  --color-ink: #0a0a0a;
-  --color-ink-soft: #1a1a1a;
-  /* Warm off-white surfaces — Phase 2.5 overrides pure white for a softer paper base. */
-  --color-paper: #fafaf7;
-  --color-paper-warm: #f4f3ee;
+  /* ===================================================================== */
+  /* 1 · SEMANTIC COLORS                                                    */
+  /* ===================================================================== */
+
+  /* Pine ramp — the spec's ink. Every muted tone is alpha over pine, never a grey:
+     that is what makes rules and secondary text sit IN the surface, not on it. */
+  --pine: #1f2a23;
+  --pine-2: rgba(31, 42, 35, 0.55);
+  --pine-3: rgba(31, 42, 35, 0.36);
+
+  /* Ground.
+     NOTE: `--card` is also a shadcn variable, redefined in apps/web/app/globals.css as
+     `--card: var(--color-surface)`. Both must stay LITERAL — pointing either at the
+     other creates a resolution cycle that silently blanks bg-card and bg-surface
+     app-wide. */
+  --canvas: #f6f7f2;
+  --card: #ffffff;
+  --sheet: #fdfdfb;
+
+  /* Primary accent — action, voice, "your turn" */
+  --lime: #cde763;
+  --lime-soft: #eef5d2;
+  --lime-press: #bcd850;
+  --lime-glow: rgba(205, 231, 99, 0.5);
+
+  /* The four semantic pairs + crit. Each is {saturated foreground, soft background};
+     that regularity is what makes the chip/tile language read as one system. */
+  --sky: #5b8def; /* schedule, time */
+  --sky-soft: #e8effc;
+  --live: #2e8b62; /* clinical success, "in chair", confirmed */
+  --live-soft: #e2f1e9;
+  --warn: #b96a25; /* attention, due, low stock */
+  --warn-soft: #f9eedc;
+  --lav: #8b7cf6; /* lab, special */
+  --lav-soft: #efecfd;
+  /* Crit has ONE meaning: act now. A 3.5px inset rail on the offending row plus a
+     factual line — never a pink wash, never decorative. */
+  --crit: #cb3534;
+  --crit-soft: #fbe9e6;
+
+  /* --- Brand aliases, retuned in place ---------------------------------- */
+  --color-ink: var(--pine);
+  --color-ink-soft: #2a3830;
+  --color-paper: var(--canvas);
+  --color-paper-warm: #eef0e8;
   --color-paper-cream: #f9f6f0; /* mascot / celebration backgrounds ONLY */
 
-  /* Accents — soft, desaturated, dental-clinic friendly */
-  --color-lime: #d4f564; /* primary accent — Resume, active states */
-  --color-lime-soft: #e8f8b5;
-  --color-peach: #ffd4a3; /* warmth — patients, billing */
+  --color-lime: var(--lime);
+  --color-lime-soft: var(--lime-soft);
+
+  /* --- Legacy pastels: values UNCHANGED until each page migrates off them --- */
+  --color-peach: #ffd4a3;
   --color-peach-soft: #ffe8d1;
-  --color-sky: #bfe3ff; /* schedule, time */
+  --color-sky: #bfe3ff;
   --color-sky-soft: #dff1ff;
-  /* Sage = clinical secondary (treatment plans, procedure/clinical status, success).
-     Phase 2.5 deepened sage from a pale mint to this muted clinical tone. */
   --color-sage: #7ba098;
   --color-sage-soft: #c9dcd6;
   --color-sage-tint: #e6efec;
   --color-sage-deep: #4a6b62;
-  --color-lavender: #e0d4ff; /* lab, special */
+  --color-lavender: #e0d4ff;
   --color-lavender-soft: #efe9ff;
 
-  /* Semantic */
-  --color-text: var(--color-ink);
-  --color-text-muted: #6b7280;
-  --color-text-subtle: #9ca3af;
+  /* --- Semantic, retuned in place --------------------------------------- */
+  --color-text: var(--pine);
+  --color-text-muted: var(--pine-2);
+  --color-text-subtle: var(--pine-3);
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-success: #16a34a;
-  --color-warning: #f59e0b;
-  --color-warning-soft: #fef3c7; /* Phase 3 — safety-warning card backing on the verification card */
-  --color-danger: #dc2626;
-  --color-info: #2563eb;
-  --color-info-soft: #ddebfe;
+  --color-success: var(--live);
+  --color-warning: var(--warn);
+  --color-warning-soft: var(--warn-soft);
+  --color-danger: var(--crit);
+  --color-info: var(--sky);
+  --color-info-soft: var(--sky-soft);
 
-  /* Quick-tool saturated icon colors (Phase 2.6 — each pairs with its pastel tile). */
-  --color-tool-patient: #e07b3a; /* warm orange on peach-soft */
-  --color-tool-inventory: #3d8b6b; /* forest green on sage-tint */
-  --color-tool-lab: #7c3aed; /* deep purple on lavender-soft */
-  --color-tool-dayoff: #6b8e23; /* olive lime on lime-soft */
-  /* (Appointment icon uses --color-info, the clear blue.) */
+  /* Quick-tool saturated icon colors (each pairs with its pastel tile). */
+  --color-tool-patient: #e07b3a;
+  --color-tool-inventory: #3d8b6b;
+  --color-tool-lab: #7c3aed;
+  --color-tool-dayoff: #6b8e23;
 
-  /* Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --radius-pill: 9999px;
+  /* ===================================================================== */
+  /* 2 · BORDERS — alpha over pine, never a grey                            */
+  /* ===================================================================== */
+  --hair: rgba(31, 42, 35, 0.07);
+  --hair-2: rgba(31, 42, 35, 0.13);
+  --color-border: var(--hair);
+  --color-border-strong: var(--hair-2);
 
-  /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
-  --shadow-hero: 0 12px 40px rgba(0, 0, 0, 0.12);
-  /* Lime glow for the primary button (lime = #d4f564 → rgb 212 245 100) */
-  --shadow-lime: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(212, 245, 100, 0.35);
-  --shadow-lime-hover: 0 12px 32px rgba(212, 245, 100, 0.5);
-  /* Focus ring for inputs: 2px lime + 4px lime-soft halo */
-  --ring-lime: 0 0 0 2px var(--color-lime), 0 0 0 6px var(--color-lime-soft);
-  --inset-input: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  /* ===================================================================== */
+  /* 3 · ELEVATION + THE TOP HIGHLIGHT                                      */
+  /* ===================================================================== */
+  /* The single most important token in this migration. Every raised surface in the
+     spec carries a 1px white inner highlight on its top edge; it is most of the
+     difference between "recolored" and "handcrafted". */
+  --highlight-top: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --highlight-top-soft: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --highlight-top-strong: inset 0 2px 1px rgba(255, 255, 255, 0.95);
 
-  /* ===== Glass tokens (glassmorphism — hero cards, sheets, dev banner, /done) ===== */
-  --glass-blur-sm: 12px;
-  --glass-blur-md: 20px;
-  --glass-blur-lg: 32px;
-  --glass-bg-light: rgba(255, 255, 255, 0.65);
-  --glass-bg-dark: rgba(10, 10, 10, 0.55);
-  --glass-bg-lime: rgba(212, 245, 100, 0.18);
-  --glass-bg-sage: rgba(123, 160, 152, 0.18);
-  --glass-border-light: rgba(255, 255, 255, 0.4);
+  /* Neutral ladder, pine-tinted (was neutral-black and highlight-less). */
+  --elev-0: none;
+  --elev-1: 0 6px 16px rgba(31, 42, 35, 0.06);
+  --elev-2: 0 8px 20px rgba(31, 42, 35, 0.06);
+  --elev-3: 0 10px 28px rgba(31, 42, 35, 0.06);
+  --elev-4: 0 16px 38px rgba(31, 42, 35, 0.2);
+  --elev-hero: 0 22px 54px rgba(31, 42, 35, 0.3);
+  --elev-lime-glow: 0 8px 22px var(--lime-glow);
+  --elev-sage-glow: 0 12px 32px rgba(123, 160, 152, 0.28);
+
+  /* ===================================================================== */
+  /* 4 · COMPOSED SURFACE SHADOWS                                           */
+  /* ===================================================================== */
+  --shadow-card: 0 10px 28px rgba(31, 42, 35, 0.06), var(--highlight-top);
+  --shadow-tile: 0 8px 20px rgba(31, 42, 35, 0.06);
+  --shadow-quick-tile:
+    0 6px 16px rgba(31, 42, 35, 0.06), var(--highlight-top-soft);
+  --shadow-stat: 0 6px 16px rgba(31, 42, 35, 0.06), var(--highlight-top);
+  --shadow-icirc: 0 6px 16px rgba(31, 42, 35, 0.08), var(--highlight-top);
+  --shadow-cta:
+    0 8px 22px var(--lime-glow), inset 0 1.5px 0 rgba(255, 255, 255, 0.7);
+  --shadow-orb:
+    0 16px 36px var(--lime-glow), 0 6px 14px rgba(31, 42, 35, 0.18),
+    inset 0 2px 1px rgba(255, 255, 255, 0.85);
+  --shadow-nav: 0 18px 44px rgba(31, 42, 35, 0.22), var(--highlight-top-strong);
+  --shadow-sheet: 0 -10px 36px rgba(31, 42, 35, 0.22);
+  --shadow-toast: 0 14px 34px rgba(31, 42, 35, 0.14);
+  --shadow-drag: 0 22px 44px rgba(31, 42, 35, 0.28);
+
+  /* Legacy aliases kept so current consumers move coherently. */
+  --shadow-soft: var(--elev-1);
+  --shadow-hero: var(--elev-hero);
+  --shadow-lime: var(--shadow-cta);
+  --shadow-lime-hover: 0 12px 32px var(--lime-glow);
+  --ring-lime: 0 0 0 2px var(--lime), 0 0 0 6px var(--lime-soft);
+  --inset-input: inset 0 1px 2px rgba(31, 42, 35, 0.04);
+
+  /* Avatar status rings (double box-shadow: white gap, then the state color). */
+  --ring-avatar-lime: 0 0 0 2.5px #fff, 0 0 0 5px var(--lime);
+  --ring-avatar-live: 0 0 0 2.5px #fff, 0 0 0 5px var(--live);
+  --ring-avatar-sky: 0 0 0 2.5px #fff, 0 0 0 5px var(--sky);
+  --ring-avatar-none: 0 0 0 2.5px #fff, 0 0 0 5px var(--hair-2);
+
+  /* Dark hero card depth. */
+  --hero-dark-grad: linear-gradient(135deg, #1c2620 0%, #26332b 100%);
+  --elev-hero-dark:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 24px 48px rgba(31, 42, 35, 0.18),
+    0 4px 12px rgba(31, 42, 35, 0.12);
+  --hero-icon-glow: 0 0 24px rgba(205, 231, 99, 0.3);
+
+  /* ===================================================================== */
+  /* 5 · GLASS — the spec uses it on exactly two surfaces                   */
+  /* ===================================================================== */
+  --glass: rgba(252, 253, 249, 0.55);
+  --glass-line: rgba(255, 255, 255, 0.95);
+  --glass-menu: rgba(253, 254, 250, 0.92);
+  --glass-bg-light: var(--glass);
+  --glass-bg-dark: rgba(31, 42, 35, 0.55);
+  --glass-bg-lime: rgba(205, 231, 99, 0.18);
+  --glass-bg-sage: rgba(46, 139, 98, 0.18);
+  --glass-border-light: var(--glass-line);
   --glass-border-dark: rgba(255, 255, 255, 0.08);
 
-  /* ===== Elevation system (layered, neutral) ===== */
-  --elev-0: none;
-  --elev-1: 0 1px 2px rgba(10, 10, 10, 0.04), 0 1px 3px rgba(10, 10, 10, 0.03);
-  --elev-2: 0 2px 4px rgba(10, 10, 10, 0.04), 0 4px 12px rgba(10, 10, 10, 0.05);
-  --elev-3: 0 4px 8px rgba(10, 10, 10, 0.05), 0 12px 24px rgba(10, 10, 10, 0.08);
-  --elev-4: 0 8px 16px rgba(10, 10, 10, 0.06), 0 24px 48px rgba(10, 10, 10, 0.12);
-  --elev-hero: 0 1px 2px rgba(10, 10, 10, 0.06), 0 32px 64px rgba(10, 10, 10, 0.18);
-  --elev-lime-glow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 12px 32px rgba(212, 245, 100, 0.35);
-  --elev-sage-glow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 12px 32px rgba(123, 160, 152, 0.28);
+  /* ===================================================================== */
+  /* 6 · BLUR — two values, deliberately (perf budget, governance §2)       */
+  /* ===================================================================== */
+  --blur-nav: 30px;
+  --blur-menu: 24px;
+  --glass-saturate: 1.9;
+  --glass-blur-sm: 12px;
+  --glass-blur-md: var(--blur-menu);
+  --glass-blur-lg: var(--blur-nav);
 
-  /* Dark hero card depth (Phase 2.6): gradient + top inner highlight + layered drop. */
-  --hero-dark-grad: linear-gradient(135deg, #0f1419 0%, #1a2028 100%);
-  --elev-hero-dark: 0 1px 0 rgba(255, 255, 255, 0.08) inset, 0 24px 48px rgba(15, 20, 25, 0.18),
-    0 4px 12px rgba(15, 20, 25, 0.12);
-  --hero-icon-glow: 0 0 24px rgba(212, 245, 100, 0.3);
+  /* ===================================================================== */
+  /* 7 · GRADIENTS                                                          */
+  /* ===================================================================== */
+  /* The ambient wash sits behind every screen at varying opacity. */
+  --amb:
+    radial-gradient(
+      120% 46% at 8% -6%,
+      rgba(205, 231, 99, 0.2),
+      transparent 60%
+    ),
+    radial-gradient(
+      100% 42% at 100% 0%,
+      rgba(91, 141, 239, 0.1),
+      transparent 58%
+    );
+  --grad-hero-c: linear-gradient(150deg, #fdfef8, #f4f8e4);
+  --grad-orb: linear-gradient(165deg, #e4f3a6, var(--lime) 60%, #bfd850);
+  --grad-tile-lime: linear-gradient(150deg, #f4fadf, var(--lime-soft));
+  --grad-tile-warn: linear-gradient(120deg, #fbf4e7, #f8efde);
+  --grad-nav-sheen: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 42%
+  );
+  --wash-lime-corner: radial-gradient(
+    circle,
+    var(--lime-soft),
+    transparent 70%
+  );
+  --hatch-lunch: repeating-linear-gradient(
+    -45deg,
+    rgba(31, 42, 35, 0.05),
+    rgba(31, 42, 35, 0.05) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  --hatch-off: repeating-linear-gradient(
+    -45deg,
+    var(--crit-soft),
+    var(--crit-soft) 6px,
+    transparent 6px,
+    transparent 12px
+  );
 
-  /* Typography scale */
-  --font-display: 'Geist', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  /* ===================================================================== */
+  /* 8 · RADIUS                                                             */
+  /* ===================================================================== */
+  --radius-2xs: 7px; /* .mini chip */
+  --radius-xs: 11px; /* settings icon square */
+  --radius-sm: 14px; /* appointment block, mic affordance */
+  --radius-md: 16px; /* form field, otp box */
+  --radius-lg: 18px; /* input, chat bubble, timeline card */
+  --radius-xl: 22px; /* quick card, medicine card */
+  --radius-2xl: 24px; /* bento tile, role card, hero-c */
+  --radius-3xl: 26px; /* card, sheet top */
+  --radius-nav: 36px; /* the glass nav pill */
+  --radius-pill: 9999px;
 
-  /* Motion */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  /* ===================================================================== */
+  /* 9 · TYPOGRAPHY                                                         */
+  /* ===================================================================== */
+  /* Geist is retained (one typeface on every device); the spec's system stack would
+     render as SF Pro on iOS and Roboto on Android. Sizes, weights and tracking follow
+     the spec exactly. */
+  --font-display: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  --text-display: 30px;
+  --text-h1: 28px;
+  --text-h2: 26px;
+  --text-h3: 24px;
+  --text-question: 27px; /* onboarding .ob-q */
+  --text-sheet-title: 19px;
+  --text-lg: 16.5px;
+  --text-base: 16px;
+  --text-row: 15.5px;
+  --text-md: 15px;
+  --text-sm: 14px;
+  --text-body: 13.5px;
+  --text-xs: 12.5px;
+  --text-2xs: 11.5px;
+  --text-3xs: 11px;
+  --text-micro: 10.5px;
+  --text-eyebrow: 10px;
+  --text-label: 9.5px;
+  --text-tiny: 9px;
+
+  --weight-regular: 500;
+  --weight-medium: 650;
+  --weight-semibold: 700;
+  --weight-bold: 750;
+  --weight-heavy: 800;
+
+  --tracking-display: -0.03em;
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-normal: 0;
+  --tracking-label: 0.06em;
+  --tracking-bento-label: 0.08em;
+  --tracking-eyebrow: 0.12em;
+  --tracking-logo: 0.18em;
+
+  /* Clinical record prose — an explicit chair-side legibility rule. */
+  --prose-record-size: 16.5px;
+  --prose-record-leading: 1.7;
+
+  /* ===================================================================== */
+  /* 10 · SPACING — the spec's dense scale                                  */
+  /* ===================================================================== */
+  --gutter: 16px; /* screen outer gutter */
+  --gutter-wide: 20px; /* prose + settings screens */
+  --gutter-onboarding: 22px;
+  --pad-card: 18px;
+  --pad-tile: 13px;
+  --gap-tight: 9px;
+  --gap-card: 12px;
+  --gap-row: 13px;
+
+  /* ===================================================================== */
+  /* 11 · MOTION — durations                                                */
+  /* ===================================================================== */
+  --duration-press: 100ms; /* 80–120ms pressed states */
+  --duration-state: 200ms; /* 180–220ms state changes */
   --duration-instant: 80ms;
   --duration-fast: 150ms;
   --duration-base: 240ms;
   --duration-slow: 400ms;
   --duration-emphatic: 600ms;
+  --duration-beat: 1200ms; /* the success beat before auto-advance */
+  --duration-undo: 6000ms; /* undo window, everywhere */
+  --hold-threshold: 350ms; /* orb hold → voice menu */
+  --speech-pause: 1200ms; /* end-of-speech detection */
 
-  /* Layout (mobile-first) */
+  /* ===================================================================== */
+  /* 12 · MOTION — curves                                                   */
+  /* ===================================================================== */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ===================================================================== */
+  /* 13 · INTERACTION TIMINGS                                               */
+  /* ===================================================================== */
+  --stagger-dial: 30ms; /* speed-dial pills, bottom-up */
+  --stagger-timeline: 45ms; /* history cards */
+  --stagger-bars: 50ms; /* bar strips */
+  --count-up: 400ms; /* numbers animating up */
+  --spine-draw: 350ms; /* timeline spine */
+
+  /* ===================================================================== */
+  /* 14 · ICONS                                                             */
+  /* ===================================================================== */
+  --icon-xs: 11px;
+  --icon-sm: 13px;
+  --icon-md: 16px;
+  --icon-lg: 18px;
+  --icon-xl: 22px;
+  --icon-orb: 26px;
+  --icon-stroke-thin: 1.9;
+  --icon-stroke: 2;
+  --icon-stroke-bold: 2.2;
+  --icon-stroke-heavy: 2.6;
+
+  /* ===================================================================== */
+  /* 15 · TOUCH TARGETS                                                     */
+  /* ===================================================================== */
+  --target-min: 44px; /* WCAG floor; also .btn2 and .icirc */
+  --target-cta: 52px;
+  --target-orb: 66px;
+  --target-nav: 72px;
+  --target-nav-capsule: 52px;
+
+  /* ===================================================================== */
+  /* 16 · LAYOUT                                                            */
+  /* ===================================================================== */
   --max-width-mobile: 430px;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
 
-  /* ===== Mascot + illustration slots =====
-     Consumed by <MascotMoment> / <DecorativeArt>. Placeholder PNGs ship in
-     apps/web/public/illu/; replace with AI-generated renders (see docs/design-system.md). */
-  --illu-mascot-hero: url('/illu/mascot/odo-hero.png');
-  --illu-mascot-smile: url('/illu/mascot/odo-smile.png');
-  --illu-mascot-celebrate: url('/illu/mascot/odo-celebrate.png');
-  --illu-mascot-thinking: url('/illu/mascot/odo-thinking.png');
-  --illu-mascot-sleeping: url('/illu/mascot/odo-sleeping.png');
-  --illu-object-tooth: url('/illu/objects/tooth.png');
-  --illu-object-xray: url('/illu/objects/xray-film.png');
-  --illu-object-mirror: url('/illu/objects/dental-mirror.png');
-  --illu-object-pills: url('/illu/objects/pill-bottle.png');
-  --illu-object-clipboard: url('/illu/objects/clipboard.png');
+  /* ===== Mascot + illustration slots ===================================== */
+  --illu-mascot-hero: url("/illu/mascot/odo-hero.png");
+  --illu-mascot-smile: url("/illu/mascot/odo-smile.png");
+  --illu-mascot-celebrate: url("/illu/mascot/odo-celebrate.png");
+  --illu-mascot-thinking: url("/illu/mascot/odo-thinking.png");
+  --illu-mascot-sleeping: url("/illu/mascot/odo-sleeping.png");
+  --illu-object-tooth: url("/illu/objects/tooth.png");
+  --illu-object-xray: url("/illu/objects/xray-film.png");
+  --illu-object-mirror: url("/illu/objects/dental-mirror.png");
+  --illu-object-pills: url("/illu/objects/pill-bottle.png");
+  --illu-object-clipboard: url("/illu/objects/clipboard.png");
 }
 
 /* ===================================================================================
-   COLOR USAGE RULES (Phase 2.5 lock-in — full rationale in docs/design-system.md §1)
+   COLOR USAGE RULES (v9 spec — full rationale in docs/design-system.md §1)
    -----------------------------------------------------------------------------------
-   • Lime   → primary action / voice / "your turn" (CTA, mic, Start Consultation, active tab)
-   • Sage   → clinical context (treatment plans, procedure cards, clinical status, success)
-   • Ink    → primary text, hero-card backgrounds
-   • Peach / Sky / Sage-tint / Lavender → category coding (tools, status, specialty chips)
-   • Paper-cream → mascot / celebration backgrounds ONLY
-   • Glass-light → hero/glass cards on light backgrounds; Glass-dark → over photos/gradients
-   • Danger / Warning / Info / Success → system messages only, never decorative
+   • Lime  → primary action / voice / "your turn" (CTA, mic, orb, active tab)
+   • Live  → clinical success, in-chair, confirmed
+   • Sky   → schedule, time, scheduled state
+   • Warn  → attention, due, low stock
+   • Lav   → lab, special
+   • Crit  → ACT NOW. A rail on the offending row + a factual line. One meaning only:
+             never a pink wash, never decorative.
+   • Pine  → primary text; pine-2/-3 are alpha, never greys
+   • Hair  → all rules and dividers, alpha over pine
+   • Glass → the nav pill and the voice menu. Nothing else (perf budget).
    =================================================================================== */
