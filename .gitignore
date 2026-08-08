@@ -50,3 +50,8 @@ docs/migration/screenshots/compare.json
 
 # screenshot session cache (refresh cookies)
 docs/migration/screenshots/.sessions.json
+
+# v9 reference frames ARE committed — they are the visual source of truth.
+# Only the fidelity working set is ignored.
+docs/migration/screenshots/impl/
+docs/migration/screenshots/fidelity/

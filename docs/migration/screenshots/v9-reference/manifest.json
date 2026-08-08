@@ -1,0 +1,862 @@
+[
+  {
+    "id": "v9-01",
+    "number": "01",
+    "name": "Splash",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-01.png"
+  },
+  {
+    "id": "v9-02",
+    "number": "02",
+    "name": "Welcome",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-02.png"
+  },
+  {
+    "id": "v9-03",
+    "number": "03",
+    "name": "Phone",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-03.png"
+  },
+  {
+    "id": "v9-04",
+    "number": "04",
+    "name": "OTP — auto-read",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-04.png"
+  },
+  {
+    "id": "v9-05",
+    "number": "05",
+    "name": "OTP — wrong code",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-05.png"
+  },
+  {
+    "id": "v9-06",
+    "number": "06",
+    "name": "Returning user — instant unlock",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-06.png"
+  },
+  {
+    "id": "v9-07",
+    "number": "07",
+    "name": "Role",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-07.png"
+  },
+  {
+    "id": "v9-08",
+    "number": "08",
+    "name": "Create clinic — conversational",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-08.png"
+  },
+  {
+    "id": "v9-09",
+    "number": "09",
+    "name": "Join by code + preview",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-09.png"
+  },
+  {
+    "id": "v9-10",
+    "number": "10",
+    "name": "Pending approval",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-10.png"
+  },
+  {
+    "id": "v9-11",
+    "number": "11",
+    "name": "Done — Odo celebrates",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-11.png"
+  },
+  {
+    "id": "v9-12",
+    "number": "12",
+    "name": "First day — setup checklist",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-12.png"
+  },
+  {
+    "id": "v9-13",
+    "number": "13",
+    "name": "Home — calm, glanceable, habit-forming",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-13.png"
+  },
+  {
+    "id": "v9-14",
+    "number": "14",
+    "name": "Flow — chair free (same anatomy)",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-14.png"
+  },
+  {
+    "id": "v9-15",
+    "number": "15",
+    "name": "Home — quiet morning, same bones",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-15.png"
+  },
+  {
+    "id": "v9-16",
+    "number": "16",
+    "name": "Flow — day done",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-16.png"
+  },
+  {
+    "id": "v9-17",
+    "number": "17",
+    "name": "Flow — offline",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-17.png"
+  },
+  {
+    "id": "v9-18",
+    "number": "18",
+    "name": "Home ＋ — speed dial open",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-18.png"
+  },
+  {
+    "id": "v9-19",
+    "number": "19",
+    "name": "Day off — quick sheet",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-19.png"
+  },
+  {
+    "id": "v9-20",
+    "number": "20",
+    "name": "Week in review — the Monday habit",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-20.png"
+  },
+  {
+    "id": "v9-21",
+    "number": "21",
+    "name": "Consult — live queue",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-21.png"
+  },
+  {
+    "id": "v9-22",
+    "number": "22",
+    "name": "Consult — empty",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-22.png"
+  },
+  {
+    "id": "v9-23",
+    "number": "23",
+    "name": "Recording",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-23.png"
+  },
+  {
+    "id": "v9-24",
+    "number": "24",
+    "name": "Recording — paused (call)",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-24.png"
+  },
+  {
+    "id": "v9-25",
+    "number": "25",
+    "name": "Processing — one state + bar",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-25.png"
+  },
+  {
+    "id": "v9-26",
+    "number": "26",
+    "name": "Processing — failed",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-26.png"
+  },
+  {
+    "id": "v9-27",
+    "number": "27",
+    "name": "Verification — conflict, clinical red",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-27.png"
+  },
+  {
+    "id": "v9-28",
+    "number": "28",
+    "name": "Verification — resolved inline",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-28.png"
+  },
+  {
+    "id": "v9-29",
+    "number": "29",
+    "name": "Verification — seven medicines",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-29.png"
+  },
+  {
+    "id": "v9-30",
+    "number": "30",
+    "name": "Verification — clean day, readable prose",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-30.png"
+  },
+  {
+    "id": "v9-31",
+    "number": "31",
+    "name": "Confirmed — saved",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-31.png"
+  },
+  {
+    "id": "v9-32",
+    "number": "32",
+    "name": "Patients — glyph rows",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-32.png"
+  },
+  {
+    "id": "v9-33",
+    "number": "33",
+    "name": "Patients — search active",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-33.png"
+  },
+  {
+    "id": "v9-34",
+    "number": "34",
+    "name": "Patients — no match",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-34.png"
+  },
+  {
+    "id": "v9-35",
+    "number": "35",
+    "name": "New patient — blank",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-35.png"
+  },
+  {
+    "id": "v9-36",
+    "number": "36",
+    "name": "New patient — voice intake",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-36.png"
+  },
+  {
+    "id": "v9-37",
+    "number": "37",
+    "name": "Patient — Overview",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-37.png"
+  },
+  {
+    "id": "v9-38",
+    "number": "38",
+    "name": "Patient — Cases journey",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-38.png"
+  },
+  {
+    "id": "v9-39",
+    "number": "39",
+    "name": "Case — procedure detail",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-39.png"
+  },
+  {
+    "id": "v9-40",
+    "number": "40",
+    "name": "Tooth map — FDI odontogram",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-40.png"
+  },
+  {
+    "id": "v9-41",
+    "number": "41",
+    "name": "Patient — Billing tab",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-41.png"
+  },
+  {
+    "id": "v9-42",
+    "number": "42",
+    "name": "Patient history — Odo timeline",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-42.png"
+  },
+  {
+    "id": "v9-43",
+    "number": "43",
+    "name": "Visit record — read-only sheet",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-43.png"
+  },
+  {
+    "id": "v9-44",
+    "number": "44",
+    "name": "Prescription sheet — dose dots",
+    "section": "F · Prescriptions",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-44.png"
+  },
+  {
+    "id": "v9-45",
+    "number": "45",
+    "name": "Prescription — conflict caught",
+    "section": "F · Prescriptions",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-45.png"
+  },
+  {
+    "id": "v9-46",
+    "number": "46",
+    "name": "Schedule — doctor day",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-46.png"
+  },
+  {
+    "id": "v9-47",
+    "number": "47",
+    "name": "Schedule — reception multi-doctor",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-47.png"
+  },
+  {
+    "id": "v9-48",
+    "number": "48",
+    "name": "New appointment sheet",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-48.png"
+  },
+  {
+    "id": "v9-49",
+    "number": "49",
+    "name": "Schedule — drag to reschedule",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-49.png"
+  },
+  {
+    "id": "v9-50",
+    "number": "50",
+    "name": "Reception Today",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-50.png"
+  },
+  {
+    "id": "v9-51",
+    "number": "51",
+    "name": "Walk-in sheet",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-51.png"
+  },
+  {
+    "id": "v9-52",
+    "number": "52",
+    "name": "Checkout sheet",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-52.png"
+  },
+  {
+    "id": "v9-53",
+    "number": "53",
+    "name": "Payment received — toast",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-53.png"
+  },
+  {
+    "id": "v9-54",
+    "number": "54",
+    "name": "Billing — densified",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-54.png"
+  },
+  {
+    "id": "v9-55",
+    "number": "55",
+    "name": "Outstanding dues",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-55.png"
+  },
+  {
+    "id": "v9-56",
+    "number": "56",
+    "name": "Lab list — stat pills, not tiles",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-56.png"
+  },
+  {
+    "id": "v9-57",
+    "number": "57",
+    "name": "Lab ＋ — its own dial",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-57.png"
+  },
+  {
+    "id": "v9-58",
+    "number": "58",
+    "name": "Lab — case detail",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-58.png"
+  },
+  {
+    "id": "v9-59",
+    "number": "59",
+    "name": "The ＋ — quick New-case sheet",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-59.png"
+  },
+  {
+    "id": "v9-60",
+    "number": "60",
+    "name": "WhatsApp consent gate",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-60.png"
+  },
+  {
+    "id": "v9-61",
+    "number": "61",
+    "name": "Lab vendors",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-61.png"
+  },
+  {
+    "id": "v9-62",
+    "number": "62",
+    "name": "Patient inbox",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-62.png"
+  },
+  {
+    "id": "v9-63",
+    "number": "63",
+    "name": "Conversation thread",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-63.png"
+  },
+  {
+    "id": "v9-64",
+    "number": "64",
+    "name": "Thread — window closed",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-64.png"
+  },
+  {
+    "id": "v9-65",
+    "number": "65",
+    "name": "Lab inbox — quiet verdicts",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-65.png"
+  },
+  {
+    "id": "v9-66",
+    "number": "66",
+    "name": "Follow-ups — call list",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-66.png"
+  },
+  {
+    "id": "v9-67",
+    "number": "67",
+    "name": "Inventory — stock",
+    "section": "K · Inventory",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-67.png"
+  },
+  {
+    "id": "v9-68",
+    "number": "68",
+    "name": "Inventory — item detail",
+    "section": "K · Inventory",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-68.png"
+  },
+  {
+    "id": "v9-69",
+    "number": "69",
+    "name": "Voice entry — confirm",
+    "section": "K · Inventory",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-69.png"
+  },
+  {
+    "id": "v9-70",
+    "number": "70",
+    "name": "More — module hub",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-70.png"
+  },
+  {
+    "id": "v9-71",
+    "number": "71",
+    "name": "Team & join code",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-71.png"
+  },
+  {
+    "id": "v9-72",
+    "number": "72",
+    "name": "WhatsApp settings",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-72.png"
+  },
+  {
+    "id": "v9-73",
+    "number": "73",
+    "name": "Availability — weekly hours",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-73.png"
+  },
+  {
+    "id": "v9-74",
+    "number": "74",
+    "name": "Days off",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-74.png"
+  },
+  {
+    "id": "v9-75",
+    "number": "75",
+    "name": "Prescription templates",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-75.png"
+  },
+  {
+    "id": "v9-76",
+    "number": "76",
+    "name": "Account",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-76.png"
+  },
+  {
+    "id": "v9-77",
+    "number": "77",
+    "name": "Switch role — confirm",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-77.png"
+  },
+  {
+    "id": "v9-78",
+    "number": "78",
+    "name": "The orb — tap records, hold speaks",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-78.png"
+  },
+  {
+    "id": "v9-79",
+    "number": "79",
+    "name": "Toasts — the three voices",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-79.png"
+  },
+  {
+    "id": "v9-80",
+    "number": "80",
+    "name": "Notifications — every row lands",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-80.png"
+  },
+  {
+    "id": "v9-81",
+    "number": "81",
+    "name": "The tap contract",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "width": 370,
+    "height": 824,
+    "png": "v9-81.png"
+  },
+  {
+    "id": "v10-01",
+    "number": "01",
+    "name": "Listening — live transcript",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "width": 370,
+    "height": 824,
+    "png": "v10-01.png"
+  },
+  {
+    "id": "v10-02",
+    "number": "02",
+    "name": "Parsed — confirm to create",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "width": 370,
+    "height": 824,
+    "png": "v10-02.png"
+  },
+  {
+    "id": "v10-03",
+    "number": "03",
+    "name": "Done — and still listening",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "width": 370,
+    "height": 824,
+    "png": "v10-03.png"
+  },
+  {
+    "id": "v10-04",
+    "number": "04",
+    "name": "Correction — misheard, fixed in place",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "width": 370,
+    "height": 824,
+    "png": "v10-04.png"
+  },
+  {
+    "id": "v10-05",
+    "number": "05",
+    "name": "What can I say — the grammar",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "width": 370,
+    "height": 824,
+    "png": "v10-05.png"
+  }
+]

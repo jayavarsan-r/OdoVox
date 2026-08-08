@@ -22,6 +22,8 @@
     "shots:baseline": "tsx scripts/screenshots.ts baseline",
     "shots:current": "tsx scripts/screenshots.ts current",
     "shots:compare": "tsx scripts/screenshot-compare.ts",
+    "shots:v9": "tsx scripts/v9-reference.ts",
+    "shots:map": "tsx scripts/frame-map.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,css}\"",
     "prepare": "husky"
   },
