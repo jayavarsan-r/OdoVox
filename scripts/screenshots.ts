@@ -88,9 +88,17 @@ async function login(
   const { cookies } = await ctx.storageState();
   await ctx.dispose();
 
-  const cache2 = await readCache();
-  cache2[role] = cookies;
-  await writeFile(SESSION_CACHE, JSON.stringify(cache2, null, 2));
+  // Merge into whatever is on disk rather than into readCache()'s result: under
+  // SHOTS_RELOGIN that returns {}, so writing it back would evict the OTHER role's
+  // still-valid session and force an unnecessary login (and OTP spend) next run.
+  let onDisk: Record<string, Cookies> = {};
+  try {
+    onDisk = JSON.parse(await readFile(SESSION_CACHE, "utf8"));
+  } catch {
+    /* first run */
+  }
+  onDisk[role] = cookies;
+  await writeFile(SESSION_CACHE, JSON.stringify(onDisk, null, 2));
   return cookies;
 }
 

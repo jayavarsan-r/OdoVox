@@ -134,6 +134,28 @@ Tagging each stage means rollback to any stage boundary is one command.
 
 ---
 
+## 5.1 · Verification ordering (learned in Stage 1)
+
+`next build` and `next dev` share `apps/web/.next`. Running the build while the dev
+server is live corrupts its client manifest — the running app starts throwing
+`Could not find the module … in the React Client Manifest` and serves 500s until it
+recompiles. It self-heals, but any screenshot captured in that window is garbage.
+
+**Order every stage's verification like this:**
+
+```
+1. pnpm lint · typecheck · test        (no server needed)
+2. STOP the dev server
+3. pnpm build                          (bundle number for the report)
+4. START the dev server
+5. pnpm shots:current && shots:compare
+6. commit
+```
+
+Never capture screenshots in the same window as a build.
+
+---
+
 ## 6 · Per-commit Migration Report (mandatory)
 
 **No commit is made without this.** It lives in the commit body, so the audit trail is
