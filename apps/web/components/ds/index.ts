@@ -27,6 +27,10 @@ export { ListRow, type ListRowProps } from "./list-row";
 export { SectionHeader, type SectionHeaderProps } from "./section-header";
 export { SettingRow, type SettingRowProps } from "./setting-row";
 export { KeyValue, type KeyValueProps } from "./key-value";
+
+/* --- Wave 3 · navigation ---------------------------------------------------- */
+export { Orb, type OrbProps } from "./orb";
+export { NavDock } from "./nav-dock";
 export {
   DecorativeFooter,
   type DecorativeFooterVariant,
