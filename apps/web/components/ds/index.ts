@@ -51,6 +51,20 @@ export {
 } from "./appointment-block";
 export { Checklist, ChecklistItem, type ChecklistItemProps } from "./checklist";
 export { Bars, type BarDatum } from "./bars";
+
+/* --- v10 Talk-to-Odo atoms --------------------------------------------------- */
+export {
+  Wave,
+  Transcript,
+  IntentChip,
+  ParsedField,
+  OdoBubble,
+  SayChip,
+  CmdRow,
+  type WaveProps,
+  type TranscriptProps,
+  type ParsedFieldProps,
+} from "./voice-atoms";
 export {
   DecorativeFooter,
   type DecorativeFooterVariant,
