@@ -31,6 +31,7 @@ export { KeyValue, type KeyValueProps } from "./key-value";
 /* --- Wave 3 · navigation ---------------------------------------------------- */
 export { Orb, type OrbProps } from "./orb";
 export { NavDock } from "./nav-dock";
+export { VoiceMenu, type VoiceMenuProps } from "./voice-menu";
 export {
   DecorativeFooter,
   type DecorativeFooterVariant,
