@@ -32,6 +32,12 @@ export { KeyValue, type KeyValueProps } from "./key-value";
 export { Orb, type OrbProps } from "./orb";
 export { NavDock } from "./nav-dock";
 export { VoiceMenu, type VoiceMenuProps } from "./voice-menu";
+
+/* --- Wave 3 · journeys and habit loop ---------------------------------------- */
+export { DayRiver, type DayRiverProps } from "./day-river";
+export { JourneyRail, type JourneyRailProps, type JourneyStep } from "./journey-rail";
+export { VerticalJourney, type JourneySitting } from "./vertical-journey";
+export { Timeline, type TimelineEntry } from "./timeline";
 export {
   DecorativeFooter,
   type DecorativeFooterVariant,
