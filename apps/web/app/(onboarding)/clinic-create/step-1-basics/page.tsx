@@ -6,7 +6,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { INDIAN_STATES } from '@odovox/types';
 import { WizardStepLayout } from '@/components/onboarding/wizard-shell';
-import { EditorialHeading } from '@/components/ds';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/forms/FormField';
@@ -52,7 +51,14 @@ export default function ClinicBasicsStep() {
     <WizardStepLayout current="basics" backHref="/clinic-choice">
       <form onSubmit={onSubmit} className="flex flex-1 flex-col">
         <div className="space-y-5 px-5 pb-28 pt-4">
-          <EditorialHeading eyebrow="STEP 1 OF 3" title="Your clinic" subtitle="Basic information." />
+          <div>
+            <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+              What&apos;s your clinic called?
+            </h1>
+            <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+              Appears on prescriptions and WhatsApp messages.
+            </p>
+          </div>
           <div className="space-y-4 rounded-2xl bg-paper-warm p-5 shadow-elev-1">
             <FormField label="Clinic name" htmlFor="name" required error={errors.name?.message}>
               <Input id="name" placeholder="Smile Dental Care" {...register('name')} />
@@ -102,7 +108,7 @@ export default function ClinicBasicsStep() {
         </div>
 
         <div
-          className="sticky bottom-0 mt-auto border-t border-border bg-background/85 px-5 py-3 backdrop-blur-glass-sm"
+          className="sticky bottom-0 mt-auto border-t border-hair bg-paper px-gutter py-3"
           style={{ paddingBottom: 'calc(0.75rem + var(--safe-bottom))' }}
         >
           <Button type="submit" size="lg" className="w-full" disabled={!isValid}>

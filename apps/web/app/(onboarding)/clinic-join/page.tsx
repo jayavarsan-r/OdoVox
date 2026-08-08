@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2 } from 'lucide-react';
 import { ClinicJoinInput } from '@odovox/types';
 import type { ClinicMemberResponse } from '@odovox/types';
 import { MobileShell } from '@/components/mobile-shell';
 import { BackHeader } from '@/components/onboarding/back-header';
-import { EditorialHeading, HeroCard } from '@/components/ds';
+import { Card } from '@/components/ui/card';
+import { Mini } from '@/components/ui/badge';
+import { InitialsAvatar } from '@/components/ui/avatar';
 import { MascotMoment } from '@/components/illustrations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,23 +125,32 @@ export default function ClinicJoinPage() {
   return (
     <MobileShell className="bg-paper">
       <BackHeader title="Join a clinic" />
-      <div className="flex flex-1 flex-col px-5 pt-2">
-        <EditorialHeading
-          title="Join a clinic"
-          subtitle="Ask your clinic admin for the join code."
-          trailing={<MascotMoment pose="thinking" size="sm" animation="float" />}
-        />
+      <div className="flex flex-1 flex-col px-gutter-onboarding pt-2">
+        {/* Frame 09 */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+              Got a join code?
+            </h1>
+            <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+              Ask your doctor to share it from Team &amp; join code.
+            </p>
+          </div>
+          <MascotMoment pose="thinking" size="sm" animation="float" />
+        </div>
 
         {lookup ? (
           <div className="mt-8 space-y-4">
-            <HeroCard
-              variant="light"
-              size="lg"
-              glow="lime"
-              icon={<Building2 />}
-              title={lookup.name}
-              subtitle={`${lookup.city}, ${lookup.state}`}
-            />
+            <Card className="flex items-center gap-[13px] p-[15px]">
+              <InitialsAvatar name={lookup.name} ring="lime" size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-row font-heavy text-pine">{lookup.name}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <Mini tone="neutral">{lookup.city}</Mini>
+                  <Mini tone="neutral">{lookup.state}</Mini>
+                </div>
+              </div>
+            </Card>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => setLookup(null)} disabled={joining}>
                 Back

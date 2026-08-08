@@ -141,7 +141,7 @@ export default function ClinicHoursStep() {
         </div>
 
         <div
-          className="sticky bottom-0 mt-auto border-t border-border bg-background/85 px-5 py-3 backdrop-blur-glass-sm"
+          className="sticky bottom-0 mt-auto border-t border-hair bg-paper px-gutter py-3"
           style={{ paddingBottom: 'calc(0.75rem + var(--safe-bottom))' }}
         >
           <Button type="submit" size="lg" className="w-full" disabled={!isValid}>
