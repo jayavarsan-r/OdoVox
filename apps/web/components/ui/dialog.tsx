@@ -17,7 +17,9 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out',
+      // Spec scrim: pine at 42%, NO blur. Global Constraint 14 caps blurred surfaces
+      // at two (the nav pill and the voice menu); a blurred scrim would make three.
+      'fixed inset-0 z-50 bg-[rgba(31,42,35,0.42)] data-[state=open]:animate-in data-[state=closed]:animate-out',
       className,
     )}
     {...props}
@@ -35,7 +37,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         'fixed left-1/2 top-1/2 z-50 grid w-full max-w-md -translate-x-1/2 -translate-y-1/2 gap-4',
-        'rounded-lg border border-border bg-surface p-6 shadow-hero',
+        'rounded-3xl bg-sheet p-6 shadow-elev-hero',
         className,
       )}
       {...props}
