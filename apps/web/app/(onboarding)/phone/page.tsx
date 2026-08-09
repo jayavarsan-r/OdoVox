@@ -1,24 +1,23 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { IndianPhone } from '@odovox/types';
-import { MobileShell } from '@/components/mobile-shell';
-import { AnimatedPage } from '@/components/animated-page';
-import { DecorativeFooter, IconCircle } from '@/components/ds';
-import { ChevronLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { PhoneInput } from '@/components/forms/PhoneInput';
-import { FormField } from '@/components/forms/FormField';
-import { api } from '@/lib/api-client';
-import { useToast } from '@/lib/toast';
-import { useOnboarding } from '@/lib/onboarding-store';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { IndianPhone } from "@odovox/types";
+import { MobileShell } from "@/components/mobile-shell";
+import { AnimatedPage } from "@/components/animated-page";
+import { IconCircle } from "@/components/ds";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PhoneInput } from "@/components/forms/PhoneInput";
+import { api } from "@/lib/api-client";
+import { useToast } from "@/lib/toast";
+import { useOnboarding } from "@/lib/onboarding-store";
 
 export default function PhonePage() {
   const router = useRouter();
   const toast = useToast();
   const setPhone = useOnboarding((s) => s.setPhone);
-  const [digits, setDigits] = useState('');
+  const [digits, setDigits] = useState("");
   const [loading, setLoading] = useState(false);
 
   const valid = IndianPhone.safeParse(digits).success;
@@ -27,9 +26,13 @@ export default function PhonePage() {
     if (!valid || loading) return;
     setLoading(true);
     try {
-      await api.post('/auth/otp/request', { phone: digits }, { skipAuth: true });
+      await api.post(
+        "/auth/otp/request",
+        { phone: digits },
+        { skipAuth: true },
+      );
       setPhone(digits);
-      router.push('/otp');
+      router.push("/otp");
     } catch (err) {
       toast.apiError(err);
     } finally {
@@ -38,13 +41,19 @@ export default function PhonePage() {
   };
 
   /**
-   * Frame 03. The `.ob` onboarding layout: back chevron, a 27px question, a 56px hero
-   * field with the +91 prefix and a mic affordance, then the CTA. All auth logic,
-   * validation and rate-limit handling are untouched — presentation only.
+   * Frame 03. The `.ob` onboarding layout: back chevron, a 27px question, the 56px
+   * `.field` with the +91 prefix, then the CTA. All auth logic, validation and
+   * rate-limit handling are untouched — presentation only.
    *
-   * The spec renders a summoned keypad. This page uses the native keyboard (there was
-   * never a custom pad here), so building one would ADD a surface rather than migrate
-   * one. Recorded as a deliberate deviation.
+   * TWO THINGS THE FRAME HAS THAT THIS PAGE DOES NOT, both recorded rather than faked:
+   *
+   *  - the summoned keypad (deviation 7). This page has always used the native keyboard,
+   *    so building a pad ADDS a surface rather than migrating one.
+   *  - the `.mic-a` affordance. `useDictation` presigns an upload and calls an
+   *    authenticated transcription endpoint, and this screen is pre-login by definition.
+   *    Wiring it needs an unauthenticated dictation route that does not exist — so the
+   *    mic would be a button that does nothing, which is worse than its absence.
+   *    `PhoneInput` carries the `onDictate` prop for frames where the user IS signed in.
    */
   return (
     <MobileShell className="bg-paper">
@@ -71,9 +80,15 @@ export default function PhonePage() {
             void submit();
           }}
         >
-          <FormField label="Mobile number" htmlFor="phone">
-            <PhoneInput id="phone" value={digits} onChange={setDigits} autoFocus invalid={false} />
-          </FormField>
+          {/* No visible label: frame 03 goes question -> field. The input carries its
+              own aria-label, so the accessible name survives the label's removal. */}
+          <PhoneInput
+            id="phone"
+            value={digits}
+            onChange={setDigits}
+            autoFocus
+            invalid={false}
+          />
           <Button
             type="submit"
             size="lg"
@@ -87,11 +102,12 @@ export default function PhonePage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-pine-3">
-          By continuing you agree to our{' '}
+          By continuing you agree to our{" "}
           <span className="underline underline-offset-2">terms</span>.
         </p>
       </AnimatedPage>
-      <DecorativeFooter variant="waveform" className="pb-6" />
+      {/* The decorative waveform footer is gone: frame 03 has no such element, and it
+          occupied the third of the canvas the frame gives to the keypad. */}
     </MobileShell>
   );
 }

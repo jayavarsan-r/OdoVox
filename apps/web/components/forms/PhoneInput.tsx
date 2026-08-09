@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { Mic } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface PhoneInputProps {
   value: string; // up to 10 raw digits
@@ -10,6 +11,8 @@ export interface PhoneInputProps {
   disabled?: boolean;
   invalid?: boolean;
   id?: string;
+  /** The spec's `.mic-a` affordance. Frames 03 and 08 carry it; omit where they don't. */
+  onDictate?: () => void;
 }
 
 function format(digits: string): string {
@@ -17,7 +20,14 @@ function format(digits: string): string {
   return `${digits.slice(0, 5)} ${digits.slice(5, 10)}`;
 }
 
-/** +91-locked 10-digit mobile input, auto-formatted as "XXXXX XXXXX". */
+/**
+ * +91-locked 10-digit mobile input, auto-formatted as "XXXXX XXXXX".
+ *
+ * The frame's `.field`, measured: 56px tall, radius 18, white, no border — it lifts off
+ * the canvas with `--shadow-field` alone. The `.cc` prefix is 15px/800 pine-2 with a
+ * hairline divider; the value is 17.5px/700 with tabular numerals so the digits do not
+ * jitter as they are typed.
+ */
 export function PhoneInput({
   value,
   onChange,
@@ -25,22 +35,23 @@ export function PhoneInput({
   disabled,
   invalid,
   id,
+  onDictate,
 }: PhoneInputProps) {
   const handle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D+/g, '').slice(0, 10);
+    const digits = e.target.value.replace(/\D+/g, "").slice(0, 10);
     onChange(digits);
   };
 
   return (
     <div
       className={cn(
-        'flex h-12 items-center rounded-md border bg-surface shadow-[var(--inset-input)] transition-shadow',
-        'focus-within:shadow-[var(--ring-lime)]',
-        invalid ? 'border-danger' : 'border-input',
-        disabled && 'opacity-50',
+        "flex h-14 items-center gap-2.5 rounded-[18px] bg-card px-4 shadow-field transition-shadow",
+        "focus-within:shadow-[var(--ring-lime)]",
+        invalid && "shadow-[0_0_0_2px_var(--crit)]",
+        disabled && "opacity-50",
       )}
     >
-      <span className="flex items-center gap-1 border-r border-border-strong px-3 text-sm font-medium text-muted-foreground">
+      <span className="flex items-center gap-1 border-r border-hair-2 pr-2.5 text-[15px] font-heavy text-pine-2">
         <span aria-hidden>🇮🇳</span> +91
       </span>
       <input
@@ -53,9 +64,19 @@ export function PhoneInput({
         value={format(value)}
         onChange={handle}
         placeholder="98765 43210"
-        className="h-full flex-1 rounded-r-md bg-transparent px-3 text-base tracking-wide outline-none placeholder:text-muted-foreground"
+        className="h-full flex-1 bg-transparent text-[17.5px] font-bold tabular-nums text-pine outline-none placeholder:font-medium placeholder:text-pine-3"
         aria-label="Mobile number"
       />
+      {onDictate ? (
+        <button
+          type="button"
+          onClick={onDictate}
+          aria-label="Say your number"
+          className="flex size-[38px] shrink-0 items-center justify-center rounded-[13px] bg-lime-soft text-pine"
+        >
+          <Mic className="size-[17px]" />
+        </button>
+      ) : null}
     </div>
   );
 }

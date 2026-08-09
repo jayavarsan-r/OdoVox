@@ -20,7 +20,7 @@ ACCOUNTED FOR (86), never in routes shipped.
 | --- | --- | --- | --- | --- | --- |
 | `v9-01` | Splash | 11 | MATCHED | 0.6% | — |
 | `v9-02` | Welcome | 11 | MISMATCHED | 10.0% | deviation #16 (pending): /welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3 |
-| `v9-03` | Phone | 11 | MISMATCHED | 7.0% | deviation #7 (revisit): No summoned numeric keypad on /phone |
+| `v9-03` | Phone | 11 | MISMATCHED | 2.2% | deviation #7 (revisit): No summoned numeric keypad on /phone |
 | `v9-04` | OTP — auto-read | 11 | MISMATCHED | 1.5% | deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
 | `v9-05` | OTP — wrong code | 11 | MISMATCHED | 2.0% | deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
 | `v9-06` | Returning user — instant unlock | — | OUT-OF-SCOPE | — | — |
@@ -139,14 +139,14 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.0%
 
 ### `v9-03` — Phone · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.0%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 2.2%
 
-- layout: **PASS**
+- layout: **PASS** — FIXED. `PhoneInput` had never been migrated — 48px tall, radius 8, bordered. The frame's `.field` is 56px, radius 18, white, borderless, lifted by shadow alone (now `--shadow-field`), with the `.cc` prefix at 15px/800 pine-2 behind a hairline and the value at 17.5px/700 tabular. The decorative waveform footer is gone; frame 03 has no such element and it occupied the third of the canvas the frame gives to the keypad. 7.5% -> 2.2%.
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — No mic button inside the input — the frame puts a lime-tinted mic at its right edge. The numeric keypad is absent (deviation #7, awaiting your ruling). A decorative waveform occupies the bottom third; the frame has no such element.
-- content: **FAIL** — A 'Mobile number' field label and a 'By continuing you agree to our terms.' line appear in the app and in no part of frame 03.
-- interaction/state: **PASS**
+- component anatomy: **FAIL** — STILL FAILING, both recorded rather than faked. (1) The keypad — deviation #7, awaiting your ruling. (2) The `.mic-a` affordance: `useDictation` presigns an upload and calls an AUTHENTICATED transcription endpoint, and this screen is pre-login by definition. Wiring it needs an unauthenticated dictation route that does not exist, so the mic would be a button that does nothing — worse than its absence. `PhoneInput` carries the `onDictate` prop ready for frames where the user IS signed in (08, 09).
+- content: **FAIL** — The visible 'Mobile number' label is gone — frame 03 goes question straight to field, and the input's own aria-label keeps the accessible name. STILL PRESENT: 'By continuing you agree to our terms.', which no part of frame 03 contains. That line is a legal/product decision, not styling, so it needs your ruling before removal.
+- interaction/state: **PASS** — The frame draws the field MID-TYPE with the CTA live; the shot was capturing our empty resting state, so an active frame was being compared against an inactive capture. The shot now types a number (never submits, so no OTP cost). Residual: the app shows a lime focus ring the frame's focused field does not. Removing it would be a real accessibility regression, so it stays and is flagged rather than silently traded away.
 - functionality: **PASS**
 - canvas geometry: **PASS**
 

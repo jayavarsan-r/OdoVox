@@ -143,6 +143,9 @@
   --shadow-orb:
     0 16px 36px var(--lime-glow), 0 6px 14px rgba(31, 42, 35, 0.18),
     inset 0 2px 1px rgba(255, 255, 255, 0.85);
+  /* `.field` — the onboarding hero input (frames 03, 08, 09). Deeper than a tile and
+     carrying no border: the spec lifts the field off the canvas with shadow alone. */
+  --shadow-field: 0 8px 22px rgba(31, 42, 35, 0.07);
   --shadow-nav: 0 18px 44px rgba(31, 42, 35, 0.22), var(--highlight-top-strong);
   --shadow-sheet: 0 -10px 36px rgba(31, 42, 35, 0.22);
   --shadow-toast: 0 14px 34px rgba(31, 42, 35, 0.14);

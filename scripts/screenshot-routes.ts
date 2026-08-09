@@ -100,7 +100,22 @@ export const SHOTS: Shot[] = [
     transient: true,
   },
   { slug: "A2-welcome", path: "/welcome", role: "anon", frame: "v9-02" },
-  { slug: "A3-phone", path: "/phone", role: "anon", frame: "v9-03" },
+  {
+    /**
+     * Frame 03 draws a number MID-TYPE ("98401 2", cursor showing) with the CTA live.
+     * Capturing the empty default compared the frame's active state against our resting
+     * one and read as a mismatch that was never real. Types, never submits — so this
+     * costs no OTP.
+     */
+    slug: "A3-phone",
+    path: "/phone",
+    role: "anon",
+    frame: "v9-03",
+    prepare: async (page) => {
+      await page.getByLabel("Mobile number").fill("9840123456");
+      await page.waitForTimeout(200);
+    },
+  },
   {
     /**
      * /otp reads its number from the onboarding store, not the URL, so it cannot be

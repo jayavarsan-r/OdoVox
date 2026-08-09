@@ -101,6 +101,7 @@ const preset = {
         icirc: "var(--shadow-icirc)",
         cta: "var(--shadow-cta)",
         orb: "var(--shadow-orb)",
+        field: "var(--shadow-field)",
         nav: "var(--shadow-nav)",
         sheetShadow: "var(--shadow-sheet)",
         toast: "var(--shadow-toast)",
