@@ -9,24 +9,58 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| MATCHED | 1 |
+| APPROVED-DEVIATION | 1 |
 | MISMATCHED | 34 |
 | OUT-OF-SCOPE | 1 |
 | NOT-BUILT | 46 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
+## Classification
+
+Every difference lands in exactly one class, and the class decides what may be done
+about it. **PRODUCT-DECISION and APPROVED-DEVIATION items are not to be modified
+until the owner approves them** — that rule is what stops the migration from
+gradually reinterpreting its own design.
+
+| Class | Action | Blocks? |
+| --- | --- | --- |
+| MUST-FIX | implement the v9 design exactly; no approval needed | yes, until closed |
+| APPROVED-DEVIATION | functionality or accessibility requires it — leave alone | yes, while pending |
+| PRODUCT-DECISION | v9 specifies a different workflow or copy — owner chooses | yes, while pending |
+| NOT-BUILT | surface or server support absent — leave until its task | no |
+
+### Open MUST-FIX — work, not questions
+
+_None. Every MUST-FIX item is closed._
+
+### Awaiting your ruling — untouched by design
+
+- **#6** `PRODUCT-DECISION` v9-08 — Clinic creation kept as 3 steps; the frame shows a single screen
+- **#7** `PRODUCT-DECISION` v9-03 — No summoned numeric keypad on /phone
+- **#8** `APPROVED-DEVIATION` v9-70 — /more shows 3 module tiles for a doctor, not 4
+- **#9** `PRODUCT-DECISION` v9-59 — /lab/new kept as a page; the frame shows a sheet
+- **#10** `APPROVED-DEVIATION` v9-37, v9-38, v9-40, v9-41 — Patient detail keeps 5 tabs (Media has no frame)
+- **#13** `PRODUCT-DECISION` v9-04, v9-05 — Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
+- **#14** `APPROVED-DEVIATION` v9-04, v9-05 — An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
+- **#16** `PRODUCT-DECISION` v9-02 — /welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those
+- **#17** `PRODUCT-DECISION` v9-09 — /clinic-join is a two-field form + explicit "Find clinic"; frame 09 is one hero code field with a live check and a clinic preview
+- **#19** `PRODUCT-DECISION` v9-07, v9-08 — The .ob-q question wraps to two lines where frames 07 and 08 set it on one
+- **#20** `APPROVED-DEVIATION` v9-03 — A lime focus ring on the .field; the frame's focused field has none
+- **#21** `PRODUCT-DECISION` v9-03 — A "By continuing you agree to our terms." line; frame 03 has none
+- **#23** `PRODUCT-DECISION` v9-05 — A "Wrong code. N attempts left." toast on top of the frame's inline message
+
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| `v9-01` | Splash | 11 | MATCHED | 0.6% | — |
-| `v9-02` | Welcome | 11 | MISMATCHED | 10.0% | deviation #16 (pending): /welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3 |
-| `v9-03` | Phone | 11 | MISMATCHED | 2.2% | deviation #7 (revisit): No summoned numeric keypad on /phone |
-| `v9-04` | OTP — auto-read | 11 | MISMATCHED | 1.5% | deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
-| `v9-05` | OTP — wrong code | 11 | MISMATCHED | 2.0% | deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
+| `v9-01` | Splash | 11 | APPROVED-DEVIATION | 0.6% | — |
+| `v9-02` | Welcome | 11 | MISMATCHED | 10.0% | PRODUCT-DECISION #16 — awaiting ruling: /welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those |
+| `v9-03` | Phone | 11 | MISMATCHED | 2.2% | PRODUCT-DECISION #7 — awaiting ruling: No summoned numeric keypad on /phone |
+| `v9-04` | OTP — auto-read | 11 | MISMATCHED | 1.5% | PRODUCT-DECISION #13 — awaiting ruling: Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
+| `v9-05` | OTP — wrong code | 11 | MISMATCHED | 7.3% | PRODUCT-DECISION #13 — awaiting ruling: Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
 | `v9-06` | Returning user — instant unlock | — | OUT-OF-SCOPE | — | — |
-| `v9-07` | Role | 12 | MISMATCHED | 3.9% | criterion "typography" FAILED |
-| `v9-08` | Create clinic — conversational | 12 | MISMATCHED | 8.4% | deviation #6 (pending): Clinic creation kept as 3 steps; the frame shows a single screen |
-| `v9-09` | Join by code + preview | 12 | MISMATCHED | 12.8% | deviation #17 (pending): /clinic-join captures the joiner's name; frame 09 has only the code field |
+| `v9-07` | Role | 12 | MISMATCHED | 3.9% | PRODUCT-DECISION #19 — awaiting ruling: The .ob-q question wraps to two lines where frames 07 and 08 set it on one |
+| `v9-08` | Create clinic — conversational | 12 | MISMATCHED | 8.9% | PRODUCT-DECISION #6 — awaiting ruling: Clinic creation kept as 3 steps; the frame shows a single screen |
+| `v9-09` | Join by code + preview | 12 | MISMATCHED | 12.8% | PRODUCT-DECISION #17 — awaiting ruling: /clinic-join is a two-field form + explicit "Find clinic"; frame 09 is one hero code field with a live check and a clinic preview |
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
@@ -54,11 +88,11 @@ ACCOUNTED FOR (86), never in routes shipped.
 | `v9-34` | Patients — no match | 19 | NOT-BUILT | — | Task 19 owns this; no route or state driver reaches it yet |
 | `v9-35` | New patient — blank | 20 | MISMATCHED | 21.2% | criterion "layout" unreviewed |
 | `v9-36` | New patient — voice intake | 20 | NOT-BUILT | — | Task 20 owns this; no route or state driver reaches it yet |
-| `v9-37` | Patient — Overview | 22 | MISMATCHED | 22.3% | deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame) |
-| `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 11.8% | deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame) |
+| `v9-37` | Patient — Overview | 22 | MISMATCHED | 22.3% | APPROVED-DEVIATION #10 — awaiting ruling: Patient detail keeps 5 tabs (Media has no frame) |
+| `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 11.8% | APPROVED-DEVIATION #10 — awaiting ruling: Patient detail keeps 5 tabs (Media has no frame) |
 | `v9-39` | Case — procedure detail | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
-| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.2% | deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame) |
-| `v9-41` | Patient — Billing tab | 22 | MISMATCHED | 10.8% | deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame) |
+| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.2% | APPROVED-DEVIATION #10 — awaiting ruling: Patient detail keeps 5 tabs (Media has no frame) |
+| `v9-41` | Patient — Billing tab | 22 | MISMATCHED | 10.8% | APPROVED-DEVIATION #10 — awaiting ruling: Patient detail keeps 5 tabs (Media has no frame) |
 | `v9-42` | Patient history — Odo timeline | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-43` | Visit record — read-only sheet | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-44` | Prescription sheet — dose dots | 24 | NOT-BUILT | — | Task 24 owns this; no route or state driver reaches it yet |
@@ -76,7 +110,7 @@ ACCOUNTED FOR (86), never in routes shipped.
 | `v9-56` | Lab list — stat pills, not tiles | 28 | MISMATCHED | 9.3% | criterion "layout" unreviewed |
 | `v9-57` | Lab ＋ — its own dial | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
 | `v9-58` | Lab — case detail | 28 | MISMATCHED | 15.4% | criterion "layout" unreviewed |
-| `v9-59` | The ＋ — quick New-case sheet | 28 | MISMATCHED | 39.7% | deviation #9 (pending): /lab/new kept as a page; the frame shows a sheet |
+| `v9-59` | The ＋ — quick New-case sheet | 28 | MISMATCHED | 39.7% | PRODUCT-DECISION #9 — awaiting ruling: /lab/new kept as a page; the frame shows a sheet |
 | `v9-60` | WhatsApp consent gate | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
 | `v9-61` | Lab vendors | 28 | MISMATCHED | 7.4% | criterion "layout" unreviewed |
 | `v9-62` | Patient inbox | 29 | MISMATCHED | 10.1% | criterion "layout" unreviewed |
@@ -87,7 +121,7 @@ ACCOUNTED FOR (86), never in routes shipped.
 | `v9-67` | Inventory — stock | 29 | MISMATCHED | 10.7% | criterion "layout" unreviewed |
 | `v9-68` | Inventory — item detail | 29 | MISMATCHED | 8.5% | criterion "layout" unreviewed |
 | `v9-69` | Voice entry — confirm | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
-| `v9-70` | More — module hub | 6 | MISMATCHED | 3.6% | deviation #8 (pending): /more shows 3 module tiles for a doctor, not 4 |
+| `v9-70` | More — module hub | 6 | MISMATCHED | 3.6% | APPROVED-DEVIATION #8 — awaiting ruling: /more shows 3 module tiles for a doctor, not 4 |
 | `v9-71` | Team & join code | 31 | NOT-BUILT | — | Task 31 owns this; no route or state driver reaches it yet |
 | `v9-72` | WhatsApp settings | 30 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
 | `v9-73` | Availability — weekly hours | 30 | MISMATCHED | 9.2% | criterion "layout" unreviewed |
@@ -109,7 +143,7 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 Each judged frame, with its side-by-side at `screenshots/fidelity/<frame>-sbs.png`.
 
-### `v9-01` — Splash · MATCHED
+### `v9-01` — Splash · APPROVED-DEVIATION
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 0.6%
 
@@ -121,6 +155,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 0.6%
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-02` — Welcome · MISMATCHED
 
@@ -135,7 +173,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.0%
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #16 (pending): /welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #16 (pending): /welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-03` — Phone · MISMATCHED
 
@@ -150,7 +191,13 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.2%
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #7 (revisit): No summoned numeric keypad on /phone
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #7 (revisit): No summoned numeric keypad on /phone
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #20 (pending): A lime focus ring on the .field; the frame's focused field has none
+- `PRODUCT-DECISION` #21 (pending): A "By continuing you agree to our terms." line; frame 03 has none
+- `NOT-BUILT` #22 (open): No .mic-a affordance on /phone
 
 ### `v9-04` — OTP — auto-read · MISMATCHED
 
@@ -159,31 +206,41 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 1.5%
 - layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — An explicit disabled 'Verify' button. Frame 04 has none — it submits automatically on the sixth digit, which is the whole point of 'OTP — auto-read'.
-- content: **FAIL** — The number is masked to '+91 ••••• 0001'; the frame shows it in full as '+91 98401 23456'. A dotted texture sits behind the resend area, which the frame does not have.
+- component anatomy: **FAIL** — The six boxes now follow the spec's `.otp i` exactly: 56px, radius 16, white, borderless with a shadow, 22px/800 tabular, and a 2.5px sky outline inset by 1px on the active box. STILL FAILING: the explicit Verify button — APPROVED-DEVIATION #14, awaiting your ruling, untouched by design.
+- content: **FAIL** — PRODUCT-DECISION #13 (masked number). The dotted footer texture is gone — frames 04 and 05 end at the resend line. (MUST-FIX #26, closed.)
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
-- deviation #14 (pending): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
+- `APPROVED-DEVIATION` #14 (pending): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `MUST-FIX` #26 (fixed): A dotted texture sits behind the resend area; frames 04/05 have none
 
 ### `v9-05` — OTP — wrong code · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 2.0%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 7.3%
 
 - layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — Same 'Verify' button as frame 04, which the frame does not have.
-- content: **PASS**
-- interaction/state: **FAIL** — The app CLEARS the six boxes on a wrong code; the frame keeps the wrong digits visible inside crit outlines so the user can see what they typed and fix it. The app also raises a 'Wrong code. 4 attempts left.' toast on top of the inline message, so the same failure is reported twice; the frame reports it once, inline, and unlocks 'Resend code' at the bottom.
+- component anatomy: **FAIL** — Boxes match the spec, and on a wrong code every one takes the 2.5px crit outline inset by 1px, as the frame draws. STILL FAILING: the Verify button (#14).
+- content: **PASS** — PRODUCT-DECISION #13 (masked number) and #23 (the attempts-left toast on top of the frame's inline message).
+- interaction/state: **PASS** — FIXED. The digits now STAY after a wrong code, inside the crit outlines, so one wrong digit can be corrected instead of forcing a full six-digit re-entry. (MUST-FIX #15.) That change required fixing `onComplete` too: it fired on ANY edit at full length, so a correction would have re-submitted on the keystroke and walked into the verify rate limit. It now fires only on the transition INTO completeness; a correction is submitted with the Verify button, which is the accessibility argument for keeping that button in the first place. Deviation #24 (resend allegedly locked) is WITHDRAWN — `setSecondsLeft(0)` already unlocks it; the original reading came from a capture taken before the error state was reached.
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
-- deviation #14 (pending): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
-- deviation #15 (pending): Wrong code clears the six boxes and raises a toast; the frame keeps the digits and reports once, inline
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
+- `APPROVED-DEVIATION` #14 (pending): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
+- `MUST-FIX` #15 (fixed): A wrong code clears the six boxes; frame 05 keeps the digits inside crit outlines
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `PRODUCT-DECISION` #23 (pending): A "Wrong code. N attempts left." toast on top of the frame's inline message
+- `NOT-BUILT` #24 (withdrawn): WITHDRAWN — false finding. Resend already unlocks immediately on a wrong code.
+- `MUST-FIX` #26 (fixed): A dotted texture sits behind the resend area; frames 04/05 have none
 
 ### `v9-07` — Role · MISMATCHED
 
@@ -198,38 +255,51 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 3.9%
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #11 (reverted): Mascot rendered on /role; frame 07 has none
-- deviation #12 (reverted): /role used tap→navigate; frame 07 is select→sticky CTA "Continue as doctor"
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #11 (reverted): Mascot rendered on /role; frame 07 has none
+- `MUST-FIX` #12 (reverted): /role used tap→navigate; frame 07 is select→sticky CTA "Continue as doctor"
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `PRODUCT-DECISION` #19 (pending): The .ob-q question wraps to two lines where frames 07 and 08 set it on one
 
 ### `v9-08` — Create clinic — conversational · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.9%
 
-- layout: **FAIL** — Frame 08 is one hero question with a single input. The app shows a six-field form card (name, phone, address, city, state, pincode, GST) in a scrolling body with a sticky footer. Deviation #6 covers keeping THREE STEPS; it does not cover replacing the frame's input language inside step 1.
-- typography: **FAIL** — Headline wraps to two lines; the frame sets it on one.
+- layout: **FAIL** — PRODUCT-DECISION #6. Frame 08 asks ONE question; our step 1 holds six fields. That is the ambiguity in deviation 6 — 'keep 3 steps' does not settle whether step 1 is one question or six fields. A visible consequence: the defaults card sits below the fold here because six fields push it there, where the frame's single input leaves room for it.
+- typography: **FAIL** — PRODUCT-DECISION #19 — the question wraps, a measured cost of the Geist substitution.
 - colors: **PASS**
-- component anatomy: **FAIL** — Missing: the `.ob-dots` progress dashes (replaced by a numbered 1–2–3 stepper), the verified-identity chip ('🛡 Dr. Priya Raghavan ✓'), the mic on the input, and the defaults card ('WE'VE SET THESE — CHANGE ANYTIME IN MORE' over hour/lunch/closure/chair chips).
-- content: **FAIL** — CTA reads 'Continue →'; the frame labels it with its destination, 'Next · City'.
-- interaction/state: **FAIL** — The frame's CTA is live as soon as a name is typed. The app's stays disabled until every required field validates, which is a different commit model.
+- component anatomy: **PASS** — FIXED. The numbered 1-2-3 stepper is replaced by the spec's `.ob-dots` (6px dashes, hair-2; active 18px wide, pine) — with the step names preserved as the nav's aria-label so a screen-reader user still hears 'Step 1 of 3: Clinic'. The verified-identity chip and the defaults card are now rendered. STILL FAILING: the `.mic-a` on the field, which needs dictation wiring (see #22 for the same constraint on /phone; here the user IS authenticated, so it is buildable — it is simply not built).
+- content: **PASS** — FIXED. The CTA no longer reads a generic 'Continue → '. The frame labels its CTA with the destination ('Next · City'); ours names OUR next step, 'Next · Hours' — copying the frame's literal word would be wrong, because step 2 here is Hours, not City.
+- interaction/state: **FAIL**
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #6 (pending): Clinic creation kept as 3 steps; the frame shows a single screen
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #6 (pending): Clinic creation kept as 3 steps; the frame shows a single screen
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `PRODUCT-DECISION` #19 (pending): The .ob-q question wraps to two lines where frames 07 and 08 set it on one
+- `MUST-FIX` #27 (fixed): Step 1 is missing frame 08's .ob-dots, verified-identity chip and defaults card, and its CTA reads "Continue →" not "Next · City"
 
 ### `v9-09` — Join by code + preview · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 
-- layout: **FAIL** — The frame is: one hero code input → live check → clinic preview card → sticky 'Request to join'. The app is a two-field form (Your name, Join code) → inline 'Find clinic' → preview appears later. The preview is not on screen in the default state at all.
+- layout: **FAIL** — PRODUCT-DECISION #17. Frame 09 is one hero code field → live check → clinic preview → sticky 'Request to join'. Ours is two fields → explicit 'Find clinic' → preview after. The workflow is the whole remaining difference, and it is yours to rule on.
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — The back control carries a 'Join a clinic' text label; the frame uses a bare white `IconCircle`. A small Odo sits top-right that the frame does not have. The hero input with its live green ✓ and the lime-ring clinic avatar with city/doctor-count chips are both absent.
-- content: **FAIL** — A 'Your name' field the frame has no equivalent for — this one is real feature parity (the app records who is joining) and needs your ruling, not silent removal.
-- interaction/state: **FAIL** — Frame 09 validates the code as you type. The app requires an explicit 'Find clinic' press before it will look anything up.
+- component anatomy: **PASS** — FIXED. The back control is a bare white `IconCircle` as the frame has it, not a chevron with a 'Join a clinic' title, and the stray Odo is gone — frame 09 has no mascot. (MUST-FIX #28.)
+- content: **FAIL** — PRODUCT-DECISION #17 — the 'Your name' field is feature parity (the join request records who is asking) and has no counterpart in the frame.
+- interaction/state: **FAIL** — PRODUCT-DECISION #17 — validate-as-you-type versus an explicit lookup press.
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #17 (pending): /clinic-join captures the joiner's name; frame 09 has only the code field
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #17 (pending): /clinic-join is a two-field form + explicit "Find clinic"; frame 09 is one hero code field with a live check and a clinic preview
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `MUST-FIX` #28 (fixed): The back control carries a "Join a clinic" text label and a stray Odo sits top-right
 
 ### `v9-13` — Home — calm, glanceable, habit-forming · MISMATCHED
 
@@ -244,6 +314,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 22.9%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-21` — Consult — live queue · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 11.1%
@@ -256,6 +330,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.1%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-32` — Patients — glyph rows · MISMATCHED
 
@@ -270,6 +348,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.7%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-33` — Patients — search active · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
@@ -282,6 +364,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-35` — New patient — blank · MISMATCHED
 
@@ -296,6 +382,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 21.2%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-37` — Patient — Overview · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 22.3%
@@ -309,8 +399,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 22.3%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
-- deviation #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
-- deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
+- `APPROVED-DEVIATION` #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-38` — Patient — Cases journey · MISMATCHED
 
@@ -325,8 +418,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.8%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
-- deviation #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
-- deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
+- `APPROVED-DEVIATION` #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-40` — Tooth map — FDI odontogram · MISMATCHED
 
@@ -341,8 +437,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.2%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
-- deviation #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
-- deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
+- `APPROVED-DEVIATION` #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-41` — Patient — Billing tab · MISMATCHED
 
@@ -357,8 +456,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.8%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
-- deviation #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
-- deviation #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
+- `APPROVED-DEVIATION` #10 (pending): Patient detail keeps 5 tabs (Media has no frame)
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-46` — Schedule — doctor day · MISMATCHED
 
@@ -373,6 +475,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-47` — Schedule — reception multi-doctor · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
@@ -385,6 +491,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-50` — Reception Today · MISMATCHED
 
@@ -399,6 +509,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.5%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-54` — Billing — densified · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
@@ -411,6 +525,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-55` — Outstanding dues · MISMATCHED
 
@@ -425,6 +543,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.6%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-56` — Lab list — stat pills, not tiles · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 9.3%
@@ -437,6 +559,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.3%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-58` — Lab — case detail · MISMATCHED
 
@@ -451,6 +577,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 15.4%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-59` — The ＋ — quick New-case sheet · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 39.7%
@@ -464,7 +594,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 39.7%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
-- deviation #9 (pending): /lab/new kept as a page; the frame shows a sheet
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `PRODUCT-DECISION` #9 (pending): /lab/new kept as a page; the frame shows a sheet
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-61` — Lab vendors · MISMATCHED
 
@@ -479,6 +612,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.4%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-62` — Patient inbox · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 10.1%
@@ -491,6 +628,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.1%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-65` — Lab inbox — quiet verdicts · MISMATCHED
 
@@ -505,6 +646,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.7%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-67` — Inventory — stock · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 10.7%
@@ -517,6 +662,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.7%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-68` — Inventory — item detail · MISMATCHED
 
@@ -531,6 +680,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-70` — More — module hub · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
@@ -544,8 +697,12 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
-- deviation #3 (approved): 5 tabs → 4 tabs + /more hub
-- deviation #8 (pending): /more shows 3 module tiles for a doctor, not 4
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `APPROVED-DEVIATION` #3 (approved): 5 tabs → 4 tabs + /more hub
+- `APPROVED-DEVIATION` #8 (pending): /more shows 3 module tiles for a doctor, not 4
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `NOT-BUILT` #25 (open): Availability's "2 doctors" and Team's "1 request" values are absent
 
 ### `v9-72` — WhatsApp settings · MISMATCHED
 
@@ -560,6 +717,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-73` — Availability — weekly hours · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 9.2%
@@ -572,6 +733,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.2%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
 ### `v9-74` — Days off · MISMATCHED
 
@@ -586,6 +751,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.9%
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+
 ### `v9-75` — Prescription templates · MISMATCHED
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 8.0%
@@ -598,3 +767,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.0%
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol

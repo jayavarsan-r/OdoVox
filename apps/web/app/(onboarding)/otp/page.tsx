@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MobileShell } from "@/components/mobile-shell";
 import { AnimatedPage } from "@/components/animated-page";
-import { DecorativeFooter, IconCircle } from "@/components/ds";
+import { IconCircle } from "@/components/ds";
 import { AlertTriangle, ChevronLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/forms/OtpInput";
@@ -65,7 +65,9 @@ export default function OtpPage() {
       router.replace(data.nextStep === "HOME" ? "/home" : "/role");
     } catch (err) {
       setInvalid(true);
-      setOtp("");
+      // The digits STAY. Frame 05 draws the wrong code still in its boxes inside the
+      // crit outlines, precisely so the user can see the typo and correct one digit.
+      // Clearing forced a full six-digit re-entry and was never asked for. (MUST-FIX #15)
       // Frame 05: "Resend unlocks immediately on a failed attempt." A wrong code often
       // means the SMS never arrived, so making the user wait out the original
       // countdown strands them on a screen with no way forward.
@@ -185,7 +187,7 @@ export default function OtpPage() {
           ) : null}
         </div>
       </AnimatedPage>
-      <DecorativeFooter variant="dots" className="pb-6" />
+      {/* No dotted footer: frames 04 and 05 end at the resend line. (MUST-FIX #26) */}
     </MobileShell>
   );
 }

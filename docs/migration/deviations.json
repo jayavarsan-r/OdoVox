@@ -1,81 +1,128 @@
 {
-  "$comment": "Deviation registry. Gate B reads this. An UNAPPROVED deviation on a frame BLOCKS that frame — a low pixel diff can never override it. Add a deviation the moment you make one; never after the fact.",
+  "$schema-note": "Every difference between a v9 frame and the implementation lands in exactly one class. Gate B reads this file and enforces the rules below \u2014 the classification is not advisory prose.",
+  "classes": {
+    "MUST-FIX": "Clearly violates v9 with no functionality or accessibility reason. Implement the v9 design exactly. BLOCKS its frame until closed. No approval needed to fix \u2014 fixing toward v9 is the mandate.",
+    "APPROVED-DEVIATION": "Existing functionality or accessibility requires something different from v9. DO NOT MODIFY until the owner explicitly approves. Blocks its frame while status is pending.",
+    "PRODUCT-DECISION": "The v9 HTML specifies a different workflow or different copy, and choosing between them is the owner's call, not an engineering one. DO NOT MODIFY until the owner explicitly approves. Blocks its frame while status is pending.",
+    "NOT-BUILT": "The surface or its server support does not exist yet. Leave untouched until its assigned migration task runs. Does not block a frame for a defect it cannot have."
+  },
   "deviations": [
     {
       "id": 1,
-      "frames": ["*"],
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "*"
+      ],
       "summary": "Geist Sans/Mono retained instead of the spec's system font stack",
-      "reason": "The system stack renders as SF Pro on iOS and Roboto on Android — two different products. Sizes, weights and tracking follow the spec exactly.",
+      "reason": "The system stack renders as SF Pro on iOS and Roboto on Android \u2014 two different products. Sizes, weights and tracking follow the spec exactly.",
       "status": "approved",
-      "measuredCost": "Geist runs ~5% wider per glyph at 800. Measured on frame 07 at the spec's own values (27px/800/-0.02em, 22px gutters, 326px available): Geist 336px vs the system stack 320px. So the .ob-q question WRAPS TO TWO LINES where frames 07 and 08 set it on one. This is deviation 1's cost, not a separate defect. Closing it needs one of: (a) accept the wrap, (b) drop the question to ~25.5px, or (c) tighten question tracking to about -0.0355em — and (b) and (c) both alter the spec's own type values, so they need the owner's ruling.",
-      "openQuestion": "Which of (a)/(b)/(c) for the question wrap?"
+      "measuredCost": "Geist runs ~5% wider per glyph at 800. Measured on frame 07 at the spec's own values (27px/800/-0.02em, 22px gutters, 326px available): Geist 336px vs the system stack 320px. So the .ob-q question WRAPS TO TWO LINES where frames 07 and 08 set it on one.",
+      "openQuestion": "See deviation 19 \u2014 the wrap is tracked separately so it can be ruled on without reopening the font choice."
     },
     {
       "id": 2,
-      "frames": ["*"],
-      "summary": "design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens",
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "*"
+      ],
+      "summary": "design-system.md \u00a712.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens",
       "reason": "The v9 spec reverses two Phase-2.6 rules. Its own mascot law bans Odo only from money and safety surfaces.",
       "status": "approved"
     },
     {
       "id": 3,
-      "frames": ["v9-70"],
-      "summary": "5 tabs → 4 tabs + /more hub",
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "5 tabs \u2192 4 tabs + /more hub",
       "reason": "The v9 nav is 4 tabs plus the orb in every frame. No route removed.",
       "status": "approved"
     },
     {
       "id": 4,
-      "frames": ["v9-06"],
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-06"
+      ],
       "summary": "WebAuthn descoped pre-launch; frame 06 out of scope",
       "reason": "Browser inconsistency and support burden outweigh the MVP security delta.",
       "status": "approved"
     },
     {
       "id": 5,
-      "frames": ["v9-37", "v9-38", "v9-40", "v9-41"],
-      "summary": "Patient tab renamed \"Tooth Map\" → \"Teeth\"",
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
+      "summary": "Patient tab renamed \"Tooth Map\" \u2192 \"Teeth\"",
       "reason": "Matches the spec's .ptabs row.",
-      "status": "approved"
+      "status": "approved",
+      "note": "APPROVED BUT NOT YET IMPLEMENTED \u2014 app/(app)/patients/[id]/page.tsx still reads 'Tooth Map'. Task 22 owns the change."
     },
     {
       "id": 6,
-      "frames": ["v9-08"],
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-08"
+      ],
       "summary": "Clinic creation kept as 3 steps; the frame shows a single screen",
       "reason": "The single screen drops hours and profile capture. Feature parity outranks fidelity.",
-      "status": "pending"
+      "status": "pending",
+      "openQuestion": "AMBIGUOUS AS WRITTEN. The frame's model is one QUESTION at a time (\"What's your clinic called?\" \u2192 \"Next \u00b7 City\"), while our step 1 holds six fields. \"Keep 3 steps\" does not settle whether step 1 should be one question or six fields \u2014 those are different claims."
     },
     {
       "id": 7,
-      "frames": ["v9-03"],
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-03"
+      ],
       "summary": "No summoned numeric keypad on /phone",
       "reason": "The page has always used the native keyboard; building a pad adds a surface rather than migrating one.",
       "status": "revisit"
     },
     {
       "id": 8,
-      "frames": ["v9-70"],
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
       "summary": "/more shows 3 module tiles for a doctor, not 4",
-      "reason": "canAccess('/billing','DOCTOR') is false. Rendering it would leak a permission.",
+      "reason": "canAccess('/billing','DOCTOR') is false. Rendering it would leak a permission \u2014 an access-control requirement, not a style choice.",
       "status": "pending"
     },
     {
       "id": 9,
-      "frames": ["v9-59"],
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-59"
+      ],
       "summary": "/lab/new kept as a page; the frame shows a sheet",
       "reason": "Feature parity.",
       "status": "pending"
     },
     {
       "id": 10,
-      "frames": ["v9-37", "v9-38", "v9-40", "v9-41"],
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
       "summary": "Patient detail keeps 5 tabs (Media has no frame)",
-      "reason": "Feature parity — Media must not disappear.",
+      "reason": "Feature parity \u2014 Media must not disappear.",
       "status": "pending"
     },
     {
       "id": 11,
-      "frames": ["v9-07"],
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-07"
+      ],
       "summary": "Mascot rendered on /role; frame 07 has none",
       "reason": "Introduced without cause during migration and never flagged.",
       "status": "reverted",
@@ -83,54 +130,184 @@
     },
     {
       "id": 12,
-      "frames": ["v9-07"],
-      "summary": "/role used tap→navigate; frame 07 is select→sticky CTA \"Continue as doctor\"",
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-07"
+      ],
+      "summary": "/role used tap\u2192navigate; frame 07 is select\u2192sticky CTA \"Continue as doctor\"",
       "reason": "A different interaction model, shipped unflagged.",
       "status": "reverted",
       "revertedIn": "Gate B remediation"
     },
     {
-      "$comment": "13 onward: found by the first Gate B criteria review. Split deliberately — a PRODUCT DECISION needs your ruling; an INCOMPLETE MIGRATION is a defect its owning task must fix and is tracked in findings.json, not here.",
       "id": 13,
-      "frames": ["v9-04", "v9-05"],
-      "summary": "Phone number masked to \"+91 ••••• 0001\"; frame 04 shows it in full",
-      "reason": "Shoulder-surfing protection on a screen a patient may see. A product decision, not a styling slip — so it needs your ruling rather than a silent revert.",
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-04",
+        "v9-05"
+      ],
+      "summary": "Phone number masked to \"+91 \u2022\u2022\u2022\u2022\u2022 0001\"; frame 04 shows it in full",
+      "reason": "Shoulder-surfing protection on a screen a patient may see. A workflow/privacy choice, not styling.",
       "status": "pending"
     },
     {
       "id": 14,
-      "frames": ["v9-04", "v9-05"],
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-04",
+        "v9-05"
+      ],
       "summary": "An explicit \"Verify\" button; frames 04/05 auto-submit on the sixth digit",
-      "reason": "Accessibility fallback when SMS autofill does not fire, and a manual retry after a wrong code. The frame's title is literally \"OTP — auto-read\", so this is a real departure.",
+      "reason": "Accessibility: SMS autofill does not always fire, and a screen-reader or keyboard user needs an explicit submit target. Auto-submit alone leaves no way to retry a corrected code.",
       "status": "pending"
     },
     {
       "id": 15,
-      "frames": ["v9-05"],
-      "summary": "Wrong code clears the six boxes and raises a toast; the frame keeps the digits and reports once, inline",
-      "reason": "Not defensible as a product decision — the frame keeps the digits so the user can see and fix the typo, and reporting the same failure twice is noise. Recommend reverting to the frame.",
-      "status": "pending"
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-05"
+      ],
+      "summary": "A wrong code clears the six boxes; frame 05 keeps the digits inside crit outlines",
+      "reason": "No functionality or accessibility reason to clear. The frame keeps the digits precisely so the user can see and fix the typo; clearing forces a full re-entry.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation \u2014 MUST-FIX pass"
     },
     {
       "id": 16,
-      "frames": ["v9-02"],
-      "summary": "/welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3",
-      "reason": "The frame's slide-1 copy (\"Speak. Odovox writes the record.\") is the product's opening promise. The app opens on a different pitch, left-aligned rather than centred, with a Skip link and language chips the frame does not have.",
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-02"
+      ],
+      "summary": "/welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those",
+      "reason": "The frame's slide-1 copy ('Speak. Odovox writes the record.') is the product's opening promise. Which pitch opens the app is a product call.",
       "status": "pending"
     },
     {
       "id": 17,
-      "frames": ["v9-09"],
-      "summary": "/clinic-join captures the joiner's name; frame 09 has only the code field",
-      "reason": "Feature parity — the join request records who is asking. Same class as deviations 6 and 10.",
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-09"
+      ],
+      "summary": "/clinic-join is a two-field form + explicit \"Find clinic\"; frame 09 is one hero code field with a live check and a clinic preview",
+      "reason": "Two things at once: the joiner's name is feature parity (the request records who is asking), and the lookup model differs (explicit press vs validate-as-you-type).",
       "status": "pending"
     },
     {
       "id": 18,
-      "frames": ["*"],
-      "summary": "The Odo mascot artwork is not the spec's #odo-body symbol",
-      "reason": "The spec draws an outline tooth with lime blush ovals; the app draws a filled grey tooth with no blush. SYSTEMIC — it affects every frame Odo appears in, so it is one fix, not one per screen.",
+      "class": "MUST-FIX",
+      "frames": [
+        "*"
+      ],
+      "summary": "The Odo mascot artwork was not the spec's #odo-body symbol",
+      "reason": "The spec draws an outline tooth with lime blush ovals; the app drew a filled grey tooth with no blush. Systemic.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation"
+    },
+    {
+      "id": 19,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-07",
+        "v9-08"
+      ],
+      "summary": "The .ob-q question wraps to two lines where frames 07 and 08 set it on one",
+      "reason": "A measured consequence of approved deviation 1, not an independent defect \u2014 the app matches the spec's values exactly. Closing it means altering one of the spec's own numbers.",
+      "status": "pending",
+      "openQuestion": "(a) accept the wrap, (b) drop the question to ~25.5px, or (c) tighten question tracking to about -0.0355em."
+    },
+    {
+      "id": 20,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "A lime focus ring on the .field; the frame's focused field has none",
+      "reason": "Accessibility. Removing focus indication to win pixels is a real regression for keyboard users.",
       "status": "pending"
+    },
+    {
+      "id": 21,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "A \"By continuing you agree to our terms.\" line; frame 03 has none",
+      "reason": "Legal copy, not styling. Whether it may be removed is not an engineering call.",
+      "status": "pending"
+    },
+    {
+      "id": 22,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "No .mic-a affordance on /phone",
+      "reason": "useDictation presigns an upload and calls an AUTHENTICATED transcription endpoint; /phone is pre-login by definition. Needs an unauthenticated dictation route that does not exist. A mic that does nothing is worse than no mic.",
+      "status": "open"
+    },
+    {
+      "id": 23,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-05"
+      ],
+      "summary": "A \"Wrong code. N attempts left.\" toast on top of the frame's inline message",
+      "reason": "The frame reports the failure once, inline. The toast reports it twice \u2014 but it also carries the remaining-attempts count, which is information the frame does not show and which warns of lockout. Dropping it loses that warning.",
+      "status": "pending"
+    },
+    {
+      "id": 24,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-05"
+      ],
+      "summary": "WITHDRAWN \u2014 false finding. Resend already unlocks immediately on a wrong code.",
+      "reason": "The verify catch already calls setSecondsLeft(0), so \"Resend code\" renders at once, exactly as frame 05 specifies. The first review read \"Resend in 1:00\" off a capture taken BEFORE the error state was reached \u2014 the A5 prepare step was silently failing, so the screenshot was of the clean OTP screen. Fixing the prepare step invalidated the finding.",
+      "status": "withdrawn"
+    },
+    {
+      "id": 26,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-04",
+        "v9-05"
+      ],
+      "summary": "A dotted texture sits behind the resend area; frames 04/05 have none",
+      "reason": "Pure decoration with no functional or accessibility role.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation \u2014 MUST-FIX pass"
+    },
+    {
+      "id": 27,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-08"
+      ],
+      "summary": "Step 1 is missing frame 08's .ob-dots, verified-identity chip and defaults card, and its CTA reads \"Continue \u2192\" not \"Next \u00b7 City\"",
+      "reason": "All four are v9 elements the app simply does not render. Independent of deviation 6 \u2014 keeping three steps says nothing about dropping the frame's furniture from step 1.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation \u2014 MUST-FIX pass"
+    },
+    {
+      "id": 28,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-09"
+      ],
+      "summary": "The back control carries a \"Join a clinic\" text label and a stray Odo sits top-right",
+      "reason": "Frame 09 uses a bare white IconCircle and has no mascot. Both are additions, not workflow.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation \u2014 MUST-FIX pass"
+    },
+    {
+      "id": 25,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "Availability's \"2 doctors\" and Team's \"1 request\" values are absent",
+      "reason": "Both need a clinic-members endpoint. /clinics has only create, lookup and join \u2014 there is no members or pending-requests route to read. Task 31 owns that server work.",
+      "status": "open"
     }
   ]
 }

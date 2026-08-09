@@ -85,11 +85,32 @@ interface FrameRow {
   note: string | null;
 }
 
+/**
+ * Every difference lands in exactly one class, and the class decides what may be done
+ * about it. This exists so the classification is ENFORCED rather than remembered:
+ *
+ *   MUST-FIX            implement v9 exactly. No approval needed — fixing toward the
+ *                       design is the mandate. Blocks its frame until closed.
+ *   APPROVED-DEVIATION  functionality or accessibility requires something else.
+ *   PRODUCT-DECISION    v9 specifies a different workflow or copy; the owner chooses.
+ *   NOT-BUILT           surface or server support absent; leave until its task runs.
+ *
+ * The last three MUST NOT BE MODIFIED without the owner's explicit approval. That is the
+ * rule that stops a migration from gradually reinterpreting its own design.
+ */
+type DeviationClass =
+  | "MUST-FIX"
+  | "APPROVED-DEVIATION"
+  | "PRODUCT-DECISION"
+  | "NOT-BUILT";
+
 interface Deviation {
   id: number;
+  class: DeviationClass;
   frames: string[];
   summary: string;
-  status: "approved" | "pending" | "revisit" | "reverted";
+  /** approved / pending / revisit = owner state. open / fixed / reverted = work state. */
+  status: string;
 }
 
 /**
@@ -114,7 +135,12 @@ interface Result {
   changedPct: number | null;
   geometry: string;
   criteria: Record<string, Verdict>;
-  deviations: { id: number; summary: string; status: string }[];
+  deviations: {
+    id: number;
+    class: DeviationClass;
+    summary: string;
+    status: string;
+  }[];
   blockers: string[];
 }
 
@@ -185,10 +211,30 @@ async function main() {
 
   for (const f of selected) {
     const devs = registry.deviations
-      .filter((d) => d.frames.includes(f.frame))
-      .map((d) => ({ id: d.id, summary: d.summary, status: d.status }));
-    const unapproved = devs.filter(
-      (d) => d.status === "pending" || d.status === "revisit",
+      .filter((d) => d.frames.includes(f.frame) || d.frames.includes("*"))
+      .map((d) => ({
+        id: d.id,
+        class: d.class,
+        summary: d.summary,
+        status: d.status,
+      }));
+
+    /** MUST-FIX items still open. These need no ruling — they need doing. */
+    const openMustFix = devs.filter(
+      (d) => d.class === "MUST-FIX" && d.status === "open",
+    );
+    /**
+     * Departures awaiting the owner. Explicitly NOT to be modified meanwhile — that is
+     * the whole point of the class, so the gate reports them and stops.
+     */
+    const awaitingRuling = devs.filter(
+      (d) =>
+        (d.class === "APPROVED-DEVIATION" || d.class === "PRODUCT-DECISION") &&
+        (d.status === "pending" || d.status === "revisit"),
+    );
+    /** Absent surfaces. Not a defect the frame can be blamed for today. */
+    const notBuilt = devs.filter(
+      (d) => d.class === "NOT-BUILT" && d.status === "open",
     );
 
     const base: Omit<Result, "verdict"> = {
@@ -278,17 +324,30 @@ async function main() {
       blockers.push(
         `canvas mismatch (${geometry}); both sides must be 370x824`,
       );
-    for (const d of unapproved)
-      blockers.push(`deviation #${d.id} (${d.status}): ${d.summary}`);
+    // MUST-FIX first: these are work, not questions, so they lead the list.
+    for (const d of openMustFix)
+      blockers.push(`MUST-FIX #${d.id}: ${d.summary}`);
+    for (const d of awaitingRuling)
+      blockers.push(`${d.class} #${d.id} — awaiting ruling: ${d.summary}`);
     for (const c of CRITERIA) {
       if (criteria[c] === "UNREVIEWED")
         blockers.push(`criterion "${c}" unreviewed`);
       if (criteria[c] === "FAIL") blockers.push(`criterion "${c}" FAILED`);
     }
+    // NOT-BUILT is reported so the frame is never silently "fine", but it does not
+    // block: there is no defect to fix until the surface exists.
+    for (const d of notBuilt) blockers.push(`NOT-BUILT #${d.id}: ${d.summary}`);
 
-    const verdict: FrameVerdict = blockers.length
+    const blocking = blockers.filter((b) => !b.startsWith("NOT-BUILT"));
+
+    const verdict: FrameVerdict = blocking.length
       ? "MISMATCHED"
-      : devs.some((d) => d.status === "approved")
+      : devs.some(
+            (d) =>
+              d.status === "approved" &&
+              (d.class === "APPROVED-DEVIATION" ||
+                d.class === "PRODUCT-DECISION"),
+          )
         ? "APPROVED-DEVIATION"
         : "MATCHED";
 
@@ -331,6 +390,47 @@ async function main() {
     "| --- | --- |",
     ...Object.entries(tally).map(([k, v]) => `| ${k} | ${v} |`),
     "",
+    "## Classification",
+    "",
+    "Every difference lands in exactly one class, and the class decides what may be done",
+    "about it. **PRODUCT-DECISION and APPROVED-DEVIATION items are not to be modified",
+    "until the owner approves them** — that rule is what stops the migration from",
+    "gradually reinterpreting its own design.",
+    "",
+    "| Class | Action | Blocks? |",
+    "| --- | --- | --- |",
+    "| MUST-FIX | implement the v9 design exactly; no approval needed | yes, until closed |",
+    "| APPROVED-DEVIATION | functionality or accessibility requires it — leave alone | yes, while pending |",
+    "| PRODUCT-DECISION | v9 specifies a different workflow or copy — owner chooses | yes, while pending |",
+    "| NOT-BUILT | surface or server support absent — leave until its task | no |",
+    "",
+    "### Open MUST-FIX — work, not questions",
+    "",
+    ...(() => {
+      const open = registry.deviations.filter(
+        (d) => d.class === "MUST-FIX" && d.status === "open",
+      );
+      return open.length
+        ? open.map(
+            (d) => `- **#${d.id}** ${d.frames.join(", ")} — ${d.summary}`,
+          )
+        : ["_None. Every MUST-FIX item is closed._"];
+    })(),
+    "",
+    "### Awaiting your ruling — untouched by design",
+    "",
+    ...registry.deviations
+      .filter(
+        (d) =>
+          (d.class === "APPROVED-DEVIATION" ||
+            d.class === "PRODUCT-DECISION") &&
+          (d.status === "pending" || d.status === "revisit"),
+      )
+      .map(
+        (d) =>
+          `- **#${d.id}** \`${d.class}\` ${d.frames.join(", ")} — ${d.summary}`,
+      ),
+    "",
     "| Frame | Name | Task | Verdict | Pixel Δ | Blockers |",
     "| --- | --- | --- | --- | --- | --- |",
     ...results.map(
@@ -362,7 +462,7 @@ async function main() {
           ? [
               "",
               ...r.deviations.map(
-                (d) => `- deviation #${d.id} (${d.status}): ${d.summary}`,
+                (d) => `- \`${d.class}\` #${d.id} (${d.status}): ${d.summary}`,
               ),
             ]
           : []),

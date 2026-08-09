@@ -6,6 +6,7 @@ export { HeroCard, type HeroCardProps } from "./hero-card";
 export { GlassCard, type GlassCardProps } from "./glass-card";
 export { EmptyState } from "./empty-state";
 export { StepperHeader } from "./stepper-header";
+export { ObDots } from "./ob-dots";
 export { FAB, FabMenu, type FabMenuItem } from "./fab";
 export { EditorialHeading } from "./editorial-heading";
 export { StatTile, StatPill, type StatTileProps } from "./stat-tile";
@@ -35,12 +36,20 @@ export { VoiceMenu, type VoiceMenuProps } from "./voice-menu";
 
 /* --- Wave 3 · journeys and habit loop ---------------------------------------- */
 export { DayRiver, type DayRiverProps } from "./day-river";
-export { JourneyRail, type JourneyRailProps, type JourneyStep } from "./journey-rail";
+export {
+  JourneyRail,
+  type JourneyRailProps,
+  type JourneyStep,
+} from "./journey-rail";
 export { VerticalJourney, type JourneySitting } from "./vertical-journey";
 export { Timeline, type TimelineEntry } from "./timeline";
 
 /* --- Wave 3 · domain surfaces ----------------------------------------------- */
-export { MedicineList, MedicineRow, type MedicineRowProps } from "./medicine-row";
+export {
+  MedicineList,
+  MedicineRow,
+  type MedicineRowProps,
+} from "./medicine-row";
 export {
   AppointmentBlock,
   SlotHint,
