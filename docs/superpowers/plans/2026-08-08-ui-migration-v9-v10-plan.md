@@ -501,7 +501,7 @@ Keep all auth logic, validation, autofill and rate-limit handling exactly as-is.
 
 ---
 
-## Task 12: Setup pages — frames 07–11
+## Task 12: Setup pages — frames 07–12
 
 Migrate `(onboarding)/role`, `clinic-choice`, `clinic-create/step-{1,2,3}`,
 `clinic-join`, `done`.
@@ -528,6 +528,13 @@ clinic preview `Card` with a lime-ring `Avatar` and `<Mini>` chips for city and 
 **done (11):** Odo celebrating 140px; headline; the join-code `Card` with a key icon,
 code, share `<Chip tone="sky">`; `.cta` "Go to Flow". The `qrcode.react` literal colours
 are the one documented hex exception.
+
+**first day (12):** eyebrow "SMILE DENTAL · DAY 1", "Let's set you up", then a four-row
+`Checklist`: "Clinic created" (done), "Add your first patient" → Add (voice intake),
+"Set working hours" → Set (`/clinic/availability`), "Invite your team" → Invite (Team).
+A closing caption: first consultation appears here. **Collapses to a pill at 3/3 and
+never returns** — persist that per clinic, not per session. Renders on `/home` for a
+clinic with no consultations; it is a home state, not a route.
 
 **Verification:** lint, typecheck, test.
 
@@ -572,7 +579,7 @@ in the migration; expect and welcome that, but every control listed above must b
 
 ---
 
-## Task 14: Home / Flow states — frames 14–18
+## Task 14: Home / Flow states — frames 14–19
 
 The four remaining Flow states, all driven by **real data**, never a mock toggle.
 
@@ -593,6 +600,14 @@ The four remaining Flow states, all driven by **real data**, never a mock toggle
   own component (this is the third REPLACE in the component mapping).
 - **18 — speed dial open:** wire `SpeedDial` (Task 7) to the header ＋ and the orb.
   Items: New patient · Walk-in to queue · New appointment · Quick prescription · New lab case.
+- **19 — day off quick sheet:** opened by the header calendar-✕. A `BottomSheet`:
+  "Block time", doctor + date line, `Segmented` (Rest of today / Full day / Pick date),
+  a FROM time row (Now / Custom), and — when bookings fall inside the window — a warn
+  row "N bookings after 14:00 need moving first" with a View link to the schedule.
+  **The CTA stays disabled until those bookings are moved**; that lock is the frame's
+  point, so it needs a unit test, not just styling. Admins may block any doctor or the
+  whole clinic — gate that on `canAccess`, and reuse the `/clinic/day-off` mutation
+  rather than adding an endpoint.
 
 State selection must derive from queue, schedule and network state. Put the selection
 logic in `lib/queue/home-state.ts` (or extend `home-summary.ts`) **with unit tests** for
@@ -869,7 +884,7 @@ Per-tooth media folds in under the panel.
 
 ---
 
-## Task 23: Case detail and visit record — frames 39, 43
+## Task 23: Case detail, patient history, and visit record — frames 39, 42, 43
 
 **Case detail (39)** — `app/(app)/patients/[id]/plans/[planId]/page.tsx`.
 **This is where every "RCT 36" reference in the app must land.**
@@ -893,6 +908,17 @@ a `<Mini tone="live">✓ Confirmed</Mini>`; three `StatPill`s (paid · medicines
 a `PaperBlock` with FINDINGS and PROCEDURE; two `btn2`s (Amend, Share PDF); and the footnote
 "Originals never change — amendments append with author & time".
 Amend uses the existing `ConsultationEdit` append-only path — **do not make records editable**.
+
+**Patient history (42)** — "Anand's history" with a Filter chip (by tooth / treatment /
+doctor), grouped under month `SectionHeader`s. Built on `VerticalJourney` (Task 8): the
+spine is a column of Odo moods — **happy tooth = completed treatment, calm = routine
+visit, red node = a permanent medical fact** (allergy), which rides the timeline forever
+in the verification rail's red. Each card is a mini-bento: procedure · tooth · fee ·
+doctor · a ✓ when confirmed. Card → visit record (43); procedure name → case detail (39);
+fee chip → the Billing tab.
+This frame is the **History surface that currently does not exist** — patient records
+render only inside the Overview tab. Add it as a sixth tab or a `/patients/[id]/history`
+route, whichever keeps `TABS` readable; either way **no existing tab may be removed**.
 
 **Verification:** lint, typecheck, test.
 
@@ -1066,7 +1092,7 @@ Also restyle `lab/[caseId]/edit/page.tsx` (no frame) in the same language.
 
 ---
 
-## Task 29: Messages, lab inbox, and inventory — frames 62–65, 67–69
+## Task 29: Messages, follow-ups, lab inbox, and inventory — frames 62–69
 
 **62 — patient inbox** (`app/(app)/messages/page.tsx`): filter `<Chip>`s
 (All / Open / Reschedule / Complaint); `ListRow`s with a 46px avatar, name, a truncated
@@ -1092,6 +1118,19 @@ a `Card` explaining the rule in one line ("Free text is locked by WhatsApp's 24-
 **✓ Applied** (with an Undo `<Mini>`), **Suggested** (a pine `<Chip>` one-tap apply +
 Reply), and **Link** (unknown sender → Link to case + Reply).
 **Zero "AI" labels anywhere** — strip any that exist.
+
+**66 — follow-ups** (new `app/(app)/follow-ups/page.tsx`): "Follow-ups" with a
+`<Chip tone="crit">2 overdue</Chip>`. Rows: avatar, name, the procedure, and the reason
+in the row's own voice ("day 9 of 7", "sutures due out", "due Thu"), with a Call or Book
+action and a ✓. **Overdue carries the red rail** — the same rail as a verification
+conflict, because red always means "act".
+The rules that create these already exist server-side in
+`apps/api/src/lib/schedule/follow-up.ts` (RCT → day-7 review · extraction → suture
+removal · denture → 2-week check) — **render them; do not reimplement them**.
+This route is **the destination of every "review call due" row on home**, which today
+links nowhere; wire those call sites as part of this task.
+Taps: row → patient record · Call → dialer, then log the call on the record · ✓ → done
+with the 6 s undo (`--duration-undo`) · Book → the appointment sheet, pre-filled.
 
 **67 — inventory** (`app/(app)/inventory/page.tsx`): three mic `<Chip>`s
 (Purchase / Usage / Count — Count stays admin-gated); a "Low stock · 2" `SectionHeader`
@@ -1221,14 +1260,45 @@ new test files.
 
 ---
 
+## Task 33: Week in review — frame 20
+
+The retention beat, and the last frame no task owned. New route
+`app/(app)/week/page.tsx`, reached from a Monday 8:00 notification and from `/more`.
+
+Eyebrow "MON 6 — SAT 11 JUL" over "Your week". Then:
+
+- a `BentoTile` pair — **PATIENTS** `32` with "+6 vs last week", and **COLLECTED**
+  `₹86,400` with "₹4,200 still due" as its supporting line;
+- **BUSIEST** — the `Bars` component (Task 9) across M T W T F S;
+- a streak `Card`: "4 weeks, every record confirmed" / "Longest streak at Smile Dental",
+  with the streak Odos;
+- a warn row "3 review calls slipped last week" → **Catch up**, which lands on
+  `/follow-ups` (Task 29);
+- `.cta` "Start Monday" → `/home`.
+
+Motion: numbers count up 400 ms, bars stagger 50 ms, streak Odos pop in last — all
+behind `useReducedMotion`.
+Taps: collected tile → billing week view · a bar → that day's schedule · streak card →
+nothing, it is a trophy.
+
+**Needs a real aggregate endpoint** — `GET /analytics/week` returning patient count,
+collected/outstanding paise, per-day counts, and the confirmed-record streak. No mock
+data and no client-side summing across paginated lists.
+
+**Verification:** lint, typecheck, test. Write an API test for the new endpoint only
+(Global Constraint 23).
+
+---
+
 ## Out of scope
 
 These are recorded so no task silently absorbs them:
 
 - **Frame 06 (device unlock)** — descoped pre-launch by the project owner. WebAuthn is not
-  being built; a PIN gate may follow later.
-- **Frame 12 (first-day checklist)**, **frame 20 (week in review)**, **frame 42 (history
-  timeline page)**, **frame 66 (follow-ups)** — these need either new aggregate endpoints or
-  the `FollowUpResolution` table. They are scoped in
-  `docs/migration/03-visual-migration-plan.md` §4.2 and follow this plan.
+  being built; a PIN gate may follow later. This is the only frame not being built.
 - The API test suite re-baseline (~69 min) is the controller's job, not a task's.
+
+Frames 12, 19, 20, 42 and 66 were previously parked here. They are product states, and
+`pnpm shots:map` reported them as UNASSIGNED — owned by no task and therefore invisible to
+Gate B. They now belong to Tasks 12, 14, 33, 23 and 29 respectively. The three that need
+new server work (20, 42, 66) say so in their own task text.

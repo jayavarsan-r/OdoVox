@@ -27,6 +27,9 @@ import { pathToFileURL } from "node:url";
 const ROOT = process.cwd();
 const OUT = join(ROOT, "docs", "migration", "screenshots", "v9-reference");
 
+/** The `.screen` content box: `.phone` 390x844 minus its 10px bezel. */
+const CANVAS = { width: 370, height: 824 };
+
 interface SpecFile {
   /** Short id used in the frame slug: v9-13, v10-02. */
   prefix: string;
@@ -102,11 +105,26 @@ async function main() {
       const meta = frames[i]!;
       // The `.screen` is the content area inside the bezel — the true design canvas.
       const screen = cards.nth(i).locator(".screen");
+      // `page.screenshot`'s clip is viewport-relative, so the frame must be on screen
+      // before its box is read.
+      await screen.scrollIntoViewIfNeeded();
       const box = await screen.boundingBox();
       const id = `${spec.prefix}-${meta.number.padStart(2, "0")}`;
       const png = `${id}.png`;
 
-      await screen.screenshot({ path: join(OUT, png) });
+      // Clip to the exact integer canvas rather than taking an element screenshot.
+      // `.screen` lands on a fractional x, so Playwright rounded its box outward and
+      // wrote 371x824 — one pixel wider than the implementation, which is enough for
+      // the comparator to declare a size mismatch and skip the diff entirely.
+      await page.screenshot({
+        path: join(OUT, png),
+        clip: {
+          x: Math.round(box?.x ?? 0),
+          y: Math.round(box?.y ?? 0),
+          width: CANVAS.width,
+          height: CANVAS.height,
+        },
+      });
 
       manifest.push({
         id,
@@ -114,8 +132,8 @@ async function main() {
         name: meta.name,
         section: meta.section,
         source: spec.file,
-        width: Math.round(box?.width ?? 0),
-        height: Math.round(box?.height ?? 0),
+        width: CANVAS.width,
+        height: CANVAS.height,
         png,
       });
       process.stdout.write(`  ✓ ${id}  ${meta.name}\n`);

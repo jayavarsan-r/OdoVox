@@ -197,25 +197,91 @@ harness cannot reach them.
 
 ---
 
-## 4. The decision I cannot make for you
+## 4. The canvas decision — RULED: (c)
 
-**The design canvas is 370×824. The device is 390×844.** What does "match the design"
-mean?
+**The design canvas is 370×824. The device is 390×844.**
 
-- **(a) Treat spec px as literal device px.** A 16px gutter stays 16px. Content is 20px
-  wider than drawn, so proportions differ ~5% from the frames. Gate B compares
-  structure and criteria, not exact pixels. _This is what I have been building._
-- **(b) Treat the frames as the literal target.** Scale spec values by 390/370 ≈ 1.054 —
-  a 16px gutter becomes 16.9px, a 26px radius 27.4px. Proportionally exact, but every
-  token gains a fractional value and the spec's round numbers stop being round.
-- **(c) Render the fidelity capture at 370×824.** Gate B becomes a true pixel diff on a
-  shared canvas; the app still ships at 390. Cleanest comparison, but it validates a
-  viewport no user has.
+Your ruling: **render the fidelity capture at 370×824.**
 
-I would pick **(a)** — the round numbers are almost certainly the designer's intent, and
-the 10px bezel reads as decorative chrome on a mockup rather than a spec of the content
-box. But it is a real fork, it changes what Gate B can assert, and per your rule I am
-not choosing it silently.
+- The 370×824 viewport is **a test fixture only**. Production continues to ship at
+  390×844.
+- The v9 tokens are **not** scaled by 390/370. A 16px gutter stays 16px.
+- The production design system is **not** altered to compensate.
+- 390×844 is **not** the fidelity comparison canvas.
+
+Implemented in `scripts/screenshots.ts`: a third mode, `fidelity`, which overrides the
+iPhone 13 viewport with `{ width: 370, height: 824, deviceScaleFactor: 1 }` and writes to
+`screenshots/impl/`. Gate A's `baseline` and `current` modes are untouched at 390×844.
+
+```
+pnpm shots:baseline / shots:current   390×844   Gate A — regression
+pnpm shots:impl                       370×824   Gate B — fidelity
+```
+
+---
+
+## 4A. Four measurement faults found while building Gate B
+
+None of these are design decisions. All four would have made the first fidelity numbers
+lies, and all four were invisible until reference and implementation were put side by side.
+
+### 0. The stabilisation script never ran. Not once.
+
+The worst of the four, and it predates Gate B.
+
+`stabilise()` passed a function to `page.addInitScript`. tsx compiles this repo with
+esbuild, and the `class PinnedDate extends Date` inside that function came back
+**downlevelled to a helper that does not exist in the browser** — so the script threw on
+its first statement and the rest never executed.
+
+Everything it was supposed to guarantee was therefore never true:
+
+| Intended              | Actual                                                     |
+| --------------------- | ---------------------------------------------------------- |
+| clock pinned to 09:41 | live clock — every relative timestamp drifted between runs |
+| animations disabled   | enabled — any shot could land mid-transition               |
+| dev banner dismissed  | present in **every screenshot ever taken**                 |
+
+Silent, because a failing init script does not fail the navigation. The proof it was
+failing was sitting in plain sight in every baseline PNG for weeks: the banner is right
+there at the top of `baseline/B1-role.png`.
+
+Fixed by passing the script as **source text**, which esbuild cannot rewrite, and moving
+the stylesheet to a post-navigation `addStyleTag` (Next replaces `<head>` during
+hydration in dev, which deletes a style tag injected at document-start).
+
+### 1. The reference PNGs were 371px wide, the implementation 370px
+
+`.screen` lands on a fractional x, so Playwright's element screenshot rounded its box
+outward. One pixel — and the comparator refuses mismatched sizes, so **every frame would
+have been silently skipped as `size-mismatch`** while the run reported success.
+Fixed: `v9-reference.ts` now clips to the integer canvas. All 86 re-captured at 370×824.
+
+### 2. The frames draw a 54px status bar; the browser draws none
+
+`.sb{height:54px}` — the "9:41", the notch, the battery. The app never draws a status bar;
+the OS does. `MobileShell` reserves the space with `--safe-top: env(safe-area-inset-top)`,
+which is ~54px on a phone and **0 in a desktop browser**.
+
+Left alone, every element in every implementation shot sits 54px higher than the frame it
+is judged against — a systematic offset that would read as "the layout is wrong" on all 86
+frames.
+
+Fixed in the fixture, not the app: fidelity capture injects `--safe-top: 54px`, which is
+what the device does anyway. Production is untouched, and no token changed.
+The band's _contents_ are mockup furniture, so the pixel diff excludes those 54 rows and
+says so; the side-by-side keeps them.
+
+### 3. Dev chrome was in every baseline shot
+
+The DEV MODE banner (a 24px band that pushes the whole page down) and Next's dev indicator
+(a floating pill over the bottom-left, sitting on top of the `/role` CTA) appear in **every
+baseline and current screenshot ever taken**. Gate A never noticed — both sides had them.
+Gate B cannot tolerate either.
+
+The harness had always intended to dismiss the banner via its `sessionStorage` key; that
+never worked. Replaced with a CSS rule on a stable `data-dev-chrome` hook, plus the
+`nextjs-portal` selector for the indicator.
 
 ---
 
@@ -233,25 +299,33 @@ not choosing it silently.
 | 4   | WebAuthn descoped; frame 06 out of scope                | auth         |
 | 5   | "Tooth Map" → "Teeth"                                   | patient tabs |
 
-### Flagged, never explicitly approved — **awaiting your ruling**
+### Pending your approval — these BLOCK their frames in Gate B
 
 | #   | Deviation                                            | Frame | My reasoning                                                                   |
 | --- | ---------------------------------------------------- | ----- | ------------------------------------------------------------------------------ |
 | 6   | Clinic creation kept as **3 steps**                  | 08    | The single screen drops hours and profile capture. Feature parity.             |
-| 7   | **No numeric keypad** on `/phone`                    | 03    | Page has always used the native keyboard; building one adds a surface.         |
 | 8   | `/more` shows **3 module tiles** for a doctor, not 4 | 70    | `canAccess('/billing','DOCTOR')` is false. Showing it would leak a permission. |
 | 9   | `/lab/new` kept as a **page**, not a sheet           | 59    | Feature parity.                                                                |
 | 10  | Patient detail keeps **5 tabs** (Media)              | 37–41 | Media has no frame; parity.                                                    |
 
-### Not flagged — found by this audit
+### To revisit separately
 
-| #   | Deviation                                                                  | Frame | Status                                                             |
-| --- | -------------------------------------------------------------------------- | ----- | ------------------------------------------------------------------ |
-| 11  | **Mascot on `/role`** that the frame does not have                         | 07    | **Unapproved. I introduced it without noting it.**                 |
-| 12  | `/role` is **tap→navigate**; frame is **select→confirm** with a sticky CTA | 07    | **Unapproved. A different interaction model, not a visual tweak.** |
+| #   | Deviation                         | Frame | Status                                                                   |
+| --- | --------------------------------- | ----- | ------------------------------------------------------------------------ |
+| 7   | **No numeric keypad** on `/phone` | 03    | You asked to revisit this on its own. Blocks frame 03 until it is ruled. |
+
+### Reverted — RULED
+
+| #   | Deviation                                                                  | Frame | Status                                                        |
+| --- | -------------------------------------------------------------------------- | ----- | ------------------------------------------------------------- |
+| 11  | **Mascot on `/role`** that the frame does not have                         | 07    | **Reverted.** The mascot is gone; the question starts at top. |
+| 12  | `/role` is **tap→navigate**; frame is **select→confirm** with a sticky CTA | 07    | **Reverted.** Select → sticky "Continue as doctor".           |
 
 Items 11 and 12 are exactly the failure your rule targets, and I found them only because
 you forced the reference capture to exist.
+
+The machine-readable copy is `deviations.json`. Gate B reads it, and an `pending` or
+`revisit` status blocks its frames no matter how low the pixel diff is.
 
 ---
 

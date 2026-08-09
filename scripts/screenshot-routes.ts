@@ -28,6 +28,16 @@ export interface Shot {
    * Skipped by the capture run until the stage that builds it flips this off.
    */
   pending?: true;
+  /**
+   * This screen redirects away by design — it exists to be passed through, not landed
+   * on. Capture at DOM-ready instead of network-idle (the redirect fires the moment the
+   * network resolves), and exempt it from the redirect guard, which is otherwise right
+   * to treat a changed path as a wrong-screen capture.
+   *
+   * Only the splash qualifies. Do not reach for this to silence a redirect you did not
+   * expect — that guard has already caught eight wrong-screen baselines.
+   */
+  transient?: true;
 }
 
 /** Tap a tab by its visible label on the patient-detail page. */
@@ -82,7 +92,13 @@ const openFirstRow = (urlPattern: RegExp) => async (page: Page) => {
 
 export const SHOTS: Shot[] = [
   // ── A · Entry ────────────────────────────────────────────────────────────
-  { slug: "A1-splash", path: "/", role: "anon", frame: "v9-01" },
+  {
+    slug: "A1-splash",
+    path: "/",
+    role: "anon",
+    frame: "v9-01",
+    transient: true,
+  },
   { slug: "A2-welcome", path: "/welcome", role: "anon", frame: "v9-02" },
   { slug: "A3-phone", path: "/phone", role: "anon", frame: "v9-03" },
   {
@@ -113,8 +129,19 @@ export const SHOTS: Shot[] = [
       await page.waitForURL(/\/otp$/, { timeout: 8000 });
       // A deliberately wrong code drives the error state: crit outlines, the factual
       // line, and resend unlocked immediately (frame 05).
-      await page.getByLabel(/verification code/i).fill("000000").catch(() => undefined);
-      await page.waitForTimeout(1500);
+      //
+      // This used to be `getByLabel(/verification code/i).fill(...).catch(() => undefined)`.
+      // Two elements carry that label — the hidden input and its container — so the fill
+      // threw a strict-mode violation, the catch swallowed it, and A5 captured the CLEAN
+      // OTP screen while reporting success. Exactly the wrong-screen class the redirect
+      // guard exists to stop. Target the input exactly, and ASSERT the error rendered.
+      await page
+        .getByLabel("Verification code", { exact: true })
+        .fill("000000");
+      await page
+        .getByRole("alert")
+        .filter({ hasText: /didn't match/i })
+        .waitFor({ timeout: 10_000 });
     },
   },
   {
@@ -156,6 +183,11 @@ export const SHOTS: Shot[] = [
      * /clinic-join needs a role in the onboarding store, so a direct visit bounces to
      * /role. Reached the way a user reaches it: pick the front-desk role, which routes
      * here. (Found by the redirect guard — this shot had been capturing /role.)
+     *
+     * Two taps, not one: frame 07 is select-then-confirm, so picking the card only
+     * selects it and the sticky CTA commits. Reverting deviation 12 broke this step,
+     * which is the harness working as intended — a prepare step encodes the real
+     * interaction, so changing the interaction must change the step.
      */
     slug: "B6-join",
     path: "/role",
@@ -163,6 +195,9 @@ export const SHOTS: Shot[] = [
     frame: "v9-09",
     prepare: async (page) => {
       await page.getByRole("button", { name: /front desk/i }).click();
+      await page
+        .getByRole("button", { name: /continue as front desk/i })
+        .click();
       await page.waitForURL(/\/clinic-join$/, { timeout: 8000 });
       await page.waitForTimeout(400);
     },

@@ -1,0 +1,134 @@
+{
+  "$comment": "Deviation registry. Gate B reads this. An UNAPPROVED deviation on a frame BLOCKS that frame — a low pixel diff can never override it. Add a deviation the moment you make one; never after the fact.",
+  "deviations": [
+    {
+      "id": 1,
+      "frames": ["*"],
+      "summary": "Geist Sans/Mono retained instead of the spec's system font stack",
+      "reason": "The system stack renders as SF Pro on iOS and Roboto on Android — two different products. Sizes, weights and tracking follow the spec exactly.",
+      "status": "approved"
+    },
+    {
+      "id": 2,
+      "frames": ["*"],
+      "summary": "design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens",
+      "reason": "The v9 spec reverses two Phase-2.6 rules. Its own mascot law bans Odo only from money and safety surfaces.",
+      "status": "approved"
+    },
+    {
+      "id": 3,
+      "frames": ["v9-70"],
+      "summary": "5 tabs → 4 tabs + /more hub",
+      "reason": "The v9 nav is 4 tabs plus the orb in every frame. No route removed.",
+      "status": "approved"
+    },
+    {
+      "id": 4,
+      "frames": ["v9-06"],
+      "summary": "WebAuthn descoped pre-launch; frame 06 out of scope",
+      "reason": "Browser inconsistency and support burden outweigh the MVP security delta.",
+      "status": "approved"
+    },
+    {
+      "id": 5,
+      "frames": ["v9-37", "v9-38", "v9-40", "v9-41"],
+      "summary": "Patient tab renamed \"Tooth Map\" → \"Teeth\"",
+      "reason": "Matches the spec's .ptabs row.",
+      "status": "approved"
+    },
+    {
+      "id": 6,
+      "frames": ["v9-08"],
+      "summary": "Clinic creation kept as 3 steps; the frame shows a single screen",
+      "reason": "The single screen drops hours and profile capture. Feature parity outranks fidelity.",
+      "status": "pending"
+    },
+    {
+      "id": 7,
+      "frames": ["v9-03"],
+      "summary": "No summoned numeric keypad on /phone",
+      "reason": "The page has always used the native keyboard; building a pad adds a surface rather than migrating one.",
+      "status": "revisit"
+    },
+    {
+      "id": 8,
+      "frames": ["v9-70"],
+      "summary": "/more shows 3 module tiles for a doctor, not 4",
+      "reason": "canAccess('/billing','DOCTOR') is false. Rendering it would leak a permission.",
+      "status": "pending"
+    },
+    {
+      "id": 9,
+      "frames": ["v9-59"],
+      "summary": "/lab/new kept as a page; the frame shows a sheet",
+      "reason": "Feature parity.",
+      "status": "pending"
+    },
+    {
+      "id": 10,
+      "frames": ["v9-37", "v9-38", "v9-40", "v9-41"],
+      "summary": "Patient detail keeps 5 tabs (Media has no frame)",
+      "reason": "Feature parity — Media must not disappear.",
+      "status": "pending"
+    },
+    {
+      "id": 11,
+      "frames": ["v9-07"],
+      "summary": "Mascot rendered on /role; frame 07 has none",
+      "reason": "Introduced without cause during migration and never flagged.",
+      "status": "reverted",
+      "revertedIn": "Gate B remediation"
+    },
+    {
+      "id": 12,
+      "frames": ["v9-07"],
+      "summary": "/role used tap→navigate; frame 07 is select→sticky CTA \"Continue as doctor\"",
+      "reason": "A different interaction model, shipped unflagged.",
+      "status": "reverted",
+      "revertedIn": "Gate B remediation"
+    },
+    {
+      "$comment": "13 onward: found by the first Gate B criteria review. Split deliberately — a PRODUCT DECISION needs your ruling; an INCOMPLETE MIGRATION is a defect its owning task must fix and is tracked in findings.json, not here.",
+      "id": 13,
+      "frames": ["v9-04", "v9-05"],
+      "summary": "Phone number masked to \"+91 ••••• 0001\"; frame 04 shows it in full",
+      "reason": "Shoulder-surfing protection on a screen a patient may see. A product decision, not a styling slip — so it needs your ruling rather than a silent revert.",
+      "status": "pending"
+    },
+    {
+      "id": 14,
+      "frames": ["v9-04", "v9-05"],
+      "summary": "An explicit \"Verify\" button; frames 04/05 auto-submit on the sixth digit",
+      "reason": "Accessibility fallback when SMS autofill does not fire, and a manual retry after a wrong code. The frame's title is literally \"OTP — auto-read\", so this is a real departure.",
+      "status": "pending"
+    },
+    {
+      "id": 15,
+      "frames": ["v9-05"],
+      "summary": "Wrong code clears the six boxes and raises a toast; the frame keeps the digits and reports once, inline",
+      "reason": "Not defensible as a product decision — the frame keeps the digits so the user can see and fix the typo, and reporting the same failure twice is noise. Recommend reverting to the frame.",
+      "status": "pending"
+    },
+    {
+      "id": 16,
+      "frames": ["v9-02"],
+      "summary": "/welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3",
+      "reason": "The frame's slide-1 copy (\"Speak. Odovox writes the record.\") is the product's opening promise. The app opens on a different pitch, left-aligned rather than centred, with a Skip link and language chips the frame does not have.",
+      "status": "pending"
+    },
+    {
+      "id": 17,
+      "frames": ["v9-09"],
+      "summary": "/clinic-join captures the joiner's name; frame 09 has only the code field",
+      "reason": "Feature parity — the join request records who is asking. Same class as deviations 6 and 10.",
+      "status": "pending"
+    },
+    {
+      "id": 18,
+      "frames": ["*"],
+      "summary": "The Odo mascot artwork is not the spec's #odo-body symbol",
+      "reason": "The spec draws an outline tooth with lime blush ovals; the app draws a filled grey tooth with no blush. SYSTEMIC — it affects every frame Odo appears in, so it is one fix, not one per screen.",
+      "status": "pending"
+    }
+  ]
+}

@@ -24,6 +24,8 @@
     "shots:compare": "tsx scripts/screenshot-compare.ts",
     "shots:v9": "tsx scripts/v9-reference.ts",
     "shots:map": "tsx scripts/frame-map.ts",
+    "shots:impl": "tsx scripts/screenshots.ts fidelity",
+    "shots:fidelity": "tsx scripts/fidelity.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,css}\"",
     "prepare": "husky"
   },

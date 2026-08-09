@@ -9,7 +9,9 @@
     "route": "/",
     "role": "anon",
     "state": "default",
-    "implementation": "current/A1-splash.png",
+    "task": 11,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -22,7 +24,9 @@
     "route": "/welcome",
     "role": "anon",
     "state": "default",
-    "implementation": "current/A2-welcome.png",
+    "task": 11,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -35,7 +39,9 @@
     "route": "/phone",
     "role": "anon",
     "state": "default",
-    "implementation": "current/A3-phone.png",
+    "task": 11,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -48,7 +54,9 @@
     "route": "/phone",
     "role": "anon",
     "state": "driven (prepare step)",
-    "implementation": "current/A4-otp.png",
+    "task": 11,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -61,7 +69,9 @@
     "route": "/phone",
     "role": "anon",
     "state": "driven (prepare step)",
-    "implementation": "current/A5-otp-error.png",
+    "task": 11,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -74,7 +84,9 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
+    "task": null,
+    "accounting": "OUT-OF-SCOPE",
+    "note": "Device unlock — WebAuthn descoped by the owner; PIN deferred",
     "status": "out-of-scope"
   },
   {
@@ -87,7 +99,9 @@
     "route": "/role",
     "role": "anon",
     "state": "default",
-    "implementation": "current/B1-role.png",
+    "task": 12,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -100,7 +114,9 @@
     "route": "/clinic-create/step-1-basics",
     "role": "anon",
     "state": "default",
-    "implementation": "current/B3-create-1.png",
+    "task": 12,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -113,7 +129,9 @@
     "route": "/role",
     "role": "anon",
     "state": "driven (prepare step)",
-    "implementation": "current/B6-join.png",
+    "task": 12,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -126,8 +144,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 12,
+    "accounting": "PLANNED",
+    "note": "Task 12 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-11",
@@ -139,7 +159,9 @@
     "route": "/done",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/B7-done.png",
+    "task": 12,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -152,8 +174,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 12,
+    "accounting": "PLANNED",
+    "note": "Task 12 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-13",
@@ -165,7 +189,9 @@
     "route": "/home",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/C1-home-inchair.png",
+    "task": 13,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -178,8 +204,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 14,
+    "accounting": "PLANNED",
+    "note": "Task 14 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-15",
@@ -191,8 +219,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 14,
+    "accounting": "PLANNED",
+    "note": "Task 14 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-16",
@@ -204,8 +234,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 14,
+    "accounting": "PLANNED",
+    "note": "Task 14 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-17",
@@ -217,8 +249,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 14,
+    "accounting": "PLANNED",
+    "note": "Task 14 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-18",
@@ -230,8 +264,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 14,
+    "accounting": "PLANNED",
+    "note": "Task 14 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-19",
@@ -243,8 +279,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 14,
+    "accounting": "PLANNED",
+    "note": "Task 14 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-20",
@@ -256,8 +294,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 33,
+    "accounting": "PLANNED",
+    "note": "Task 33 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-21",
@@ -269,7 +309,9 @@
     "route": "/consult",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/D1-consult.png",
+    "task": 15,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -282,8 +324,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 15,
+    "accounting": "PLANNED",
+    "note": "Task 15 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-23",
@@ -295,8 +339,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 16,
+    "accounting": "PLANNED",
+    "note": "Task 16 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-24",
@@ -308,8 +354,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 16,
+    "accounting": "PLANNED",
+    "note": "Task 16 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-25",
@@ -321,8 +369,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 16,
+    "accounting": "PLANNED",
+    "note": "Task 16 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-26",
@@ -334,8 +384,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 16,
+    "accounting": "PLANNED",
+    "note": "Task 16 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-27",
@@ -347,8 +399,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 18,
+    "accounting": "PLANNED",
+    "note": "Task 18 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-28",
@@ -360,8 +414,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 18,
+    "accounting": "PLANNED",
+    "note": "Task 18 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-29",
@@ -373,8 +429,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 18,
+    "accounting": "PLANNED",
+    "note": "Task 18 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-30",
@@ -386,8 +444,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 18,
+    "accounting": "PLANNED",
+    "note": "Task 18 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-31",
@@ -399,8 +459,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 18,
+    "accounting": "PLANNED",
+    "note": "Task 18 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-32",
@@ -412,7 +474,9 @@
     "route": "/patients",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/E1-patients.png",
+    "task": 19,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -425,7 +489,9 @@
     "route": "/patients?search=a",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/E2-search.png",
+    "task": 19,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -438,8 +504,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 19,
+    "accounting": "PLANNED",
+    "note": "Task 19 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-35",
@@ -451,7 +519,9 @@
     "route": "/patients/new",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/E4-new-patient.png",
+    "task": 20,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -464,8 +534,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 20,
+    "accounting": "PLANNED",
+    "note": "Task 20 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-37",
@@ -477,7 +549,9 @@
     "route": "/patients",
     "role": "doctor",
     "state": "driven (prepare step)",
-    "implementation": "current/E6-patient-overview.png",
+    "task": 22,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -490,7 +564,9 @@
     "route": "/patients",
     "role": "doctor",
     "state": "driven (prepare step)",
-    "implementation": "current/E7-patient-cases.png",
+    "task": 22,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -503,8 +579,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 23,
+    "accounting": "PLANNED",
+    "note": "Task 23 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-40",
@@ -516,7 +594,9 @@
     "route": "/patients",
     "role": "doctor",
     "state": "driven (prepare step)",
-    "implementation": "current/E8-patient-teeth.png",
+    "task": 22,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -529,7 +609,9 @@
     "route": "/patients",
     "role": "doctor",
     "state": "driven (prepare step)",
-    "implementation": "current/E10-patient-billing.png",
+    "task": 22,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -542,8 +624,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 23,
+    "accounting": "PLANNED",
+    "note": "Task 23 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-43",
@@ -555,8 +639,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 23,
+    "accounting": "PLANNED",
+    "note": "Task 23 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-44",
@@ -568,8 +654,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 24,
+    "accounting": "PLANNED",
+    "note": "Task 24 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-45",
@@ -581,8 +669,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 24,
+    "accounting": "PLANNED",
+    "note": "Task 24 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-46",
@@ -594,7 +684,9 @@
     "route": "/schedule",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/G1-schedule-day.png",
+    "task": 25,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -607,7 +699,9 @@
     "route": "/schedule",
     "role": "receptionist",
     "state": "default",
-    "implementation": "current/G2-schedule-multi.png",
+    "task": 25,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -620,8 +714,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 25,
+    "accounting": "PLANNED",
+    "note": "Task 25 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-49",
@@ -633,8 +729,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 25,
+    "accounting": "PLANNED",
+    "note": "Task 25 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-50",
@@ -646,7 +744,9 @@
     "route": "/today",
     "role": "receptionist",
     "state": "default",
-    "implementation": "current/H1-today.png",
+    "task": 26,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -659,8 +759,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 26,
+    "accounting": "PLANNED",
+    "note": "Task 26 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-52",
@@ -672,8 +774,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 26,
+    "accounting": "PLANNED",
+    "note": "Task 26 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-53",
@@ -685,8 +789,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 26,
+    "accounting": "PLANNED",
+    "note": "Task 26 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-54",
@@ -698,7 +804,9 @@
     "route": "/billing",
     "role": "receptionist",
     "state": "default",
-    "implementation": "current/H5-billing.png",
+    "task": 27,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -711,7 +819,9 @@
     "route": "/billing/outstanding",
     "role": "receptionist",
     "state": "default",
-    "implementation": "current/H6-outstanding.png",
+    "task": 27,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -724,7 +834,9 @@
     "route": "/lab",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/I1-lab.png",
+    "task": 28,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -737,8 +849,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 28,
+    "accounting": "PLANNED",
+    "note": "Task 28 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-58",
@@ -750,7 +864,9 @@
     "route": "/lab",
     "role": "doctor",
     "state": "driven (prepare step)",
-    "implementation": "current/I3-lab-case.png",
+    "task": 28,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -763,7 +879,9 @@
     "route": "/lab/new",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/I4-lab-new.png",
+    "task": 28,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -776,8 +894,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 28,
+    "accounting": "PLANNED",
+    "note": "Task 28 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-61",
@@ -789,7 +909,9 @@
     "route": "/lab/vendors",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/I6-vendors.png",
+    "task": 28,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -802,7 +924,9 @@
     "route": "/messages",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/J1-messages.png",
+    "task": 29,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -815,8 +939,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 29,
+    "accounting": "PLANNED",
+    "note": "Task 29 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-64",
@@ -828,8 +954,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 29,
+    "accounting": "PLANNED",
+    "note": "Task 29 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-65",
@@ -841,7 +969,9 @@
     "route": "/messages/lab",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/J4-lab-inbox.png",
+    "task": 29,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -854,8 +984,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 29,
+    "accounting": "PLANNED",
+    "note": "Task 29 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-67",
@@ -867,7 +999,9 @@
     "route": "/inventory",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/K1-inventory.png",
+    "task": 29,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -880,7 +1014,9 @@
     "route": "/inventory",
     "role": "doctor",
     "state": "driven (prepare step)",
-    "implementation": "current/K2-item.png",
+    "task": 29,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -893,8 +1029,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 29,
+    "accounting": "PLANNED",
+    "note": "Task 29 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-70",
@@ -906,7 +1044,9 @@
     "route": "/more",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/L1-more.png",
+    "task": 6,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -919,8 +1059,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 31,
+    "accounting": "PLANNED",
+    "note": "Task 31 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-72",
@@ -932,7 +1074,9 @@
     "route": "/clinic/whatsapp",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/L3-whatsapp.png",
+    "task": 30,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -945,7 +1089,9 @@
     "route": "/clinic/availability",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/L4-availability.png",
+    "task": 30,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -958,7 +1104,9 @@
     "route": "/clinic/day-off",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/L5-dayoff.png",
+    "task": 30,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -971,7 +1119,9 @@
     "route": "/clinic/templates",
     "role": "doctor",
     "state": "default",
-    "implementation": "current/L6-templates.png",
+    "task": 30,
+    "accounting": "MAPPED",
+    "note": null,
     "status": "mapped"
   },
   {
@@ -984,8 +1134,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 30,
+    "accounting": "PLANNED",
+    "note": "Task 30 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-77",
@@ -997,8 +1149,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 30,
+    "accounting": "PLANNED",
+    "note": "Task 30 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-78",
@@ -1010,8 +1164,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": null,
+    "accounting": "CROSS-CUTTING",
+    "note": "Orb tap/hold contract — validated by lib/ds/orb.ts tests + every frame carrying the dock",
+    "status": "cross-cutting"
   },
   {
     "frame": "v9-79",
@@ -1023,8 +1179,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": null,
+    "accounting": "CROSS-CUTTING",
+    "note": "The three toast voices — validated by lib/ds/toast-voice.ts tests + lib/toast.ts",
+    "status": "cross-cutting"
   },
   {
     "frame": "v9-80",
@@ -1036,8 +1194,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 31,
+    "accounting": "PLANNED",
+    "note": "Task 31 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v9-81",
@@ -1049,8 +1209,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": null,
+    "accounting": "CROSS-CUTTING",
+    "note": "The tap contract (what tap / hold / long-press mean) — validated by the interaction criterion on every frame",
+    "status": "cross-cutting"
   },
   {
     "frame": "v10-01",
@@ -1062,8 +1224,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 32,
+    "accounting": "PLANNED",
+    "note": "Task 32 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v10-02",
@@ -1075,8 +1239,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 32,
+    "accounting": "PLANNED",
+    "note": "Task 32 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v10-03",
@@ -1088,8 +1254,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 32,
+    "accounting": "PLANNED",
+    "note": "Task 32 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v10-04",
@@ -1101,8 +1269,10 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 32,
+    "accounting": "PLANNED",
+    "note": "Task 32 builds and captures this",
+    "status": "pending"
   },
   {
     "frame": "v10-05",
@@ -1114,7 +1284,9 @@
     "route": null,
     "role": null,
     "state": "—",
-    "implementation": null,
-    "status": "unmapped"
+    "task": 32,
+    "accounting": "PLANNED",
+    "note": "Task 32 builds and captures this",
+    "status": "pending"
   }
 ]

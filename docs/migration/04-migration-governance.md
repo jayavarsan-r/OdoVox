@@ -122,8 +122,10 @@ Stage <N> is complete only if:
 
   ✓ every page in the stage passes the §1 Design QA checklist
   ✓ every page in the stage passes the §3 numeric criteria
-  ✓ all screenshots recaptured and every diff read and approved
-  ✓ zero visual-diff failures (structural loss = failure; restyle = expected)
+  ✓ GATE A: all screenshots recaptured and every diff read and approved
+  ✓ GATE A: zero structural loss (a restyle is expected; a missing control is not)
+  ✓ GATE B: every frame the stage owns is MATCHED or APPROVED-DEVIATION
+  ✓ GATE B: zero criteria left UNREVIEWED on those frames
   ✓ zero accessibility regressions vs the stage's entry snapshot
   ✓ performance budgets (§2) hold on the stage's heaviest page
   ✓ every commit in the stage carries a §6 Migration Report
@@ -131,6 +133,25 @@ Stage <N> is complete only if:
 ```
 
 Tagging each stage means rollback to any stage boundary is one command.
+
+### The two gates answer different questions
+
+|          | Gate A — regression                     | Gate B — fidelity                                           |
+| -------- | --------------------------------------- | ----------------------------------------------------------- |
+| Question | did we lose anything?                   | does it match the approved design?                          |
+| Truth    | `screenshots/baseline/` — the OLD app   | `screenshots/v9-reference/` — the v9 HTML                   |
+| Canvas   | 390×844 (the device)                    | 370×824 (the `.screen` fixture)                             |
+| Command  | `pnpm shots:current && shots:compare`   | `pnpm shots:impl && shots:fidelity`                         |
+| Fails on | a control, row, state or route vanished | an unapproved deviation, or any criterion FAIL / UNREVIEWED |
+
+**Neither substitutes for the other, and neither is a pixel-percentage test.** A frame at
+3% off the old app can be 30% off the design; a frame at 2% off the design can still carry
+the wrong interaction model, which is exactly what shipped on `/role`.
+
+Gate B judges eight criteria per frame — layout, typography, colors, component anatomy,
+content, interaction/state, functionality, canvas geometry. Only canvas geometry is decided
+mechanically. **The other seven start UNREVIEWED, and UNREVIEWED blocks**, so a frame
+cannot pass by nobody looking at it.
 
 ---
 

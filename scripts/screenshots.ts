@@ -31,7 +31,21 @@ const OUT_ROOT = join(process.cwd(), "docs", "migration", "screenshots");
 const SHOT_DELAY_MS = Number(process.env.SHOTS_DELAY_MS ?? 1500);
 const RATE_WINDOW_MS = Number(process.env.SHOTS_RATE_WINDOW_MS ?? 62_000);
 
-const mode = (process.argv[2] ?? "current") as "baseline" | "current";
+/**
+ * baseline / current -> GATE A (regression), 390x844, the real device viewport.
+ * fidelity           -> GATE B (design), 370x824, the v9 `.screen` canvas.
+ *
+ * 370x824 is a TEST FIXTURE ONLY. Production ships at 390x844; the v9 tokens are
+ * never scaled to compensate. The fixture exists so reference and implementation
+ * share a canvas and a pixel diff means something.
+ */
+const mode = (process.argv[2] ?? "current") as
+  | "baseline"
+  | "current"
+  | "fidelity";
+
+/** The v9 `.screen` content box, measured: .phone 390x844 minus its 10px bezel. */
+const FIDELITY_VIEWPORT = { width: 370, height: 824 };
 const filters = process.argv.slice(3);
 
 type Cookies = Parameters<BrowserContext["addCookies"]>[0];
@@ -104,34 +118,71 @@ async function login(
   return cookies;
 }
 
-/** Freeze anything that would make two captures of an unchanged page differ. */
+/**
+ * The v9 `.sb` status bar, measured from the spec: `.sb{height:54px}`.
+ *
+ * The app already reserves this space — `MobileShell` pads by `--safe-top`, which is
+ * `env(safe-area-inset-top)`. On a phone that is ~54px; in a desktop browser it is 0.
+ * So the frames draw a band the app also has on device but not under test, and without
+ * emulating it every element sits 54px higher than the frame it is being judged against.
+ * Emulating it makes the fixture behave like the device the frames depict — it is not a
+ * change to the design system, and production is untouched.
+ */
+const SAFE_TOP = 54;
+
+/**
+ * Freeze anything that would make two captures of an unchanged page differ.
+ *
+ * Passed as SOURCE TEXT, not as a function. tsx compiles this file with esbuild, and a
+ * `class PinnedDate extends Date` in a function handed to `addInitScript` came back
+ * downlevelled to a helper that does not exist in the browser — so the whole script threw
+ * on its first line and silently did nothing. Every screenshot ever taken therefore ran
+ * with a LIVE clock, animations enabled, and the dev banner showing. A string cannot be
+ * rewritten on the way out, which is the point.
+ */
+function stabiliseSource(): string {
+  return `
+(function () {
+  // Pin the clock so relative times ("2m ago") don't drift between runs.
+  var FIXED = new Date("2026-07-13T09:41:00+05:30").getTime();
+  var RealDate = Date;
+  function PinnedDate() {
+    if (arguments.length === 0) return new RealDate(FIXED);
+    return new (Function.prototype.bind.apply(RealDate, [null].concat([].slice.call(arguments))))();
+  }
+  PinnedDate.prototype = RealDate.prototype;
+  PinnedDate.now = function () { return FIXED; };
+  PinnedDate.parse = RealDate.parse;
+  PinnedDate.UTC = RealDate.UTC;
+  window.Date = PinnedDate;
+
+  // The banner's own dismissal key. Belt to the stylesheet's braces: this stops it ever
+  // rendering, the CSS stops it showing if this fails.
+  try { sessionStorage.setItem("odovox-dev-banner-dismissed", "1"); } catch (e) {}
+})();
+`;
+}
+
+/**
+ * The stylesheet, applied AFTER navigation rather than at init.
+ *
+ * Next replaces `<head>` during hydration in dev, which silently deleted a style tag
+ * injected at document-start — the probe found two style tags left, neither of them ours.
+ * `addStyleTag` runs post-hydration, so it survives.
+ */
+function stabiliseCss(emulateSafeArea: boolean): string {
+  return [
+    // Never capture mid-transition.
+    `*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}`,
+    // Dev-only chrome. `nextjs-portal` is a custom element with a shadow root; hiding the
+    // host hides the indicator inside it.
+    `[data-dev-chrome],nextjs-portal,#__next-build-watcher{display:none!important}`,
+    ...(emulateSafeArea ? [`:root{--safe-top:${SAFE_TOP}px!important}`] : []),
+  ].join("\n");
+}
+
 async function stabilise(ctx: BrowserContext) {
-  await ctx.addInitScript(() => {
-    // Pin the clock so relative times ("2m ago") don't drift between runs.
-    const FIXED = new Date("2026-07-13T09:41:00+05:30").getTime();
-    const RealDate = Date;
-    class PinnedDate extends RealDate {
-      constructor(...args: ConstructorParameters<typeof Date>) {
-        args.length ? super(...args) : super(FIXED);
-      }
-      static now() {
-        return FIXED;
-      }
-    }
-    globalThis.Date = PinnedDate as DateConstructor;
-    // Dismiss the dev banner — it is 24px of dev-only chrome that shifts every page
-    // down and would pollute every diff. Uses the component's own dismissal key, so
-    // no app change is needed.
-    try {
-      sessionStorage.setItem("odovox-dev-banner-dismissed", "1");
-    } catch {
-      /* storage unavailable — banner just stays, still deterministic */
-    }
-    // Kill animations so a capture is never mid-transition.
-    const style = document.createElement("style");
-    style.textContent = `*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important}`;
-    document.documentElement.appendChild(style);
-  });
+  await ctx.addInitScript({ content: stabiliseSource() });
 }
 
 /**
@@ -141,7 +192,12 @@ async function stabilise(ctx: BrowserContext) {
  */
 const BENIGN = [/Failed to load resource.*401 \(Unauthorized\)/];
 
-async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
+async function capture(
+  ctx: BrowserContext,
+  shot: Shot,
+  outDir: string,
+  css: string,
+) {
   const page = await ctx.newPage();
   const consoleErrors: string[] = [];
   page.on("console", (m) => {
@@ -150,8 +206,17 @@ async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
     if (!BENIGN.some((re) => re.test(text))) consoleErrors.push(text);
   });
   try {
+    if (shot.transient) {
+      // Hold the screen still. The splash routes away the moment /auth/refresh settles —
+      // either outcome redirects — so neither fulfilling nor aborting the call keeps it
+      // on screen. Leaving the request hanging does, and the hanging state IS the state
+      // frame 01 draws: Odo plus the progress hairline, mid-token-exchange.
+      await page.route(`${API}/auth/**`, () => {});
+    }
     await page.goto(`${WEB}${shot.path}`, {
-      waitUntil: "networkidle",
+      // A transient screen redirects the instant its network settles, so waiting for
+      // networkidle guarantees capturing the NEXT screen instead.
+      waitUntil: shot.transient ? "domcontentloaded" : "networkidle",
       timeout: 30_000,
     });
     // Landing somewhere other than the requested path means a redirect happened, and
@@ -164,7 +229,7 @@ async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
     // landing is checked.
     const landed = new URL(page.url()).pathname;
     const wanted = new URL(shot.path, WEB).pathname;
-    if (landed !== wanted) {
+    if (!shot.transient && landed !== wanted) {
       throw new Error(
         `redirected ${wanted} -> ${landed}. The shot would not be of the screen its ` +
           `slug names.` +
@@ -173,7 +238,11 @@ async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
             : ""),
       );
     }
+    await page.addStyleTag({ content: css });
     if (shot.prepare) await shot.prepare(page);
+    // A prepare step can navigate, and a client-side route change re-renders the head —
+    // so re-apply rather than assume the first tag survived.
+    await page.addStyleTag({ content: css });
     await page.waitForTimeout(500); // let the last layout settle
     await page.screenshot({ path: join(outDir, `${shot.slug}.png`) });
     return { slug: shot.slug, ok: true as const, consoleErrors };
@@ -190,7 +259,7 @@ async function capture(ctx: BrowserContext, shot: Shot, outDir: string) {
 }
 
 async function main() {
-  const outDir = join(OUT_ROOT, mode);
+  const outDir = join(OUT_ROOT, mode === "fidelity" ? "impl" : mode);
   await mkdir(outDir, { recursive: true });
 
   let shots = active();
@@ -203,13 +272,17 @@ async function main() {
 
   const browser = await chromium.launch();
   const results: Awaited<ReturnType<typeof capture>>[] = [];
+  const css = stabiliseCss(mode === "fidelity");
 
   for (const role of ["anon", "doctor", "receptionist"] as const) {
     const group = shots.filter((s) => s.role === role);
     if (!group.length) continue;
 
     const ctx = await browser.newContext({
-      ...devices["iPhone 13"], // 390x844 — the spec's exact frame size
+      ...devices["iPhone 13"],
+      ...(mode === "fidelity"
+        ? { viewport: FIDELITY_VIEWPORT, deviceScaleFactor: 1 }
+        : {}),
       baseURL: WEB,
     });
     await stabilise(ctx);
@@ -218,18 +291,22 @@ async function main() {
     let reloggedIn = false;
 
     for (const shot of group) {
-      let r = await capture(ctx, shot, outDir);
+      let r = await capture(ctx, shot, outDir, css);
 
       // The app ROTATES its refresh token on every /auth/refresh, so a cached cookie
       // dies as soon as a previous run used it. That is inherent to the auth design,
       // not an anomaly — so heal instead of failing: drop the cached session, log in
       // once more, and retry. Only once per role, so a genuinely broken login still
       // surfaces as a failure rather than looping.
+      //
+      // An expired session shows up as a BOUNCE TO /welcome, not as the words "session
+      // invalid" — the heal condition only matched the latter, so a whole authenticated
+      // run once burned 29 minutes retrying a login it never attempted. Match both.
       if (
         !r.ok &&
         role !== "anon" &&
         !reloggedIn &&
-        /session invalid/.test(r.error ?? "")
+        /session invalid|-> \/welcome/.test(r.error ?? "")
       ) {
         console.log(
           `  … ${shot.slug}: session rotated, re-authenticating ${role}`,
@@ -237,7 +314,7 @@ async function main() {
         reloggedIn = true;
         await ctx.clearCookies();
         await ctx.addCookies(await login(role, 0, true));
-        r = await capture(ctx, shot, outDir);
+        r = await capture(ctx, shot, outDir, css);
       }
 
       // The API allows 100 req/min per IP (plugins/rate-limit.ts) and each page load
@@ -248,7 +325,7 @@ async function main() {
       if (rateLimited) {
         console.log(`  … ${shot.slug} rate-limited, waiting out the window`);
         await new Promise((res) => setTimeout(res, RATE_WINDOW_MS));
-        r = await capture(ctx, shot, outDir);
+        r = await capture(ctx, shot, outDir, css);
       }
 
       results.push(r);
