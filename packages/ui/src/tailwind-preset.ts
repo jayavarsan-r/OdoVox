@@ -181,6 +181,7 @@ const preset = {
       letterSpacing: {
         display: "var(--tracking-display)",
         tight: "var(--tracking-tight)",
+        question: "var(--tracking-question)",
         snug: "var(--tracking-snug)",
         label: "var(--tracking-label)",
         "bento-label": "var(--tracking-bento-label)",

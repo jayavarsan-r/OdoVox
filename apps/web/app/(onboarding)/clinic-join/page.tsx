@@ -133,7 +133,7 @@ export default function ClinicJoinPage() {
       </div>
       <div className="flex flex-1 flex-col px-gutter-onboarding pt-2">
         <div className="mt-6">
-          <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
             Got a join code?
           </h1>
           <p className="mt-2 text-sm leading-[1.5] text-pine-2">

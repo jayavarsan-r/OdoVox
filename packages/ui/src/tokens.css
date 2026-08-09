@@ -290,6 +290,18 @@
 
   --tracking-display: -0.03em;
   --tracking-tight: -0.02em;
+  /**
+   * The onboarding question (`.ob-q`) only. The spec sets it at -0.02em, and every other
+   * value we match exactly: 800 weight, 27px, 1.15 leading, 22px gutters (326px of usable
+   * width). But Geist — approved deviation 1 — runs ~5% wider per glyph at 800, so
+   * "How will you use Odovox?" measures 336px against those 326 and wraps where frames 07
+   * and 08 set it on one line. The spec's own stack measures 320px.
+   *
+   * This token buys back exactly that overflow and nothing more. It is deliberately NOT
+   * `--tracking-tight`: the rest of the app keeps the spec's -0.02em, because only this
+   * one string at this one size overflows.
+   */
+  --tracking-question: -0.036em;
   --tracking-snug: -0.01em;
   --tracking-normal: 0;
   --tracking-label: 0.06em;

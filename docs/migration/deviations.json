@@ -65,24 +65,26 @@
     },
     {
       "id": 6,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-08"
       ],
       "summary": "Clinic creation kept as 3 steps; the frame shows a single screen",
       "reason": "The single screen drops hours and profile capture. Feature parity outranks fidelity.",
-      "status": "pending",
-      "openQuestion": "AMBIGUOUS AS WRITTEN. The frame's model is one QUESTION at a time (\"What's your clinic called?\" \u2192 \"Next \u00b7 City\"), while our step 1 holds six fields. \"Keep 3 steps\" does not settle whether step 1 should be one question or six fields \u2014 those are different claims."
+      "status": "open",
+      "openQuestion": "AMBIGUOUS AS WRITTEN. The frame's model is one QUESTION at a time (\"What's your clinic called?\" \u2192 \"Next \u00b7 City\"), while our step 1 holds six fields. \"Keep 3 steps\" does not settle whether step 1 should be one question or six fields \u2014 those are different claims.",
+      "ruling": "KEEP the 3-step workflow, but redesign each step to the v9 one-question-at-a-time pattern with a destination-labelled CTA. Do NOT collapse the required data collection. Step 1 must not remain a dense six-field form."
     },
     {
       "id": 7,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-03"
       ],
       "summary": "No summoned numeric keypad on /phone",
       "reason": "The page has always used the native keyboard; building a pad adds a surface rather than migrating one.",
-      "status": "revisit"
+      "status": "open",
+      "ruling": "KEEP the keypad. Implement v9 visually and behaviourally, preserving phone validation and rate-limit logic."
     },
     {
       "id": 8,
@@ -92,17 +94,19 @@
       ],
       "summary": "/more shows 3 module tiles for a doctor, not 4",
       "reason": "canAccess('/billing','DOCTOR') is false. Rendering it would leak a permission \u2014 an access-control requirement, not a style choice.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "APPROVED \u2014 3 tiles. RBAC determines available actions; no inaccessible fourth tile for symmetry."
     },
     {
       "id": 9,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-59"
       ],
       "summary": "/lab/new kept as a page; the frame shows a sheet",
       "reason": "Feature parity.",
-      "status": "pending"
+      "status": "deferred-to-task-28",
+      "ruling": "USE the sheet presentation for lab creation. Preserve every existing field, validation rule, API call and workflow. Presentation only."
     },
     {
       "id": 10,
@@ -115,7 +119,8 @@
       ],
       "summary": "Patient detail keeps 5 tabs (Media has no frame)",
       "reason": "Feature parity \u2014 Media must not disappear.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "APPROVED \u2014 keep 5 tabs including Media."
     },
     {
       "id": 11,
@@ -148,7 +153,8 @@
       ],
       "summary": "Phone number masked to \"+91 \u2022\u2022\u2022\u2022\u2022 0001\"; frame 04 shows it in full",
       "reason": "Shoulder-surfing protection on a screen a patient may see. A workflow/privacy choice, not styling.",
-      "status": "pending"
+      "status": "blocked-on-clarification",
+      "ruling": "Ruling reads \"MATCH v9 \u2014 use the masked presentation specified by the design\", but frame 04 shows the number IN FULL: \"Sent to +91 98401 23456 \u00b7 Edit\". v9 specifies no masking anywhere. The table ruling (\"KEEP masking\") and the prose (\"do not expose the complete number\") both point to KEEPING our mask \u2014 which is a deviation FROM v9, not a match to it. Held until confirmed; masking stays meanwhile."
     },
     {
       "id": 14,
@@ -159,7 +165,8 @@
       ],
       "summary": "An explicit \"Verify\" button; frames 04/05 auto-submit on the sixth digit",
       "reason": "Accessibility: SMS autofill does not always fire, and a screen-reader or keyboard user needs an explicit submit target. Auto-submit alone leaves no way to retry a corrected code.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "APPROVED \u2014 keep the Verify button. Functional UI is not removed to reduce a pixel percentage."
     },
     {
       "id": 15,
@@ -180,17 +187,19 @@
       ],
       "summary": "/welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those",
       "reason": "The frame's slide-1 copy ('Speak. Odovox writes the record.') is the product's opening promise. Which pitch opens the app is a product call.",
-      "status": "pending"
+      "status": "blocked-on-clarification",
+      "ruling": "Ruling reads \"implement the v9 copy, Skip behavior, chips and four progress dots exactly\", but frame 02 has THREE dots, NO Skip link and NO language chips. Matching v9 exactly therefore means DELETING the Skip link and the language chips and dropping to 3 slides. The v9 copy is unambiguous and can proceed; the other three cannot without confirming which way they go."
     },
     {
       "id": 17,
-      "class": "PRODUCT-DECISION",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-09"
       ],
       "summary": "/clinic-join is a two-field form + explicit \"Find clinic\"; frame 09 is one hero code field with a live check and a clinic preview",
       "reason": "Two things at once: the joiner's name is feature parity (the request records who is asking), and the lookup model differs (explicit press vs validate-as-you-type).",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "APPROVED \u2014 keep the two-field lookup. Recreate the v9 visual treatment around the existing reliable workflow."
     },
     {
       "id": 18,
@@ -205,15 +214,17 @@
     },
     {
       "id": 19,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-07",
         "v9-08"
       ],
       "summary": "The .ob-q question wraps to two lines where frames 07 and 08 set it on one",
       "reason": "A measured consequence of approved deviation 1, not an independent defect \u2014 the app matches the spec's values exactly. Closing it means altering one of the spec's own numbers.",
-      "status": "pending",
-      "openQuestion": "(a) accept the wrap, (b) drop the question to ~25.5px, or (c) tighten question tracking to about -0.0355em."
+      "status": "fixed",
+      "openQuestion": "(a) accept the wrap, (b) drop the question to ~25.5px, or (c) tighten question tracking to about -0.0355em.",
+      "ruling": "MATCH the v9 wrap. Verify in order: font family, weight, container width, size, line height; use letter-spacing only if needed.",
+      "fixedIn": "Applied in the ruling's own order. Items 2-5 already matched the spec exactly (800 weight, 326px container, 27px, 1.15 leading), and item 1 is approved deviation 1, so letter-spacing was the only remaining lever: new --tracking-question token at -0.036em, scoped to the .ob-q heading alone. The rest of the app keeps the spec's -0.02em. Verified in the browser: \"How will you use Odovox?\" now renders on ONE line at 326px."
     },
     {
       "id": 20,
@@ -223,17 +234,19 @@
       ],
       "summary": "A lime focus ring on the .field; the frame's focused field has none",
       "reason": "Accessibility. Removing focus indication to win pixels is a real regression for keyboard users.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "APPROVED \u2014 keep the focus ring. Make it restrained and consistent with the v9 system."
     },
     {
       "id": 21,
-      "class": "PRODUCT-DECISION",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-03"
       ],
       "summary": "A \"By continuing you agree to our terms.\" line; frame 03 has none",
       "reason": "Legal copy, not styling. Whether it may be removed is not an engineering call.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "KEEP the terms/legal copy. Style it with v9 typography and spacing."
     },
     {
       "id": 22,
@@ -247,13 +260,14 @@
     },
     {
       "id": 23,
-      "class": "PRODUCT-DECISION",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-05"
       ],
       "summary": "A \"Wrong code. N attempts left.\" toast on top of the frame's inline message",
       "reason": "The frame reports the failure once, inline. The toast reports it twice \u2014 but it also carries the remaining-attempts count, which is information the frame does not show and which warns of lockout. Dropping it loses that warning.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "KEEP the attempts-left toast. Restyle to the v9 visual language."
     },
     {
       "id": 24,
@@ -309,5 +323,6 @@
       "reason": "Both need a clinic-members endpoint. /clinics has only create, lookup and join \u2014 there is no members or pending-requests route to read. Task 31 owns that server work.",
       "status": "open"
     }
-  ]
+  ],
+  "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first."
 }

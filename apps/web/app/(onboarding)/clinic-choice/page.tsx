@@ -18,7 +18,7 @@ export default function ClinicChoicePage() {
           <MascotMoment pose="hero" size="md" animation="float" background="cream" />
         </div>
         <div className="mt-7">
-          <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
             Your clinic
           </h1>
           <p className="mt-2 text-sm leading-[1.5] text-pine-2">Two minutes. Three steps.</p>

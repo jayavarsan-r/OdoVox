@@ -44,7 +44,7 @@ export default function RolePage() {
     <MobileShell className="bg-paper">
       <AnimatedPage className="flex flex-1 flex-col px-gutter-onboarding">
         <div className="mt-7">
-          <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
             How will you use Odovox?
           </h1>
           <p className="mt-2 text-sm leading-[1.5] text-pine-2">

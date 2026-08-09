@@ -110,7 +110,7 @@ export default function OtpPage() {
         </div>
 
         <div className="mt-6">
-          <h1 className="text-question font-heavy leading-[1.15] tracking-tight text-pine">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
             Enter the code
           </h1>
           <p className="mt-2 text-sm leading-[1.5] text-pine-2">
