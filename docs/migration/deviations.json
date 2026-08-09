@@ -6,7 +6,9 @@
       "frames": ["*"],
       "summary": "Geist Sans/Mono retained instead of the spec's system font stack",
       "reason": "The system stack renders as SF Pro on iOS and Roboto on Android — two different products. Sizes, weights and tracking follow the spec exactly.",
-      "status": "approved"
+      "status": "approved",
+      "measuredCost": "Geist runs ~5% wider per glyph at 800. Measured on frame 07 at the spec's own values (27px/800/-0.02em, 22px gutters, 326px available): Geist 336px vs the system stack 320px. So the .ob-q question WRAPS TO TWO LINES where frames 07 and 08 set it on one. This is deviation 1's cost, not a separate defect. Closing it needs one of: (a) accept the wrap, (b) drop the question to ~25.5px, or (c) tighten question tracking to about -0.0355em — and (b) and (c) both alter the spec's own type values, so they need the owner's ruling.",
+      "openQuestion": "Which of (a)/(b)/(c) for the question wrap?"
     },
     {
       "id": 2,

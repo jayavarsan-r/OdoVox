@@ -9,7 +9,8 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| MISMATCHED | 35 |
+| MATCHED | 1 |
+| MISMATCHED | 34 |
 | OUT-OF-SCOPE | 1 |
 | NOT-BUILT | 46 |
 | NOT-CAPTURED | 1 |
@@ -17,8 +18,8 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
-| `v9-01` | Splash | 11 | MISMATCHED | 1.5% | criterion "layout" FAILED |
-| `v9-02` | Welcome | 11 | MISMATCHED | 10.3% | deviation #16 (pending): /welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3 |
+| `v9-01` | Splash | 11 | MATCHED | 0.6% | — |
+| `v9-02` | Welcome | 11 | MISMATCHED | 10.0% | deviation #16 (pending): /welcome carousel has 4 slides with different copy; frame 02 is slide 1 of 3 |
 | `v9-03` | Phone | 11 | MISMATCHED | 7.0% | deviation #7 (revisit): No summoned numeric keypad on /phone |
 | `v9-04` | OTP — auto-read | 11 | MISMATCHED | 1.5% | deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
 | `v9-05` | OTP — wrong code | 11 | MISMATCHED | 2.0% | deviation #13 (pending): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full |
@@ -108,14 +109,14 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 Each judged frame, with its side-by-side at `screenshots/fidelity/<frame>-sbs.png`.
 
-### `v9-01` — Splash · MISMATCHED
+### `v9-01` — Splash · MATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 1.5%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 0.6%
 
-- layout: **FAIL** — Block sits ~27px low. The frame centres Odo in the full 824 canvas; the app centres inside MobileShell's safe-area padding, so the whole group drops by half the inset.
+- layout: **PASS** — FIXED. Was ~27px low: the frame centres Odo in the full 824 canvas (its `.ob` is `inset:0`, unlike every other onboarding frame's `inset:54px 0 0 0`), while MobileShell pads by the safe area on every page. The splash now cancels that inset.
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — Odo's artwork is not the spec's `#odo-body`: the frame draws an outline tooth with lime blush ovals, the app draws a filled grey tooth with no blush and a notch at the crown. SYSTEMIC — every mascot frame inherits this.
+- component anatomy: **PASS** — FIXED. Odo is redrawn from the spec's own `#odo-body` path with the lime blush ovals, and the size ladder is now the spec's measured diameters (34/64/120/140) instead of a scale topping out at 280 — larger than the design draws anywhere. Frame 01 wants 120 and was getting 200. Residual: the app's ambient ring wash vs the frame's soft corner gradient.
 - content: **PASS**
 - interaction/state: **PASS**
 - functionality: **PASS**
@@ -123,7 +124,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 1.5%
 
 ### `v9-02` — Welcome · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 10.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 10.0%
 
 - layout: **FAIL** — The frame is centre-aligned (mascot, headline, body all centred). The implementation is left-aligned.
 - typography: **PASS**
@@ -189,7 +190,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.0%
 geometry: ref 370x824 · impl 370x824 · pixel Δ 3.9%
 
 - layout: **PASS**
-- typography: **FAIL** — The headline wraps to two lines ('How will you use / Odovox?'); frame 07 sets it on one. The question size is running larger than the frame's. SYSTEMIC — the same wrap appears on frame 08.
+- typography: **FAIL** — The question wraps to two lines; frame 07 sets it on one. MEASURED, and it is not a size error — the app matches the spec exactly at 27px/800/-0.02em with 22px gutters. 'How will you use Odovox?' renders 336px in Geist against 326px available; the spec's system stack renders it at 320px. So this is the measured cost of approved deviation 1, and closing it needs your ruling on (a) accept the wrap, (b) 25.5px, or (c) tighter question tracking. SYSTEMIC — frame 08 wraps for the same reason.
 - colors: **PASS**
 - component anatomy: **PASS**
 - content: **PASS**

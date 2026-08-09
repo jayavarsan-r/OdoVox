@@ -64,7 +64,11 @@ export default function SplashPage() {
    * usually completes in well under a second.
    */
   return (
-    <MobileShell className="items-center justify-center">
+    // `-mt-[var(--safe-top)]` because frame 01 is the one screen the spec centres in the
+    // FULL canvas: its `.ob` is `inset:0`, not the `inset:54px 0 0 0` every other
+    // onboarding frame uses. MobileShell pads by the safe area on every page, which left
+    // Odo sitting half an inset low here. Full-bleed splash, then normal insets after.
+    <MobileShell className="-mt-[var(--safe-top)] items-center justify-center">
       <GradientMesh variant="warm" />
       <div className="flex flex-col items-center">
         <MascotMoment pose="hero" size="lg" animation="float" />
