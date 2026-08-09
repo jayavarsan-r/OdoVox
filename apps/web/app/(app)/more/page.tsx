@@ -33,6 +33,8 @@ import { useInventoryItems } from "@/lib/inventory-queries";
 import { useConversations } from "@/lib/whatsapp-queries";
 import { useWhatsAppSettings } from "@/lib/whatsapp-queries";
 import { useDailyCollection } from "@/lib/billing/api";
+import { useDayOffs } from "@/lib/schedule/api";
+import { useTemplates } from "@/lib/queries";
 import { rupees } from "@/lib/queue/checkout-form";
 import { cn } from "@/lib/utils";
 
@@ -102,9 +104,20 @@ export default function MorePage() {
   const conversations = useConversations({ status: "OPEN" });
   const collection = useDailyCollection();
   const whatsapp = useWhatsAppSettings();
+  // Frame 70 puts a value on every setup row — the hub's whole point is that it shows
+  // state, not just destinations. Two of the four have a source today.
+  const dayOffs = useDayOffs();
+  const templates = useTemplates("");
+
+  const today = new Date().setHours(0, 0, 0, 0);
+  const upcomingDayOffs =
+    dayOffs.data?.dayOffs.filter(
+      (d) => new Date(d.endDate ?? d.date).setHours(0, 0, 0, 0) >= today,
+    ).length ?? 0;
+  const templateCount = templates.data?.items.length ?? 0;
 
   const cases = labCases.data?.pages.flatMap((p) => p.items) ?? [];
-  const overdueLab = cases.filter((c) => c.status === 'ISSUE_RAISED').length;
+  const overdueLab = cases.filter((c) => c.status === "ISSUE_RAISED").length;
   const items = inventory.data?.pages.flatMap((p) => p.items) ?? [];
   const lowStock = items.filter((i) => i.isLowStock).length;
   const openThreads = conversations.data?.length ?? 0;
@@ -207,6 +220,12 @@ export default function MorePage() {
           }
           onClick={go("/clinic/whatsapp")}
         />
+        {/*
+          Frame 70 puts "2 doctors" here and "1 request" on Team & join code. Both need a
+          clinic-members endpoint, which does not exist — /clinics has only create,
+          lookup and join. Task 31 owns that server work; until then the value is omitted
+          rather than faked, and the gap is recorded against frame 70 in findings.json.
+        */}
         <SettingRow
           icon={<CalendarClock />}
           tone="sky"
@@ -220,6 +239,7 @@ export default function MorePage() {
           icon={<CalendarOff />}
           tone="crit"
           title="Days off"
+          value={upcomingDayOffs ? `${upcomingDayOffs} upcoming` : undefined}
           trailing={
             <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
           }
@@ -229,6 +249,7 @@ export default function MorePage() {
           icon={<Pill />}
           tone="lav"
           title="Rx templates"
+          value={templateCount ? String(templateCount) : undefined}
           trailing={
             <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
           }

@@ -87,7 +87,7 @@ ACCOUNTED FOR (86), never in routes shipped.
 | `v9-67` | Inventory — stock | 29 | MISMATCHED | 10.7% | criterion "layout" unreviewed |
 | `v9-68` | Inventory — item detail | 29 | MISMATCHED | 8.5% | criterion "layout" unreviewed |
 | `v9-69` | Voice entry — confirm | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
-| `v9-70` | More — module hub | 6 | MISMATCHED | 3.5% | deviation #8 (pending): /more shows 3 module tiles for a doctor, not 4 |
+| `v9-70` | More — module hub | 6 | MISMATCHED | 3.6% | deviation #8 (pending): /more shows 3 module tiles for a doctor, not 4 |
 | `v9-71` | Team & join code | 31 | NOT-BUILT | — | Task 31 owns this; no route or state driver reaches it yet |
 | `v9-72` | WhatsApp settings | 30 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
 | `v9-73` | Availability — weekly hours | 30 | MISMATCHED | 9.2% | criterion "layout" unreviewed |
@@ -126,11 +126,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 0.6%
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 10.0%
 
-- layout: **FAIL** — The frame is centre-aligned (mascot, headline, body all centred). The implementation is left-aligned.
+- layout: **PASS** — FIXED. Frame 02's `.ob` is `align-items:center;text-align:center` — the front door is a centred composition. The app was left-aligned. Now centred, with the `.ob-s` 280px body cap and the frame's 18px gap under Odo.
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — Three elements the frame does not have: a Skip link top-right, a row of language chips, and a 4th carousel dot. Odo is also missing the frame's sparkles and blush.
-- content: **FAIL** — Slide 1 is different copy entirely. Frame: 'Speak. / Odovox writes the record.' + 'Notes, prescriptions, sittings and billing…'. App: 'Built for Indian dental clinics' + a languages pitch. CTA reads 'Continue', the frame's reads 'Continue with phone'.
+- component anatomy: **FAIL** — Odo now carries the frame's lime and blue sparkles and sits on the canvas rather than inside a cream card the frame does not have. STILL FAILING on three elements that belong to deviation 16 and are not mine to remove: the Skip link, the language chips, and a 4th carousel dot where the frame has 3.
+- content: **FAIL** — Deviation 16. Slide 1 is different copy entirely. Frame: 'Speak. / Odovox writes the record.' + 'Notes, prescriptions, sittings and billing…'. App: 'Built for Indian dental clinics' + a languages pitch. CTA reads 'Continue'; the frame's reads 'Continue with phone'. The pixel delta cannot move off 10% until this is ruled on — the copy dominates the canvas.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
@@ -533,13 +533,13 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
 
 ### `v9-70` — More — module hub · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 3.5%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 
 - layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS**
-- content: **FAIL** — The frame's setup rows each carry a right-hand value — Availability '2 doctors', Days off '2 upcoming', Rx templates '12', Team & join code a '1 request' chip. The app renders those four rows with a chevron and nothing else, so the hub loses the at-a-glance state that is the reason the frame puts values there. WhatsApp and Account do show theirs.
+- content: **FAIL** — PARTIALLY FIXED. Days off and Rx templates now carry their values (upcoming closures from `useDayOffs`, template count from `useTemplates`) — Days off renders empty only when there genuinely are none. STILL BARE: Availability's '2 doctors' and Team & join code's '1 request' chip. Both need a clinic-members endpoint, and `/clinics` has only create, lookup and join — there is no members or pending-requests route to read. Task 31 owns that server work. Faking either would put a number on screen that no query stands behind, so they are omitted and recorded here instead.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**

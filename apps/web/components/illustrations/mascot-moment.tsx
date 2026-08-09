@@ -44,17 +44,21 @@ const MOUTH: Record<MascotPose, string> = {
 /** Sleeping and thinking close the eyes; the rest keep the spec's 2.7r dots. */
 const EYES_CLOSED: MascotPose[] = ["sleeping"];
 
-function Odo({ pose }: { pose: MascotPose }) {
+/** The spec's two sparkles, verbatim — a lime four-point and a smaller blue one. */
+const SPARKLE_LIME = "M56 12 l1.4 3 3 1.4-3 1.4-1.4 3-1.4-3-3-1.4 3-1.4z";
+const SPARKLE_SKY = "M8 20 l1 2.2 2.2 1-2.2 1-1 2.2-1-2.2-2.2-1 2.2-1z";
+
+function Odo({ pose, sparkles }: { pose: MascotPose; sparkles: boolean }) {
   const filled = pose === "celebrate";
   return (
     <svg viewBox="0 0 64 64" className="size-full" fill="none" aria-hidden>
-      {/* Celebrate carries the spec's lime sparkle; thinking carries its rising dots. */}
-      {pose === "celebrate" && (
-        <path
-          d="M56 12 l1.4 3 3 1.4-3 1.4-1.4 3-1.4-3-3-1.4 3-1.4z"
-          className="fill-lime"
-        />
+      {/* Sparkles are a per-usage decoration in the spec, not part of a pose: frame 01's
+          Odo has none, frame 02's identical face has both. Celebrate always carries the
+          lime one. */}
+      {(sparkles || pose === "celebrate") && (
+        <path d={SPARKLE_LIME} className="fill-lime" />
       )}
+      {sparkles && <path d={SPARKLE_SKY} className="fill-sky" opacity=".7" />}
       {pose === "thinking" && (
         <>
           <circle cx="46" cy="12" r="1.5" className="fill-pine" opacity=".4" />
@@ -124,12 +128,15 @@ export function MascotMoment({
   size = "md",
   animation = "float",
   background = "none",
+  sparkles = false,
   className,
 }: {
   pose: MascotPose;
   size?: MascotSize;
   animation?: MascotAnimation;
   background?: MascotBackground;
+  /** The spec's lime + blue sparkles. Frame 02 has them; frame 01's same face does not. */
+  sparkles?: boolean;
   className?: string;
 }) {
   const px = mascotSizePx(size);
@@ -161,7 +168,7 @@ export function MascotMoment({
     >
       {/* Odo, drawn from the spec's own geometry. */}
       <div style={{ width: px, height: px }} className="absolute">
-        <Odo pose={pose} />
+        <Odo pose={pose} sparkles={sparkles} />
       </div>
       {/* An opaque pose PNG, when one ships, covers the SVG. Transparent today. */}
       <div
