@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 3 |
-| MISMATCHED | 32 |
+| APPROVED-DEVIATION | 6 |
 | OUT-OF-SCOPE | 1 |
+| MISMATCHED | 29 |
 | NOT-BUILT | 46 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -33,7 +33,6 @@ gradually reinterpreting its own design.
 ### Open MUST-FIX — work, not questions
 
 - **#6** v9-08 — Clinic creation kept as 3 steps; the frame shows a single screen
-- **#7** v9-03 — No summoned numeric keypad on /phone
 
 ### Awaiting your ruling — untouched by design
 
@@ -41,9 +40,9 @@ gradually reinterpreting its own design.
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
 | `v9-01` | Splash | 11 | APPROVED-DEVIATION | 0.6% | — |
-| `v9-02` | Welcome | 11 | MISMATCHED | 10.0% | criterion "component anatomy" FAILED |
-| `v9-03` | Phone | 11 | MISMATCHED | 1.9% | MUST-FIX #7: No summoned numeric keypad on /phone |
-| `v9-04` | OTP — auto-read | 11 | MISMATCHED | 1.5% | criterion "content" FAILED |
+| `v9-02` | Welcome | 11 | APPROVED-DEVIATION | 2.8% | — |
+| `v9-03` | Phone | 11 | APPROVED-DEVIATION | 2.3% | NOT-BUILT #22: No .mic-a affordance on /phone |
+| `v9-04` | OTP — auto-read | 11 | APPROVED-DEVIATION | 1.5% | — |
 | `v9-05` | OTP — wrong code | 11 | APPROVED-DEVIATION | 7.3% | — |
 | `v9-06` | Returning user — instant unlock | — | OUT-OF-SCOPE | — | — |
 | `v9-07` | Role | 12 | APPROVED-DEVIATION | 2.8% | — |
@@ -148,46 +147,46 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 0.6%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
-### `v9-02` — Welcome · MISMATCHED
+### `v9-02` — Welcome · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 10.0%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 2.8%
 
-- layout: **PASS** — FIXED. Frame 02's `.ob` is `align-items:center;text-align:center` — the front door is a centred composition. The app was left-aligned. Now centred, with the `.ob-s` 280px body cap and the frame's 18px gap under Odo.
+- layout: **PASS** — FIXED twice. First the centring (frame 02's `.ob` is `align-items:center;text-align:center`). Then the vertical flow: the frame is TOP-ANCHORED — 56px above Odo, 18px to the question, body, dots 20px under it, and only then `margin-top:auto` drops the CTA to the floor. We had the whole group vertically centred with the dots stranded beside the CTA, and an `h-56` hero box centring a 140px mascot in 224px on top of that. 10.0% -> 2.8%.
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — Odo now carries the frame's lime and blue sparkles and sits on the canvas rather than inside a cream card the frame does not have. STILL FAILING on three elements that belong to deviation 16 and are not mine to remove: the Skip link, the language chips, and a 4th carousel dot where the frame has 3.
-- content: **FAIL** — Deviation 16. Slide 1 is different copy entirely. Frame: 'Speak. / Odovox writes the record.' + 'Notes, prescriptions, sittings and billing…'. App: 'Built for Indian dental clinics' + a languages pitch. CTA reads 'Continue'; the frame's reads 'Continue with phone'. The pixel delta cannot move off 10% until this is ruled on — the copy dominates the canvas.
+- component anatomy: **PASS** — FIXED. Skip link and language chips removed, 4 dots -> 3, Odo carries the frame's lime and blue sparkles on the bare canvas. (MUST-FIX #16.)
+- content: **PASS** — FIXED. Slide 1 is frame 02's copy verbatim — 'Speak. / Odovox writes the record.' The old slide 1 ('Built for Indian dental clinics') and slide 2 ('Speak. It structures itself.') said in two screens what the frame says in one, so the frame's wording replaces both rather than a slide being dropped at random. CTA is 'Continue with phone' from every slide, which is the frame's stated skip behaviour.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
-- `PRODUCT-DECISION` #16 (blocked-on-clarification): /welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those
+- `MUST-FIX` #16 (fixed): /welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
-### `v9-03` — Phone · MISMATCHED
+### `v9-03` — Phone · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 1.9%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 2.3%
 
 - layout: **PASS** — FIXED. `PhoneInput` had never been migrated — 48px tall, radius 8, bordered. The frame's `.field` is 56px, radius 18, white, borderless, lifted by shadow alone (now `--shadow-field`), with the `.cc` prefix at 15px/800 pine-2 behind a hairline and the value at 17.5px/700 tabular. The decorative waveform footer is gone; frame 03 has no such element and it occupied the third of the canvas the frame gives to the keypad. 7.5% -> 2.2%.
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **FAIL** — STILL FAILING, both recorded rather than faked. (1) The keypad — deviation #7, awaiting your ruling. (2) The `.mic-a` affordance: `useDictation` presigns an upload and calls an AUTHENTICATED transcription endpoint, and this screen is pre-login by definition. Wiring it needs an unauthenticated dictation route that does not exist, so the mic would be a button that does nothing — worse than its absence. `PhoneInput` carries the `onDictate` prop ready for frames where the user IS signed in (08, 09).
-- content: **FAIL** — The visible 'Mobile number' label is gone — frame 03 goes question straight to field, and the input's own aria-label keeps the accessible name. STILL PRESENT: 'By continuing you agree to our terms.', which no part of frame 03 contains. That line is a legal/product decision, not styling, so it needs your ruling before removal.
+- component anatomy: **PASS** — FIXED. The keypad is built from the spec's own CSS — 48px keys, radius 12, white, 0 3px 10px shadow, 19px/600 over 8.5px/700 letters, ghost bottom corners. Real buttons, so keyboard and screen-reader users get it too and the native keyboard still works. It only produces digits; validation and rate-limit handling are exactly where they were. STILL ABSENT: the `.mic-a`, which needs an unauthenticated dictation endpoint (NOT-BUILT #22).
+- content: **PASS** — APPROVED-DEVIATION #21 — the terms line stays and is now styled in the v9 system (12px/600 on --pine-3). Its visible cost: it lifts the keypad ~30px above where the frame sits it, which is the honest price of keeping legal copy the frame omits.
 - interaction/state: **PASS** — The frame draws the field MID-TYPE with the CTA live; the shot was capturing our empty resting state, so an active frame was being compared against an inactive capture. The shot now types a number (never submits, so no OTP cost). Residual: the app shows a lime focus ring the frame's focused field does not. Removing it would be a real accessibility regression, so it stays and is flagged rather than silently traded away.
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
-- `MUST-FIX` #7 (open): No summoned numeric keypad on /phone
+- `MUST-FIX` #7 (fixed): No summoned numeric keypad on /phone
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #20 (approved): A lime focus ring on the .field; the frame's focused field has none
 - `APPROVED-DEVIATION` #21 (approved): A "By continuing you agree to our terms." line; frame 03 has none
 - `NOT-BUILT` #22 (open): No .mic-a affordance on /phone
 
-### `v9-04` — OTP — auto-read · MISMATCHED
+### `v9-04` — OTP — auto-read · APPROVED-DEVIATION
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 1.5%
 
@@ -195,14 +194,14 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 1.5%
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS** — The six boxes now follow the spec's `.otp i` exactly: 56px, radius 16, white, borderless with a shadow, 22px/800 tabular, and a 2.5px sky outline inset by 1px on the active box. STILL FAILING: the explicit Verify button — APPROVED-DEVIATION #14, awaiting your ruling, untouched by design.
-- content: **FAIL** — PRODUCT-DECISION #13 (masked number). The dotted footer texture is gone — frames 04 and 05 end at the resend line. (MUST-FIX #26, closed.)
+- content: **PASS** — PRODUCT-DECISION #13 (masked number). The dotted footer texture is gone — frames 04 and 05 end at the resend line. (MUST-FIX #26, closed.)
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
-- `PRODUCT-DECISION` #13 (blocked-on-clarification): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
+- `APPROVED-DEVIATION` #13 (approved): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
 - `APPROVED-DEVIATION` #14 (approved): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #26 (fixed): A dotted texture sits behind the resend area; frames 04/05 have none
@@ -222,7 +221,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.3%
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
-- `PRODUCT-DECISION` #13 (blocked-on-clarification): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
+- `APPROVED-DEVIATION` #13 (approved): Phone number masked to "+91 ••••• 0001"; frame 04 shows it in full
 - `APPROVED-DEVIATION` #14 (approved): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
 - `MUST-FIX` #15 (fixed): A wrong code clears the six boxes; frame 05 keeps the digits inside crit outlines
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol

@@ -83,8 +83,9 @@
       ],
       "summary": "No summoned numeric keypad on /phone",
       "reason": "The page has always used the native keyboard; building a pad adds a surface rather than migrating one.",
-      "status": "open",
-      "ruling": "KEEP the keypad. Implement v9 visually and behaviourally, preserving phone validation and rate-limit logic."
+      "status": "fixed",
+      "ruling": "KEEP the keypad. Implement v9 visually and behaviourally, preserving phone validation and rate-limit logic.",
+      "fixedIn": "Built as `NumericKeypad` from the spec's `.keypad`/`.key` CSS: 48px keys, radius 12, white, 0 3px 10px shadow, 19px/600 digits over 8.5px/700 letter rows, ghost bottom corners. Real <button>s, so it is keyboard-reachable and screen-reader announced, and the native keyboard still works underneath. It only produces digits \u2014 IndianPhone.safeParse still gates the CTA and rate-limit handling is untouched."
     },
     {
       "id": 8,
@@ -146,15 +147,15 @@
     },
     {
       "id": 13,
-      "class": "PRODUCT-DECISION",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-04",
         "v9-05"
       ],
       "summary": "Phone number masked to \"+91 \u2022\u2022\u2022\u2022\u2022 0001\"; frame 04 shows it in full",
       "reason": "Shoulder-surfing protection on a screen a patient may see. A workflow/privacy choice, not styling.",
-      "status": "blocked-on-clarification",
-      "ruling": "Ruling reads \"MATCH v9 \u2014 use the masked presentation specified by the design\", but frame 04 shows the number IN FULL: \"Sent to +91 98401 23456 \u00b7 Edit\". v9 specifies no masking anywhere. The table ruling (\"KEEP masking\") and the prose (\"do not expose the complete number\") both point to KEEPING our mask \u2014 which is a deviation FROM v9, not a match to it. Held until confirmed; masking stays meanwhile."
+      "status": "approved",
+      "ruling": "APPROVED \u2014 keep masking. Recorded as a deviation FROM v9, not a match to it: frame 04 shows the number in full (\"Sent to +91 98401 23456 \u00b7 Edit\") and v9 specifies no masking anywhere. The intent in both the table (\"KEEP masking\") and the prose (\"do not expose the complete phone number\") is unambiguous, so the mask stays and the departure is on the record."
     },
     {
       "id": 14,
@@ -181,14 +182,15 @@
     },
     {
       "id": 16,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-02"
       ],
       "summary": "/welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those",
       "reason": "The frame's slide-1 copy ('Speak. Odovox writes the record.') is the product's opening promise. Which pitch opens the app is a product call.",
-      "status": "blocked-on-clarification",
-      "ruling": "Ruling reads \"implement the v9 copy, Skip behavior, chips and four progress dots exactly\", but frame 02 has THREE dots, NO Skip link and NO language chips. Matching v9 exactly therefore means DELETING the Skip link and the language chips and dropping to 3 slides. The v9 copy is unambiguous and can proceed; the other three cannot without confirming which way they go."
+      "status": "fixed",
+      "ruling": "MATCH v9. Frame 02 has THREE dots, NO Skip link and NO language chips, and its note reads \"3 swipeable value dots; CTA skips them\" \u2014 so the Skip behaviour IS the CTA, which goes straight to /phone. Implement: v9 slide-1 copy, 3 slides, no separate Skip link, no chips, CTA always \"Continue with phone\".",
+      "fixedIn": "3 slides with frame 02's slide-1 copy verbatim, no Skip link (the CTA carries that job, per the frame's own note \"CTA skips them\"), no language chips, 3 dots. Layout re-anchored to the frame's top-down flow \u2014 56px above Odo, 18px to the question, dots 20px under the body, CTA at the floor \u2014 replacing a vertically centred group that sat ~70px low. 10.0% -> 2.8%."
     },
     {
       "id": 17,
@@ -246,7 +248,8 @@
       "summary": "A \"By continuing you agree to our terms.\" line; frame 03 has none",
       "reason": "Legal copy, not styling. Whether it may be removed is not an engineering call.",
       "status": "approved",
-      "ruling": "KEEP the terms/legal copy. Style it with v9 typography and spacing."
+      "ruling": "KEEP the terms/legal copy. Style it with v9 typography and spacing.",
+      "fixedIn": "Restyled to the v9 system: 12px/600 on --pine-3, directly under the keypad."
     },
     {
       "id": 22,

@@ -9,6 +9,7 @@ import { IconCircle } from "@/components/ds";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/forms/PhoneInput";
+import { NumericKeypad } from "@/components/forms/NumericKeypad";
 import { api } from "@/lib/api-client";
 import { useToast } from "@/lib/toast";
 import { useOnboarding } from "@/lib/onboarding-store";
@@ -45,15 +46,15 @@ export default function PhonePage() {
    * `.field` with the +91 prefix, then the CTA. All auth logic, validation and
    * rate-limit handling are untouched — presentation only.
    *
-   * TWO THINGS THE FRAME HAS THAT THIS PAGE DOES NOT, both recorded rather than faked:
+   * The keypad is built (MUST-FIX #7). It only produces digits; `IndianPhone.safeParse`
+   * still gates the CTA and the rate-limit handling is where it always was.
    *
-   *  - the summoned keypad (deviation 7). This page has always used the native keyboard,
-   *    so building a pad ADDS a surface rather than migrating one.
-   *  - the `.mic-a` affordance. `useDictation` presigns an upload and calls an
-   *    authenticated transcription endpoint, and this screen is pre-login by definition.
-   *    Wiring it needs an unauthenticated dictation route that does not exist — so the
-   *    mic would be a button that does nothing, which is worse than its absence.
-   *    `PhoneInput` carries the `onDictate` prop for frames where the user IS signed in.
+   * ONE THING THE FRAME HAS THAT THIS PAGE DOES NOT: the `.mic-a` affordance.
+   * `useDictation` presigns an upload and calls an AUTHENTICATED transcription endpoint,
+   * and this screen is pre-login by definition. Wiring it needs an unauthenticated
+   * dictation route that does not exist — so the mic would be a button that does nothing,
+   * which is worse than its absence. `PhoneInput` carries the `onDictate` prop ready for
+   * frames where the user IS signed in.
    */
   return (
     <MobileShell className="bg-paper">
@@ -74,7 +75,7 @@ export default function PhonePage() {
         </div>
 
         <form
-          className="mt-5"
+          className="mt-5 flex flex-1 flex-col"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();
@@ -86,7 +87,6 @@ export default function PhonePage() {
             id="phone"
             value={digits}
             onChange={setDigits}
-            autoFocus
             invalid={false}
           />
           <Button
@@ -99,12 +99,23 @@ export default function PhonePage() {
           >
             Send code
           </Button>
-        </form>
 
-        <p className="mt-6 text-center text-xs text-pine-3">
-          By continuing you agree to our{" "}
-          <span className="underline underline-offset-2">terms</span>.
-        </p>
+          {/* Frame 03's summoned keypad. (MUST-FIX #7.) It only produces digits — every
+              validation rule and the rate-limit handling stay exactly where they were,
+              and the native keyboard is still available to anyone who prefers it. */}
+          <NumericKeypad
+            className="mt-auto"
+            onDigit={(d) => setDigits((v) => (v + d).slice(0, 10))}
+            onBackspace={() => setDigits((v) => v.slice(0, -1))}
+          />
+
+          {/* APPROVED-DEVIATION #21: the frame has no terms line, but legal copy is not
+              removed for fidelity. Styled in the v9 system — 12px/600 on --pine-3. */}
+          <p className="pb-3 text-center text-xs font-semibold text-pine-3">
+            By continuing you agree to our{" "}
+            <span className="underline underline-offset-2">terms</span>.
+          </p>
+        </form>
       </AnimatedPage>
       {/* The decorative waveform footer is gone: frame 03 has no such element, and it
           occupied the third of the canvas the frame gives to the keypad. */}
