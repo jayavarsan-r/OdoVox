@@ -269,6 +269,17 @@ export const SHOTS: Shot[] = [
     frame: "v9-33",
   },
   {
+    /**
+     * Frame 34 — the no-match state. It was one of the 49 frames nothing could reach:
+     * a state, not a route. `?search=` opens the search mode and seeds the query, so a
+     * term nobody matches drives it with no new machinery.
+     */
+    slug: "E3-search-no-match",
+    path: "/patients?search=Ramesh%20Kum",
+    role: "doctor",
+    frame: "v9-34",
+  },
+  {
     slug: "E4-new-patient",
     path: "/patients/new",
     role: "doctor",

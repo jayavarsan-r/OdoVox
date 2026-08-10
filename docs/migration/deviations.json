@@ -407,7 +407,8 @@
       ],
       "summary": "A ProfileButton in the /consult header; frame 21 has none",
       "reason": "Account is reachable from /more, so this may be duplication \u2014 but it is existing functionality and not deleted without a ruling.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "APPROVED \u2014 keep the profile icon on /consult."
     },
     {
       "id": 37,
@@ -417,6 +418,36 @@
       ],
       "summary": "The in-chair card shows an elapsed timer; frame 21 does not",
       "reason": "How long the patient has been in the chair is real clinical information and was already on this screen. The frame omits it, so keeping it is a departure \u2014 but dropping it loses a signal a doctor uses.",
+      "status": "pending"
+    },
+    {
+      "id": 38,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-32"
+      ],
+      "summary": "No \"\u20b9 Due\" filter chip; frame 32 has one",
+      "reason": "There is no outstanding-balance filter on the API \u2014 PatientFilter is all/in_chair/due_today/lab_pending/recent. A chip that silently returned the unfiltered list would be worse than its absence, so it is not rendered. Needs a server filter.",
+      "status": "open"
+    },
+    {
+      "id": 39,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-32"
+      ],
+      "summary": "Two filter chips the frame does not show \u2014 Lab and Recent",
+      "reason": "Both are existing filters with server support. The frame shows four chips; we show five (six once \u20b9 Due exists). Trimming is a product call, not a styling one.",
+      "status": "pending"
+    },
+    {
+      "id": 40,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-32"
+      ],
+      "summary": "An \"All patients \u00b7 N\" section header above the list; frame 32 goes straight to the card",
+      "reason": "The count is useful and was on the old screen. The frame omits it.",
       "status": "pending"
     }
   ],

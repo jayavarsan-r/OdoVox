@@ -11,8 +11,8 @@ ACCOUNTED FOR (86), never in routes shipped.
 | --- | --- |
 | APPROVED-DEVIATION | 7 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 28 |
-| NOT-BUILT | 46 |
+| MISMATCHED | 29 |
+| NOT-BUILT | 45 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
@@ -41,8 +41,9 @@ _None. Every MUST-FIX item is closed._
 - **#31** `PRODUCT-DECISION` v9-13 — Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
 - **#32** `PRODUCT-DECISION` v9-13 — A 'Recent' section on /home; frame 13 has none
 - **#35** `APPROVED-DEVIATION` v9-21, v9-22 — A back chevron in the /consult header; frame 21 has none
-- **#36** `PRODUCT-DECISION` v9-21, v9-22 — A ProfileButton in the /consult header; frame 21 has none
 - **#37** `PRODUCT-DECISION` v9-21 — The in-chair card shows an elapsed timer; frame 21 does not
+- **#39** `PRODUCT-DECISION` v9-32 — Two filter chips the frame does not show — Lab and Recent
+- **#40** `PRODUCT-DECISION` v9-32 — An "All patients · N" section header above the list; frame 32 goes straight to the card
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -77,9 +78,9 @@ _None. Every MUST-FIX item is closed._
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-30` | Verification — clean day, readable prose | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-31` | Confirmed — saved | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 6.7% | criterion "layout" unreviewed |
-| `v9-33` | Patients — search active | 19 | MISMATCHED | 8.4% | criterion "layout" unreviewed |
-| `v9-34` | Patients — no match | 19 | NOT-BUILT | — | Task 19 owns this; no route or state driver reaches it yet |
+| `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 5.0% | PRODUCT-DECISION #39 — awaiting ruling: Two filter chips the frame does not show — Lab and Recent |
+| `v9-33` | Patients — search active | 19 | MISMATCHED | 6.3% | criterion "layout" unreviewed |
+| `v9-34` | Patients — no match | 19 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
 | `v9-35` | New patient — blank | 20 | MISMATCHED | 21.2% | criterion "layout" unreviewed |
 | `v9-36` | New patient — voice intake | 20 | NOT-BUILT | — | Task 20 owns this; no route or state driver reaches it yet |
 | `v9-37` | Patient — Overview | 22 | MISMATCHED | 22.3% | criterion "layout" unreviewed |
@@ -335,14 +336,34 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #35 (pending): A back chevron in the /consult header; frame 21 has none
-- `PRODUCT-DECISION` #36 (pending): A ProfileButton in the /consult header; frame 21 has none
+- `PRODUCT-DECISION` #36 (approved): A ProfileButton in the /consult header; frame 21 has none
 - `PRODUCT-DECISION` #37 (pending): The in-chair card shows an elapsed timer; frame 21 does not
 
 ### `v9-32` — Patients — glyph rows · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 
-- layout: **UNREVIEWED**
+- layout: **UNREVIEWED** — Frame 32's spine: 28px 'Patients' with search and lime ＋ circles, a filter chip row, then one card of `.vrow`s — replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.
+- typography: **UNREVIEWED**
+- colors: **UNREVIEWED**
+- component anatomy: **UNREVIEWED** — Rows rebuilt to the frame: 44px avatar RINGED BY STATE (live in the chair, sky for lab), name, glyph Minis for age/complaint/medical flag/outstanding, and a state dot on the right. The ＋ now opens the speed dial from the header instead of a floating button overlapping the list — the same duplicate-affordance fix as Flow.
+- content: **UNREVIEWED** — NOT-BUILT #38: the frame's '₹ Due' chip has no server filter behind it, so it is not rendered rather than shipped as a no-op. PRODUCT-DECISIONS #39 (two extra chips) and #40 (the count header).
+- interaction/state: **UNREVIEWED**
+- functionality: **UNREVIEWED**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `NOT-BUILT` #38 (open): No "₹ Due" filter chip; frame 32 has one
+- `PRODUCT-DECISION` #39 (pending): Two filter chips the frame does not show — Lab and Recent
+- `PRODUCT-DECISION` #40 (pending): An "All patients · N" section header above the list; frame 32 goes straight to the card
+
+### `v9-33` — Patients — search active · MISMATCHED
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.3%
+
+- layout: **UNREVIEWED** — Search is now a MODE, as frames 33/34 draw it: the field and a Cancel replace the header entirely, rather than a bar permanently occupying a fifth of the screen. 8.4% -> 6.3%.
 - typography: **UNREVIEWED**
 - colors: **UNREVIEWED**
 - component anatomy: **UNREVIEWED**
@@ -355,15 +376,15 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.7%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
-### `v9-33` — Patients — search active · MISMATCHED
+### `v9-34` — Patients — no match · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 
-- layout: **UNREVIEWED**
+- layout: **UNREVIEWED** — NEWLY CAPTURABLE. Frame 34 was one of the 49 frames nothing could reach — a state, not a route. `?search=` opens the mode and seeds the query, so a term nobody matches drives it with no new machinery.
 - typography: **UNREVIEWED**
 - colors: **UNREVIEWED**
 - component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
+- content: **UNREVIEWED** — The frame does not stop at 'nothing found' — it offers to create the person you just typed, carrying the term into /patients/new. That is the whole point of the frame, and the old screen had none of it.
 - interaction/state: **UNREVIEWED**
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
