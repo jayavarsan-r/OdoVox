@@ -326,6 +326,66 @@
       "summary": "Availability's \"2 doctors\" and Team's \"1 request\" values are absent",
       "reason": "Both need a clinic-members endpoint. /clinics has only create, lookup and join \u2014 there is no members or pending-requests route to read. Task 31 owns that server work.",
       "status": "open"
+    },
+    {
+      "id": 29,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "A voice search field on /home; frame 13 has none",
+      "reason": "Existing functionality. /patients carries its own search (frame 33), so this may be duplication \u2014 but it is not deleted without a ruling. Kept and restyled into the v9 language under a labelled section.",
+      "status": "pending"
+    },
+    {
+      "id": 30,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The VoiceCommandHero on /home; frame 13 has none",
+      "reason": "Existing functionality. In v9 the dock's orb is the voice surface, so this is likely duplication \u2014 but removing a working voice entry point is a product call.",
+      "status": "pending"
+    },
+    {
+      "id": 31,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "Five quick tiles where frame 13 has three (Lab, Schedule, Block time)",
+      "reason": "New patient and Inventory are the two extra. Both are reachable from /more and the speed dial, so the frame may be right that they do not belong on Flow \u2014 but dropping them changes the doctor's daily reach.",
+      "status": "pending"
+    },
+    {
+      "id": 32,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "A 'Recent' section on /home; frame 13 has none",
+      "reason": "Existing functionality, and the only place recent visits surface outside a patient record.",
+      "status": "pending"
+    },
+    {
+      "id": 33,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)",
+      "reason": "The queue visit carries no treatment-plan context, so sitting n/N is not available on /home. Needs the active plan joined onto the in-chair visit \u2014 server work Task 22 (patient plans) or a /home aggregate would own.",
+      "status": "open"
+    },
+    {
+      "id": 34,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The hero subtitle reads queue context, not the frame's clinical line",
+      "reason": "Frame 13 reads 'RCT 36 \u00b7 obturation today \u00b7 penicillin allergy' \u2014 procedure, today's step, and the allergy in crit. Ours reads 'Now treating X \u00b7 N waiting'. The clinical line needs the plan and allergy joined onto the in-chair visit; same missing join as #33.",
+      "status": "open"
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first."
