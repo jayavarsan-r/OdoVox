@@ -9,7 +9,8 @@ import { ProfileButton } from '@/components/app-shell/profile-button';
 import { EditorialHeading, EmptyState, FabMenu, StatTile } from '@/components/ds';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InitialsAvatar, WaitingRow, CheckoutRow } from '@/components/queue/queue-cards';
-import { OfflineBanner, RealtimeDot } from '@/components/queue/realtime-dot';
+import { RealtimeDot } from '@/components/queue/realtime-dot';
+import { OfflineBanner } from '@/components/ds';
 import { ActivityFeed } from '@/components/queue/activity-feed';
 import { WalkInSheet } from '@/components/queue/walk-in-sheet';
 import { CheckoutSheet } from '@/components/queue/checkout-sheet';
@@ -56,7 +57,7 @@ export default function TodayPage() {
           }
         />
       </div>
-      <OfflineBanner />
+      <OfflineBanner className="mx-gutter mt-2" />
 
       <div className="flex flex-1 flex-col gap-6 px-5 pb-28 pt-4">
         {/* Phase 8: today's money — collection, cash, online, pending checkouts. */}

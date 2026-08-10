@@ -23,6 +23,7 @@ import {
   EmptyState,
   FabMenu,
   IconCircle,
+  OfflineBanner,
   ProgressRing,
   QuickTile,
   SectionHeader,
@@ -165,6 +166,10 @@ export default function DoctorHomePage() {
           <ProfileButton />
         </div>
       </header>
+
+      {/* Frame 17. ADDITIVE — it sits above the hero and does not replace it, because
+          recording, notes and checkout all keep working offline. */}
+      <OfflineBanner className="mx-gutter mt-3" />
 
       {/* The day river — every appointment today as one segment, the chair as the marker. */}
       <DayRiver

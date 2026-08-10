@@ -7,6 +7,7 @@ export { GlassCard, type GlassCardProps } from "./glass-card";
 export { EmptyState } from "./empty-state";
 export { StepperHeader } from "./stepper-header";
 export { ObDots } from "./ob-dots";
+export { OfflineBanner } from "./offline-banner";
 export { FAB, FabMenu, type FabMenuItem } from "./fab";
 export { EditorialHeading } from "./editorial-heading";
 export { StatTile, StatPill, type StatTileProps } from "./stat-tile";

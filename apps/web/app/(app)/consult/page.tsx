@@ -10,7 +10,8 @@ import { EmptyState } from '@/components/ds';
 import { staggerChildren } from '@/components/ds/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { InChairCard, WaitingRow, CheckoutRow } from '@/components/queue/queue-cards';
-import { OfflineBanner, RealtimeDot } from '@/components/queue/realtime-dot';
+import { RealtimeDot } from '@/components/queue/realtime-dot';
+import { OfflineBanner } from '@/components/ds';
 import { useQueueStore } from '@/lib/queue/store';
 import { getCheckout, getInChair, getWaiting } from '@/lib/queue/selectors';
 import { useCallIn, useQueueSnapshot, useReturnToQueue, useStartConsultation } from '@/lib/queue/mutations';
@@ -86,7 +87,7 @@ export default function ConsultPage() {
         </div>
         <ProfileButton />
       </header>
-      <OfflineBanner />
+      <OfflineBanner className="mx-gutter mt-2" />
 
       {snapshot.isLoading && state.lastSyncedAt === 0 ? (
         <div className="flex flex-1 items-center justify-center">
