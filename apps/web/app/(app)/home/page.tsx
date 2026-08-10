@@ -26,10 +26,11 @@ import {
   ProgressRing,
   QuickTile,
   SectionHeader,
+  StatPill,
 } from "@/components/ds";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mini } from "@/components/ui/badge";
+import { Chip, Mini } from "@/components/ui/badge";
 import { InitialsAvatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
@@ -40,6 +41,10 @@ import { useQueueStore } from "@/lib/queue/store";
 import { getInChair, getWaiting } from "@/lib/queue/selectors";
 import { useQueueSnapshot } from "@/lib/queue/mutations";
 import { consultHeroSubtitle } from "@/lib/queue/home-summary";
+import { flowState } from "@/lib/queue/home-state";
+import { useDailyCollection } from "@/lib/billing/api";
+import { rupees } from "@/lib/queue/checkout-form";
+import { MascotMoment } from "@/components/illustrations";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -86,8 +91,11 @@ export default function DoctorHomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
+  // Frame 18 — "Home ＋ · speed dial open". The ＋ summons the dial.
+  const [dialOpen, setDialOpen] = useState(false);
   const needsYou = useNeedsYou();
   const recent = useRecentVisits();
+  const collection = useDailyCollection();
 
   const todayISO = localDateISO(new Date(), "Asia/Kolkata");
   const todaySchedule = useSchedule(todayISO, todayISO, "me");
@@ -112,7 +120,25 @@ export default function DoctorHomePage() {
   const firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
 
   const done = appointments.filter((a) => a.status === "COMPLETED").length;
+  const total = appointments.length;
   const needsCount = needsYou.data?.items.length ?? 0;
+
+  /**
+   * Which Flow frame is true. One call, tested boundaries — the alternative is five
+   * nested ternaries in JSX that nobody can prove correct at 9am on a Monday.
+   */
+  const state = flowState({
+    total,
+    done,
+    inChair: !!inChair,
+    waiting: waiting.length,
+  });
+
+  const nextAppt = upNext[0];
+  const nextName = nextAppt?.patientName ?? null;
+  const nextTime = nextAppt
+    ? formatLocalTime(new Date(nextAppt.startsAt), tz)
+    : null;
 
   return (
     <AnimatedPage className="flex flex-1 flex-col pb-28">
@@ -131,7 +157,8 @@ export default function DoctorHomePage() {
             size="md"
             tone="lime"
             aria-label="New"
-            onClick={() => router.push("/patients/new")}
+            aria-expanded={dialOpen}
+            onClick={() => setDialOpen((v) => !v)}
           >
             <Plus />
           </IconCircle>
@@ -163,47 +190,151 @@ export default function DoctorHomePage() {
         }
       />
 
-      {/* `.hero-c` — whoever is in the chair, and the one action that matters. */}
+      {/* `.hero-c` — one card, five faces. Which one is true is decided by
+          `flowState`, not by conditions scattered through this JSX. Frames 13-16. */}
       <div className="mt-3 px-gutter">
-        {inChair ? (
-          <Card wash className="p-[15px]">
-            <div className="flex items-center gap-[13px]">
-              <ProgressRing value={1} max={1} size={56} tone="lime" label="•" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[19px] font-heavy tracking-tight text-pine">
-                  {inChair.patient.name}
-                </p>
-                <p className="mt-[3px] truncate text-[11.5px] font-semibold text-pine-2">
-                  {consultHeroSubtitle(inChair.patient.name, waiting.length)}
-                </p>
+        <Card wash className="p-[15px]">
+          {state === "in-chair" && inChair ? (
+            <>
+              <Chip tone="live" className="mb-2.5">
+                IN CHAIR
+              </Chip>
+              <div className="flex items-center gap-[13px]">
+                <ProgressRing
+                  value={done}
+                  max={Math.max(total, 1)}
+                  size={56}
+                  tone="lime"
+                  caption="TODAY"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[19px] font-heavy tracking-tight text-pine">
+                    {inChair.patient.name}
+                  </p>
+                  <p className="mt-[3px] truncate text-[11.5px] font-semibold text-pine-2">
+                    {consultHeroSubtitle(inChair.patient.name, waiting.length)}
+                  </p>
+                </div>
               </div>
-            </div>
-            <Button
-              block
-              className="mt-3 h-[46px] text-[14.5px]"
-              onClick={() => router.push("/consult")}
-            >
-              <Play />
-              Continue consultation
-            </Button>
-          </Card>
-        ) : (
-          <Card wash className="p-[15px]">
-            <p className="text-[19px] font-heavy tracking-tight text-pine">
-              {waiting.length > 0 ? "Chair is free" : "Nothing in the queue"}
-            </p>
-            <p className="mt-[3px] text-[11.5px] font-semibold text-pine-2">
-              {consultHeroSubtitle(null, waiting.length)}
-            </p>
-            <Button
-              block
-              className="mt-3 h-[46px] text-[14.5px]"
-              onClick={() => router.push("/consult")}
-            >
-              {waiting.length > 0 ? "Call next patient" : "Open the queue"}
-            </Button>
-          </Card>
-        )}
+              <Button
+                block
+                className="mt-3 h-[46px] text-[14.5px]"
+                onClick={() => router.push("/consult")}
+              >
+                <Play />
+                Continue consultation
+              </Button>
+            </>
+          ) : null}
+
+          {/* Frame 14 — chair free, people waiting. The ring turns sky: the day is
+              progressing but nothing is happening right now. */}
+          {state === "chair-free" ? (
+            <>
+              <Chip tone="sky" className="mb-2.5">
+                CHAIR FREE
+              </Chip>
+              <div className="flex items-center gap-[13px]">
+                <ProgressRing
+                  value={done}
+                  max={Math.max(total, 1)}
+                  size={56}
+                  tone="sky"
+                  caption="TODAY"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[22px] font-heavy tracking-tight text-pine">
+                    {nextName ?? "Next patient"}
+                  </p>
+                  <span className="mt-1.5 flex flex-wrap gap-1.5">
+                    {nextTime ? (
+                      <Mini tone="neutral">Next · {nextTime}</Mini>
+                    ) : null}
+                    <Mini tone="lav">{waiting.length} waiting</Mini>
+                  </span>
+                </div>
+              </div>
+              <Button
+                block
+                className="mt-3 h-[46px] text-[14.5px]"
+                onClick={() => router.push("/consult")}
+              >
+                Call next patient
+              </Button>
+            </>
+          ) : null}
+
+          {/* Frame 15 — quiet. Nothing to do yet, so the card says when that changes
+              rather than offering an action there is no reason to take. */}
+          {state === "quiet" ? (
+            <>
+              <p className="text-[22px] font-heavy tracking-tight text-pine">
+                {nextTime ? `Quiet until ${nextTime}` : "Quiet for now"}
+              </p>
+              <p className="mt-[3px] text-[11.5px] font-semibold text-pine-2">
+                {total} booked today
+                {nextName ? ` · first is ${nextName}` : ""}
+              </p>
+              <Button
+                block
+                className="mt-3 h-[46px] text-[14.5px]"
+                onClick={() => router.push("/schedule")}
+              >
+                See the day
+              </Button>
+            </>
+          ) : null}
+
+          {/* Frame 16 — day done. Odo celebrates, and the stats are the proof. */}
+          {state === "day-done" ? (
+            <>
+              <div className="flex items-center gap-[13px]">
+                <MascotMoment
+                  pose="celebrate"
+                  size="md"
+                  animation="bounce-in"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[22px] font-heavy tracking-tight text-pine">
+                    That&apos;s all {total}
+                  </p>
+                  <p className="mt-[3px] text-[11.5px] font-semibold text-pine-2">
+                    Every record confirmed · nothing pending
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex gap-gap-tight">
+                <StatPill label="SEEN" value={String(done)} />
+                {collection.data ? (
+                  <StatPill
+                    label="TODAY"
+                    value={rupees(collection.data.totalCollectedPaise)}
+                  />
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          {/* Nothing booked and nobody waiting. Frame 13 has no drawing for this, so it
+              wears the same anatomy and says the true thing. */}
+          {state === "empty-day" ? (
+            <>
+              <p className="text-[22px] font-heavy tracking-tight text-pine">
+                Nothing booked today
+              </p>
+              <p className="mt-[3px] text-[11.5px] font-semibold text-pine-2">
+                Walk-ins and arrivals land here
+              </p>
+              <Button
+                block
+                className="mt-3 h-[46px] text-[14.5px]"
+                onClick={() => router.push("/consult")}
+              >
+                Open the queue
+              </Button>
+            </>
+          ) : null}
+        </Card>
       </div>
 
       {/* The quick bento. Frame 13 carries Lab, Schedule and a wide Block-time bar; the
@@ -393,7 +524,11 @@ export default function DoctorHomePage() {
         </Card>
       )}
 
+      {/* Frame 18. Controlled by the header ＋, so no second floating button competes
+          with the dock's orb — and nothing overlaps "Needs you" any more. */}
       <FabMenu
+        open={dialOpen}
+        onOpenChange={setDialOpen}
         items={[
           {
             id: "new-patient",
