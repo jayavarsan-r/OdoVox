@@ -40,6 +40,9 @@ _None. Every MUST-FIX item is closed._
 - **#30** `PRODUCT-DECISION` v9-13 — The VoiceCommandHero on /home; frame 13 has none
 - **#31** `PRODUCT-DECISION` v9-13 — Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
 - **#32** `PRODUCT-DECISION` v9-13 — A 'Recent' section on /home; frame 13 has none
+- **#35** `APPROVED-DEVIATION` v9-21, v9-22 — A back chevron in the /consult header; frame 21 has none
+- **#36** `PRODUCT-DECISION` v9-21, v9-22 — A ProfileButton in the /consult header; frame 21 has none
+- **#37** `PRODUCT-DECISION` v9-21 — The in-chair card shows an elapsed timer; frame 21 does not
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -63,7 +66,7 @@ _None. Every MUST-FIX item is closed._
 | `v9-18` | Home ＋ — speed dial open | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-19` | Day off — quick sheet | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-20` | Week in review — the Monday habit | 33 | NOT-BUILT | — | Task 33 owns this; no route or state driver reaches it yet |
-| `v9-21` | Consult — live queue | 15 | MISMATCHED | 11.1% | criterion "layout" unreviewed |
+| `v9-21` | Consult — live queue | 15 | MISMATCHED | 12.9% | APPROVED-DEVIATION #35 — awaiting ruling: A back chevron in the /consult header; frame 21 has none |
 | `v9-22` | Consult — empty | 15 | NOT-BUILT | — | Task 15 owns this; no route or state driver reaches it yet |
 | `v9-23` | Recording | 16 | NOT-BUILT | — | Task 16 owns this; no route or state driver reaches it yet |
 | `v9-24` | Recording — paused (call) | 16 | NOT-BUILT | — | Task 16 owns this; no route or state driver reaches it yet |
@@ -92,7 +95,7 @@ _None. Every MUST-FIX item is closed._
 | `v9-47` | Schedule — reception multi-doctor | 25 | MISMATCHED | 5.0% | criterion "layout" unreviewed |
 | `v9-48` | New appointment sheet | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
 | `v9-49` | Schedule — drag to reschedule | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
-| `v9-50` | Reception Today | 26 | MISMATCHED | 7.5% | criterion "layout" unreviewed |
+| `v9-50` | Reception Today | 26 | MISMATCHED | 6.7% | criterion "layout" unreviewed |
 | `v9-51` | Walk-in sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-52` | Checkout sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
@@ -317,20 +320,23 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
 
 ### `v9-21` — Consult — live queue · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 11.1%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 
-- layout: **UNREVIEWED**
+- layout: **UNREVIEWED** — Frame 21's spine is in place: 28px 'Consult' with a Live chip, then 'Now treating' / 'Waiting' / 'Sent to checkout' as `.sec` rows over grouped cards rather than three loose stacks.
 - typography: **UNREVIEWED**
 - colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
+- component anatomy: **UNREVIEWED** — All three row types rebuilt to the frame. In-chair: `.card.wash`, 52px live-ringed avatar, 18px/800 name, glyph Minis, a 48px Record CTA beside a 48px IconCircle — the frame puts return-to-queue on the icon, one dominant action and one escape hatch, where we had two full-width buttons. Waiting: 44px sky-ringed avatar with a lime 'Call in' chip, falling back to a pine-3 'Booked' chip when there is no action to offer. Checkout: 65% opacity with the amount as a live Mini. STILL PRESENT: a back chevron (#35) and ProfileButton (#36) the frame's header does not have.
 - content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
+- interaction/state: **UNREVIEWED** — Every behaviour preserved — call-in state machine, long-press, the lime arrival flash, optimistic layoutId transitions between sections. PRODUCT-DECISION #37: the elapsed timer stays.
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #35 (pending): A back chevron in the /consult header; frame 21 has none
+- `PRODUCT-DECISION` #36 (pending): A ProfileButton in the /consult header; frame 21 has none
+- `PRODUCT-DECISION` #37 (pending): The in-chair card shows an elapsed timer; frame 21 does not
 
 ### `v9-32` — Patients — glyph rows · MISMATCHED
 
@@ -495,7 +501,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 
 ### `v9-50` — Reception Today · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.5%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.7%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**

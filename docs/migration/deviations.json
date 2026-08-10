@@ -386,6 +386,38 @@
       "summary": "The hero subtitle reads queue context, not the frame's clinical line",
       "reason": "Frame 13 reads 'RCT 36 \u00b7 obturation today \u00b7 penicillin allergy' \u2014 procedure, today's step, and the allergy in crit. Ours reads 'Now treating X \u00b7 N waiting'. The clinical line needs the plan and allergy joined onto the in-chair visit; same missing join as #33.",
       "status": "open"
+    },
+    {
+      "id": 35,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-21",
+        "v9-22"
+      ],
+      "summary": "A back chevron in the /consult header; frame 21 has none",
+      "reason": "/consult is not one of the four dock tabs \u2014 it is reached from Flow's 'Continue consultation'. Removing back would strand anyone who arrived that way. Navigation, not decoration.",
+      "status": "pending"
+    },
+    {
+      "id": 36,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21",
+        "v9-22"
+      ],
+      "summary": "A ProfileButton in the /consult header; frame 21 has none",
+      "reason": "Account is reachable from /more, so this may be duplication \u2014 but it is existing functionality and not deleted without a ruling.",
+      "status": "pending"
+    },
+    {
+      "id": 37,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21"
+      ],
+      "summary": "The in-chair card shows an elapsed timer; frame 21 does not",
+      "reason": "How long the patient has been in the chair is real clinical information and was already on this screen. The frame omits it, so keeping it is a departure \u2014 but dropping it loses a signal a doctor uses.",
+      "status": "pending"
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first."

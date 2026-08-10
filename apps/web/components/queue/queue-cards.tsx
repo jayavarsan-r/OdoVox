@@ -1,30 +1,48 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Mic, RotateCcw, ChevronRight, Info, CircleDot } from 'lucide-react';
-import type { VisitWithPatient } from '@odovox/types';
-import { GlassCard } from '@/components/ds';
-import { springScale } from '@/components/ds/motion';
-import { Button } from '@/components/ui/button';
-import { rupees } from '@/lib/queue/checkout-form';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Mic, RotateCcw, ChevronRight, Info, CircleDot } from "lucide-react";
+import type { VisitWithPatient } from "@odovox/types";
+import { springScale } from "@/components/ds/motion";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Chip, Mini } from "@/components/ui/badge";
+import { InitialsAvatar as DsAvatar } from "@/components/ui/avatar";
+import { IconCircle } from "@/components/ds";
+import { rupees } from "@/lib/queue/checkout-form";
+import { cn } from "@/lib/utils";
 
 export function initials(name: string): string {
   return name
     .split(/\s+/)
     .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('');
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
-const AVATAR_TONES = ['bg-sage-soft', 'bg-peach-soft', 'bg-sky-soft', 'bg-lavender'];
+const AVATAR_TONES = [
+  "bg-sage-soft",
+  "bg-peach-soft",
+  "bg-sky-soft",
+  "bg-lavender",
+];
 
-export function InitialsAvatar({ name, className }: { name: string; className?: string }) {
+export function InitialsAvatar({
+  name,
+  className,
+}: {
+  name: string;
+  className?: string;
+}) {
   const tone = AVATAR_TONES[name.charCodeAt(0) % AVATAR_TONES.length];
   return (
     <span
-      className={cn('flex size-11 shrink-0 items-center justify-center rounded-pill text-sm font-semibold text-ink', tone, className)}
+      className={cn(
+        "flex size-11 shrink-0 items-center justify-center rounded-pill text-sm font-semibold text-ink",
+        tone,
+        className,
+      )}
       aria-hidden
     >
       {initials(name)}
@@ -39,14 +57,24 @@ function useElapsed(since: Date | string | null): string {
     const t = setInterval(() => force((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, [since]);
-  if (!since) return '';
-  const secs = Math.max(0, Math.floor((Date.now() - new Date(since).getTime()) / 1000));
+  if (!since) return "";
+  const secs = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(since).getTime()) / 1000),
+  );
   const m = Math.floor(secs / 60);
   const s = secs % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/** Doctor's in-chair hero card (glass allowed — it's a hero surface, §12.1). */
+/**
+ * Frame 21's "Now treating" card: `.card.wash`, a 52px live-ringed avatar, the name at
+ * 18px/800, glyph `Mini`s underneath, then a 48px `.cta` beside a 48px `.icirc`.
+ *
+ * The frame puts "Record" on the primary and the return-to-queue on the icon button
+ * rather than a second full-width row — one dominant action, one escape hatch. Both do
+ * exactly what they did before.
+ */
 export function InChairCard({
   visit,
   onRecord,
@@ -63,41 +91,59 @@ export function InChairCard({
   const elapsed = useElapsed(visit.calledInAt);
   return (
     <motion.div layoutId={`visit-${visit.id}`} {...springScale}>
-      <GlassCard tone="light">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-sage-deep">
-              <span>Now treating · Token {visit.tokenNumber}</span>
-              {visit.recording ? (
-                <span className="inline-flex items-center gap-1 text-danger">
-                  <CircleDot className="size-3 animate-pulse" /> recording
-                </span>
-              ) : null}
-            </div>
-            <h2 className="mt-1 truncate text-2xl font-semibold text-ink">{visit.patient.name}</h2>
-            <p className="mt-0.5 truncate text-sm text-text-muted">
-              {visit.patient.age} · {visit.chiefComplaint ?? '—'}
+      <Card wash className="p-[15px]">
+        <div className="flex items-center gap-[13px]">
+          <DsAvatar name={visit.patient.name} ring="live" size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[18px] font-heavy tracking-tight text-pine">
+              {visit.patient.name}
             </p>
-          </div>
-          <div className="shrink-0 text-right">
-            {visit.roomName ? <p className="text-xs font-medium text-text-muted">{visit.roomName}</p> : null}
-            {elapsed ? <p className="font-mono text-sm tabular-nums text-ink">{elapsed}</p> : null}
+            <span className="mt-[5px] flex flex-wrap items-center gap-1.5">
+              <Mini tone="neutral">Token {visit.tokenNumber}</Mini>
+              {visit.chiefComplaint ? (
+                <Mini tone="neutral">{visit.chiefComplaint}</Mini>
+              ) : null}
+              {visit.recording ? (
+                <Mini tone="crit">
+                  <CircleDot className="size-2.5 animate-pulse" /> recording
+                </Mini>
+              ) : null}
+              {elapsed ? <Mini tone="sky">{elapsed}</Mini> : null}
+            </span>
           </div>
         </div>
-        <div className="mt-4 flex flex-col gap-2">
-          <Button variant="primary" onClick={onRecord} loading={busyRecord}>
-            <Mic /> Record findings
+        <div className="mt-3.5 flex items-center gap-[9px]">
+          <Button
+            className="h-12 flex-1 text-[14.5px]"
+            onClick={onRecord}
+            loading={busyRecord}
+          >
+            <Mic /> Record
           </Button>
-          <Button variant="ghost" onClick={onReturn} loading={busyReturn}>
-            <RotateCcw /> Return to queue
-          </Button>
+          {/* The frame's second slot is an icon, not a full-width row: returning to the
+              queue is the escape hatch, not a co-equal action. */}
+          <IconCircle
+            size="lg"
+            aria-label="Return to queue"
+            onClick={onReturn}
+            disabled={busyReturn}
+          >
+            <RotateCcw />
+          </IconCircle>
         </div>
-      </GlassCard>
+      </Card>
     </motion.div>
   );
 }
 
-/** A waiting patient row (doctor + receptionist). The lime flash on entry signals "just arrived". */
+/**
+ * Frame 21's waiting `.vrow`: a 44px sky-ringed avatar, the name, glyph `Mini`s, and a
+ * lime "Call in" chip. A patient nobody can call in yet reads "Booked" in pine-3 — the
+ * frame distinguishes "your move" from "not yet" by colour alone, so the row never
+ * offers an action it cannot perform.
+ *
+ * The lime flash on entry stays: it is how a doctor notices someone just arrived.
+ */
 export function WaitingRow({
   visit,
   onCallIn,
@@ -123,7 +169,7 @@ export function WaitingRow({
     <motion.div
       layoutId={`visit-${visit.id}`}
       {...springScale}
-      className="overflow-hidden rounded-lg border border-border bg-surface shadow-elev-1"
+      className="overflow-hidden"
       onContextMenu={(e) => {
         if (onLongPress) {
           e.preventDefault();
@@ -132,10 +178,10 @@ export function WaitingRow({
       }}
     >
       <motion.div
-        initial={{ backgroundColor: 'rgba(212,245,100,0.5)' }}
-        animate={{ backgroundColor: 'rgba(212,245,100,0)' }}
+        initial={{ backgroundColor: "rgba(205,231,99,0.5)" }}
+        animate={{ backgroundColor: "rgba(205,231,99,0)" }}
         transition={{ duration: 0.6 }}
-        className="flex items-center gap-3 p-3"
+        className="flex items-center gap-3 px-4 py-2.5"
       >
         <button
           type="button"
@@ -145,55 +191,83 @@ export function WaitingRow({
           onPointerUp={endPress}
           onPointerLeave={endPress}
         >
-          <InitialsAvatar name={visit.patient.name} />
+          <DsAvatar
+            name={visit.patient.name}
+            ring={onCallIn ? "sky" : "none"}
+            size="md"
+          />
           <span className="min-w-0">
-            <span className="flex items-center gap-1 truncate font-medium text-ink">
+            <span className="flex items-center gap-1.5 truncate text-[14px] font-heavy text-pine">
               {visit.patient.name}
-              {visit.priority > 0 ? <span className="rounded-pill bg-peach-soft px-1.5 text-[10px] font-semibold text-ink">PRIORITY</span> : null}
-              {onOpen ? <Info className="size-3.5 shrink-0 text-text-subtle" /> : null}
+              {visit.priority > 0 ? <Mini tone="warn">PRIORITY</Mini> : null}
+              {onOpen ? (
+                <Info className="size-3.5 shrink-0 text-pine-3" />
+              ) : null}
             </span>
-            <span className="truncate text-xs text-text-muted">
-              {visit.patient.age} · {visit.chiefComplaint ?? 'Walk-in'}
+            <span className="mt-1 flex flex-wrap gap-1.5">
+              <Mini tone="neutral">{visit.chiefComplaint ?? "Walk-in"}</Mini>
+              <Mini tone="neutral">#{visit.tokenNumber}</Mini>
             </span>
           </span>
         </button>
         {onCallIn ? (
-          <Button size="sm" variant="primary" onClick={onCallIn} loading={calling}>
-            Call in
-          </Button>
+          <button
+            type="button"
+            onClick={onCallIn}
+            disabled={calling}
+            className="shrink-0"
+          >
+            <Chip tone="lime">{calling ? "Calling…" : "Call in"}</Chip>
+          </button>
         ) : (
-          <span className="font-mono text-xs tabular-nums text-text-subtle">#{visit.tokenNumber}</span>
+          <Chip tone="neutral">Booked</Chip>
         )}
       </motion.div>
     </motion.div>
   );
 }
 
-/** Checkout card — view-only for the doctor; with a "Take payment" CTA for the receptionist. */
-export function CheckoutRow({ visit, onTakePayment }: { visit: VisitWithPatient; onTakePayment?: () => void }) {
+/**
+ * Frame 21's "Sent to checkout" row, drawn at 65% opacity: the work is done, so it
+ * recedes. The doctor sees the amount and nothing else; the receptionist gets the CTA.
+ */
+export function CheckoutRow({
+  visit,
+  onTakePayment,
+}: {
+  visit: VisitWithPatient;
+  onTakePayment?: () => void;
+}) {
   return (
     <motion.div
       layoutId={`visit-${visit.id}`}
       {...springScale}
       className={cn(
-        'flex items-center gap-3 rounded-lg border border-border p-3',
-        onTakePayment ? 'bg-surface shadow-elev-1' : 'bg-paper-warm opacity-80',
+        "flex items-center gap-3 px-4 py-2.5",
+        onTakePayment ? "" : "opacity-65",
       )}
     >
-      <InitialsAvatar name={visit.patient.name} />
+      <DsAvatar name={visit.patient.name} ring="none" size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-ink">{visit.patient.name}</p>
-        <p className="truncate text-xs text-text-muted">
-          {visit.doctorName ?? '—'}
-          {visit.billDuePaise != null ? ` · ${rupees(visit.billDuePaise)} due` : ''}
+        <p className="truncate text-[14px] font-heavy text-pine">
+          {visit.patient.name}
         </p>
+        {visit.doctorName ? (
+          <p className="truncate text-[11.5px] font-semibold text-pine-2">
+            {visit.doctorName}
+          </p>
+        ) : null}
       </div>
       {onTakePayment ? (
-        <Button size="sm" variant="secondary" onClick={onTakePayment}>
-          <ChevronRight className="rotate-0" /> Take payment
-        </Button>
+        <button type="button" onClick={onTakePayment} className="shrink-0">
+          <Chip tone="lime">
+            Take payment <ChevronRight className="size-3" />
+          </Chip>
+        </button>
+      ) : visit.billDuePaise != null ? (
+        <Mini tone="live">{rupees(visit.billDuePaise)}</Mini>
       ) : (
-        <span className="text-xs font-medium text-text-subtle">Checkout</span>
+        <Mini tone="neutral">Checkout</Mini>
       )}
     </motion.div>
   );
