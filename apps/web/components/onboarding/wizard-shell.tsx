@@ -26,22 +26,38 @@ import { WIZARD_STEPS, type WizardStepId } from "@/lib/ds/wizard";
 export function WizardStepLayout({
   current,
   backHref,
+  onBack,
   children,
 }: {
   current: WizardStepId;
   backHref: string;
+  /**
+   * Step 1 asks five questions on one route, so back has to walk them before it leaves
+   * the step — otherwise the first tap discards four answered questions. When set, the
+   * chevron becomes a button; otherwise it stays a real link to `backHref`.
+   */
+  onBack?: () => void;
   children: ReactNode;
 }) {
+  const chevron =
+    "flex size-10 shrink-0 items-center justify-center rounded-pill bg-surface text-pine shadow-icirc";
   return (
     <MobileShell className="bg-paper">
       <div className="flex items-center gap-2.5 px-gutter-onboarding pt-0.5">
-        <Link
-          href={backHref}
-          aria-label="Go back"
-          className="flex size-10 shrink-0 items-center justify-center rounded-pill bg-surface text-pine shadow-icirc"
-        >
-          <ChevronLeft className="size-[18px]" />
-        </Link>
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Go back"
+            className={chevron}
+          >
+            <ChevronLeft className="size-[18px]" />
+          </button>
+        ) : (
+          <Link href={backHref} aria-label="Go back" className={chevron}>
+            <ChevronLeft className="size-[18px]" />
+          </Link>
+        )}
         {/* Frame 08's `.ob-dots`, not a numbered stepper. The step names survive as the
             nav's aria-label so a screen-reader user still hears "Step 2 of 3: Hours". */}
         <ObDots

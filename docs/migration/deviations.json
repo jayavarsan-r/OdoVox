@@ -71,9 +71,10 @@
       ],
       "summary": "Clinic creation kept as 3 steps; the frame shows a single screen",
       "reason": "The single screen drops hours and profile capture. Feature parity outranks fidelity.",
-      "status": "open",
+      "status": "fixed",
       "openQuestion": "AMBIGUOUS AS WRITTEN. The frame's model is one QUESTION at a time (\"What's your clinic called?\" \u2192 \"Next \u00b7 City\"), while our step 1 holds six fields. \"Keep 3 steps\" does not settle whether step 1 should be one question or six fields \u2014 those are different claims.",
-      "ruling": "KEEP the 3-step workflow, but redesign each step to the v9 one-question-at-a-time pattern with a destination-labelled CTA. Do NOT collapse the required data collection. Step 1 must not remain a dense six-field form."
+      "ruling": "KEEP the 3-step workflow, but redesign each step to the v9 one-question-at-a-time pattern with a destination-labelled CTA. Do NOT collapse the required data collection. Step 1 must not remain a dense six-field form.",
+      "fixedIn": "Step 1 now asks ONE QUESTION AT A TIME \u2014 five screens on one route: name -> contact -> address -> city+state -> pincode+GST, each with the `.field` hero input and a CTA naming its destination. All three steps and all seven fields survive; only the pacing changed. The question list lives in lib/ds/wizard with a test asserting every key of stepBasicsSchema appears exactly once, so re-pacing can never silently drop a field. Back walks the questions before leaving the step, so one tap no longer discards four answers. 8.7% -> 5.1%."
     },
     {
       "id": 7,

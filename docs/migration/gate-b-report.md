@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 6 |
+| APPROVED-DEVIATION | 7 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 29 |
+| MISMATCHED | 28 |
 | NOT-BUILT | 46 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -32,7 +32,7 @@ gradually reinterpreting its own design.
 
 ### Open MUST-FIX — work, not questions
 
-- **#6** v9-08 — Clinic creation kept as 3 steps; the frame shows a single screen
+_None. Every MUST-FIX item is closed._
 
 ### Awaiting your ruling — untouched by design
 
@@ -46,7 +46,7 @@ gradually reinterpreting its own design.
 | `v9-05` | OTP — wrong code | 11 | APPROVED-DEVIATION | 7.3% | — |
 | `v9-06` | Returning user — instant unlock | — | OUT-OF-SCOPE | — | — |
 | `v9-07` | Role | 12 | APPROVED-DEVIATION | 2.8% | — |
-| `v9-08` | Create clinic — conversational | 12 | MISMATCHED | 8.7% | MUST-FIX #6: Clinic creation kept as 3 steps; the frame shows a single screen |
+| `v9-08` | Create clinic — conversational | 12 | APPROVED-DEVIATION | 5.1% | — |
 | `v9-09` | Join by code + preview | 12 | MISMATCHED | 12.8% | criterion "layout" FAILED |
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
@@ -249,22 +249,22 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.8%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #19 (fixed): The .ob-q question wraps to two lines where frames 07 and 08 set it on one
 
-### `v9-08` — Create clinic — conversational · MISMATCHED
+### `v9-08` — Create clinic — conversational · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
 
-- layout: **FAIL** — PRODUCT-DECISION #6. Frame 08 asks ONE question; our step 1 holds six fields. That is the ambiguity in deviation 6 — 'keep 3 steps' does not settle whether step 1 is one question or six fields. A visible consequence: the defaults card sits below the fold here because six fields push it there, where the frame's single input leaves room for it.
+- layout: **PASS** — FIXED. Step 1 was a six-field form; frame 08 asks one question. It now asks five in sequence on the same route — name, contact, address, city+state, pincode+GST — each a hero `.field` with a CTA naming where it goes. Every field survives and the schema is untouched; `lib/ds/wizard` owns the question list with a test that every `stepBasicsSchema` key appears exactly once. The defaults card is now visible instead of pushed below the fold. 8.7% -> 5.1%.
 - typography: **PASS** — FIXED with frame 07 — the same `--tracking-question` token.
 - colors: **PASS**
 - component anatomy: **PASS** — FIXED. The numbered 1-2-3 stepper is replaced by the spec's `.ob-dots` (6px dashes, hair-2; active 18px wide, pine) — with the step names preserved as the nav's aria-label so a screen-reader user still hears 'Step 1 of 3: Clinic'. The verified-identity chip and the defaults card are now rendered. STILL FAILING: the `.mic-a` on the field, which needs dictation wiring (see #22 for the same constraint on /phone; here the user IS authenticated, so it is buildable — it is simply not built).
 - content: **PASS** — FIXED. The CTA no longer reads a generic 'Continue → '. The frame labels its CTA with the destination ('Next · City'); ours names OUR next step, 'Next · Hours' — copying the frame's literal word would be wrong, because step 2 here is Hours, not City.
-- interaction/state: **FAIL**
+- interaction/state: **PASS** — FIXED. The CTA validates only the fields its question owns and advances; the last one writes the store and routes to Hours. Back walks the questions before leaving the step — previously a single tap would have discarded four answered questions.
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
-- `MUST-FIX` #6 (open): Clinic creation kept as 3 steps; the frame shows a single screen
+- `MUST-FIX` #6 (fixed): Clinic creation kept as 3 steps; the frame shows a single screen
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #19 (fixed): The .ob-q question wraps to two lines where frames 07 and 08 set it on one
 - `MUST-FIX` #27 (fixed): Step 1 is missing frame 08's .ob-dots, verified-identity chip and defaults card, and its CTA reads "Continue →" not "Next · City"
