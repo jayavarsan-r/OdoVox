@@ -458,6 +458,25 @@
       "reason": "The count is useful and was on the old screen. The frame omits it.",
       "status": "dropped",
       "ruling": "DROP \u2014 remove the redundant \"All patients \u00b7 N\" header."
+    },
+    {
+      "id": 41,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13",
+        "v9-78"
+      ],
+      "summary": "Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero",
+      "reason": "VERIFIED, not assumed. `routeVoiceCommand` (lib/voice/intent-router.ts) had exactly one caller \u2014 VoiceCommandHero \u2014 and that component now has none. The orb is a voice affordance in NAME (mic icon, hold menu) but not in behaviour: nav-dock.tsx:59 is `onTap={() => router.push(action.href)}` and voice-menu.tsx:87 is `router.push(row.href)`. Neither captures speech. So \"say what you want, get routed\" is gone from the running app while intent-router.test.ts keeps passing and makes it look healthy.\n\nRuling #30's stated rationale was 'the dock orb remains the single global voice affordance'. That premise is true of the icon and false of the behaviour, so the ruling was likely made without this being visible.",
+      "status": "pending",
+      "reopens": "Task 13",
+      "foundBy": "peer session during a cross-session coordination check",
+      "options": [
+        "(a) Wire dictation into the orb tap, or add a sixth 'Say something else\u2026' row to the frame-78 menu \u2014 keeps ruling #30 and loses nothing.",
+        "(b) Accept the loss: delete VoiceCommandHero, intent-router.ts and its tests as dead code. Honest, but ends free-form voice.",
+        "(c) Keep it recorded as an open decision, which by this file's own `rule` reopens Task 13 until it is resolved."
+      ],
+      "doNot": "Do NOT resolve this by deleting the router without a ruling \u2014 that converts an open question into a silent capability loss."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
