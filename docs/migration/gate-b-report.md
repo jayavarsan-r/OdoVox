@@ -40,7 +40,8 @@ _None. Every MUST-FIX item is closed._
 inside the task that surfaced them, never carried forward — thirty unresolved
 deviations at the end is a pile nobody can remember the reason for.
 
-_None. Every task closed its own decisions._
+- **Task 16** — 1 open
+  - **#43** `APPROVED-DEVIATION` v9-25 — The transcript is shown under the processing bar; frame 25 has none
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |

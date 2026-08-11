@@ -485,6 +485,39 @@
       "alsoAffects": "/today (frame 50) has the same shape. Frame 50's header carries ONLY an avatar \u2014 no \uff0b \u2014 so the frame relies on the dock orb for actions. Our floating FabMenu therefore duplicates the orb and overlaps 'Recent activity'. On /home and /patients the fix was to move the dial onto a header \uff0b the frame actually draws; frame 50 draws none, so /today cannot be fixed the same way. Resolving #41 by wiring the orb to the speed dial fixes BOTH the missing voice routing and this overlap. Folded in here rather than opened as a separate decision \u2014 it is one question, not two.",
       "ruling": "APPROVED \u2014 wire the dock orb as the single global floating action/voice affordance, preserving BOTH voice command routing and speed-dial actions. /today must not render a duplicate FAB. Do not remove voice functionality to simplify the UI.",
       "fixedIn": "The orb hold-menu gains a sixth row, \"Say something else\u2026\", which CAPTURES SPEECH rather than navigating (href: null) and hands the transcript to routeVoiceCommand. That restores the exact capability ruling #30 removed \u2014 an unclear command still lands in patient search with the transcript rather than a dead end. `routeVoiceCommand` has a live caller again.\n\nReception keeps everything /today's FAB carried: \"Add walk-in\" and \"Take a payment\" are now role-gated rows in the same menu (RECEPTIONIST and ADMIN \u2014 on a small clinic's single device the admin IS the front desk). Walk-in routes to /today?walkin=1, which opens the existing sheet on arrival; new patient, book and lab case were already menu rows.\n\n/today no longer renders a FabMenu. v9-50 7.0% -> 6.1%.\n\nOne existing test asserted the menu held EXACTLY five rows. Rather than delete it, it now asserts frame 78's five intents are present and in order \u2014 the guarantee it existed for \u2014 so it still fails if one is dropped or reordered.\n\nAlso caught by building rather than typechecking: /today now reads useSearchParams, which Next requires inside a Suspense boundary. `pnpm build` failed where typecheck passed. Boundary added; bundle unchanged at 103 kB."
+    },
+    {
+      "id": 42,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-26"
+      ],
+      "summary": "Frame 26's second action, \"Keep audio \u00b7 review later\", does not exist",
+      "reason": "The frame offers two recoveries; we now offer two as well, but not the same second one. \"Try again\" is implemented as a real retry of the upload (the blob survives FAILED, so no dictation is lost). \"Keep audio \u00b7 review later\" needs to PARK the recording as a draft on the patient with a lav badge and retry in the background \u2014 that is a persistence feature with no server support today: no draft state, no background retry queue. Shipping a button that only looked like it parked the audio would be the exact failure the frame's own note warns about (\"Failure never loses audio\"). Our second action is \"Record again instead\", which is honest about discarding.",
+      "status": "open"
+    },
+    {
+      "id": 43,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-25"
+      ],
+      "summary": "The transcript is shown under the processing bar; frame 25 has none",
+      "reason": "Frame 25's mock is mid-upload, so it has no transcript to show \u2014 it does not decide against one. Our TRANSCRIBED state HAS the doctor's own words back, and it is the first proof the audio survived. Rendered quietly under the bar rather than dropped.",
+      "status": "pending"
+    },
+    {
+      "id": 44,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-23",
+        "v9-24",
+        "v9-25",
+        "v9-26"
+      ],
+      "summary": "Frames 23-26 are IMPLEMENTED but NOT YET CAPTURED by Gate B",
+      "reason": "These are states inside a live consultation, not routes. Capturing them needs a shot that creates a real consultation, grants the microphone and drives the store through its actual transitions. The harness now launches Chromium with a fake capture device and grants the microphone permission \u2014 half the driver \u2014 but the remaining half (seeding an in-chair patient and starting a consultation per run) is real work and mutates data. NOT faked: no production state was invented to produce a screenshot, which is why these four frames report NOT-CAPTURED rather than a number.",
+      "status": "open"
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

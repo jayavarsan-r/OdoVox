@@ -270,7 +270,21 @@ async function main() {
     process.exit(1);
   }
 
-  const browser = await chromium.launch();
+  /**
+   * Fake media so the recording states (frames 23-26) can be driven through the REAL
+   * application rather than mocked. Chromium synthesises a microphone, `getUserMedia`
+   * resolves, MediaRecorder runs, and the consult store walks its actual state machine.
+   *
+   * This is a HARNESS capability only — no production code is aware of it, and no state
+   * is faked: the screenshots show the app's own states, reached the way a doctor
+   * reaches them.
+   */
+  const browser = await chromium.launch({
+    args: [
+      "--use-fake-ui-for-media-stream",
+      "--use-fake-device-for-media-capture",
+    ],
+  });
   const results: Awaited<ReturnType<typeof capture>>[] = [];
   const css = stabiliseCss(mode === "fidelity");
 
@@ -280,6 +294,7 @@ async function main() {
 
     const ctx = await browser.newContext({
       ...devices["iPhone 13"],
+      permissions: ["microphone"],
       ...(mode === "fidelity"
         ? { viewport: FIDELITY_VIEWPORT, deviceScaleFactor: 1 }
         : {}),

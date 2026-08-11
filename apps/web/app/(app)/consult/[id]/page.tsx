@@ -4,10 +4,11 @@ import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, RotateCw } from 'lucide-react';
 import type { ConsultationContext } from '@odovox/types';
 import { MascotMoment } from '@/components/illustrations/mascot-moment';
 import { Button } from '@/components/ui/button';
+import { Mini } from '@/components/ui/badge';
 import { Recorder } from '@/components/voice/recorder';
 import { ProgressStrip } from '@/components/voice/progress-strip';
 import { VerificationCard } from '@/components/voice/verification-card';
@@ -119,31 +120,65 @@ export default function ConsultDetailPage() {
         ) : null}
 
         {isPipeline ? (
-          <div className="w-full max-w-mobile">
+          <div className="w-full max-w-mobile px-gutter">
             <ProgressStrip state={state} />
             <button
               type="button"
               onClick={() => useConsultStore.getState().dispatch({ type: 'RERECORD' })}
-              className="mt-6 w-full text-center text-sm text-text-muted"
+              className="mt-6 w-full text-center text-[13px] font-heavy text-pine-2"
             >
               Cancel
             </button>
           </div>
         ) : null}
 
+        {/* Frame 26 — failure. Its note is the whole design: "Failure never loses audio."
+
+            The old screen offered ONE action, "Re-record", which nulls the blob and makes
+            the doctor dictate four minutes again. But the recording is still on the
+            device — `refs.blob` survives a FAILED state — so the frame's "Try again" is a
+            RETRY OF THE UPLOAD, not a re-record. `sendForReview()` re-presigns, re-PUTs
+            and re-opens the stream, so calling it again is exactly that. Re-record stays
+            available underneath, because sometimes the audio really is the problem. */}
         {state.kind === 'FAILED' ? (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-base font-medium text-danger">Couldn&apos;t finish ({state.step}).</p>
-            <p className="max-w-xs text-sm text-text-muted">{state.error}</p>
-            <Button onClick={() => useConsultStore.getState().dispatch({ type: 'RERECORD' })}>Re-record</Button>
+          <div className="flex w-full max-w-mobile flex-col items-center gap-3 px-gutter text-center">
+            <MascotMoment pose="thinking" size="lg" animation="none" />
+            <p className="text-[19px] font-heavy tracking-tight text-pine">
+              Couldn&apos;t process
+            </p>
+            <p className="text-[12.5px] font-semibold leading-[1.5] text-pine-2">
+              {state.error}
+              <br />
+              Your recording is safe on this phone.
+            </p>
+            <Mini tone="live">{state.step} · audio saved</Mini>
+            <div className="mt-2 flex w-full flex-col gap-2.5">
+              <Button
+                block
+                onClick={() => void useConsultStore.getState().sendForReview()}
+              >
+                <RotateCw /> Try again
+              </Button>
+              <Button
+                variant="outline"
+                block
+                onClick={() => useConsultStore.getState().dispatch({ type: 'RERECORD' })}
+              >
+                Record again instead
+              </Button>
+            </div>
           </div>
         ) : null}
 
         {state.kind === 'CONFIRMED' ? (
           <div className="flex flex-col items-center gap-3 rounded-3xl bg-paper-cream p-8 text-center">
             <MascotMoment pose="celebrate" size="md" animation="bounce-in" />
-            <p className="text-lg font-semibold text-ink">Sent to the front desk</p>
-            <p className="text-sm text-text-muted">The record is filed. Taking you back…</p>
+            <p className="text-[19px] font-heavy tracking-tight text-pine">
+              Sent to the front desk
+            </p>
+            <p className="text-[12.5px] font-semibold text-pine-2">
+              The record is filed. Taking you back…
+            </p>
           </div>
         ) : null}
       </main>

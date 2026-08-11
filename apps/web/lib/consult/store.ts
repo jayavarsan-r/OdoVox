@@ -251,6 +251,18 @@ export const useConsultStore = create<ConsultStore>((set, get) => ({
 
   rerecord: async () => {
     const { consultationId } = get();
+    // Close the abandoned run's event stream FIRST.
+    //
+    // Without this the SSE subscription from the failed attempt stays open, and a late
+    // TRANSCRIBED/READY event for that consultation drags the UI out of IDLE and back
+    // into the old pipeline — on top of the new take the doctor has already started.
+    // `applyServerEvent` has no notion of which run an event belongs to, so the fix
+    // belongs here, at the point the run is abandoned.
+    //
+    // Only the subscription is torn down. No STT, extraction, persistence or retry
+    // semantics change; the server-side reject below is exactly as it was.
+    closeStream?.();
+    closeStream = null;
     if (consultationId) {
       await api.post(`/consultations/${consultationId}/reject`, { reason: 'doctor re-recorded' }).catch(() => undefined);
     }
