@@ -379,7 +379,9 @@
       ],
       "summary": "The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)",
       "reason": "The queue visit carries no treatment-plan context, so sitting n/N is not available on /home. Needs the active plan joined onto the in-chair visit \u2014 server work Task 22 (patient plans) or a /home aggregate would own.",
-      "status": "open"
+      "status": "fixed",
+      "ruling": "Option (a) \u2014 extend the existing queue snapshot with ONLY the minimum clinical context. No second /home/in-chair source of truth; both /home and /consult consume the same authoritative snapshot.",
+      "fixedIn": "`VisitWithPatient` gains ONE nullable field, `activePlan` {procedure, teeth, sitting, totalSittings}. The allergy needed nothing \u2014 `patient.medicalFlags` was already on the payload and simply was not being read.\n\nServer: one narrow include on the existing VISIT_QUEUE_INCLUDE \u2014 sittingNumber plus four procedure scalars, take:1. `Sitting.notesEnc` is deliberately NOT selected: it is encrypted PHI and the queue is read by receptionists. A soft-deleted procedure yields null rather than a half-populated line.\n\nHero: the ring now shows the SITTING count (2/3) with a \"SITTING\" caption, falling back to the day when there is no plan. The line reads \"RCT 36 \u00b7 sitting 2 of 3\" via `heroClinicalLine`, with the allergy rendered as a SEPARATE crit span so line-clamping can never truncate it away \u2014 the one part of the hero that must survive at any width.\n\nNo endpoint, route, RBAC rule or state transition changed. v9-13 6.6% -> 6.4%."
     },
     {
       "id": 34,
@@ -389,7 +391,9 @@
       ],
       "summary": "The hero subtitle reads queue context, not the frame's clinical line",
       "reason": "Frame 13 reads 'RCT 36 \u00b7 obturation today \u00b7 penicillin allergy' \u2014 procedure, today's step, and the allergy in crit. Ours reads 'Now treating X \u00b7 N waiting'. The clinical line needs the plan and allergy joined onto the in-chair visit; same missing join as #33.",
-      "status": "open"
+      "status": "fixed",
+      "ruling": "Option (a) \u2014 extend the existing queue snapshot with ONLY the minimum clinical context. No second /home/in-chair source of truth; both /home and /consult consume the same authoritative snapshot.",
+      "fixedIn": "`VisitWithPatient` gains ONE nullable field, `activePlan` {procedure, teeth, sitting, totalSittings}. The allergy needed nothing \u2014 `patient.medicalFlags` was already on the payload and simply was not being read.\n\nServer: one narrow include on the existing VISIT_QUEUE_INCLUDE \u2014 sittingNumber plus four procedure scalars, take:1. `Sitting.notesEnc` is deliberately NOT selected: it is encrypted PHI and the queue is read by receptionists. A soft-deleted procedure yields null rather than a half-populated line.\n\nHero: the ring now shows the SITTING count (2/3) with a \"SITTING\" caption, falling back to the day when there is no plan. The line reads \"RCT 36 \u00b7 sitting 2 of 3\" via `heroClinicalLine`, with the allergy rendered as a SEPARATE crit span so line-clamping can never truncate it away \u2014 the one part of the hero that must survive at any width.\n\nNo endpoint, route, RBAC rule or state transition changed. v9-13 6.6% -> 6.4%."
     },
     {
       "id": 35,

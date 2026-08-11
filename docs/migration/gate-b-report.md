@@ -56,7 +56,7 @@ _None. Every task closed its own decisions._
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
-| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.6% | criterion "layout" unreviewed |
+| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.4% | criterion "layout" unreviewed |
 | `v9-14` | Flow — chair free (same anatomy) | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-15` | Home — quiet morning, same bones | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-16` | Flow — day done | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
@@ -295,7 +295,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 
 ### `v9-13` — Home — calm, glanceable, habit-forming · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 
 - layout: **UNREVIEWED** — Frame 13's spine is in place: eyebrow date over a 24px greeting with the ＋ and avatar, day river, `.hero-c`, quick bento, 'Up next' rail, 'Needs you' rows, nav dock. 22.9% -> 15.5%.
 - typography: **UNREVIEWED**
@@ -313,8 +313,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 - `PRODUCT-DECISION` #30 (dropped): The VoiceCommandHero on /home; frame 13 has none
 - `PRODUCT-DECISION` #31 (dropped): Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
 - `PRODUCT-DECISION` #32 (approved): A 'Recent' section on /home; frame 13 has none
-- `NOT-BUILT` #33 (open): The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)
-- `NOT-BUILT` #34 (open): The hero subtitle reads queue context, not the frame's clinical line
+- `NOT-BUILT` #33 (fixed): The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)
+- `NOT-BUILT` #34 (fixed): The hero subtitle reads queue context, not the frame's clinical line
 - `PRODUCT-DECISION` #41 (fixed): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
 
 ### `v9-21` — Consult — live queue · MISMATCHED

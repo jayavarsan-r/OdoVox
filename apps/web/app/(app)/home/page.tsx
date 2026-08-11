@@ -38,7 +38,7 @@ import { formatLocalTime, localDateISO } from "@/lib/schedule/tz";
 import { useQueueStore } from "@/lib/queue/store";
 import { getInChair, getWaiting } from "@/lib/queue/selectors";
 import { useQueueSnapshot } from "@/lib/queue/mutations";
-import { consultHeroSubtitle } from "@/lib/queue/home-summary";
+import { heroClinicalLine } from "@/lib/queue/home-summary";
 import { flowState } from "@/lib/queue/home-state";
 import { useDailyCollection } from "@/lib/billing/api";
 import { rupees } from "@/lib/queue/checkout-form";
@@ -199,19 +199,37 @@ export default function DoctorHomePage() {
                 IN CHAIR
               </Chip>
               <div className="flex items-center gap-[13px]">
+                {/* Frame 13's ring is the SITTING count (2/3), not the day's progress —
+                    it answers "where are we in this treatment", which is what a doctor
+                    picking up mid-plan needs. Falls back to the day when there is no
+                    plan, because most visits are one-off. */}
                 <ProgressRing
-                  value={done}
-                  max={Math.max(total, 1)}
+                  value={inChair.activePlan?.sitting ?? done}
+                  max={Math.max(
+                    inChair.activePlan?.totalSittings ?? total,
+                    1,
+                  )}
                   size={56}
                   tone="lime"
-                  caption="TODAY"
+                  caption={inChair.activePlan ? "SITTING" : "TODAY"}
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[19px] font-heavy tracking-tight text-pine">
                     {inChair.patient.name}
                   </p>
-                  <p className="mt-[3px] truncate text-[11.5px] font-semibold text-pine-2">
-                    {consultHeroSubtitle(inChair.patient.name, waiting.length)}
+                  {/* "RCT 36 · obturation today · penicillin allergy" — procedure, tooth,
+                      and the allergy in crit. The allergy is NEVER truncated away: it is
+                      rendered as its own span so it survives the line clamping. */}
+                  <p className="mt-[3px] text-[11.5px] font-semibold text-pine-2">
+                    <span className="truncate">
+                      {heroClinicalLine(inChair)}
+                    </span>
+                    {inChair.patient.medicalFlags.length > 0 ? (
+                      <span className="font-heavy text-crit">
+                        {" · "}
+                        {inChair.patient.medicalFlags.join(" · ")}
+                      </span>
+                    ) : null}
                   </p>
                 </div>
               </div>
