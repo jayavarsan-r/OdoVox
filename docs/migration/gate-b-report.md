@@ -40,8 +40,8 @@ _None. Every MUST-FIX item is closed._
 inside the task that surfaced them, never carried forward — thirty unresolved
 deviations at the end is a pile nobody can remember the reason for.
 
-- **Task 13** — 1 open
-  - **#41** `PRODUCT-DECISION` v9-13, v9-78 — Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
+- **Task 13, 26** — 1 open
+  - **#41** `PRODUCT-DECISION` v9-13, v9-50, v9-78 — Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -94,7 +94,7 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-47` | Schedule — reception multi-doctor | 25 | MISMATCHED | 5.0% | criterion "layout" unreviewed |
 | `v9-48` | New appointment sheet | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
 | `v9-49` | Schedule — drag to reschedule | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
-| `v9-50` | Reception Today | 26 | MISMATCHED | 6.7% | criterion "layout" unreviewed |
+| `v9-50` | Reception Today | 26 | MISMATCHED | 7.0% | PRODUCT-DECISION #41 — awaiting ruling: Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero |
 | `v9-51` | Walk-in sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-52` | Checkout sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
@@ -521,20 +521,21 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 
 ### `v9-50` — Reception Today · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 7.0%
 
-- layout: **UNREVIEWED**
+- layout: **UNREVIEWED** — Frame 50's spine is in place: eyebrow with the LIVE marker over a 28px 'Today', the two-tile money bento, 'Clinic now' with Messages in its action slot, doctor-grouped rows in ONE card, then Checkout and Recent activity.
 - typography: **UNREVIEWED**
 - colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
+- component anatomy: **UNREVIEWED** — The per-doctor grouping was a card PER DOCTOR; frame 50 uses one card with each doctor announced by an eyebrow caption, and the free-chair state written into that caption rather than shown as an empty box. Money went from SEVEN tiles (4 collection + 3 stats) to the frame's two. Nothing was lost: in-chair is visible in 'Clinic now', the checkout count is that section's own action, appointments-today moved onto the section header, and Cash/Online remain in Billing — where a receptionist reconciling a drawer already goes.
 - content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
+- interaction/state: **UNREVIEWED** — Every receptionist capability preserved: WalkInSheet, voice walk-in, CheckoutSheet, QueueActionSheet (long-press), ActivityFeed, per-doctor grouping, and tap-through to the patient record. Built on the tested `today-state` model — origin stays separate from status, in-chair is never a reception action.
 - functionality: **UNREVIEWED**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `PRODUCT-DECISION` #41 (pending): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
 
 ### `v9-54` — Billing — densified · MISMATCHED
 

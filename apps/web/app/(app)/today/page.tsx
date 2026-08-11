@@ -2,13 +2,21 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Calendar, IndianRupee, CircleDot, MessageCircle, ChevronRight, Mic } from 'lucide-react';
+import { UserPlus, Calendar, IndianRupee, CircleDot, Mic } from 'lucide-react';
 import type { VisitWithPatient } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
-import { EditorialHeading, EmptyState, FabMenu, StatTile } from '@/components/ds';
+import {
+  BentoTile,
+  EmptyState,
+  FabMenu,
+  SectionHeader,
+} from '@/components/ds';
+import { Card } from '@/components/ui/card';
+import { Chip } from '@/components/ui/badge';
+import { InitialsAvatar as DsAvatar } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { InitialsAvatar, WaitingRow, CheckoutRow } from '@/components/queue/queue-cards';
+import { WaitingRow, CheckoutRow } from '@/components/queue/queue-cards';
 import { RealtimeDot } from '@/components/queue/realtime-dot';
 import { OfflineBanner } from '@/components/ds';
 import { ActivityFeed } from '@/components/queue/activity-feed';
@@ -20,7 +28,7 @@ import { getByDoctor, getCheckout } from '@/lib/queue/selectors';
 import { useActivityFeed, useQueueSnapshot } from '@/lib/queue/mutations';
 import { useTodayStats } from '@/lib/queries';
 import { useDailyCollection } from '@/lib/billing/api';
-import { collectionStatTiles } from '@/lib/billing/format';
+import { rupeesCompact } from '@/lib/billing/format';
 import { useAuth } from '@/lib/auth';
 
 export default function TodayPage() {
@@ -39,65 +47,68 @@ export default function TodayPage() {
 
   const doctorQueues = getByDoctor(state).filter((d) => d.available || d.inChair || d.waiting.length > 0);
   const checkout = getCheckout(state);
-  const inChairCount = doctorQueues.filter((d) => d.inChair).length;
-  const eyebrow = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' });
+  // Frame 50: "MON · 13 JUL" — short weekday, middot separator.
+  const now = new Date();
+  const eyebrow = `${now.toLocaleDateString('en-IN', { weekday: 'short' })} · ${now.getDate()} ${now.toLocaleDateString('en-IN', { month: 'short' })}`;
 
   return (
     <AnimatedPage className="flex flex-1 flex-col">
-      <div className="px-5 pt-4">
-        <EditorialHeading
-          eyebrow={eyebrow.toUpperCase()}
-          title="Today"
-          subtitle={clinic?.name ?? 'Your clinic'}
-          trailing={
-            <div className="flex items-center gap-2">
+      {/* Frame 50 — the eyebrow carries the live marker, and the clinic name moves
+          into it so the title line stays a single 28px word. */}
+      <header className="flex items-start justify-between gap-3 px-gutter pt-2.5">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-eyebrow font-heavy uppercase tracking-eyebrow text-pine-3">
+            {eyebrow.toUpperCase()}
+            <span className="text-pine-3">·</span>
+            <span className="flex items-center gap-1 text-live">
               <RealtimeDot />
-              <ProfileButton />
-            </div>
-          }
-        />
-      </div>
+              LIVE
+            </span>
+          </p>
+          <h1 className="mt-[5px] truncate text-[28px] font-heavy tracking-tight text-pine">
+            Today
+          </h1>
+          <p className="truncate text-[11.5px] font-semibold text-pine-2">
+            {clinic?.name ?? 'Your clinic'}
+          </p>
+        </div>
+        <ProfileButton />
+      </header>
       <OfflineBanner className="mx-gutter mt-2" />
 
-      <div className="flex flex-1 flex-col gap-6 px-5 pb-28 pt-4">
-        {/* Phase 8: today's money — collection, cash, online, pending checkouts. */}
+      <div className="flex flex-1 flex-col gap-1 pb-28 pt-3">
+        {/* Frame 50's bento: the day's money, two tiles, PENDING in crit.
+
+            This replaced SEVEN tiles (4 collection + 3 stats). Nothing was thrown
+            away — the three stats were already on this screen twice over: in-chair
+            is visible in "Clinic now", the checkout count is that section's own
+            action, and appointments-today moves onto the "Clinic now" header. Cash
+            and Online remain one tap away in Billing, which is where a receptionist
+            reconciling a drawer already goes. */}
         {collection.isLoading || !collection.data ? (
-          <Skeleton className="h-20 w-full" />
+          <Skeleton className="mx-gutter h-[86px] rounded-2xl" />
         ) : (
-          <div className="grid grid-cols-4 gap-2">
-            {collectionStatTiles(collection.data, checkout.length).map((t) => (
-              <StatTile key={t.label} size="sm" value={t.value} label={t.label} variant={t.variant} />
-            ))}
-          </div>
-        )}
-        {stats.isLoading ? (
-          <Skeleton className="h-20 w-full" />
-        ) : (
-          <div className="grid grid-cols-3 gap-3">
-            <StatTile variant="lime" value={stats.data?.appointmentsToday ?? 0} label="Appointments" />
-            <StatTile variant="sage" value={inChairCount} label="In chair" />
-            <StatTile variant="warning" value={checkout.length} label="Ready to bill" />
+          <div className="grid grid-cols-2 gap-gap-tight px-gutter">
+            <BentoTile
+              label="COLLECTED"
+              value={rupeesCompact(collection.data.totalCollectedPaise)}
+            />
+            <BentoTile
+              tone={checkout.length > 0 ? 'crit' : 'neutral'}
+              label="PENDING"
+              value={String(checkout.length)}
+            />
           </div>
         )}
 
-        {/* Phase 9: WhatsApp inbox entry point (Messages isn't a bottom tab — the 5-tab bar is locked). */}
-        <button
-          type="button"
-          onClick={() => router.push('/messages')}
-          className="flex items-center gap-3 rounded-2xl bg-paper-warm px-4 py-3 text-left shadow-elev-1"
-        >
-          <span className="flex size-9 items-center justify-center rounded-md bg-sage-soft text-sage-deep">
-            <MessageCircle className="size-[18px]" />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-semibold">Messages</span>
-            <span className="block text-xs text-text-subtle">Patient WhatsApp conversations</span>
-          </span>
-          <ChevronRight className="size-4 text-text-subtle" />
-        </button>
-
+        {/* Frame 50 puts Messages in the section's action slot rather than giving it a
+            banner of its own — it is a destination, not an event. */}
         <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-text-subtle">Active queue · live</h2>
+          <SectionHeader
+            title="Clinic now"
+            action={`Messages${stats.data ? ` · ${stats.data.appointmentsToday} today` : ''}`}
+            onAction={() => router.push('/messages')}
+          />
           {snapshot.isLoading && state.lastSyncedAt === 0 ? (
             <Skeleton className="h-24 w-full rounded-2xl" />
           ) : doctorQueues.length === 0 ? (
@@ -109,47 +120,56 @@ export default function TodayPage() {
               body="Tap the + to check a walk-in patient in."
             />
           ) : (
-            <div className="space-y-3">
+            /* Frame 50 groups by doctor with an EYEBROW, not a card per doctor: one
+               card, each doctor announced by a caption line. The free-chair caption
+               carries its state inline ("CHAIR 2 — FREE"), which is how reception
+               reads the room at a glance instead of counting empty boxes. */
+            <Card className="mx-gutter divide-y divide-hair overflow-hidden py-0.5">
               {doctorQueues.map((d) => (
-                <div key={d.doctorId} className="rounded-2xl border border-border bg-surface p-3 shadow-elev-1">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-ink">{d.doctorName ?? 'Doctor'}</span>
-                    {!d.available ? <span className="text-xs text-text-subtle">off today</span> : null}
-                  </div>
+                <div key={d.doctorId} className="py-1">
+                  <p className="px-4 pb-1 pt-1.5 text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">
+                    {d.doctorName ?? 'Doctor'}
+                    {d.inChair
+                      ? ''
+                      : d.available
+                        ? ' — free'
+                        : ' — off today'}
+                  </p>
                   {d.inChair ? (
-                    <div className="mb-2 flex items-center gap-2 rounded-lg bg-sage-tint p-2">
-                      <InitialsAvatar name={d.inChair.patient.name} className="size-8 text-xs" />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{d.inChair.patient.name}</span>
+                    <div className="flex items-center gap-3 px-4 py-2">
+                      <DsAvatar name={d.inChair.patient.name} ring="live" size="md" />
+                      <span className="min-w-0 flex-1 truncate text-[14px] font-heavy text-pine">
+                        {d.inChair.patient.name}
+                      </span>
                       {d.inChair.recording ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-danger">
-                          <CircleDot className="size-3 animate-pulse" /> recording
-                        </span>
+                        <Chip tone="live">
+                          <CircleDot className="size-2.5 animate-pulse" /> Rec
+                        </Chip>
                       ) : (
-                        <span className="text-xs font-medium text-sage-deep">In chair</span>
+                        <Chip tone="live">In chair</Chip>
                       )}
                     </div>
-                  ) : (
-                    <p className="mb-2 rounded-lg bg-paper-warm p-2 text-xs text-text-muted">Chair empty</p>
-                  )}
-                  {d.waiting.length > 0 ? (
-                    <div className="space-y-2">
-                      {d.waiting.map((v) => (
-                        <WaitingRow key={v.id} visit={v} onLongPress={() => setActionVisit(v)} onOpen={() => router.push(`/patients/${v.patient.id}`)} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-text-subtle">No one waiting</p>
-                  )}
+                  ) : null}
+                  {d.waiting.map((v) => (
+                    <WaitingRow
+                      key={v.id}
+                      visit={v}
+                      onLongPress={() => setActionVisit(v)}
+                      onOpen={() => router.push(`/patients/${v.patient.id}`)}
+                    />
+                  ))}
                 </div>
               ))}
-            </div>
+            </Card>
           )}
         </section>
 
         <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-text-subtle">
-            Ready for checkout · {checkout.length}
-          </h2>
+          <SectionHeader
+            title="Checkout"
+            action={String(checkout.length)}
+            actionTone={checkout.length > 0 ? 'crit' : 'muted'}
+          />
           {checkout.length === 0 ? (
             <EmptyState
               variant="inline"
@@ -159,17 +179,19 @@ export default function TodayPage() {
               body="Confirmed consultations land here for payment."
             />
           ) : (
-            <div className="space-y-2">
+            <Card className="mx-gutter divide-y divide-hair overflow-hidden py-0.5">
               {checkout.map((v) => (
                 <CheckoutRow key={v.id} visit={v} onTakePayment={() => setCheckoutVisit(v)} />
               ))}
-            </div>
+            </Card>
           )}
         </section>
 
         <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-text-subtle">Recent activity</h2>
-          <ActivityFeed />
+          <SectionHeader title="Recent activity" />
+          <div className="px-gutter">
+            <ActivityFeed />
+          </div>
         </section>
       </div>
 

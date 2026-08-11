@@ -464,6 +464,7 @@
       "class": "PRODUCT-DECISION",
       "frames": [
         "v9-13",
+        "v9-50",
         "v9-78"
       ],
       "summary": "Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero",
@@ -476,7 +477,8 @@
         "(b) Accept the loss: delete VoiceCommandHero, intent-router.ts and its tests as dead code. Honest, but ends free-form voice.",
         "(c) Keep it recorded as an open decision, which by this file's own `rule` reopens Task 13 until it is resolved."
       ],
-      "doNot": "Do NOT resolve this by deleting the router without a ruling \u2014 that converts an open question into a silent capability loss."
+      "doNot": "Do NOT resolve this by deleting the router without a ruling \u2014 that converts an open question into a silent capability loss.",
+      "alsoAffects": "/today (frame 50) has the same shape. Frame 50's header carries ONLY an avatar \u2014 no \uff0b \u2014 so the frame relies on the dock orb for actions. Our floating FabMenu therefore duplicates the orb and overlaps 'Recent activity'. On /home and /patients the fix was to move the dial onto a header \uff0b the frame actually draws; frame 50 draws none, so /today cannot be fixed the same way. Resolving #41 by wiring the orb to the speed dial fixes BOTH the missing voice routing and this overlap. Folded in here rather than opened as a separate decision \u2014 it is one question, not two."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
