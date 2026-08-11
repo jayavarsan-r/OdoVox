@@ -563,10 +563,21 @@ Order, top to bottom:
    avatar + name 13px/800 + `<Mini>` chips.
 6. **"Needs you"** — `SectionHeader` (action "View all · 3") + `ListRow`s in a `Card`.
 
-**Every existing feature stays.** `VoiceCommandHero` and `VoiceSearchInput` are not in
-frame 13 — **do not delete them.** Keep both, placed coherently (the voice hero can sit
-under the quick tiles). The `FabMenu` becomes the orb's speed dial (Task 7) — verify it
-still opens.
+**SUPERSEDED BY RULING (2026-08-11).** This task originally said to keep every existing
+feature and place `VoiceCommandHero` and `VoiceSearchInput` coherently. The owner has
+since ruled on the four holdovers this screen raised:
+
+- **#29 DROP** — no voice search on Home; `/patients` owns patient search.
+- **#30 DROP** — no `VoiceCommandHero`; the dock orb is the single global voice affordance.
+- **#31 DROP** — the quick bento is frame 13's three tiles (Lab · Schedule · wide Block
+  time). New patient and Inventory go, because both are already reachable from `/more`
+  and the speed dial. This is de-duplication, not feature removal.
+- **#32 KEEP** — the "Recent" section stays; it is the only place recent visits surface
+  outside a patient record.
+
+The components themselves are **not deleted from the codebase** — only their placement on
+Home is withdrawn. The `FabMenu` becomes the orb's speed dial (Task 7) — verify it still
+opens.
 
 Data: `useNeedsYou`, `useRecentVisits`, `useSchedule`, `useQueueSnapshot`, `useQueueStore`,
 `consultHeroSubtitle`. **No query changes.**
@@ -1018,6 +1029,27 @@ A discount row appears only for permitted roles.
 (`--duration-undo`). The day's numbers tick up behind it over `--count-up`.
 
 Keep the activity feed, `QueueActionSheet`, `AddToQueueSheet`, realtime, and the offline banner.
+
+### State model — binding constraints (owner, 2026-08-11)
+
+Task 26a landed `lib/queue/today-state.ts` state-first, before any pixels moved. The
+remaining visual work **continues on that model**; these five are not open to
+reinterpretation while migrating `/today` to frame 50:
+
+1. **Origin and current status stay separate concepts.** `isWalkIn()` rides alongside
+   `receptionRowState()`; it never becomes part of it.
+2. **No mutually-exclusive `WALK_IN` status.** A walk-in can be waiting, in a chair or at
+   checkout — collapsing those loses where the patient actually is.
+3. **Day precedence is `active` > `empty-day` > `day-done`.**
+4. **Any open actionable row outranks the presence of completed rows.** One person waiting
+   beats seven finished; "that's everyone" while somebody sits in the waiting room is the
+   failure that matters.
+5. **In-chair is never exposed as a receptionist action.** It stays out of
+   `needsAttention` — that move belongs to the doctor, and surfacing it here is noise on
+   the clinic's busiest screen.
+
+**And the standing rule, restated by the owner:** do not modify business logic merely to
+achieve a lower screenshot percentage. The pixel diff is a report, never a target.
 
 **Verification:** lint, typecheck, test.
 

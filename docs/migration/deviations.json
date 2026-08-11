@@ -335,7 +335,8 @@
       ],
       "summary": "A voice search field on /home; frame 13 has none",
       "reason": "Existing functionality. /patients carries its own search (frame 33), so this may be duplication \u2014 but it is not deleted without a ruling. Kept and restyled into the v9 language under a labelled section.",
-      "status": "pending"
+      "status": "dropped",
+      "ruling": "DROP \u2014 no voice search on Home; Patients owns patient search."
     },
     {
       "id": 30,
@@ -345,7 +346,8 @@
       ],
       "summary": "The VoiceCommandHero on /home; frame 13 has none",
       "reason": "Existing functionality. In v9 the dock's orb is the voice surface, so this is likely duplication \u2014 but removing a working voice entry point is a product call.",
-      "status": "pending"
+      "status": "dropped",
+      "ruling": "DROP \u2014 no VoiceCommandHero; the dock orb remains the single global voice affordance."
     },
     {
       "id": 31,
@@ -355,7 +357,8 @@
       ],
       "summary": "Five quick tiles where frame 13 has three (Lab, Schedule, Block time)",
       "reason": "New patient and Inventory are the two extra. Both are reachable from /more and the speed dial, so the frame may be right that they do not belong on Flow \u2014 but dropping them changes the doctor's daily reach.",
-      "status": "pending"
+      "status": "dropped",
+      "ruling": "DROP \u2014 do not duplicate the two quick actions already available through More/speed dial."
     },
     {
       "id": 32,
@@ -365,7 +368,8 @@
       ],
       "summary": "A 'Recent' section on /home; frame 13 has none",
       "reason": "Existing functionality, and the only place recent visits surface outside a patient record.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "KEEP \u2014 Recent section remains on Home."
     },
     {
       "id": 33,
@@ -396,7 +400,8 @@
       ],
       "summary": "A back chevron in the /consult header; frame 21 has none",
       "reason": "/consult is not one of the four dock tabs \u2014 it is reached from Flow's 'Continue consultation'. Removing back would strand anyone who arrived that way. Navigation, not decoration.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "KEEP \u2014 back chevron remains on Consult because Consult is not a dock destination."
     },
     {
       "id": 36,
@@ -418,7 +423,8 @@
       ],
       "summary": "The in-chair card shows an elapsed timer; frame 21 does not",
       "reason": "How long the patient has been in the chair is real clinical information and was already on this screen. The frame omits it, so keeping it is a departure \u2014 but dropping it loses a signal a doctor uses.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "KEEP \u2014 elapsed consultation timer remains."
     },
     {
       "id": 38,
@@ -439,7 +445,8 @@
       ],
       "summary": "Two filter chips the frame does not show \u2014 Lab and Recent",
       "reason": "Both are existing filters with server support. The frame shows four chips; we show five (six once \u20b9 Due exists). Trimming is a product call, not a styling one.",
-      "status": "pending"
+      "status": "approved",
+      "ruling": "KEEP \u2014 Lab and Recent filters remain because they correspond to real server-supported filters."
     },
     {
       "id": 40,
@@ -449,7 +456,8 @@
       ],
       "summary": "An \"All patients \u00b7 N\" section header above the list; frame 32 goes straight to the card",
       "reason": "The count is useful and was on the old screen. The frame omits it.",
-      "status": "pending"
+      "status": "dropped",
+      "ruling": "DROP \u2014 remove the redundant \"All patients \u00b7 N\" header."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

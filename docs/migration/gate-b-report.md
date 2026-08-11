@@ -40,17 +40,7 @@ _None. Every MUST-FIX item is closed._
 inside the task that surfaced them, never carried forward — thirty unresolved
 deviations at the end is a pile nobody can remember the reason for.
 
-- **Task 13** — 4 open
-  - **#29** `PRODUCT-DECISION` v9-13 — A voice search field on /home; frame 13 has none
-  - **#30** `PRODUCT-DECISION` v9-13 — The VoiceCommandHero on /home; frame 13 has none
-  - **#31** `PRODUCT-DECISION` v9-13 — Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
-  - **#32** `PRODUCT-DECISION` v9-13 — A 'Recent' section on /home; frame 13 has none
-- **Task 15** — 2 open
-  - **#35** `APPROVED-DEVIATION` v9-21, v9-22 — A back chevron in the /consult header; frame 21 has none
-  - **#37** `PRODUCT-DECISION` v9-21 — The in-chair card shows an elapsed timer; frame 21 does not
-- **Task 19** — 2 open
-  - **#39** `PRODUCT-DECISION` v9-32 — Two filter chips the frame does not show — Lab and Recent
-  - **#40** `PRODUCT-DECISION` v9-32 — An "All patients · N" section header above the list; frame 32 goes straight to the card
+_None. Every task closed its own decisions._
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -66,7 +56,7 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
-| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 7.2% | PRODUCT-DECISION #29 — awaiting ruling: A voice search field on /home; frame 13 has none |
+| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.6% | criterion "layout" unreviewed |
 | `v9-14` | Flow — chair free (same anatomy) | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-15` | Home — quiet morning, same bones | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-16` | Flow — day done | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
@@ -74,7 +64,7 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-18` | Home ＋ — speed dial open | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-19` | Day off — quick sheet | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-20` | Week in review — the Monday habit | 33 | NOT-BUILT | — | Task 33 owns this; no route or state driver reaches it yet |
-| `v9-21` | Consult — live queue | 15 | MISMATCHED | 12.9% | APPROVED-DEVIATION #35 — awaiting ruling: A back chevron in the /consult header; frame 21 has none |
+| `v9-21` | Consult — live queue | 15 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
 | `v9-22` | Consult — empty | 15 | NOT-BUILT | — | Task 15 owns this; no route or state driver reaches it yet |
 | `v9-23` | Recording | 16 | NOT-BUILT | — | Task 16 owns this; no route or state driver reaches it yet |
 | `v9-24` | Recording — paused (call) | 16 | NOT-BUILT | — | Task 16 owns this; no route or state driver reaches it yet |
@@ -85,7 +75,7 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-30` | Verification — clean day, readable prose | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-31` | Confirmed — saved | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 5.0% | PRODUCT-DECISION #39 — awaiting ruling: Two filter chips the frame does not show — Lab and Recent |
+| `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 4.9% | criterion "layout" unreviewed |
 | `v9-33` | Patients — search active | 19 | MISMATCHED | 6.3% | criterion "layout" unreviewed |
 | `v9-34` | Patients — no match | 19 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
 | `v9-35` | New patient — blank | 20 | MISMATCHED | 21.2% | criterion "layout" unreviewed |
@@ -305,7 +295,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 
 ### `v9-13` — Home — calm, glanceable, habit-forming · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 
 - layout: **UNREVIEWED** — Frame 13's spine is in place: eyebrow date over a 24px greeting with the ＋ and avatar, day river, `.hero-c`, quick bento, 'Up next' rail, 'Needs you' rows, nav dock. 22.9% -> 15.5%.
 - typography: **UNREVIEWED**
@@ -319,10 +309,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
-- `PRODUCT-DECISION` #29 (pending): A voice search field on /home; frame 13 has none
-- `PRODUCT-DECISION` #30 (pending): The VoiceCommandHero on /home; frame 13 has none
-- `PRODUCT-DECISION` #31 (pending): Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
-- `PRODUCT-DECISION` #32 (pending): A 'Recent' section on /home; frame 13 has none
+- `PRODUCT-DECISION` #29 (dropped): A voice search field on /home; frame 13 has none
+- `PRODUCT-DECISION` #30 (dropped): The VoiceCommandHero on /home; frame 13 has none
+- `PRODUCT-DECISION` #31 (dropped): Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
+- `PRODUCT-DECISION` #32 (approved): A 'Recent' section on /home; frame 13 has none
 - `NOT-BUILT` #33 (open): The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)
 - `NOT-BUILT` #34 (open): The hero subtitle reads queue context, not the frame's clinical line
 
@@ -342,13 +332,13 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
-- `APPROVED-DEVIATION` #35 (pending): A back chevron in the /consult header; frame 21 has none
+- `APPROVED-DEVIATION` #35 (approved): A back chevron in the /consult header; frame 21 has none
 - `PRODUCT-DECISION` #36 (approved): A ProfileButton in the /consult header; frame 21 has none
-- `PRODUCT-DECISION` #37 (pending): The in-chair card shows an elapsed timer; frame 21 does not
+- `PRODUCT-DECISION` #37 (approved): The in-chair card shows an elapsed timer; frame 21 does not
 
 ### `v9-32` — Patients — glyph rows · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 4.9%
 
 - layout: **UNREVIEWED** — Frame 32's spine: 28px 'Patients' with search and lime ＋ circles, a filter chip row, then one card of `.vrow`s — replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.
 - typography: **UNREVIEWED**
@@ -363,8 +353,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `NOT-BUILT` #38 (deferred-to-task-34): No "₹ Due" filter chip; frame 32 has one
-- `PRODUCT-DECISION` #39 (pending): Two filter chips the frame does not show — Lab and Recent
-- `PRODUCT-DECISION` #40 (pending): An "All patients · N" section header above the list; frame 32 goes straight to the card
+- `PRODUCT-DECISION` #39 (approved): Two filter chips the frame does not show — Lab and Recent
+- `PRODUCT-DECISION` #40 (dropped): An "All patients · N" section header above the list; frame 32 goes straight to the card
 
 ### `v9-33` — Patients — search active · MISMATCHED
 

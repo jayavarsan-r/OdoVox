@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Boxes,
   Calendar,
   CalendarOff,
   ChevronRight,
@@ -16,8 +15,6 @@ import {
 } from "lucide-react";
 import { AnimatedPage } from "@/components/animated-page";
 import { ProfileButton } from "@/components/app-shell/profile-button";
-import { VoiceCommandHero } from "@/components/voice/voice-command-hero";
-import { VoiceSearchInput } from "@/components/voice-search-input";
 import {
   DayRiver,
   EmptyState,
@@ -78,12 +75,10 @@ function greeting(hour: number): string {
  * avatar; the day river with its caption; the `.hero-c` for whoever is in the chair; a
  * three-tile quick bento; "Up next" over the queue; "Needs you" over the action rows.
  *
- * FOUR THINGS THIS PAGE HAS THAT FRAME 13 DOES NOT. None is deleted — the rule is that
- * functionality is not removed for pixel fidelity — so each is kept, restyled into the v9
- * language, and recorded as a pending deviation for a ruling:
- *
- *   #29 the voice search field        #31 five quick tiles where the frame has three
- *   #30 the voice command hero        #32 the "Recent" section
+ * Ruled and closed: the voice search field (#29), the VoiceCommandHero (#30) and two
+ * extra quick tiles (#31) are gone — patient search belongs to /patients, the dock orb is
+ * the single global voice affordance, and both actions live on /more and the speed dial.
+ * The "Recent" section stays (#32): it is the only place recent visits surface.
  *
  * Every data source is unchanged: the same queue snapshot that drives /consult, the same
  * schedule, needs-you and recent-visits queries, the same routes behind every tap.
@@ -91,7 +86,6 @@ function greeting(hour: number): string {
 export default function DoctorHomePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [search, setSearch] = useState("");
   // Frame 18 — "Home ＋ · speed dial open". The ＋ summons the dial.
   const [dialOpen, setDialOpen] = useState(false);
   const needsYou = useNeedsYou();
@@ -342,8 +336,9 @@ export default function DoctorHomePage() {
         </Card>
       </div>
 
-      {/* The quick bento. Frame 13 carries Lab, Schedule and a wide Block-time bar; the
-          other three are kept (deviation #31) rather than dropped. */}
+      {/* The quick bento — exactly frame 13's three: Lab, Schedule, and the wide
+          Block-time bar. New patient and Inventory were dropped (#31); both remain
+          reachable from /more and the speed dial. */}
       <div className="mt-3 grid grid-cols-2 gap-gap-tight px-gutter">
         <QuickTile
           icon={<FlaskConical />}
@@ -358,20 +353,6 @@ export default function DoctorHomePage() {
           label="Schedule"
           subtitle="Today and ahead"
           onClick={() => router.push("/schedule")}
-        />
-        <QuickTile
-          icon={<UserPlus />}
-          iconTone="live"
-          label="New patient"
-          subtitle="Add a record"
-          onClick={() => router.push("/patients/new")}
-        />
-        <QuickTile
-          icon={<Boxes />}
-          iconTone="sky"
-          label="Inventory"
-          subtitle="Stock and supplies"
-          onClick={() => router.push("/inventory")}
         />
         <QuickTile
           className="col-span-2"
@@ -472,24 +453,10 @@ export default function DoctorHomePage() {
         </Card>
       )}
 
-      {/* ── Kept from the previous Home, pending a ruling ─────────────────────
-          Frame 13 has none of these. They are existing functionality, so they stay
-          until you rule on them, restyled into the v9 language rather than left in
-          the old one. Deviations #29, #30, #32. */}
-      <SectionHeader title="Find and dictate" action="Not in frame 13" />
-      <div className="space-y-3 px-gutter">
-        <VoiceSearchInput
-          value={search}
-          onChange={setSearch}
-          onSubmit={(v) =>
-            router.push(
-              `/patients${v ? `?search=${encodeURIComponent(v)}` : ""}`,
-            )
-          }
-        />
-        <VoiceCommandHero />
-      </div>
-
+      {/* ── Recent — kept from the previous Home by ruling ────────────────────
+          Frame 13 has no Recent section, but #32 was ruled KEEP: this is the only
+          place recent visits surface outside a patient record. The other three
+          holdovers on this screen (#29, #30, #31) were ruled DROP and are gone. */}
       <SectionHeader
         title="Recent"
         action="See all"

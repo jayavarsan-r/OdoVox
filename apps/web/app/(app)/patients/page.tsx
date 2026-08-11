@@ -16,7 +16,6 @@ import {
   EmptyState,
   FabMenu,
   IconCircle,
-  SectionHeader,
   StatusDot,
 } from "@/components/ds";
 import { Button } from "@/components/ui/button";
@@ -243,10 +242,6 @@ function PatientsInner() {
         />
       ) : (
         <>
-          <SectionHeader
-            title={trimmed ? "Results" : "All patients"}
-            action={String(all.length)}
-          />
           <Card className="mx-gutter divide-y divide-hair overflow-hidden py-0.5">
             {all.map((p) => (
               <PatientRow
