@@ -36,14 +36,21 @@ _None. Every MUST-FIX item is closed._
 
 ### Awaiting your ruling — untouched by design
 
-- **#29** `PRODUCT-DECISION` v9-13 — A voice search field on /home; frame 13 has none
-- **#30** `PRODUCT-DECISION` v9-13 — The VoiceCommandHero on /home; frame 13 has none
-- **#31** `PRODUCT-DECISION` v9-13 — Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
-- **#32** `PRODUCT-DECISION` v9-13 — A 'Recent' section on /home; frame 13 has none
-- **#35** `APPROVED-DEVIATION` v9-21, v9-22 — A back chevron in the /consult header; frame 21 has none
-- **#37** `PRODUCT-DECISION` v9-21 — The in-chair card shows an elapsed timer; frame 21 does not
-- **#39** `PRODUCT-DECISION` v9-32 — Two filter chips the frame does not show — Lab and Recent
-- **#40** `PRODUCT-DECISION` v9-32 — An "All patients · N" section header above the list; frame 32 goes straight to the card
+**A task is not complete while it has an open decision.** Open items are resolved
+inside the task that surfaced them, never carried forward — thirty unresolved
+deviations at the end is a pile nobody can remember the reason for.
+
+- **Task 13** — 4 open
+  - **#29** `PRODUCT-DECISION` v9-13 — A voice search field on /home; frame 13 has none
+  - **#30** `PRODUCT-DECISION` v9-13 — The VoiceCommandHero on /home; frame 13 has none
+  - **#31** `PRODUCT-DECISION` v9-13 — Five quick tiles where frame 13 has three (Lab, Schedule, Block time)
+  - **#32** `PRODUCT-DECISION` v9-13 — A 'Recent' section on /home; frame 13 has none
+- **Task 15** — 2 open
+  - **#35** `APPROVED-DEVIATION` v9-21, v9-22 — A back chevron in the /consult header; frame 21 has none
+  - **#37** `PRODUCT-DECISION` v9-21 — The in-chair card shows an elapsed timer; frame 21 does not
+- **Task 19** — 2 open
+  - **#39** `PRODUCT-DECISION` v9-32 — Two filter chips the frame does not show — Lab and Recent
+  - **#40** `PRODUCT-DECISION` v9-32 — An "All patients · N" section header above the list; frame 32 goes straight to the card
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -355,7 +362,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
-- `NOT-BUILT` #38 (open): No "₹ Due" filter chip; frame 32 has one
+- `NOT-BUILT` #38 (deferred-to-task-34): No "₹ Due" filter chip; frame 32 has one
 - `PRODUCT-DECISION` #39 (pending): Two filter chips the frame does not show — Lab and Recent
 - `PRODUCT-DECISION` #40 (pending): An "All patients · N" section header above the list; frame 32 goes straight to the card
 

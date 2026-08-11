@@ -419,17 +419,38 @@ async function main() {
     "",
     "### Awaiting your ruling — untouched by design",
     "",
-    ...registry.deviations
-      .filter(
+    "**A task is not complete while it has an open decision.** Open items are resolved",
+    "inside the task that surfaced them, never carried forward — thirty unresolved",
+    "deviations at the end is a pile nobody can remember the reason for.",
+    "",
+    ...(() => {
+      // Grouped by the task owning the frames each deviation touches, so an open
+      // decision is always attributable to the task that has to close it.
+      const taskOf = new Map(frames.map((f) => [f.frame, f.task]));
+      const open = registry.deviations.filter(
         (d) =>
           (d.class === "APPROVED-DEVIATION" ||
             d.class === "PRODUCT-DECISION") &&
           (d.status === "pending" || d.status === "revisit"),
-      )
-      .map(
-        (d) =>
-          `- **#${d.id}** \`${d.class}\` ${d.frames.join(", ")} — ${d.summary}`,
-      ),
+      );
+      if (!open.length) return ["_None. Every task closed its own decisions._"];
+
+      const byTask = new Map<string, string[]>();
+      for (const d of open) {
+        const tasks = [
+          ...new Set(d.frames.map((f) => taskOf.get(f)).filter(Boolean)),
+        ];
+        const key = tasks.length ? `Task ${tasks.join(", ")}` : "Cross-cutting";
+        byTask.set(key, [
+          ...(byTask.get(key) ?? []),
+          `  - **#${d.id}** \`${d.class}\` ${d.frames.join(", ")} — ${d.summary}`,
+        ]);
+      }
+      return [...byTask.entries()].flatMap(([task, lines]) => [
+        `- **${task}** — ${lines.length} open`,
+        ...lines,
+      ]);
+    })(),
     "",
     "| Frame | Name | Task | Verdict | Pixel Δ | Blockers |",
     "| --- | --- | --- | --- | --- | --- |",

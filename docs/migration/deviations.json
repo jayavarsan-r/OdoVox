@@ -428,7 +428,8 @@
       ],
       "summary": "No \"\u20b9 Due\" filter chip; frame 32 has one",
       "reason": "There is no outstanding-balance filter on the API \u2014 PatientFilter is all/in_chair/due_today/lab_pending/recent. A chip that silently returned the unfiltered list would be worse than its absence, so it is not rendered. Needs a server filter.",
-      "status": "open"
+      "status": "deferred-to-task-34",
+      "ruling": "Becomes a real feature, not a visual fake. Task 34 adds a `balanceDue` filter to the patients list \u2014 server, types and chip \u2014 because reception needs to list who owes money, not because a frame draws a chip. Built with the billing work, not for the screenshot."
     },
     {
       "id": 39,
@@ -451,5 +452,6 @@
       "status": "pending"
     }
   ],
-  "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first."
+  "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
+  "rule": "EVERY COMPLETED TASK LEAVES ZERO OPEN PRODUCT-DECISION ITEMS FOR THAT TASK. Open decisions are raised and resolved within the task that surfaced them. They are never carried forward: a pile of 20-30 unresolved deviations at the end is a pile nobody can remember the reason for."
 }

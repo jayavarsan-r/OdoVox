@@ -1290,6 +1290,24 @@ data and no client-side summing across paginated lists.
 
 ---
 
+## Task 34: Outstanding-balance filter — frame 32's "₹ Due" chip
+
+**Not a migration task.** Frame 32 draws a "₹ Due" chip, but the reason to build this is
+that reception needs it: chasing outstanding balances is a daily job and there is
+currently no way to list who owes money.
+
+- **Server:** extend the patients list filter with `balanceDue`, returning patients whose
+  outstanding balance is greater than zero. Follow the existing `PatientFilter` union and
+  the query shape `/patients` already uses — no new endpoint.
+- **Types:** add `balance_due` to `PatientFilter` in `packages/types`.
+- **Web:** add the chip to `/patients` in crit tone, per frame 32.
+- **Done when:** the chip returns only patients with a non-zero balance, proven by an API
+  test seeding one patient with a balance and one without.
+
+Ordering: build it when the billing work lands (Task 27), not for the screenshot.
+
+---
+
 ## Out of scope
 
 These are recorded so no task silently absorbs them:
