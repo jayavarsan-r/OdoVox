@@ -1,15 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { UserPlus, Calendar, IndianRupee, CircleDot, Mic } from 'lucide-react';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { UserPlus, IndianRupee, CircleDot } from 'lucide-react';
 import type { VisitWithPatient } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
 import {
   BentoTile,
   EmptyState,
-  FabMenu,
   SectionHeader,
 } from '@/components/ds';
 import { Card } from '@/components/ui/card';
@@ -31,7 +30,7 @@ import { useDailyCollection } from '@/lib/billing/api';
 import { rupeesCompact } from '@/lib/billing/format';
 import { useAuth } from '@/lib/auth';
 
-export default function TodayPage() {
+function TodayInner() {
   const router = useRouter();
   const { clinic } = useAuth();
   const stats = useTodayStats();
@@ -40,7 +39,9 @@ export default function TodayPage() {
   useActivityFeed(true);
   const state = useQueueStore((s) => s.state);
 
-  const [walkInOpen, setWalkInOpen] = useState(false);
+  // The orb's "Add walk-in" row routes to /today?walkin=1 — open the sheet on arrival.
+  const params = useSearchParams();
+  const [walkInOpen, setWalkInOpen] = useState(params.get('walkin') === '1');
   const [walkInVoice, setWalkInVoice] = useState(false);
   const [checkoutVisit, setCheckoutVisit] = useState<VisitWithPatient | null>(null);
   const [actionVisit, setActionVisit] = useState<VisitWithPatient | null>(null);
@@ -195,19 +196,29 @@ export default function TodayPage() {
         </section>
       </div>
 
-      <FabMenu
-        items={[
-          { id: 'walk-in', label: 'Add walk-in', tone: 'lime', icon: <UserPlus />, onClick: () => setWalkInOpen(true) },
-          { id: 'voice-walk-in', label: 'Voice walk-in', tone: 'lime', icon: <Mic />, onClick: () => { setWalkInVoice(true); setWalkInOpen(true); } },
-          { id: 'new-patient', label: 'New patient', tone: 'peach', icon: <UserPlus />, onClick: () => router.push('/patients/new') },
-          { id: 'add-payment', label: 'Add payment', tone: 'sage', icon: <IndianRupee />, onClick: () => router.push('/billing') },
-          { id: 'new-appointment', label: 'New appointment', tone: 'sky', icon: <Calendar />, onClick: () => router.push('/schedule?dictate=1') },
-        ]}
-      />
+      {/* No floating FAB here. Frame 50's header carries only an avatar, so the frame
+          relies on the dock ORB for actions — and a second floating button would both
+          duplicate the orb and sit on top of "Recent activity". Ruling #41: the orb is
+          the single global floating action/voice affordance.
 
+          Nothing was dropped. "Add walk-in" and "Take a payment" moved into the orb's
+          hold menu as reception-only rows; new patient, book and lab case were already
+          there. The walk-in sheet still opens here, now via ?walkin=1. */}
       <WalkInSheet open={walkInOpen} voice={walkInVoice} onClose={() => { setWalkInOpen(false); setWalkInVoice(false); }} />
       <CheckoutSheet visit={checkoutVisit} open={!!checkoutVisit} onClose={() => setCheckoutVisit(null)} />
       <QueueActionSheet visit={actionVisit} open={!!actionVisit} onClose={() => setActionVisit(null)} />
     </AnimatedPage>
+  );
+}
+
+/**
+ * `useSearchParams` (the orb's ?walkin=1 hand-off) forces a suspense boundary — without
+ * one Next fails the production build, which typecheck alone would not have caught.
+ */
+export default function TodayPage() {
+  return (
+    <Suspense fallback={<Skeleton className="mx-gutter mt-4 h-40 rounded-2xl" />}>
+      <TodayInner />
+    </Suspense>
   );
 }

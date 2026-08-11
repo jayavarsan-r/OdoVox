@@ -67,6 +67,7 @@ export function NavDock({
         onClose={() => setMenuOpen(false)}
         inChairName={inChair?.patient.name ?? null}
         inChairVisitId={inChair?.id ?? null}
+        role={role}
       />
     </>
   );

@@ -46,13 +46,65 @@ describe("voiceMenuRows — the no-accidental-recording rule", () => {
     ).toHaveLength(0);
   });
 
-  it("always offers the five spec intents", () => {
-    expect(voiceMenuRows({ inChairName: null }).map((r) => r.id)).toEqual([
+  it("always offers the five spec intents, in the frame's order", () => {
+    // Was an exact-equality assertion on the whole list. Ruling #41 adds a sixth row
+    // (free-form dictation) and reception gets two more, so equality would now fail for
+    // a change that was approved. The GUARANTEE this test exists for is that frame 78's
+    // five intents are all present and in order — that is what is asserted now, and it
+    // still fails if one is dropped or reordered.
+    const ids = voiceMenuRows({ inChairName: null }).map((r) => r.id);
+    expect(ids.slice(0, 5)).toEqual([
       "consultation",
       "new-patient",
       "book",
       "lab-case",
       "find-patient",
     ]);
+  });
+});
+
+describe("the orb as the single global voice affordance (#41)", () => {
+  it("always offers free-form dictation — that is what makes it a voice surface", () => {
+    const dictate = voiceMenuRows({}).find((r) => r.id === "dictate");
+    expect(dictate).toBeDefined();
+    // href null: the destination is not known until the sentence is spoken.
+    expect(dictate!.href).toBeNull();
+  });
+
+  it("offers dictation with or without a patient in the chair", () => {
+    for (const ctx of [{}, { inChairName: "Anand", inChairVisitId: "v1" }]) {
+      expect(voiceMenuRows(ctx).some((r) => r.id === "dictate")).toBe(true);
+    }
+  });
+
+  it("dictation is never the hot row — the named consultation outranks it", () => {
+    const rows = voiceMenuRows({ inChairName: "Anand", inChairVisitId: "v1" });
+    expect(rows.find((r) => r.id === "dictate")!.hot).toBe(false);
+    expect(rows.find((r) => r.id === "consultation")!.hot).toBe(true);
+  });
+
+  it("gives reception the two rows its floating FAB used to carry", () => {
+    const ids = voiceMenuRows({ role: "RECEPTIONIST" }).map((r) => r.id);
+    expect(ids).toContain("walk-in");
+    expect(ids).toContain("payment");
+  });
+
+  it("does not show reception's rows to a doctor", () => {
+    const ids = voiceMenuRows({ role: "DOCTOR" }).map((r) => r.id);
+    expect(ids).not.toContain("walk-in");
+    expect(ids).not.toContain("payment");
+  });
+
+  it("every row except dictate still carries a real destination", () => {
+    for (const row of voiceMenuRows({ role: "RECEPTIONIST" })) {
+      if (row.id === "dictate") continue;
+      expect(row.href).toBeTruthy();
+    }
+  });
+
+  it("the safety rule survives the new rows: row one still names who it records", () => {
+    const rows = voiceMenuRows({ role: "RECEPTIONIST" });
+    expect(rows[0]!.id).toBe("consultation");
+    expect(rows[0]!.label).toBe("No one in the chair");
   });
 });

@@ -40,8 +40,7 @@ _None. Every MUST-FIX item is closed._
 inside the task that surfaced them, never carried forward — thirty unresolved
 deviations at the end is a pile nobody can remember the reason for.
 
-- **Task 13, 26** — 1 open
-  - **#41** `PRODUCT-DECISION` v9-13, v9-50, v9-78 — Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
+_None. Every task closed its own decisions._
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -57,7 +56,7 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
-| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.6% | PRODUCT-DECISION #41 — awaiting ruling: Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero |
+| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.6% | criterion "layout" unreviewed |
 | `v9-14` | Flow — chair free (same anatomy) | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-15` | Home — quiet morning, same bones | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-16` | Flow — day done | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
@@ -94,7 +93,7 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-47` | Schedule — reception multi-doctor | 25 | MISMATCHED | 5.0% | criterion "layout" unreviewed |
 | `v9-48` | New appointment sheet | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
 | `v9-49` | Schedule — drag to reschedule | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
-| `v9-50` | Reception Today | 26 | MISMATCHED | 7.0% | PRODUCT-DECISION #41 — awaiting ruling: Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero |
+| `v9-50` | Reception Today | 26 | MISMATCHED | 6.1% | criterion "layout" unreviewed |
 | `v9-51` | Walk-in sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-52` | Checkout sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
@@ -316,7 +315,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 - `PRODUCT-DECISION` #32 (approved): A 'Recent' section on /home; frame 13 has none
 - `NOT-BUILT` #33 (open): The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)
 - `NOT-BUILT` #34 (open): The hero subtitle reads queue context, not the frame's clinical line
-- `PRODUCT-DECISION` #41 (pending): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
+- `PRODUCT-DECISION` #41 (fixed): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
 
 ### `v9-21` — Consult — live queue · MISMATCHED
 
@@ -521,7 +520,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 
 ### `v9-50` — Reception Today · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.0%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.1%
 
 - layout: **UNREVIEWED** — Frame 50's spine is in place: eyebrow with the LIVE marker over a 28px 'Today', the two-tile money bento, 'Clinic now' with Messages in its action slot, doctor-grouped rows in ONE card, then Checkout and Recent activity.
 - typography: **UNREVIEWED**
@@ -535,7 +534,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.0%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
-- `PRODUCT-DECISION` #41 (pending): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
+- `PRODUCT-DECISION` #41 (fixed): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
 
 ### `v9-54` — Billing — densified · MISMATCHED
 

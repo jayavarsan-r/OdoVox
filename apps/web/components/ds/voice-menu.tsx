@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   FlaskConical,
+  IndianRupee,
   Mic,
+  MessageSquareText,
   Search,
   UserPlus,
 } from "lucide-react";
+import { VoiceInput } from "@/components/voice/voice-input";
+import { routeVoiceCommand } from "@/lib/voice/intent-router";
+import { useToast } from "@/lib/toast";
 import {
   voiceMenuRows,
   type VoiceIntentId,
@@ -37,6 +42,9 @@ const ICONS: Record<
   book: CalendarDays,
   "lab-case": FlaskConical,
   "find-patient": Search,
+  "walk-in": UserPlus,
+  payment: IndianRupee,
+  dictate: MessageSquareText,
 };
 
 export interface VoiceMenuProps extends VoiceMenuContext {
@@ -46,7 +54,25 @@ export interface VoiceMenuProps extends VoiceMenuContext {
 
 export function VoiceMenu({ open, onClose, ...ctx }: VoiceMenuProps) {
   const router = useRouter();
+  const toast = useToast();
   const rows = voiceMenuRows(ctx);
+
+  /**
+   * The free-form row (#41). This is the capability VoiceCommandHero used to carry: say
+   * a whole sentence, let `routeVoiceCommand` pick the screen. When ruling #30 removed
+   * the hero it left `routeVoiceCommand` with no caller at all, so the orb was a voice
+   * affordance in name only. This row is what makes the ruling true.
+   *
+   * An unclear command still lands somewhere useful — patient search with the
+   * transcript — rather than a dead end.
+   */
+  const onDictated = (t: string) => {
+    if (!t) return;
+    const route = routeVoiceCommand(t);
+    if (route.intent === "unclear") toast.info(`Searching for “${route.query}”…`);
+    onClose();
+    router.push(route.href);
+  };
 
   return (
     <AnimatePresence>
@@ -77,6 +103,34 @@ export function VoiceMenu({ open, onClose, ...ctx }: VoiceMenuProps) {
           >
             {rows.map((row) => {
               const Icon = ICONS[row.id];
+              // `href: null` marks the row that captures speech instead of navigating.
+              if (row.href === null) {
+                return (
+                  <div key={row.id} className="px-3 py-[11px]">
+                    <span className="mb-2 flex items-center gap-[11px]">
+                      <Icon className="size-[17px] shrink-0 text-pine-2" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-body font-heavy text-pine">
+                          {row.label}
+                        </span>
+                        {row.sublabel ? (
+                          <span className="block truncate text-micro font-semibold text-pine-2">
+                            {row.sublabel}
+                          </span>
+                        ) : null}
+                      </span>
+                    </span>
+                    <VoiceInput
+                      mode="single-shot"
+                      placement="sheet"
+                      label="Hold to speak"
+                      onTranscript={onDictated}
+                    />
+                  </div>
+                );
+              }
+              // Hoisted so the null-check above narrows inside the click closure too.
+              const href = row.href;
               return (
                 <button
                   key={row.id}
@@ -84,7 +138,7 @@ export function VoiceMenu({ open, onClose, ...ctx }: VoiceMenuProps) {
                   role="menuitem"
                   onClick={() => {
                     onClose();
-                    router.push(row.href);
+                    router.push(href);
                   }}
                   className={cn(
                     "flex w-full items-center gap-[11px] rounded-lg px-3 py-[11px] text-left",
