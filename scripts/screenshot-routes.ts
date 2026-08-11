@@ -40,6 +40,21 @@ export interface Shot {
   transient?: true;
 }
 
+/**
+ * Start a real consultation and begin recording.
+ *
+ * From /consult: "Record" starts the consultation for whoever is in the chair and routes
+ * to /consult/{id}; the mic button then requests permission and begins capture. Both are
+ * the real buttons a doctor taps.
+ */
+const startRecording = async (page: Page) => {
+  await page.getByRole("button", { name: /^record$/i }).click();
+  await page.waitForURL(/\/consult\/[^/]+$/, { timeout: 15_000 });
+  await page.getByRole("button", { name: /start recording/i }).click();
+  await page.getByText(/REC/).waitFor({ timeout: 10_000 });
+  await page.waitForTimeout(400);
+};
+
 /** Tap a tab by its visible label on the patient-detail page. */
 const patientTab = (label: string) => async (page: Page) => {
   await page.getByRole("button", { name: label, exact: true }).first().click();
@@ -259,6 +274,65 @@ export const SHOTS: Shot[] = [
 
   // ── D · Consult pipeline ─────────────────────────────────────────────────
   { slug: "D1-consult", path: "/consult", role: "doctor", frame: "v9-21" },
+  {
+    /**
+     * Frames 23-26 are STATES inside a live consultation, not routes — the last big
+     * block of the 49 nothing could reach.
+     *
+     * Driven entirely through the real application: tap Record on the in-chair patient
+     * (which starts a real consultation), grant the microphone (Chromium's fake capture
+     * device, configured at launch), and let the consult store walk its own machine. No
+     * state is injected and no production code knows the harness exists.
+     *
+     * Each run does create a consultation for the seeded in-chair patient. That is a
+     * real side effect on a dev database, and it is the price of not faking the state.
+     */
+    slug: "D2-recording",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-23",
+    prepare: startRecording,
+  },
+  {
+    slug: "D3-paused",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-24",
+    prepare: async (page) => {
+      await startRecording(page);
+      await page.getByRole("button", { name: /pause/i }).click();
+      await page.getByText(/PAUSED/).waitFor({ timeout: 5000 });
+    },
+  },
+  {
+    slug: "D4-processing",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-25",
+    prepare: async (page) => {
+      await startRecording(page);
+      await page.waitForTimeout(1200); // capture something real to send
+      await page.getByRole("button", { name: /finish/i }).click();
+      await page.getByRole("button", { name: /save findings/i }).click();
+      await page.getByText(/Processing/).waitFor({ timeout: 10_000 });
+    },
+  },
+  {
+    slug: "D5-failed",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-26",
+    prepare: async (page) => {
+      // Frame 26 is "The network dropped." Reproduce exactly that: fail the presign
+      // call. The store's own error path does the rest — nothing is stubbed in the app.
+      await page.route("**/consultations/audio/presign", (r) => r.abort());
+      await startRecording(page);
+      await page.waitForTimeout(1200);
+      await page.getByRole("button", { name: /finish/i }).click();
+      await page.getByRole("button", { name: /save findings/i }).click();
+      await page.getByText(/Couldn't process/).waitFor({ timeout: 10_000 });
+    },
+  },
 
   // ── E · Patients & cases ─────────────────────────────────────────────────
   { slug: "E1-patients", path: "/patients", role: "doctor", frame: "v9-32" },

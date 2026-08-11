@@ -515,8 +515,20 @@
         "v9-25",
         "v9-26"
       ],
-      "summary": "Frames 23-26 are IMPLEMENTED but NOT YET CAPTURED by Gate B",
+      "summary": "Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven",
       "reason": "These are states inside a live consultation, not routes. Capturing them needs a shot that creates a real consultation, grants the microphone and drives the store through its actual transitions. The harness now launches Chromium with a fake capture device and grants the microphone permission \u2014 half the driver \u2014 but the remaining half (seeding an in-chair patient and starting a consultation per run) is real work and mutates data. NOT faked: no production state was invented to produce a screenshot, which is why these four frames report NOT-CAPTURED rather than a number.",
+      "status": "partially-fixed",
+      "fixedIn": "The driver works and is real: Chromium launches with a fake capture device, the shot taps Record (starting an actual consultation), taps the mic, and the consult store walks its own machine. D2-recording and D3-paused capture RECORDING and PAUSED with no injected state.\n\nD4-processing and D5-failed still fail: the click after 'Finish' times out, so STOPPED is not being reached the way the driver expects. Not diagnosed yet. NOT worked around by faking the state."
+    },
+    {
+      "id": 45,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-23",
+        "v9-24"
+      ],
+      "summary": "The recording screen is restyled but not recomposed to frame 23",
+      "reason": "Visual inspection of the side-by-side, not the percentage. Frame 23 is: a patient strip at the top (avatar, name, age/sitting Minis, allergy in crit) with the REC chip opposite; a LARGE timer; a central lime mic orb with concentric rings; the complaint as a chip beneath it; and two CIRCULAR buttons with labels below (Pause, and a dark Finish with a check). Ours keeps the old composition \u2014 a five-bar waveform, a small mono timer, and two pill buttons \u2014 with v9 tokens applied to it.\n\nThe controls and states are right; the composition is not. 8.5% and 7.1% are mostly this.",
       "status": "open"
     }
   ],
