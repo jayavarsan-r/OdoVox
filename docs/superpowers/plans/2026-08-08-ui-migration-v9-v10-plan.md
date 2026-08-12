@@ -700,9 +700,19 @@ five regression tests depend on it. Split it before Task 18 restyles it, so that
 something breaks, `git bisect` lands on either "moved code" or "changed pixels" — never
 an ambiguous mix.
 
-Split into `components/voice/verification/`:
-`identity-header.tsx` · `summary-bento.tsx` · `medicine-list.tsx` · `record-prose.tsx` ·
-`safety-banner.tsx` · `actions.tsx`, with `verification-card.tsx` composing them.
+Split into `components/voice/verification/`, with `verification-card.tsx` composing them.
+
+**Corrected during execution (deviation #50).** The original file list named
+`summary-bento.tsx` and `record-prose.tsx`, which describe the POST-Task-18 anatomy: a
+bento of TOOTH/FEES/NEXT-SITTING tiles and prose sections. Today those three values are
+three of seven sequential `Row`s, so building those two files would require REORDERING THE
+DOM — which this task forbids. The split therefore follows the seams that exist now:
+
+`field-row.tsx` (the row primitive) · `identity-header.tsx` · `record-fields.tsx` ·
+`medicine-list.tsx` · `lab-case-block.tsx` · `safety-banner.tsx` · `actions.tsx`
+
+Task 18 turns `record-fields.tsx` into the bento + prose. Renaming happens there, when the
+contents actually change, so the rename and the restyle land in one reviewable commit.
 
 Editing logic already lives in `lib/consult/editors.ts` and `lib/consult/safety-view.ts` —
 **keep it there.** Move no logic into components; move any that has leaked into the
@@ -711,15 +721,25 @@ component out to `lib/consult/`.
 **Constraints:**
 
 - Identical rendered output. Same DOM, same classes, same order.
-- All five regression tests pass **untouched**: `verification-card-autosave-draft`,
+- All five regression tests keep every guarantee they encode: `verification-card-autosave-draft`,
   `verification-card-identity-from-patient-only`, `verification-card-inline-mode`,
   `verification-card-preview-step`, `overview-tab-invalidates-after-confirm`.
+
+  **Corrected during execution (deviation #50).** These tests grep SOURCE TEXT of a single
+  file, so "pass untouched" and "split the file" cannot both hold — the greps fail the
+  moment the code moves, with no behaviour changed. Worse, `identity-from-patient-only`
+  would keep passing while guarding one file out of seven: silently weakened, still green.
+  So the tests' source-loading widens to the whole directory (`verification-sources.ts`)
+  and the assertions stay byte-identical, except two that described JSX shapes the split
+  legitimately turned into a prop and into data. Both keep their stated intent.
 - No prop renames on the public `VerificationCard`.
 
 Commit message must be tagged `refactor(no-visual-change)`.
 
-**Verification:** lint, typecheck, test. The controller will confirm a **zero-pixel diff**
-on the verification screenshots — that is this task's real proof of correctness.
+**Verification:** lint, typecheck, test, and a **zero-pixel diff** on the verification
+screenshot — this task's real proof of correctness. Captured via the `D6-verify` shot,
+which drives the real record→process→verify pipeline (added in this task; frames 27-31 had
+no capture before it).
 
 ---
 

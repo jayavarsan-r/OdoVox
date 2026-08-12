@@ -382,6 +382,38 @@ export const SHOTS: Shot[] = [
     },
   },
   {
+    /**
+     * Frames 27-31 — the verification card. Reached the only honest way: record, finish,
+     * send, and let the real pipeline run. On dev's mock STT + mock extractor that takes
+     * a couple of seconds and produces real structured data, so the card renders the same
+     * fields a live Sarvam+Gemini run would.
+     *
+     * Task 17 splits this component with a zero-pixel-change requirement, and this shot
+     * is that task's proof. It is deliberately captured BEFORE the refactor.
+     */
+    slug: "D6-verify",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-30",
+    prepare: async (page) => {
+      await startRecording(page);
+      await page.waitForTimeout(1200);
+      await page.getByRole("button", { name: /finish/i }).click();
+      await page.getByRole("button", { name: /save findings/i }).click();
+      // The whole pipeline: upload → STT → extraction → READY over SSE. Generous, because
+      // a real provider run is not instant and this must not be a flaky gate.
+      //
+      // Anchored on Re-record, not on the CTA: the verification CTA currently reads
+      // "Save findings", which is the SAME label the recorder's STOPPED state uses for a
+      // completely different action. Re-record only exists on the verification card.
+      await page
+        .getByRole("button", { name: /^re-record$/i })
+        .waitFor({ timeout: 60_000 });
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(600);
+    },
+  },
+  {
     slug: "D5-failed",
     path: "/consult",
     role: "doctor",

@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import { verificationSource } from './verification-sources';
 
 /**
  * Phase 9.6 Issue 16: before anything commits, the doctor sees a Preview — the exact summary
@@ -9,19 +7,27 @@ import { dirname, join, resolve } from 'node:path';
  * Confirm only fires from inside the preview.
  */
 
-const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const card = readFileSync(join(webRoot, 'components', 'voice', 'verification-card.tsx'), 'utf8');
+const card = verificationSource();
 
 describe('verification card — preview before save', () => {
   it('the primary CTA is "Save findings" and opens the preview (no direct commit)', () => {
     expect(card).toContain('Save findings');
-    expect(card).toMatch(/onClick=\{\(\) => setPreview\(true\)\}/);
+    // The CTA opens the preview; it never calls confirm(). Task 17 moved the button into
+    // <SaveActions onOpenPreview={...}/>, so the handler now reads as the prop rather
+    // than an inline onClick — same guarantee, one indirection later.
+    expect(card).toMatch(/onOpenPreview=\{\(\) => setPreview\(true\)\}/);
     expect(card).not.toContain("'Confirm & send to front desk'");
   });
 
   it('the preview summarises procedure, prescription, follow-up, fee and notes', () => {
+    // These were five hand-written <PreviewLine label="..."> literals; Task 17 moved them
+    // into previewLines() in lib/consult/card-view.ts, where their VALUES are now asserted
+    // directly (card-view.test.ts) instead of only their labels being grepped. This keeps
+    // the "all five are summarised" guarantee against the source that renders them.
     for (const label of ['Procedure', 'Prescription', 'Follow-up', 'Fee', 'Notes']) {
-      expect(card).toContain(`label="${label}"`);
+      // Quote-agnostic: the formatter owns quote style, and a guard that breaks on
+      // prettier's preference is a guard nobody trusts.
+      expect(card).toMatch(new RegExp(`label: ['"]${label}['"]`));
     }
   });
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import { verificationSource } from './verification-sources';
 
 /**
  * Phase 9.6 Issue 6: the verification card is the doctor's MAIN working surface — full-page and
@@ -10,7 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const page = readFileSync(join(webRoot, 'app', '(app)', 'consult', '[id]', 'page.tsx'), 'utf8');
-const card = readFileSync(join(webRoot, 'components', 'voice', 'verification-card.tsx'), 'utf8');
+const card = verificationSource();
 
 describe('verification card — inline full-page mode', () => {
   it('the consult page renders the card in-flow, not as a fixed bottom overlay', () => {

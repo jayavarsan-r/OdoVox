@@ -573,6 +573,22 @@
       "reason": "Frame 24's banner reads 'Paused automatically for a phone call \u00b7 audio safe on this phone'. Nothing in the recorder listens for an interruption \u2014 no visibilitychange handler, no MediaRecorder pause on an audio-session interrupt \u2014 so every pause today is one the doctor pressed. The banner ships in the frame's amber treatment and position with honest copy ('Paused \u00b7 audio safe on this phone') rather than claiming a phone call that did not happen. Fabricating the cause on a clinical screen is worse than saying less.",
       "status": "open",
       "openQuestion": "Build auto-pause on interruption? It is a real robustness win \u2014 an incoming call currently keeps the recorder running and captures the call instead of the consultation \u2014 but it needs its own investigation of iOS/Android audio-session behaviour in a PWA. Recommend a task of its own; the banner copy becomes frame 24's verbatim once it exists."
+    },
+    {
+      "id": 50,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29",
+        "v9-30",
+        "v9-31"
+      ],
+      "summary": "Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule",
+      "reason": "Task 17 required (a) zero pixel change, (b) a split into six named files including `summary-bento.tsx` and `record-prose.tsx`, and (c) five regression tests passing untouched. All three cannot hold. (b) names post-Task-18 anatomy \u2014 the bento's TOOTH/FEES/NEXT-SITTING are currently three of seven sequential rows, so creating those files means reordering the DOM, violating (a). And (c) is impossible with any split at all: the tests grep the source TEXT of verification-card.tsx, so moving code breaks them without changing behaviour. Resolved in favour of the zero-pixel rule, which is the task's actual purpose.",
+      "status": "approved",
+      "ruling": "Self-resolved under the standing rule that a task closes no open decision of its own, and that the plan is fixed in the same change when it contradicts itself. The plan file now carries both corrections inline.",
+      "fixedIn": "Split follows today's seams: field-row \u00b7 identity-header \u00b7 record-fields \u00b7 medicine-list \u00b7 lab-case-block \u00b7 safety-banner \u00b7 actions. Test source-loading widened to the directory via test/regression/verification-sources.ts with assertions byte-identical, except two that described JSX shapes the split turned into a prop and into data (both keep their intent). That widening also CLOSED a hole: identity-from-patient-only would otherwise have kept passing while guarding one file out of seven. Proof of zero pixel change is a byte-identical PNG hash for D6-verify before and after (fc0de187146092729350deb98d098cfc), not a diff percentage. Logic that had leaked into JSX moved to lib/consult/card-view.ts with 9 new tests \u2014 including that a mistyped tooth number is dropped rather than coerced."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
