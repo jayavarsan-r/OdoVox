@@ -7,6 +7,7 @@ import {
   medicinesState,
   nextSittingLine,
   parseTeethInput,
+  partitionSafety,
   previewLines,
   proseSections,
   reviewSubtitle,
@@ -39,7 +40,7 @@ const base: ClinicalExtraction = {
 
 const warn = (over: Partial<SafetyViewItem>): SafetyViewItem =>
   ({
-    code: "x",
+    code: "allergy_conflict",
     message: "m",
     blocking: false,
     resolved: false,
@@ -274,5 +275,64 @@ describe('savedOutcomes', () => {
       { text: '₹3,000 → checkout', tone: 'lime' },
       { text: 'Thu, 16 Jul booked', tone: 'sky' },
     ]);
+  });
+});
+
+describe('partitionSafety', () => {
+  const withAmox: ClinicalExtraction = {
+    ...base,
+    prescriptions: [
+      { name: 'Amoxicillin', dosage: '500mg', frequency: 'TID', durationDays: 5, instructions: null },
+    ],
+  };
+
+  it('puts a live drug conflict on the drug, not in a banner', () => {
+    const w = warn({ blocking: false, detail: 'Amoxicillin', message: 'Penicillin allergy' });
+    const { onDrug, standalone } = partitionSafety([w], withAmox);
+    expect(onDrug).toEqual([w]);
+    expect(standalone).toEqual([]);
+  });
+
+  it('keeps a RESOLVED drug warning visible once its medicine is gone', () => {
+    // The bug this exists for: the warning sat on the medicine row, the doctor removed
+    // the medicine, and the warning vanished with it — no row to render on, and filtered
+    // out of the banner too. Invariant (b) is that a resolved warning re-renders with a
+    // check, never disappears, so "I dealt with that" and "that was never raised" stay
+    // distinguishable.
+    const w = warn({ resolved: true, detail: 'Amoxicillin', message: 'Penicillin allergy' });
+    const { onDrug, standalone } = partitionSafety([w], base);
+    expect(onDrug).toEqual([]);
+    expect(standalone).toEqual([w]);
+  });
+
+  it('sends warnings with no drug to the banner', () => {
+    const w = warn({ blocking: true, detail: '99', message: 'Invalid tooth' });
+    expect(partitionSafety([w], base).standalone).toEqual([w]);
+  });
+});
+
+describe('the medicines state line', () => {
+  it('does not report an invalid tooth as a medicine conflict', () => {
+    // "Medicines · 2   1 conflict" next to a perfectly good prescription list, because a
+    // tooth number was wrong, sends the doctor hunting through the drugs.
+    const tooth = warn({ code: 'invalid_tooth', blocking: true, detail: '99' });
+    const { drugRelated } = partitionSafety([tooth], base);
+    expect(drugRelated).toEqual([]);
+    expect(medicinesState(drugRelated)).toEqual({ text: '✓ no conflicts', tone: 'live' });
+  });
+
+  it('still says "checked" after the conflict that earned it was resolved', () => {
+    // Frame 28's line. Counting only what a medicine row can still host would flip this
+    // back to "no conflicts" the instant the doctor fixed it — erasing the fact that
+    // anything was ever flagged, on the one screen where that fact matters.
+    const fixed = warn({ code: 'allergy_conflict', resolved: true, detail: 'Amoxicillin' });
+    const { onDrug, drugRelated } = partitionSafety([fixed], base);
+    expect(onDrug).toEqual([]);
+    expect(medicinesState(drugRelated)).toEqual({ text: '✓ checked', tone: 'live' });
+  });
+
+  it('counts a live drug conflict', () => {
+    const live = warn({ code: 'allergy_conflict', detail: 'Amoxicillin' });
+    expect(medicinesState(partitionSafety([live], base).drugRelated).text).toBe('1 conflict');
   });
 });

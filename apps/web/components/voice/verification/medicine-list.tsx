@@ -10,7 +10,7 @@ import {
 } from '@/components/ds';
 import type { SafetyViewItem } from '@/lib/consult/safety-view';
 import { addMedicine, removeMedicine } from '@/lib/consult/editors';
-import { medicineDose, medicinesState } from '@/lib/consult/card-view';
+import { medicineDose } from '@/lib/consult/card-view';
 import { cn } from '@/lib/utils';
 
 const FREQ: MedicineFrequency[] = ['OD', 'BD', 'TID', 'QID', 'SOS'];
@@ -95,14 +95,18 @@ function MedicineEditor({
 export function MedicineList({
   data,
   safety,
+  state,
   onEdit,
 }: {
   data: ClinicalExtraction;
+  /** Live conflicts that a visible medicine row can host. */
   safety: SafetyViewItem[];
+  /** The section's state line — computed from every drug warning, resolved ones included,
+   *  so "✓ checked" survives the resolution that earned it. */
+  state: { text: string; tone: 'crit' | 'live' };
   onEdit: (next: ClinicalExtraction) => void;
 }) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const state = medicinesState(safety);
 
   return (
     <>

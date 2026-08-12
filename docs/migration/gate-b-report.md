@@ -74,7 +74,7 @@ _None. Every task closed its own decisions._
 | `v9-28` | Verification — resolved inline | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #52: The FINDINGS and PROCEDURE prose sections have no extraction fields behind them |
-| `v9-31` | Confirmed — saved | 18 | APPROVED-DEVIATION | 8.4% | — |
+| `v9-31` | Confirmed — saved | 18 | APPROVED-DEVIATION | 6.6% | — |
 | `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 4.9% | criterion "layout" unreviewed |
 | `v9-33` | Patients — search active | 19 | MISMATCHED | 6.3% | criterion "layout" unreviewed |
 | `v9-34` | Patients — no match | 19 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
@@ -442,7 +442,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
 
 ### `v9-31` — Confirmed — saved · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 
 - layout: **PASS**
 - typography: **PASS**

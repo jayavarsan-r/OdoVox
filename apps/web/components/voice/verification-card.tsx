@@ -5,7 +5,11 @@ import { Check } from "lucide-react";
 import type { ClinicalExtraction } from "@odovox/types";
 import { BentoTile } from "@/components/ds";
 import { useConsultStore } from "@/lib/consult/store";
-import { invalidFields } from "@/lib/consult/card-view";
+import {
+  invalidFields,
+  medicinesState,
+  partitionSafety,
+} from "@/lib/consult/card-view";
 import {
   hasUnresolvedBlocking,
   type SafetyViewItem,
@@ -66,6 +70,11 @@ export function VerificationCard({
   const [confirmRerecord, setConfirmRerecord] = useState(false);
   const blocked = hasUnresolvedBlocking(safety);
   const invalid = invalidFields(safety);
+  // A conflict goes on the drug while a drug can hold it; everything else — resolved
+  // conflicts whose medicine is gone, invalid teeth, sitting overflows — goes to the
+  // banner. Nothing falls between the two, which is how a resolved warning used to
+  // vanish instead of re-rendering with its check.
+  const { onDrug, standalone, drugRelated } = partitionSafety(safety, data);
 
   // Every card edit funnels through here: marks the draft dirty (guards Re-record) and
   // autosaves via the store's PATCH.
@@ -133,18 +142,21 @@ export function VerificationCard({
           </div>
         ) : null}
 
-        <MedicineList data={data} safety={safety} onEdit={applyEdit} />
+        <MedicineList
+          data={data}
+          safety={onDrug}
+          state={medicinesState(drugRelated)}
+          onEdit={applyEdit}
+        />
 
         {freeEdit ? null : <RecordProse data={data} />}
 
         <div className="px-gutter">
           <LabCaseBlock data={data} onEdit={applyEdit} />
-          {/* The banner carries warnings with no medicine to sit on (invalid tooth,
-              sitting overflow). Drug conflicts render on their own row instead — the flag
-              belongs on the drug, not in a banner away from it. */}
-          <SafetyBanner
-            safety={safety.filter((s) => !s.detail || s.blocking)}
-          />
+          {/* Everything the medicine rows cannot host. Crucially that includes RESOLVED
+              drug conflicts: the medicine is gone, so the row is gone, and the warning has
+              to land here struck through with its check rather than disappear. */}
+          <SafetyBanner safety={standalone} />
         </div>
       </div>
 

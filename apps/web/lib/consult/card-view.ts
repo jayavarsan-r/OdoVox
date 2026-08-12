@@ -161,7 +161,11 @@ export function proseSections(data: ClinicalExtraction): { label: string; body: 
   return out;
 }
 
-/** Frame 27's medicines-section state line: the conflict count, or "no conflicts". */
+/**
+ * Frame 27's medicines-section state line. Takes the DRUG-attached warnings only — passing
+ * it every warning made an invalid tooth number read as "1 conflict" beside a prescription
+ * list that was perfectly fine, sending the doctor hunting through the drugs.
+ */
 export function medicinesState(safety: SafetyViewItem[]): { text: string; tone: 'crit' | 'live' } {
   const open = safety.filter((s) => !s.resolved).length;
   if (open > 0) return { text: `${open} conflict${open > 1 ? 's' : ''}`, tone: 'crit' };
@@ -225,4 +229,55 @@ export function savedOutcomes(
   const next = nextSittingLine(data, from);
   if (next) out.push({ text: `${next.split(' · ')[0]} booked`, tone: 'sky' });
   return out;
+}
+
+/**
+ * Warning codes that are about a MEDICINE. The rest (invalid_tooth, sitting_overflow,
+ * sitting_jump) are about the procedure and have no drug row to sit on. Kept in step with
+ * `isResolved` in safety-view.ts, which switches on the same codes.
+ */
+const DRUG_WARNING_CODES = new Set([
+  'allergy_conflict',
+  'drug_interaction',
+  'antibiotic_duration',
+  'pediatric_dosage',
+  'pregnancy_risk',
+]);
+
+/**
+ * Split safety warnings by whether a currently-prescribed medicine can carry them.
+ *
+ * The verification card draws a drug conflict ON the drug — red rail, red name, one
+ * factual line — because a flag in a banner away from the prescription is a flag the
+ * doctor has to correlate by hand. But that only works while the drug is still on the
+ * list. The moment they resolve the conflict by removing it, the warning has no row to
+ * live on, and filtering it out of the banner too made it disappear entirely.
+ *
+ * That silently broke the card's invariant (b): a resolved warning re-renders with a
+ * check, it is NEVER removed. "I dealt with that" and "nothing was ever raised" must not
+ * look the same, or the audit the doctor performs in their head stops being possible.
+ *
+ * So the split is by ATTACHMENT, not by resolution: anything a visible medicine row can
+ * host goes on the row, and everything else — resolved conflicts, invalid teeth, sitting
+ * overflows — goes to the banner.
+ */
+export function partitionSafety(
+  safety: SafetyViewItem[],
+  data: ClinicalExtraction,
+): { onDrug: SafetyViewItem[]; standalone: SafetyViewItem[]; drugRelated: SafetyViewItem[] } {
+  const prescribed = new Set(data.prescriptions.map((p) => p.name.trim().toLowerCase()));
+  const onDrug: SafetyViewItem[] = [];
+  const standalone: SafetyViewItem[] = [];
+
+  for (const s of safety) {
+    const drug = s.detail?.trim().toLowerCase();
+    if (!s.resolved && drug && prescribed.has(drug)) onDrug.push(s);
+    else standalone.push(s);
+  }
+  // Whether a warning is ABOUT a drug is decided by its code, not by whether that drug is
+  // still prescribed — removing the medicine resolves the conflict, it does not turn the
+  // conflict into a tooth problem. The section's state line counts this set, so frame 28's
+  // "✓ checked" survives the resolution that earned it.
+  const drugRelated = safety.filter((s) => DRUG_WARNING_CODES.has(s.code));
+  return { onDrug, standalone, drugRelated };
 }

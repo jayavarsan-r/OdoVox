@@ -64,8 +64,11 @@ export default function ConsultDetailPage() {
         }
       }
       void queryClient.invalidateQueries({ queryKey: ['queue'] });
-      const t = setTimeout(() => router.replace(patientId ? `/patients/${patientId}` : '/consult'), 1800);
-      return () => clearTimeout(t);
+      // No auto-advance. This screen used to bounce to the patient record after 1.8s,
+      // which was fine when it only said "Saved" — but frame 31 gives it two real actions
+      // ("Call next · <name>", "Back to Flow"), and a screen that disappears mid-reach is
+      // worse than no buttons at all. The doctor leaves when they choose to.
+      return undefined;
     }
     if (state.kind === 'REJECTED') {
       const t = setTimeout(() => router.replace('/consult'), 600);
