@@ -10,8 +10,11 @@ import { verificationSource } from './verification-sources';
 const card = verificationSource();
 
 describe('verification card — preview before save', () => {
-  it('the primary CTA is "Save findings" and opens the preview (no direct commit)', () => {
-    expect(card).toContain('Save findings');
+  it('the primary CTA opens the preview (no direct commit)', () => {
+    // Frame 27 renames it "Confirm & save". The old label collided with the recorder's
+    // STOPPED button, which also read "Save findings" for a completely different action —
+    // send audio for processing vs commit the clinical record.
+    expect(card).toContain('Confirm & save');
     // The CTA opens the preview; it never calls confirm(). Task 17 moved the button into
     // <SaveActions onOpenPreview={...}/>, so the handler now reads as the prop rather
     // than an inline onClick — same guarantee, one indirection later.

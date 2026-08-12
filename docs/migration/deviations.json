@@ -589,6 +589,67 @@
       "status": "approved",
       "ruling": "Self-resolved under the standing rule that a task closes no open decision of its own, and that the plan is fixed in the same change when it contradicts itself. The plan file now carries both corrections inline.",
       "fixedIn": "Split follows today's seams: field-row \u00b7 identity-header \u00b7 record-fields \u00b7 medicine-list \u00b7 lab-case-block \u00b7 safety-banner \u00b7 actions. Test source-loading widened to the directory via test/regression/verification-sources.ts with assertions byte-identical, except two that described JSX shapes the split turned into a prop and into data (both keep their intent). That widening also CLOSED a hole: identity-from-patient-only would otherwise have kept passing while guarding one file out of seven. Proof of zero pixel change is a byte-identical PNG hash for D6-verify before and after (fc0de187146092729350deb98d098cfc), not a diff percentage. Logic that had leaked into JSX moved to lib/consult/card-view.ts with 9 new tests \u2014 including that a mistyped tooth number is dropped rather than coerced."
+    },
+    {
+      "id": 51,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-27",
+        "v9-28"
+      ],
+      "summary": "Frame 27's \"Swap \u2192 Azithro 500\" \u2014 no drug-substitution knowledge base exists",
+      "reason": "The frame resolves an allergy conflict by swapping to a NAMED alternative antibiotic, and frame 28 shows the result ('swapped for Amoxicillin \u00b7 allergy-safe'). Nothing in the app knows that azithromycin is the penicillin-safe substitute: SafetyWarning carries code, message, field and detail \u2014 no alternative \u2014 and there is no substitution table anywhere in the API. Hardcoding one inside a UI task would be inventing prescribing advice, which is the single thing this product must never do. The conflict rail ships with the frame's full anatomy (red rail, red drug name, one factual line, inline action) and the action is 'Remove', which is the resolution the safety model actually recognises (isResolved: the flagged medicine is no longer prescribed). It says Remove rather than Swap so the doctor is never told the app chose a replacement drug.",
+      "status": "open",
+      "openQuestion": "Build drug substitution? It needs a clinical data source, an owner for its correctness, and a decision about liability \u2014 the app would be suggesting a specific prescription. Recommend a dedicated task with clinical sign-off, not a migration task."
+    },
+    {
+      "id": 52,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29",
+        "v9-30"
+      ],
+      "summary": "The FINDINGS and PROCEDURE prose sections have no extraction fields behind them",
+      "reason": "Frames 27-30 set the record as three narrative sections \u2014 FINDINGS, PROCEDURE, INSTRUCTIONS. ClinicalExtraction has exactly one free-text field, `notes`, which is where dictated patient advice lands and maps cleanly to INSTRUCTIONS. There is no findings field and no procedure narrative; producing them means new schema fields plus new Gemini prompt work, i.e. changing clinical extraction from inside a restyle. PaperBlock ships and renders the sections that have data; sections without data are omitted rather than filled with generated prose.",
+      "status": "open",
+      "openQuestion": "Add `findings` and `procedureNarrative` to ClinicalExtraction and the clinical prompt? It is the difference between a structured summary and a record a dentist would actually keep. Recommend scheduling with extraction work, where the prompt and its tests live."
+    },
+    {
+      "id": 53,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-27"
+      ],
+      "summary": "Frame 27 greys out Confirm on an allergy conflict; today the doctor may override with an audited warning",
+      "reason": "Frame 27 shows 'Confirm & save' disabled while the allergy conflict is unresolved, and the task brief repeats it. That is a CLINICAL POLICY change, not a visual one. Today allergy_conflict is an advisory warning, not a blocking error: the API's own prompt says 'Do NOT remove the prescription \u2014 flag it; the doctor decides', and confirming over a live warning is a supported, audited path (confirmedWithWarning -> CONSULTATION_CONFIRMED_WITH_WARNING). Disabling Confirm would remove a doctor's documented authority to prescribe against a flag they have judged \u2014 for example a recorded 'rash' that they know to be tolerable. Implemented as today: Confirm is gated by BLOCKING errors only, and the conflict is drawn loudly on the drug.",
+      "status": "open",
+      "openQuestion": "Should an unresolved allergy conflict HARD-BLOCK confirm, overriding the doctor? Recommend no \u2014 keep the override with its audit trail, since the alternative is a clinician unable to file a record they believe is correct. If yes, the API's warning/blocking classification must change too, so the two layers do not disagree."
+    },
+    {
+      "id": 54,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-30"
+      ],
+      "summary": "Frame 30 packs medicines into a half-width tile beside NEXT; one composition ships for all four states",
+      "reason": "Frames 27/28/29 give medicines a full-width card, one row per drug. Frame 30 \u2014 a single medicine \u2014 instead shrinks it to a half-width tile next to a NEXT \u00b7 CEMENTATION tile. Shipping both means the medicines section changes shape based on how many drugs were prescribed, so the same information lands somewhere different each consultation and a doctor cannot build a habit of where to look. Frame 29's requirement (seven medicines with the same anatomy as two) is explicitly about that consistency. The full-width card ships for all four states; the NEXT tile keeps its place in the bento above.",
+      "status": "approved",
+      "ruling": "Self-resolved under the standing rule that no task closes with an open decision of its own. Frame 29's own stated requirement decides it: anatomy must not change with list length."
+    },
+    {
+      "id": 55,
+      "class": "NOT-CAPTURED",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29"
+      ],
+      "summary": "The conflict, resolved and seven-medicine states need clinical data no seeded recording produces",
+      "reason": "All three are built and will render \u2014 the conflict rail, the resolved note with Undo and the seven-row list are implemented \u2014 but reaching them through the real application means a recording that actually dictates an allergy-conflicting drug (27/28) or seven medicines (29). The mock extractor produces neither from the harness's fake audio. Capturing them honestly needs seed data purpose-built for it: a patient with a recorded penicillin allergy plus a canned transcript that prescribes amoxicillin. That is a harness/seed task, not a UI one, and faking the state to get a screenshot is explicitly forbidden.",
+      "status": "open",
+      "openQuestion": "Add a seeded 'conflict demo' patient + canned transcript so 27/28/29 can be captured and regression-tested? Recommend yes \u2014 these are the states where the card earns its keep, and they are currently the least verified."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

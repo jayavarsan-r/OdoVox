@@ -30,23 +30,41 @@ export function SaveActions({
   blocked,
   confirming,
   onOpenPreview,
+  onRerecord,
+  rerecordLabel,
+  onRerecordBlur,
 }: {
   blocked: boolean;
   confirming: boolean;
   onOpenPreview: () => void;
+  onRerecord: () => void;
+  rerecordLabel: string;
+  onRerecordBlur: () => void;
 }) {
   return (
-    <div className="border-t border-border/60 p-4" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
+    <div
+      className="sticky bottom-0 mt-auto bg-gradient-to-t from-paper via-paper to-transparent px-gutter pt-4"
+      style={{ paddingBottom: 'calc(10px + var(--safe-bottom))' }}
+    >
       <Button
-        variant="primary"
+        block
         size="lg"
         loading={confirming}
         disabled={blocked || confirming}
         onClick={onOpenPreview}
-        className="w-full shadow-lime-glow"
       >
-        {blocked ? 'Resolve safety issues to confirm' : 'Save findings'}
+        {blocked ? 'Resolve safety issues to confirm' : 'Confirm & save'}
       </Button>
+      {/* Re-record sits under the CTA as a text action, not a button — frame 27 makes it
+          reachable without ever making it a peer of Confirm. */}
+      <button
+        type="button"
+        onClick={onRerecord}
+        onBlur={onRerecordBlur}
+        className="mt-2.5 w-full text-center text-[12.5px] font-heavy text-pine-2"
+      >
+        {rerecordLabel}
+      </button>
     </div>
   );
 }

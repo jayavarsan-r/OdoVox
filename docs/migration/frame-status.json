@@ -243,7 +243,9 @@
     "changedPct": null,
     "gateB": "NOT-BUILT",
     "openMustFix": [],
-    "openDecisions": []
+    "openDecisions": [
+      "#53: Frame 27 greys out Confirm on an allergy conflict; today the doctor may override with an audited warning"
+    ]
   },
   {
     "frame": "v9-28",
@@ -266,18 +268,18 @@
   {
     "frame": "v9-30",
     "name": "Verification — clean day, readable prose",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.16040716040716,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-31",
     "name": "Confirmed — saved",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 8.373464373464373,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

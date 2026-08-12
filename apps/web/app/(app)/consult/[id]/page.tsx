@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -18,6 +18,10 @@ import { ComplaintStrip } from '@/components/consult/complaint-strip';
 import { useConsultStore } from '@/lib/consult/store';
 import { failureMessage } from '@/lib/consult/failure-copy';
 import { NextUpHint } from '@/components/queue/next-up-hint';
+import { SavedScreen } from '@/components/voice/verification/saved-screen';
+import { useQueueStore } from '@/lib/queue/store';
+import { getWaiting } from '@/lib/queue/selectors';
+import { nextSittingLine, savedOutcomes } from '@/lib/consult/card-view';
 import { api } from '@/lib/api-client';
 import { cn, fmtDuration } from '@/lib/utils';
 
@@ -80,6 +84,29 @@ export default function ConsultDetailPage() {
   const showsPatientStrip = recording || isPipeline || failed;
   const capturedMs = useConsultStore((s) => s.capturedMs);
 
+  // Frame 31 reports what the doctor's words CAUSED — an Rx, a bill, a booking — but by
+  // the time CONFIRMED renders, the extraction that produced them is gone from the state
+  // machine. So the summary is snapshotted on the last frame that still has the data.
+  // A ref, not state: writing it must not re-render the card mid-confirm.
+  const confirmedRef = useRef<{
+    firstName: string;
+    outcomes: ReturnType<typeof savedOutcomes>;
+  } | null>(null);
+  if (state.kind === 'VERIFY' || state.kind === 'CONFIRMING') {
+    confirmedRef.current = {
+      firstName: (context?.patient.name ?? '').split(/\s+/)[0] ?? '',
+      outcomes: savedOutcomes(state.data, new Date()),
+    };
+  }
+  const confirmed = confirmedRef.current;
+
+  // Frame 31's primary action is the next patient — the doctor's actual next move after
+  // filing a record. Read from the live queue, so an empty waiting room shows no button
+  // rather than a dead one.
+  const queue = useQueueStore((s) => s.state);
+  const myDoctorId = useQueueStore((s) => s.myDoctorId) ?? undefined;
+  const nextWaiting = getWaiting(queue, myDoctorId)[0];
+
   return (
     <div className={cn('relative flex min-h-dvh flex-col bg-paper', recording && 'bg-paper-warm')}>
       {/* Frames 23-26 replace the generic "Consultation" header with a patient strip: a
@@ -92,7 +119,7 @@ export default function ConsultDetailPage() {
             failed      the same, plus "· saved" — the screen's entire reassurance
 
           Off these states the ordinary header returns. */}
-      {showsPatientStrip && context ? (
+      {isVerify || state.kind === 'CONFIRMED' ? null : showsPatientStrip && context ? (
         <header className="flex items-center gap-2.5 px-gutter pt-2">
           <InitialsAvatar
             name={context.patient.name}
@@ -133,6 +160,9 @@ export default function ConsultDetailPage() {
           ) : null}
         </header>
       ) : (
+        /* Frames 27-31 have no chrome above "Review" — the card's own header is the top of
+           the screen, and a second title bar would push the whole record down a line for
+           nothing. */
         <header className="flex items-center gap-2 px-4 pt-4">
           <button type="button" onClick={() => router.back()} aria-label="Back" className="text-text-muted">
             <ChevronLeft className="size-6" />
@@ -161,16 +191,26 @@ export default function ConsultDetailPage() {
         </div>
       ) : null}
 
-      {/* Full patient context on the idle/ready states; a compact strip while recording (§2.2–2.3).
-          On the verification surface it stays visible — the identity line (name · age · token)
-          always renders from the patient DB record, never from extraction (Issue 5). */}
-      {context && ((isRecorder && !recording) || isVerify) ? (
+      {/* Full patient context on the idle/ready states only.
+          On VERIFY it is deliberately absent: frame 27's own header carries the identity
+          line ("Anand Kumar › RCT 36 · Sitting 2"), so keeping the context card here too
+          would print the patient's name twice on one screen — the exact duplication
+          Phase 4.5 Issue 5 exists to prevent. The identity is still on the verification
+          surface, and still from the patient DB record rather than the extraction. */}
+      {context && isRecorder && !recording ? (
         <div className="px-5 pt-3">
           <PatientContextCard ctx={context} />
         </div>
       ) : null}
 
-      <main className={cn('flex flex-1 flex-col px-5', isVerify ? 'min-h-0 py-3' : 'items-center justify-center py-8')}>
+      {/* The verification surface owns its own gutters — its bento, medicine card and
+          prose rule each sit at different insets — so main contributes none on VERIFY. */}
+      <main
+        className={cn(
+          'flex flex-1 flex-col',
+          isVerify ? 'min-h-0 pt-3' : 'items-center justify-center px-5 py-8',
+        )}
+      >
         {isRecorder ? (
           <Recorder complaint={context && recording ? <ComplaintStrip ctx={context} /> : undefined} />
         ) : null}
@@ -185,7 +225,14 @@ export default function ConsultDetailPage() {
             transition={{ type: 'spring', stiffness: 300, damping: 32 }}
             className="flex min-h-0 w-full flex-1 flex-col"
           >
-            <VerificationCard data={state.data} safety={state.safety} />
+            <VerificationCard
+              data={state.data}
+              safety={state.safety}
+              /* Identity from the patient DB record, never from the extraction. */
+              patientName={context?.patient.name ?? ''}
+              nextSittingLine={nextSittingLine(state.data, new Date())}
+              onOpenPatient={() => patientId && router.push(`/patients/${patientId}`)}
+            />
           </motion.div>
         ) : null}
 
@@ -250,16 +297,14 @@ export default function ConsultDetailPage() {
           </div>
         ) : null}
 
-        {state.kind === 'CONFIRMED' ? (
-          <div className="flex flex-col items-center gap-3 rounded-3xl bg-paper-cream p-8 text-center">
-            <MascotMoment pose="celebrate" size="md" animation="bounce-in" />
-            <p className="text-[19px] font-heavy tracking-tight text-pine">
-              Sent to the front desk
-            </p>
-            <p className="text-[12.5px] font-semibold text-pine-2">
-              The record is filed. Taking you back…
-            </p>
-          </div>
+        {state.kind === 'CONFIRMED' && confirmed ? (
+          <SavedScreen
+            patientFirstName={confirmed.firstName}
+            outcomes={confirmed.outcomes}
+            nextPatientName={nextWaiting?.patient.name ?? null}
+            onCallNext={() => router.replace('/consult')}
+            onBackToFlow={() => router.replace('/home')}
+          />
         ) : null}
       </main>
 

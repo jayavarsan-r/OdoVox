@@ -659,7 +659,18 @@ async function main() {
   //     Visit is IN_CHAIR in Room 1 — the live "now treating" patient on /consult.
   const pendingVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-pending` },
-    update: {},
+    // Restore the demo state, don't just leave whatever the last session left behind.
+    // `update: {}` made re-seeding a no-op for these visits, so the queue drifted with use
+    // (a consultation confirmed to CHECKOUT stayed there) while the seed still PRINTED
+    // "Queue: 1 WAITING · 1 IN_CHAIR · 1 CHECKOUT". `pnpm db:seed` is the documented way
+    // to get back to a known demo, so it has to actually do that.
+    update: {
+      status: 'IN_CHAIR',
+      roomId: room1.id,
+      calledInAt: new Date(Date.now() - 5 * 60 * 1000),
+      startedAt: new Date(),
+      endedAt: null,
+    },
     create: {
       id: `seed-visit-${clinic.id}-pending`,
       clinicId: clinic.id,
@@ -678,7 +689,17 @@ async function main() {
 
   await prisma.consultation.upsert({
     where: { id: `seed-consult-${clinic.id}-pending` },
-    update: {},
+    // Same reason as the visit above: this one gets CONFIRMED or REJECTED by anyone who
+    // demos or screenshots the review flow, and a CONFIRMED consultation can never be
+    // reopened (correctly — you do not un-file a clinical record). Re-seeding puts the
+    // demo back to a consultation waiting for review.
+    update: {
+      status: 'PENDING_REVIEW',
+      confirmedAt: null,
+      confirmedById: null,
+      rejectedById: null,
+      rejectedReason: null,
+    },
     create: {
       id: `seed-consult-${clinic.id}-pending`,
       visitId: pendingVisit.id,
@@ -715,7 +736,14 @@ async function main() {
   });
   const waitingVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-waiting` },
-    update: {},
+    update: {
+      status: 'WAITING',
+      roomId: null,
+      checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
+      calledInAt: null,
+      startedAt: null,
+      endedAt: null,
+    },
     create: {
       id: `seed-visit-${clinic.id}-waiting`,
       clinicId: clinic.id,

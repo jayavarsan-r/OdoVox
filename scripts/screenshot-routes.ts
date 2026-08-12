@@ -111,7 +111,25 @@ async function resetToIdle(page: Page): Promise<void> {
 }
 
 const startRecording = async (page: Page) => {
-  await page.getByRole("button", { name: /^record$/i }).click();
+  // No Record button means no one is in the chair — which is exactly where D7 leaves the
+  // queue, since confirming a consultation sends that patient to checkout. Call the next
+  // waiting patient in first, the way a doctor would. Both are real queue controls; no
+  // state is injected to make the next shot work.
+  const record = page.getByRole("button", { name: /^record$/i });
+  if (!(await record.first().isVisible().catch(() => false))) {
+    const callIn = page.getByRole("button", { name: /call in/i }).first();
+    if (!(await callIn.isVisible().catch(() => false))) {
+      throw new Error(
+        "the queue is empty — nobody in the chair and nobody waiting. D7 confirms a " +
+          "patient to checkout on every run, so a few full capture cycles drain the seeded " +
+          "queue. Re-seed with `pnpm db:seed` and run again; this is dev data state, not a " +
+          "regression.",
+      );
+    }
+    await callIn.click();
+    await record.first().waitFor({ timeout: 15_000 });
+  }
+  await record.first().click();
   await page.waitForURL(/\/consult\/[^/]+$/, { timeout: 15_000 });
   await resetToIdle(page);
   await page.getByRole("button", { name: /start recording/i }).click();
@@ -411,6 +429,28 @@ export const SHOTS: Shot[] = [
         .waitFor({ timeout: 60_000 });
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(600);
+    },
+  },
+  {
+    /**
+     * Frame 31 — saved. Reached by actually committing: the preview opens, the doctor
+     * confirms, and the confirm transaction writes the record. This is a real write to
+     * the dev database, which is the price of not faking the screen.
+     */
+    slug: "D7-saved",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-31",
+    prepare: async (page) => {
+      await startRecording(page);
+      await page.waitForTimeout(1200);
+      await page.getByRole("button", { name: /finish/i }).click();
+      await page.getByRole("button", { name: /save findings/i }).click();
+      await page.getByRole("button", { name: /^re-record$/i }).waitFor({ timeout: 60_000 });
+      await page.getByRole("button", { name: /confirm & save/i }).click();
+      await page.getByRole("button", { name: /save & send to front desk/i }).click();
+      await page.getByText(/Saved to /).waitFor({ timeout: 30_000 });
+      await page.waitForTimeout(500);
     },
   },
   {

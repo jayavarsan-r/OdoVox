@@ -440,14 +440,14 @@
     "section": "D · Consult pipeline",
     "source": "odovox-v9-master.html",
     "reference": "v9-reference/v9-30.png",
-    "shot": null,
-    "route": null,
-    "role": null,
-    "state": "—",
+    "shot": "D6-verify",
+    "route": "/consult",
+    "role": "doctor",
+    "state": "driven (prepare step)",
     "task": 18,
-    "accounting": "PLANNED",
-    "note": "Task 18 builds and captures this",
-    "status": "pending"
+    "accounting": "MAPPED",
+    "note": null,
+    "status": "mapped"
   },
   {
     "frame": "v9-31",
@@ -455,14 +455,14 @@
     "section": "D · Consult pipeline",
     "source": "odovox-v9-master.html",
     "reference": "v9-reference/v9-31.png",
-    "shot": null,
-    "route": null,
-    "role": null,
-    "state": "—",
+    "shot": "D7-saved",
+    "route": "/consult",
+    "role": "doctor",
+    "state": "driven (prepare step)",
     "task": 18,
-    "accounting": "PLANNED",
-    "note": "Task 18 builds and captures this",
-    "status": "pending"
+    "accounting": "MAPPED",
+    "note": null,
+    "status": "mapped"
   },
   {
     "frame": "v9-32",

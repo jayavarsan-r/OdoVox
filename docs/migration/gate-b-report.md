@@ -9,10 +9,10 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 11 |
+| APPROVED-DEVIATION | 13 |
 | OUT-OF-SCOPE | 1 |
 | MISMATCHED | 29 |
-| NOT-BUILT | 41 |
+| NOT-BUILT | 39 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
@@ -73,8 +73,8 @@ _None. Every task closed its own decisions._
 | `v9-27` | Verification — conflict, clinical red | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-28` | Verification — resolved inline | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-30` | Verification — clean day, readable prose | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-31` | Confirmed — saved | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
+| `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #52: The FINDINGS and PROCEDURE prose sections have no extraction fields behind them |
+| `v9-31` | Confirmed — saved | 18 | APPROVED-DEVIATION | 8.4% | — |
 | `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 4.9% | criterion "layout" unreviewed |
 | `v9-33` | Patients — search active | 19 | MISMATCHED | 6.3% | criterion "layout" unreviewed |
 | `v9-34` | Patients — no match | 19 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
@@ -419,6 +419,44 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
 - `NOT-BUILT` #42 (open): Frame 26's second action, "Keep audio · review later", does not exist
 - `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
 - `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
+
+### `v9-30` — Verification — clean day, readable prose · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
+- `NOT-BUILT` #52 (open): The FINDINGS and PROCEDURE prose sections have no extraction fields behind them
+- `APPROVED-DEVIATION` #54 (approved): Frame 30 packs medicines into a half-width tile beside NEXT; one composition ships for all four states
+
+### `v9-31` — Confirmed — saved · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
 
 ### `v9-32` — Patients — glyph rows · MISMATCHED
 

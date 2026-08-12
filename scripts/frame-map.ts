@@ -57,6 +57,11 @@ const FRAME_TO_SHOT: Record<string, string> = {
   "v9-24": "D3-paused",
   "v9-25": "D4-processing",
   "v9-26": "D5-failed",
+  // 30 is the clean verification state — the one the harness reaches with ordinary seed
+  // data. 27/28 (allergy conflict, then resolved) and 29 (seven medicines) need specific
+  // clinical data that only exists if the doctor dictated it; see deviations #51 and #54.
+  "v9-30": "D6-verify",
+  "v9-31": "D7-saved",
   "v9-32": "E1-patients",
   "v9-33": "E2-search",
   "v9-34": "E3-search-no-match",

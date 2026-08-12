@@ -7,8 +7,8 @@ bucket: "unmapped" reads as "optional", and these are real product states.
 
 | Accounting | Meaning | Count |
 | --- | --- | --- |
-| MAPPED | a shot renders it; Gate B can judge it | 41 |
-| PLANNED | a plan task owns it; nothing captures it yet | 41 |
+| MAPPED | a shot renders it; Gate B can judge it | 43 |
+| PLANNED | a plan task owns it; nothing captures it yet | 39 |
 | CROSS-CUTTING | a contract validated by tests, not one screenshot | 3 |
 | OUT-OF-SCOPE | explicitly ruled out by the owner | 1 |
 | **UNASSIGNED** | **no shot and no task — a hole in the plan** | **0** |
@@ -44,8 +44,8 @@ bucket: "unmapped" reads as "optional", and these are real product states.
 | `v9-27` | Verification — conflict, clinical red | v9-master | 18 | — | — | PLANNED |
 | `v9-28` | Verification — resolved inline | v9-master | 18 | — | — | PLANNED |
 | `v9-29` | Verification — seven medicines | v9-master | 18 | — | — | PLANNED |
-| `v9-30` | Verification — clean day, readable prose | v9-master | 18 | — | — | PLANNED |
-| `v9-31` | Confirmed — saved | v9-master | 18 | — | — | PLANNED |
+| `v9-30` | Verification — clean day, readable prose | v9-master | 18 | `/consult` | doctor | MAPPED |
+| `v9-31` | Confirmed — saved | v9-master | 18 | `/consult` | doctor | MAPPED |
 | `v9-32` | Patients — glyph rows | v9-master | 19 | `/patients` | doctor | MAPPED |
 | `v9-33` | Patients — search active | v9-master | 19 | `/patients?search=a` | doctor | MAPPED |
 | `v9-34` | Patients — no match | v9-master | 19 | `/patients?search=Ramesh%20Kum` | doctor | MAPPED |
