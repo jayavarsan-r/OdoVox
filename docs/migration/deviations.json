@@ -650,6 +650,52 @@
       "reason": "All three are built and will render \u2014 the conflict rail, the resolved note with Undo and the seven-row list are implemented \u2014 but reaching them through the real application means a recording that actually dictates an allergy-conflicting drug (27/28) or seven medicines (29). The mock extractor produces neither from the harness's fake audio. Capturing them honestly needs seed data purpose-built for it: a patient with a recorded penicillin allergy plus a canned transcript that prescribes amoxicillin. That is a harness/seed task, not a UI one, and faking the state to get a screenshot is explicitly forbidden.",
       "status": "open",
       "openQuestion": "Add a seeded 'conflict demo' patient + canned transcript so 27/28/29 can be captured and regression-tested? Recommend yes \u2014 these are the states where the card earns its keep, and they are currently the least verified."
+    },
+    {
+      "id": 56,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-35"
+      ],
+      "summary": "The disabled-CTA line names what is actually missing instead of frame 35's static copy",
+      "reason": "Frame 35 reads 'Name + phone unlock the button \u00b7 everything else can wait'. CreatePatientInput requires name, phone, age AND gender, so a button enabled on name + phone would let the receptionist tap Create and collect a validation error instead of a patient \u2014 the precise failure Global Constraint 1 ('a disabled CTA always says why') exists to prevent. The line is computed from the fields still empty ('Name, phone, age and gender still needed') and shrinks as the form fills in, turning into 'Everything else can wait' once the API would accept it. That honours the constraint's intent more exactly than its own example copy does.",
+      "status": "approved",
+      "ruling": "Self-resolved under the standing rule that no task closes with an open decision of its own. Global Constraint 1 decides it: the frame's static line would be false for this API.",
+      "fixedIn": "apps/web/lib/patients/new-patient-form.ts with 7 tests, incl. age 0 (infants are patients)."
+    },
+    {
+      "id": 57,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-35",
+        "v9-36"
+      ],
+      "summary": "Optional fields move behind a 'More details' disclosure rather than being dropped",
+      "reason": "Frame 35 shows only NAME, AGE, PHONE and FLAGS; frame 36 adds a collapsed 'More details' row. The form also carries blood group, address, chief complaint and allergies, none of which appear in either frame and none of which may be removed. They live inside the disclosure \u2014 every field the form ever had is still reachable. Two behaviours keep it from hiding anything that matters: the disclosure opens automatically when voice intake fills a field inside it, so dictated allergies are never filed away unreviewed; and GENDER stays on the main surface because the API requires it.",
+      "status": "approved",
+      "ruling": "Self-resolved: a disclosure is not a deletion, and nothing required is inside it."
+    },
+    {
+      "id": 58,
+      "class": "NOT-CAPTURED",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio",
+      "reason": "Frame 36 is the form AFTER dictation, every voice-filled field wearing its lime spine. The spine, the touch-to-clear behaviour and the auto-opening 'More details' are all built. But capturing it means a real intake extraction, and Chromium's fake capture device produces audio the mock extractor parses into zero fields - verified by a shot that waited on the NAME input and timed out at 60s. Capturing it honestly needs a canned intake transcript in the mock provider, which is harness work; faking the form state is forbidden.",
+      "status": "open",
+      "openQuestion": "Add a canned intake transcript to the mock STT/extractor so voice-intake states can be captured and regression-tested? Same underlying gap as #55 - recommend one task for both."
+    },
+    {
+      "id": 59,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "Voice intake claimed \"Filled from your voice\" over a form it had filled nothing into",
+      "reason": "onIntake fired the success toast unconditionally. When the extractor understood nothing - a noisy room, a phone held wrong, a sentence it could not parse - the receptionist was told it worked, over a completely empty form, and sent to a Create button that would reject them. Found by READING the frame-36 capture: the toast was on screen above blank fields.",
+      "status": "fixed",
+      "fixedIn": "apps/web/app/(app)/patients/new/page.tsx - an extraction that sets no field now says \"Couldn't catch that - try again, or type the details in.\" and returns early."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

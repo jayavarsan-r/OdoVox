@@ -9,10 +9,10 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 13 |
+| APPROVED-DEVIATION | 14 |
 | OUT-OF-SCOPE | 1 |
 | MISMATCHED | 29 |
-| NOT-BUILT | 39 |
+| NOT-BUILT | 38 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
@@ -78,8 +78,8 @@ _None. Every task closed its own decisions._
 | `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 4.9% | criterion "layout" unreviewed |
 | `v9-33` | Patients — search active | 19 | MISMATCHED | 6.3% | criterion "layout" unreviewed |
 | `v9-34` | Patients — no match | 19 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
-| `v9-35` | New patient — blank | 20 | MISMATCHED | 21.2% | criterion "layout" unreviewed |
-| `v9-36` | New patient — voice intake | 20 | NOT-BUILT | — | Task 20 owns this; no route or state driver reaches it yet |
+| `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
+| `v9-36` | New patient — voice intake | 20 | MISMATCHED | 14.1% | criterion "layout" unreviewed |
 | `v9-37` | Patient — Overview | 22 | MISMATCHED | 22.3% | criterion "layout" unreviewed |
 | `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 11.8% | criterion "layout" unreviewed |
 | `v9-39` | Case — procedure detail | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
@@ -512,9 +512,28 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
-### `v9-35` — New patient — blank · MISMATCHED
+### `v9-35` — New patient — blank · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 21.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.1%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #56 (approved): The disabled-CTA line names what is actually missing instead of frame 35's static copy
+- `APPROVED-DEVIATION` #57 (approved): Optional fields move behind a 'More details' disclosure rather than being dropped
+
+### `v9-36` — New patient — voice intake · MISMATCHED
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -528,6 +547,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 21.2%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #57 (approved): Optional fields move behind a 'More details' disclosure rather than being dropped
 
 ### `v9-37` — Patient — Overview · MISMATCHED
 

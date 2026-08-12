@@ -278,7 +278,7 @@
     "frame": "v9-31",
     "name": "Confirmed — saved",
     "status": "APPROVED-DEVIATION",
-    "changedPct": 8.373464373464373,
+    "changedPct": 6.601614601614601,
     "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
@@ -313,18 +313,18 @@
   {
     "frame": "v9-35",
     "name": "New patient — blank",
-    "status": "MISMATCHED",
-    "changedPct": 21.15724815724816,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 8.128115128115128,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-36",
     "name": "New patient — voice intake",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "MISMATCHED",
+    "changedPct": 14.053703053703053,
+    "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
   },

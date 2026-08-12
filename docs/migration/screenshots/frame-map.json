@@ -530,14 +530,14 @@
     "section": "E · Patients & cases",
     "source": "odovox-v9-master.html",
     "reference": "v9-reference/v9-36.png",
-    "shot": null,
-    "route": null,
-    "role": null,
-    "state": "—",
+    "shot": "E5-new-patient-voiced",
+    "route": "/patients/new",
+    "role": "doctor",
+    "state": "driven (prepare step)",
     "task": 20,
-    "accounting": "PLANNED",
-    "note": "Task 20 builds and captures this",
-    "status": "pending"
+    "accounting": "MAPPED",
+    "note": null,
+    "status": "mapped"
   },
   {
     "frame": "v9-37",

@@ -496,6 +496,32 @@ export const SHOTS: Shot[] = [
     frame: "v9-35",
   },
   {
+    /**
+     * Frame 36 — the form after voice intake, with the lime spine on every field that
+     * arrived by dictation. Driven through the real intake pipeline: press the mic, let
+     * the recorder capture, stop, and let the extraction fill the form. Nothing is typed
+     * in and no field is pre-set.
+     */
+    slug: "E5-new-patient-voiced",
+    path: "/patients/new",
+    role: "doctor",
+    frame: "v9-36",
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /speak patient details/i }).first().click();
+      await page.waitForTimeout(1500);
+      await page.getByRole("button", { name: /stop/i }).first().click();
+      // Wait for the NAME field to actually carry a value, not for the toast. The toast
+      // fires either way, and "success message over an empty form" is precisely the state
+      // this shot exists to rule out — waiting on the toast would have captured it.
+      await page.waitForFunction(
+        () => (document.querySelector("#name") as HTMLInputElement | null)?.value !== "",
+        undefined,
+        { timeout: 60_000 },
+      );
+      await page.waitForTimeout(600);
+    },
+  },
+  {
     slug: "E6-patient-overview",
     path: "/patients",
     role: "doctor",
