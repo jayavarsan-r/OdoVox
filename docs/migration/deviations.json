@@ -493,18 +493,21 @@
         "v9-26"
       ],
       "summary": "Frame 26's second action, \"Keep audio \u00b7 review later\", does not exist",
-      "reason": "The frame offers two recoveries; we now offer two as well, but not the same second one. \"Try again\" is implemented as a real retry of the upload (the blob survives FAILED, so no dictation is lost). \"Keep audio \u00b7 review later\" needs to PARK the recording as a draft on the patient with a lav badge and retry in the background \u2014 that is a persistence feature with no server support today: no draft state, no background retry queue. Shipping a button that only looked like it parked the audio would be the exact failure the frame's own note warns about (\"Failure never loses audio\"). Our second action is \"Record again instead\", which is honest about discarding.",
-      "status": "open"
+      "reason": "Frame 26 offers 'Keep audio \u00b7 review later' beneath 'Try again'. That implies a deferred-review queue: audio parked on the device, surfaced later as work outstanding. No such queue exists, and inventing one inside a UI task would be a product feature built without a spec. The screen ships 'Record again instead' in that slot, which is the existing capability and must not be removed (FAILED retains the blob, so re-record is a real alternative to retrying the upload). Both actions honour the frame's own note, 'Failure never loses audio'.",
+      "status": "open",
+      "openQuestion": "Should the deferred-review queue be built? It needs its own surface (where does parked audio appear?), a retention rule, and a story for audio that never gets reviewed. Recommend scheduling it with the consult-queue work rather than folding it into Task 16."
     },
     {
       "id": 43,
-      "class": "APPROVED-DEVIATION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-25"
       ],
-      "summary": "The transcript is shown under the processing bar; frame 25 has none",
+      "summary": "The transcript was shown under the processing bar; the dentist must not see the pipeline",
       "reason": "Frame 25's mock is mid-upload, so it has no transcript to show \u2014 it does not decide against one. Our TRANSCRIBED state HAS the doctor's own words back, and it is the first proof the audio survived. Rendered quietly under the bar rather than dropped.",
-      "status": "pending"
+      "status": "fixed",
+      "ruling": "DROP the transcript from the processing state. The dentist-facing model is RECORD \u2192 Processing \u2192 AI Review. No uploading, transcription, extracting, provider names, SSE or internal stage vocabulary reaches the UI. One polished loading state: Odo, a concise message, an elegant progress treatment, nothing else.",
+      "fixedIn": "Removed from `ProgressStrip`. The transcript is still carried by the TRANSCRIBED state and still reaches the extraction and review workflow \u2014 only the dentist-facing processing UI stops rendering it."
     },
     {
       "id": 44,
@@ -529,7 +532,47 @@
       ],
       "summary": "The recording screen is restyled but not recomposed to frame 23",
       "reason": "Visual inspection of the side-by-side, not the percentage. Frame 23 is: a patient strip at the top (avatar, name, age/sitting Minis, allergy in crit) with the REC chip opposite; a LARGE timer; a central lime mic orb with concentric rings; the complaint as a chip beneath it; and two CIRCULAR buttons with labels below (Pause, and a dark Finish with a check). Ours keeps the old composition \u2014 a five-bar waveform, a small mono timer, and two pill buttons \u2014 with v9 tokens applied to it.\n\nThe controls and states are right; the composition is not. 8.5% and 7.1% are mostly this.",
-      "status": "open"
+      "status": "fixed",
+      "ruling": " OWNER (verbatim): \"#45 remains CLOSED: the recording screen must use the V9 structural composition: patient strip + large timer + central recording orb/rings + complaint context + low circular controls.\"",
+      "fixedIn": "apps/web/components/voice/recorder.tsx recomposed to frame 23's measured geometry (56px zero-padded tabular timer, 180px ring stack at insets 0/21/42 around a 92px lime orb, complaint chip beneath, two 62px labelled IconCircles pinned low); the patient strip moved onto apps/web/app/(app)/consult/[id]/page.tsx and now spans frames 23-26. PAUSED recolours the rings and swaps the primary rather than relayouting, per frame 24. The old waveform composition and the Waveform component are gone."
+    },
+    {
+      "id": 46,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-23",
+        "v9-24",
+        "v9-25",
+        "v9-26"
+      ],
+      "summary": "A rejected consultation made its visit permanently un-recordable \u2014 the root cause of #44",
+      "reason": "POST /consultations returns the EXISTING consultation for a visit whatever its status (consultations.ts findUnique on visitId). Once a doctor taps Re-record \u2014 which posts /consultations/:id/reject and sets status REJECTED \u2014 and then leaves the screen or the app reloads, tapping Record for that patient in the queue re-enters the same REJECTED consultation. deriveStateFromView returns {kind:'REJECTED'} and the consult page router.replace's back to /consult. The doctor taps Record, is bounced to the queue, and the visit can never be recorded again \u2014 silently, with no error. Reproduced against the live stack: D2/D3/D4/D5 capture now dead-ends on the queue screen.",
+      "status": "fixed",
+      "ruling": "APPROVED AS MUST-FIX (owner, verbatim): \"A REJECTED consultation represents a rejected recording/processing attempt, NOT a permanently unusable visit. POST /consultations for a visit that already has a REJECTED consultation must reuse that existing consultation and reset it to PENDING_REVIEW so the doctor can record again... The rejection itself MUST remain durable in AuditLog via CONSULTATION_REJECTED. Do NOT drop the unique Consultation.visitId constraint. Do NOT create a second consultation record for the same visit as part of this fix. Do NOT remove or weaken the audit trail.\"",
+      "fixedIn": "apps/api/src/routes/consultations.ts \u2014 POST /consultations resets a REJECTED consultation in place: status PENDING_REVIEW, and every field that is the rejected ATTEMPT's own output cleared (structuredData, rejectedById, rejectedReason, rawTranscriptEnc, audioUrl, audioStorageKey, audioDurationMs, languageCode, provider, sttLatencyMs, extractionLatencyMs, safetyWarnings). The schema was inspected per the ruling: those are precisely the transient/derived columns of one recording. Patient, Visit, ConsultationEdit and AuditLog are untouched, the unique visitId constraint stands, and no second row is created. A CONSULTATION_REOPENED audit row records the reset. Regression: apps/api/test/consultation-reject-then-rerecord.test.ts covers all eight required proofs. Clearing the transcript and audio key is the safety half \u2014 without it the next take would inherit the abandoned recording's dictation."
+    },
+    {
+      "id": 48,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-23",
+        "v9-24"
+      ],
+      "summary": "The recording strip shows age but not the sitting number (\"36 \u00b7 S2\")",
+      "reason": "Frame 23's identity Mini reads '36 \u00b7 S2' \u2014 age and which sitting of the active plan this is. ConsultationContext (packages/types/src/visit.ts) carries no plan or sitting; adding it means a join on the consultation-context endpoint. The queue snapshot already gained `activePlan` for the /home hero, so the shape exists, but widening a second endpoint is API work outside a recording-UI task and the Task 16 brief forbids changing API contracts absent a blocking bug. Age renders correctly; the sitting is simply absent, not wrong.",
+      "status": "open",
+      "openQuestion": "Add `activePlan` to ConsultationContext so the recording strip can show the sitting? Recommend folding it into the task that owns the patient-context card rather than Task 16."
+    },
+    {
+      "id": 49,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-24"
+      ],
+      "summary": "Auto-pause on interruption \u2014 frame 24's \"Paused automatically for a phone call\"",
+      "reason": "Frame 24's banner reads 'Paused automatically for a phone call \u00b7 audio safe on this phone'. Nothing in the recorder listens for an interruption \u2014 no visibilitychange handler, no MediaRecorder pause on an audio-session interrupt \u2014 so every pause today is one the doctor pressed. The banner ships in the frame's amber treatment and position with honest copy ('Paused \u00b7 audio safe on this phone') rather than claiming a phone call that did not happen. Fabricating the cause on a clinical screen is worse than saying less.",
+      "status": "open",
+      "openQuestion": "Build auto-pause on interruption? It is a real robustness win \u2014 an incoming call currently keeps the recorder running and captures the call instead of the consultation \u2014 but it needs its own investigation of iOS/Android audio-session behaviour in a PWA. Recommend a task of its own; the banner copy becomes frame 24's verbatim once it exists."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

@@ -59,6 +59,15 @@ interface ConsultStore {
   state: ConsultState;
   consultationId: string | null;
   amplitude: number[];
+  /**
+   * How long the captured audio runs, in ms. The pipeline states carry no duration —
+   * UPLOADING knows a progress fraction, TRANSCRIBING knows nothing — but frame 25 keeps
+   * the patient strip up throughout processing with "04:32 audio" on it, so the doctor
+   * can see WHOSE recording and HOW MUCH is in flight. It survives past STOPPED for that.
+   * This is the length of the recording, not a pipeline stage: nothing here tells the
+   * dentist which internal step is running.
+   */
+  capturedMs: number;
   dispatch: (action: ConsultAction) => void;
   init: (consultationId: string) => Promise<void>;
   beginRecording: () => Promise<void>;
@@ -89,6 +98,7 @@ export const useConsultStore = create<ConsultStore>((set, get) => ({
   state: initialState,
   consultationId: null,
   amplitude: [0, 0, 0, 0, 0],
+  capturedMs: 0,
 
   dispatch: (action) => set((s) => ({ state: consultReducer(s.state, action) })),
 
@@ -173,6 +183,7 @@ export const useConsultStore = create<ConsultStore>((set, get) => ({
     };
     mr.stop();
     stopMedia();
+    set({ capturedMs: durationMs });
     get().dispatch({ type: 'STOP', durationMs });
   },
 
@@ -273,6 +284,6 @@ export const useConsultStore = create<ConsultStore>((set, get) => ({
     stopMedia();
     closeStream?.();
     closeStream = null;
-    set({ state: initialState, consultationId: null, amplitude: [0, 0, 0, 0, 0] });
+    set({ state: initialState, consultationId: null, amplitude: [0, 0, 0, 0, 0], capturedMs: 0 });
   },
 }));

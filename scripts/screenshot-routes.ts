@@ -47,9 +47,73 @@ export interface Shot {
  * to /consult/{id}; the mic button then requests permission and begins capture. Both are
  * the real buttons a doctor taps.
  */
+/**
+ * Land the consult screen on IDLE, using only affordances a doctor actually has.
+ *
+ * `init()` rehydrates a consultation from the server, which is correct: a doctor who
+ * walks back into a consultation already at review should see the review, not a fresh
+ * record button. But the queue hands the harness whichever visit is at the top, and a
+ * previous capture run may have left that consultation mid-pipeline — so the run before
+ * this one decides which screen this one starts on.
+ *
+ * The fix is to walk back the way a doctor would: every non-IDLE state on this screen
+ * offers a route to re-record, so click through them until the record button appears.
+ * Nothing here injects state; each click is a real control on a real screen.
+ */
+async function resetToIdle(page: Page): Promise<void> {
+  const idle = page.getByText(/Tap to record/i);
+  // Ordered by how far along the pipeline the state is, so the deepest screen resolves
+  // first. VERIFY asks for a second click when the card has unsaved edits.
+  const exits = [
+    /^Re-record$/i,
+    /Discard edits & re-record\?/i,
+    /Record again instead/i,
+    /^Cancel$/i,
+  ];
+
+  /**
+   * IDLE is also the store's DEFAULT, so a bare visibility check passes on the first
+   * paint — before `init()`'s rehydrate has come back — and then the real state lands
+   * and the record button vanishes under the click. Idle only counts if it survives the
+   * rehydrate, so require it to still be there after the network goes quiet.
+   */
+  const settledIdle = async () => {
+    if (!(await idle.isVisible().catch(() => false))) return false;
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(600);
+    return idle.isVisible().catch(() => false);
+  };
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (await settledIdle()) return;
+    let clicked = false;
+    for (const name of exits) {
+      const exit = page.getByRole("button", { name });
+      if (await exit.first().isVisible().catch(() => false)) {
+        await exit.first().click();
+        clicked = true;
+        break;
+      }
+    }
+    await page.waitForTimeout(clicked ? 400 : 800);
+  }
+
+  const reached = await page
+    .locator("main")
+    .innerText()
+    .catch(() => "<unreadable>");
+  throw new Error(
+    "consult screen never settled on IDLE — no re-record affordance was reachable from " +
+      `the state the previous run left this consultation in. On screen: ${JSON.stringify(
+        reached.replace(/\s+/g, " ").slice(0, 200),
+      )}`,
+  );
+}
+
 const startRecording = async (page: Page) => {
   await page.getByRole("button", { name: /^record$/i }).click();
   await page.waitForURL(/\/consult\/[^/]+$/, { timeout: 15_000 });
+  await resetToIdle(page);
   await page.getByRole("button", { name: /start recording/i }).click();
   await page.getByText(/REC/).waitFor({ timeout: 10_000 });
   await page.waitForTimeout(400);

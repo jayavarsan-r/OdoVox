@@ -9,11 +9,11 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 7 |
+| APPROVED-DEVIATION | 11 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 31 |
+| MISMATCHED | 29 |
 | NOT-BUILT | 41 |
-| NOT-CAPTURED | 3 |
+| NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
 ## Classification
@@ -32,7 +32,7 @@ gradually reinterpreting its own design.
 
 ### Open MUST-FIX — work, not questions
 
-- **#45** v9-23, v9-24 — The recording screen is restyled but not recomposed to frame 23
+_None. Every MUST-FIX item is closed._
 
 ### Awaiting your ruling — untouched by design
 
@@ -40,8 +40,7 @@ gradually reinterpreting its own design.
 inside the task that surfaced them, never carried forward — thirty unresolved
 deviations at the end is a pile nobody can remember the reason for.
 
-- **Task 16** — 1 open
-  - **#43** `APPROVED-DEVIATION` v9-25 — The transcript is shown under the processing bar; frame 25 has none
+_None. Every task closed its own decisions._
 
 | Frame | Name | Task | Verdict | Pixel Δ | Blockers |
 | --- | --- | --- | --- | --- | --- |
@@ -67,10 +66,10 @@ deviations at the end is a pile nobody can remember the reason for.
 | `v9-20` | Week in review — the Monday habit | 33 | NOT-BUILT | — | Task 33 owns this; no route or state driver reaches it yet |
 | `v9-21` | Consult — live queue | 15 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
 | `v9-22` | Consult — empty | 15 | NOT-BUILT | — | Task 15 owns this; no route or state driver reaches it yet |
-| `v9-23` | Recording | 16 | MISMATCHED | 8.5% | MUST-FIX #45: The recording screen is restyled but not recomposed to frame 23 |
-| `v9-24` | Recording — paused (call) | 16 | MISMATCHED | 7.1% | MUST-FIX #45: The recording screen is restyled but not recomposed to frame 23 |
-| `v9-25` | Processing — one state + bar | 16 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
-| `v9-26` | Processing — failed | 16 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
+| `v9-23` | Recording | 16 | APPROVED-DEVIATION | 4.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
+| `v9-24` | Recording — paused (call) | 16 | APPROVED-DEVIATION | 5.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
+| `v9-25` | Processing — one state + bar | 16 | APPROVED-DEVIATION | 2.6% | — |
+| `v9-26` | Processing — failed | 16 | APPROVED-DEVIATION | 6.5% | NOT-BUILT #42: Frame 26's second action, "Keep audio · review later", does not exist |
 | `v9-27` | Verification — conflict, clinical red | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-28` | Verification — resolved inline | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
@@ -338,43 +337,88 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 - `PRODUCT-DECISION` #36 (approved): A ProfileButton in the /consult header; frame 21 has none
 - `PRODUCT-DECISION` #37 (approved): The in-chair card shows an elapsed timer; frame 21 does not
 
-### `v9-23` — Recording · MISMATCHED
+### `v9-23` — Recording · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 4.7%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
-- `MUST-FIX` #45 (open): The recording screen is restyled but not recomposed to frame 23
+- `MUST-FIX` #45 (fixed): The recording screen is restyled but not recomposed to frame 23
+- `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
+- `NOT-BUILT` #48 (open): The recording strip shows age but not the sitting number ("36 · S2")
 
-### `v9-24` — Recording — paused (call) · MISMATCHED
+### `v9-24` — Recording — paused (call) · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.1%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 5.7%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
-- `MUST-FIX` #45 (open): The recording screen is restyled but not recomposed to frame 23
+- `MUST-FIX` #45 (fixed): The recording screen is restyled but not recomposed to frame 23
+- `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
+- `NOT-BUILT` #48 (open): The recording strip shows age but not the sitting number ("36 · S2")
+- `NOT-BUILT` #49 (open): Auto-pause on interruption — frame 24's "Paused automatically for a phone call"
+
+### `v9-25` — Processing — one state + bar · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 2.6%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `MUST-FIX` #43 (fixed): The transcript was shown under the processing bar; the dentist must not see the pipeline
+- `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
+- `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
+
+### `v9-26` — Processing — failed · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `NOT-BUILT` #42 (open): Frame 26's second action, "Keep audio · review later", does not exist
+- `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
+- `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
 
 ### `v9-32` — Patients — glyph rows · MISMATCHED
 

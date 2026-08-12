@@ -1,0 +1,736 @@
+[
+  {
+    "frame": "v9-01",
+    "name": "Splash",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 0.5693225693225693,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-02",
+    "name": "Welcome",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 2.7753597753597754,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-03",
+    "name": "Phone",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 2.328887328887329,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-04",
+    "name": "OTP — auto-read",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 1.486837486837487,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-05",
+    "name": "OTP — wrong code",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 7.338013338013338,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-06",
+    "name": "Returning user — instant unlock",
+    "status": "OUT-OF-SCOPE",
+    "changedPct": null,
+    "gateB": "OUT-OF-SCOPE",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-07",
+    "name": "Role",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 2.8097578097578095,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [
+      "#11: Mascot rendered on /role; frame 07 has none",
+      "#12: /role used tap→navigate; frame 07 is select→sticky CTA \"Continue as doctor\""
+    ],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-08",
+    "name": "Create clinic — conversational",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 5.101790101790102,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-09",
+    "name": "Join by code + preview",
+    "status": "MISMATCHED",
+    "changedPct": 12.797121797121797,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-10",
+    "name": "Pending approval",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-11",
+    "name": "Done — Odo celebrates",
+    "status": "NOT-CAPTURED",
+    "changedPct": null,
+    "gateB": "NOT-CAPTURED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-12",
+    "name": "First day — setup checklist",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-13",
+    "name": "Home — calm, glanceable, habit-forming",
+    "status": "MISMATCHED",
+    "changedPct": 6.434889434889435,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-14",
+    "name": "Flow — chair free (same anatomy)",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-15",
+    "name": "Home — quiet morning, same bones",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-16",
+    "name": "Flow — day done",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-17",
+    "name": "Flow — offline",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-18",
+    "name": "Home ＋ — speed dial open",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-19",
+    "name": "Day off — quick sheet",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-20",
+    "name": "Week in review — the Monday habit",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-21",
+    "name": "Consult — live queue",
+    "status": "MISMATCHED",
+    "changedPct": 12.926640926640925,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-22",
+    "name": "Consult — empty",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-23",
+    "name": "Recording",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 4.665847665847666,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-24",
+    "name": "Recording — paused (call)",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 5.705510705510706,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-25",
+    "name": "Processing — one state + bar",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 2.6426816426816426,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-26",
+    "name": "Processing — failed",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.520884520884521,
+    "gateB": "APPROVED-DEVIATION",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-27",
+    "name": "Verification — conflict, clinical red",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-28",
+    "name": "Verification — resolved inline",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-29",
+    "name": "Verification — seven medicines",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-30",
+    "name": "Verification — clean day, readable prose",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-31",
+    "name": "Confirmed — saved",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-32",
+    "name": "Patients — glyph rows",
+    "status": "MISMATCHED",
+    "changedPct": 4.939276939276939,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-33",
+    "name": "Patients — search active",
+    "status": "MISMATCHED",
+    "changedPct": 6.307476307476308,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-34",
+    "name": "Patients — no match",
+    "status": "MISMATCHED",
+    "changedPct": 12.906282906282907,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-35",
+    "name": "New patient — blank",
+    "status": "MISMATCHED",
+    "changedPct": 21.15724815724816,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-36",
+    "name": "New patient — voice intake",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-37",
+    "name": "Patient — Overview",
+    "status": "MISMATCHED",
+    "changedPct": 22.276939276939277,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-38",
+    "name": "Patient — Cases journey",
+    "status": "MISMATCHED",
+    "changedPct": 11.756405756405757,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-39",
+    "name": "Case — procedure detail",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-40",
+    "name": "Tooth map — FDI odontogram",
+    "status": "MISMATCHED",
+    "changedPct": 11.191646191646191,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-41",
+    "name": "Patient — Billing tab",
+    "status": "MISMATCHED",
+    "changedPct": 10.750789750789751,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-42",
+    "name": "Patient history — Odo timeline",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-43",
+    "name": "Visit record — read-only sheet",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-44",
+    "name": "Prescription sheet — dose dots",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-45",
+    "name": "Prescription — conflict caught",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-46",
+    "name": "Schedule — doctor day",
+    "status": "MISMATCHED",
+    "changedPct": 6.3562653562653555,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-47",
+    "name": "Schedule — reception multi-doctor",
+    "status": "MISMATCHED",
+    "changedPct": 5.040716040716041,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-48",
+    "name": "New appointment sheet",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-49",
+    "name": "Schedule — drag to reschedule",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-50",
+    "name": "Reception Today",
+    "status": "MISMATCHED",
+    "changedPct": 6.061425061425061,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-51",
+    "name": "Walk-in sheet",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-52",
+    "name": "Checkout sheet",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-53",
+    "name": "Payment received — toast",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-54",
+    "name": "Billing — densified",
+    "status": "MISMATCHED",
+    "changedPct": 7.196209196209197,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-55",
+    "name": "Outstanding dues",
+    "status": "MISMATCHED",
+    "changedPct": 5.641628641628642,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-56",
+    "name": "Lab list — stat pills, not tiles",
+    "status": "MISMATCHED",
+    "changedPct": 9.303264303264305,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-57",
+    "name": "Lab ＋ — its own dial",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-58",
+    "name": "Lab — case detail",
+    "status": "MISMATCHED",
+    "changedPct": 15.38961038961039,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-59",
+    "name": "The ＋ — quick New-case sheet",
+    "status": "MISMATCHED",
+    "changedPct": 39.725517725517726,
+    "gateB": "MISMATCHED",
+    "openMustFix": [
+      "#9: /lab/new kept as a page; the frame shows a sheet"
+    ],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-60",
+    "name": "WhatsApp consent gate",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-61",
+    "name": "Lab vendors",
+    "status": "MISMATCHED",
+    "changedPct": 7.3959283959283955,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-62",
+    "name": "Patient inbox",
+    "status": "MISMATCHED",
+    "changedPct": 10.137241137241137,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-63",
+    "name": "Conversation thread",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-64",
+    "name": "Thread — window closed",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-65",
+    "name": "Lab inbox — quiet verdicts",
+    "status": "MISMATCHED",
+    "changedPct": 7.744120744120744,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-66",
+    "name": "Follow-ups — call list",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-67",
+    "name": "Inventory — stock",
+    "status": "MISMATCHED",
+    "changedPct": 10.654264654264654,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-68",
+    "name": "Inventory — item detail",
+    "status": "MISMATCHED",
+    "changedPct": 8.541944541944542,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-69",
+    "name": "Voice entry — confirm",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-70",
+    "name": "More — module hub",
+    "status": "MISMATCHED",
+    "changedPct": 3.551421551421551,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-71",
+    "name": "Team & join code",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-72",
+    "name": "WhatsApp settings",
+    "status": "MISMATCHED",
+    "changedPct": 9.694629694629695,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-73",
+    "name": "Availability — weekly hours",
+    "status": "MISMATCHED",
+    "changedPct": 9.207792207792208,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-74",
+    "name": "Days off",
+    "status": "MISMATCHED",
+    "changedPct": 10.916461916461916,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-75",
+    "name": "Prescription templates",
+    "status": "MISMATCHED",
+    "changedPct": 7.954018954018954,
+    "gateB": "MISMATCHED",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-76",
+    "name": "Account",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-77",
+    "name": "Switch role — confirm",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-78",
+    "name": "The orb — tap records, hold speaks",
+    "status": "CROSS-CUTTING",
+    "changedPct": null,
+    "gateB": "CROSS-CUTTING",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-79",
+    "name": "Toasts — the three voices",
+    "status": "CROSS-CUTTING",
+    "changedPct": null,
+    "gateB": "CROSS-CUTTING",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-80",
+    "name": "Notifications — every row lands",
+    "status": "NOT-BUILT",
+    "changedPct": null,
+    "gateB": "NOT-BUILT",
+    "openMustFix": [],
+    "openDecisions": []
+  },
+  {
+    "frame": "v9-81",
+    "name": "The tap contract",
+    "status": "CROSS-CUTTING",
+    "changedPct": null,
+    "gateB": "CROSS-CUTTING",
+    "openMustFix": [],
+    "openDecisions": []
+  }
+]

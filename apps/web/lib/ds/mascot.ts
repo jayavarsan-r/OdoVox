@@ -9,6 +9,7 @@ export type MascotPose =
   | "smile"
   | "celebrate"
   | "thinking"
+  | "concerned"
   | "sleeping";
 export type MascotSize = "sm" | "md" | "lg" | "xl";
 export type MascotAnimation = "none" | "float" | "bounce-in" | "gentle-pulse";
@@ -25,6 +26,7 @@ export const MASCOT_POSES: readonly MascotPose[] = [
   "smile",
   "celebrate",
   "thinking",
+  "concerned",
   "sleeping",
 ];
 

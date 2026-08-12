@@ -27,7 +27,8 @@
     "shots:impl": "tsx scripts/screenshots.ts fidelity",
     "shots:fidelity": "tsx scripts/fidelity.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,cjs,mjs,json,md,css}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "shots:frame-status": "tsx scripts/frame-status.ts"
   },
   "devDependencies": {
     "@odovox/config": "workspace:*",

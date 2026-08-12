@@ -393,6 +393,10 @@
   --illu-mascot-celebrate: url("/illu/mascot/odo-celebrate.png");
   --illu-mascot-thinking: url("/illu/mascot/odo-thinking.png");
   --illu-mascot-sleeping: url("/illu/mascot/odo-sleeping.png");
+  /* No PNG shipped yet — the component falls back to its inline SVG, which is what the
+     other poses render today too. Declared so the pose is a first-class token rather
+     than an undefined var that silently paints nothing once the art lands. */
+  --illu-mascot-concerned: url("/illu/mascot/odo-concerned.png");
   --illu-object-tooth: url("/illu/objects/tooth.png");
   --illu-object-xray: url("/illu/objects/xray-film.png");
   --illu-object-mirror: url("/illu/objects/dental-mirror.png");

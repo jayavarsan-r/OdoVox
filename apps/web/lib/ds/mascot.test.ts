@@ -16,9 +16,13 @@ describe("mascot pose → asset mapping", () => {
     expect(mascotAssetVar("sleeping")).toBe("var(--illu-mascot-sleeping)");
   });
 
-  it("has exactly the five approved poses", () => {
+  // Six since frame 26. "concerned" was added for the processing-failure screen, which
+  // was wearing "thinking" — the same face as the processing screen it had just left, so
+  // a doctor glancing at the phone read "still working" on a screen that had given up.
+  // The list is asserted exactly so a seventh pose is a decision, not a drive-by import.
+  it("has exactly the six approved poses", () => {
     expect([...MASCOT_POSES].sort()).toEqual(
-      ["celebrate", "hero", "sleeping", "smile", "thinking"].sort(),
+      ["celebrate", "concerned", "hero", "sleeping", "smile", "thinking"].sort(),
     );
   });
 

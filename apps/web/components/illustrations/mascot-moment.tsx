@@ -38,6 +38,9 @@ const MOUTH: Record<MascotPose, string> = {
   smile: "M27 34 Q32 37.5 37 34",
   celebrate: "M26.5 32.5 A5.5 5.2 0 0 0 37.5 32.5 Z",
   thinking: "M28.5 34.5 h7",
+  // Frame 26's Odo. The arc is the mirror of `smile` — the failure screen must not wear
+  // the same face as the processing screen, or a doctor mid-glance reads "still working".
+  concerned: "M27 36.5 Q32 33 37 36.5",
   sleeping: "M29 34.5 h6",
 };
 

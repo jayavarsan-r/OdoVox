@@ -1,39 +1,61 @@
-import type { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import { ClinicalExtraction } from '@odovox/types';
-import { AppError, NotFoundError, ValidationError } from '../lib/errors.js';
-import { ok, parse } from '../lib/http.js';
-import { requireRole } from '../lib/rbac.js';
-import { storage, isAllowedAudioMime, MAX_AUDIO_BYTES } from '../lib/storage.js';
-import { toConsultationResponse } from '../lib/serialize.js';
-import { commitConsultation } from '../lib/consultation/commit.js';
-import { parseAllergies } from '../lib/consultation/context.js';
-import { runSafetyChecks } from '../lib/ai/safety.js';
-import { enqueueSttJob, enqueueExtractionJob } from '../queues/index.js';
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { ClinicalExtraction } from "@odovox/types";
+import { AppError, NotFoundError, ValidationError } from "../lib/errors.js";
+import { ok, parse } from "../lib/http.js";
+import { requireRole } from "../lib/rbac.js";
+import {
+  storage,
+  isAllowedAudioMime,
+  MAX_AUDIO_BYTES,
+} from "../lib/storage.js";
+import { toConsultationResponse } from "../lib/serialize.js";
+import { commitConsultation } from "../lib/consultation/commit.js";
+import { parseAllergies } from "../lib/consultation/context.js";
+import { runSafetyChecks } from "../lib/ai/safety.js";
+import { enqueueSttJob, enqueueExtractionJob } from "../queues/index.js";
 import {
   consultationChannel,
   getConsultationEventsSince,
   publishConsultationEvent,
-} from '../queues/events.js';
-import { broadcastToClinic } from '../lib/realtime/broadcast.js';
-import { markRecording } from '../lib/realtime/recording.js';
-import { loadQueueVisit } from '../lib/queue/snapshot.js';
-import { APPOINTMENT_INCLUDE, serializeAppointment } from '../lib/schedule/serialize.js';
+} from "../queues/events.js";
+import { broadcastToClinic } from "../lib/realtime/broadcast.js";
+import { markRecording } from "../lib/realtime/recording.js";
+import { loadQueueVisit } from "../lib/queue/snapshot.js";
+import {
+  APPOINTMENT_INCLUDE,
+  serializeAppointment,
+} from "../lib/schedule/serialize.js";
 
-const StartInput = z.object({ patientId: z.string().min(1), visitId: z.string().min(1).optional() });
+const StartInput = z.object({
+  patientId: z.string().min(1),
+  visitId: z.string().min(1).optional(),
+});
 const PresignInput = z.object({
   consultationId: z.string().min(1),
   mimeType: z.string().min(1),
   sizeBytes: z.number().int().positive().optional(),
 });
-const ConfirmInput = z.object({ structuredData: z.unknown(), confirmedWithWarning: z.boolean().optional() });
+const ConfirmInput = z.object({
+  structuredData: z.unknown(),
+  confirmedWithWarning: z.boolean().optional(),
+});
 const RejectInput = z.object({ reason: z.string().max(500).optional() });
 const PatchInput = z.object({ structuredData: z.unknown() });
 
-export async function consultationRoutes(fastify: FastifyInstance): Promise<void> {
+export async function consultationRoutes(
+  fastify: FastifyInstance,
+): Promise<void> {
   const { prisma } = fastify;
-  const anyClinical = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')] };
-  const doctorOnly = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] };
+  const anyClinical = {
+    preHandler: [
+      fastify.authenticate,
+      requireRole("DOCTOR", "RECEPTIONIST", "ADMIN"),
+    ],
+  };
+  const doctorOnly = {
+    preHandler: [fastify.authenticate, requireRole("DOCTOR", "ADMIN")],
+  };
 
   /** Load a consultation (+ visit + patient), enforcing it belongs to the caller's clinic. */
   async function loadInClinic(id: string, clinicId: string) {
@@ -42,67 +64,150 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
       include: { visit: { include: { patient: true } } },
     });
     if (!consult || consult.deletedAt || consult.visit.clinicId !== clinicId) {
-      throw new NotFoundError('Consultation not found');
+      throw new NotFoundError("Consultation not found");
     }
     return consult;
   }
 
   // POST /consultations — start a consultation for a patient (creates a visit if none given).
-  fastify.post('/consultations', doctorOnly, async (req) => {
+  fastify.post("/consultations", doctorOnly, async (req) => {
     const body = parse(StartInput, req.body);
-    const patient = await prisma.patient.findFirst({ where: { id: body.patientId, deletedAt: null } });
-    if (!patient) throw new NotFoundError('Patient not found');
+    const patient = await prisma.patient.findFirst({
+      where: { id: body.patientId, deletedAt: null },
+    });
+    if (!patient) throw new NotFoundError("Patient not found");
 
     let visitId = body.visitId;
     if (visitId) {
       const v = await prisma.visit.findFirst({ where: { id: visitId } });
-      if (!v || v.patientId !== body.patientId) throw new NotFoundError('Visit not found');
+      if (!v || v.patientId !== body.patientId)
+        throw new NotFoundError("Visit not found");
     } else {
       const count = await prisma.visit.count({});
       const visit = await prisma.visit.create({
-        data: { clinicId: req.clinicId!, patientId: body.patientId, doctorId: req.user!.id, status: 'IN_CHAIR', tokenNumber: count + 1 },
+        data: {
+          clinicId: req.clinicId!,
+          patientId: body.patientId,
+          doctorId: req.user!.id,
+          status: "IN_CHAIR",
+          tokenNumber: count + 1,
+        },
       });
       visitId = visit.id;
     }
 
-    const consult =
+    let consult =
       (await prisma.consultation.findUnique({ where: { visitId } })) ??
-      (await prisma.consultation.create({ data: { visitId, status: 'PENDING_REVIEW', structuredData: {} } }));
-    await fastify.audit('CONSULTATION_STARTED', 'Consultation', consult.id, { patientId: body.patientId });
+      (await prisma.consultation.create({
+        data: { visitId, status: "PENDING_REVIEW", structuredData: {} },
+      }));
+
+    // A REJECTED consultation is a rejected ATTEMPT, not an unusable visit. Returning it
+    // as-is dead-ended the visit: the client derives REJECTED and bounces off the consult
+    // screen back to the queue, so the doctor could never record that patient again.
+    //
+    // `visitId` is unique — deliberately, one consultation per visit — so restarting
+    // reuses this row rather than creating a second one. Everything cleared below is the
+    // rejected take's own output: its transcript, its audio, its extraction, its timings.
+    // That clearing is the safety half of this fix. A row merely flipped back to
+    // PENDING_REVIEW would carry the abandoned recording's transcript and audio key into
+    // the next take's review — one dictation's findings filed under another's.
+    //
+    // Nothing is lost: the rejection is already durable in AuditLog
+    // (CONSULTATION_REJECTED), which is where an audit trail belongs, and the doctor's
+    // own edits live in ConsultationEdit rows that this does not touch.
+    if (consult.status === "REJECTED") {
+      consult = await prisma.consultation.update({
+        where: { id: consult.id },
+        data: {
+          status: "PENDING_REVIEW",
+          structuredData: {},
+          rejectedById: null,
+          rejectedReason: null,
+          rawTranscriptEnc: null,
+          audioUrl: null,
+          audioStorageKey: null,
+          audioDurationMs: null,
+          languageCode: null,
+          provider: null,
+          sttLatencyMs: null,
+          extractionLatencyMs: null,
+          safetyWarnings: [],
+        },
+      });
+      await fastify.audit("CONSULTATION_REOPENED", "Consultation", consult.id, {
+        patientId: body.patientId,
+        previousStatus: "REJECTED",
+      });
+    }
+
+    await fastify.audit("CONSULTATION_STARTED", "Consultation", consult.id, {
+      patientId: body.patientId,
+    });
     return ok({ consultationId: consult.id, visitId });
   });
 
   // POST /consultations/audio/presign — signed PUT for a direct browser→S3 upload.
-  fastify.post('/consultations/audio/presign', doctorOnly, async (req) => {
+  fastify.post("/consultations/audio/presign", doctorOnly, async (req) => {
     const body = parse(PresignInput, req.body);
-    if (!isAllowedAudioMime(body.mimeType)) throw new ValidationError('Unsupported audio type');
-    if (body.sizeBytes && body.sizeBytes > MAX_AUDIO_BYTES) throw new ValidationError('Audio file too large');
+    if (!isAllowedAudioMime(body.mimeType))
+      throw new ValidationError("Unsupported audio type");
+    if (body.sizeBytes && body.sizeBytes > MAX_AUDIO_BYTES)
+      throw new ValidationError("Audio file too large");
     const consult = await loadInClinic(body.consultationId, req.clinicId!);
     const storageKey = `clinics/${req.clinicId}/audio/${consult.id}.webm`;
-    const uploadUrl = await storage.presignUpload(storageKey, body.mimeType, 300);
-    await prisma.consultation.update({ where: { id: consult.id }, data: { audioStorageKey: storageKey } });
-    await fastify.audit('CONSULTATION_AUDIO_PRESIGNED', 'Consultation', consult.id);
+    const uploadUrl = await storage.presignUpload(
+      storageKey,
+      body.mimeType,
+      300,
+    );
+    await prisma.consultation.update({
+      where: { id: consult.id },
+      data: { audioStorageKey: storageKey },
+    });
+    await fastify.audit(
+      "CONSULTATION_AUDIO_PRESIGNED",
+      "Consultation",
+      consult.id,
+    );
     return ok({ uploadUrl, storageKey, consultationId: consult.id });
   });
 
   // POST /consultations/:id/process — enqueue STT (+ extraction chained by the worker).
-  fastify.post('/consultations/:id/process', doctorOnly, async (req) => {
+  fastify.post("/consultations/:id/process", doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     const consult = await loadInClinic(id, req.clinicId!);
-    if (!consult.audioStorageKey) throw new ValidationError('No audio uploaded yet');
+    if (!consult.audioStorageKey)
+      throw new ValidationError("No audio uploaded yet");
     const job = await prisma.job.create({
-      data: { clinicId: consult.visit.clinicId, kind: 'STT', status: 'QUEUED', inputRef: consult.id },
+      data: {
+        clinicId: consult.visit.clinicId,
+        kind: "STT",
+        status: "QUEUED",
+        inputRef: consult.id,
+      },
     });
     await enqueueSttJob({ consultationId: consult.id, jobId: job.id });
-    await publishConsultationEvent(fastify.redis, consult.id, { type: 'RECORDED' });
-    await fastify.audit('CONSULTATION_PROCESS_ENQUEUED', 'Consultation', consult.id, { jobId: job.id });
+    await publishConsultationEvent(fastify.redis, consult.id, {
+      type: "RECORDED",
+    });
+    await fastify.audit(
+      "CONSULTATION_PROCESS_ENQUEUED",
+      "Consultation",
+      consult.id,
+      { jobId: job.id },
+    );
 
     // Phase 4 cross-wire: light the "Dr. X is recording" indicator on the clinic's screens. The
     // matching `doctor.recording.stopped` fires from the extraction worker when the pipeline settles.
     await markRecording(fastify.redis, consult.visit.clinicId, consult.visitId);
     broadcastToClinic(consult.visit.clinicId, {
-      type: 'doctor.recording.started',
-      payload: { visitId: consult.visitId, doctorId: req.user!.id, patientName: consult.visit.patient.name },
+      type: "doctor.recording.started",
+      payload: {
+        visitId: consult.visitId,
+        doctorId: req.user!.id,
+        patientName: consult.visit.patient.name,
+      },
     });
     return ok({ jobId: job.id });
   });
@@ -110,17 +215,20 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
   // GET /consultations/:id — status + structured data + patient/visit/x-ray context. Transcript
   // only for doctor/admin. The context (Phase 4.5) lets the consult page show the chief complaint
   // the receptionist checked the patient in for, plus any x-rays they attached at check-in.
-  fastify.get('/consultations/:id', anyClinical, async (req) => {
+  fastify.get("/consultations/:id", anyClinical, async (req) => {
     const { id } = req.params as { id: string };
     const consult = await loadInClinic(id, req.clinicId!);
-    const latestJob = await prisma.job.findFirst({ where: { inputRef: id }, orderBy: { createdAt: 'desc' } });
-    const includeTranscript = req.role === 'DOCTOR' || req.role === 'ADMIN';
+    const latestJob = await prisma.job.findFirst({
+      where: { inputRef: id },
+      orderBy: { createdAt: "desc" },
+    });
+    const includeTranscript = req.role === "DOCTOR" || req.role === "ADMIN";
 
     // Media is clinic-scoped, and loadInClinic already proved the visit is in the caller's clinic —
     // so this can't surface another clinic's x-rays.
     const xrays = await prisma.media.findMany({
-      where: { visitId: consult.visitId, type: 'XRAY', deletedAt: null },
-      orderBy: { uploadedAt: 'asc' },
+      where: { visitId: consult.visitId, type: "XRAY", deletedAt: null },
+      orderBy: { uploadedAt: "asc" },
       select: { id: true, type: true, mimeType: true },
     });
     const p = consult.visit.patient;
@@ -137,7 +245,8 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
       visit: {
         id: consult.visit.id,
         tokenNumber: consult.visit.tokenNumber,
-        chiefComplaint: consult.visit.chiefComplaint ?? p.chiefComplaint ?? null,
+        chiefComplaint:
+          consult.visit.chiefComplaint ?? p.chiefComplaint ?? null,
         calledInAt: consult.visit.calledInAt ?? null,
         status: consult.visit.status,
       },
@@ -146,13 +255,19 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
 
     return ok({
       ...toConsultationResponse(consult, { includeTranscript }),
-      latestJob: latestJob ? { kind: latestJob.kind, status: latestJob.status, lastError: latestJob.lastError } : null,
+      latestJob: latestJob
+        ? {
+            kind: latestJob.kind,
+            status: latestJob.status,
+            lastError: latestJob.lastError,
+          }
+        : null,
       context,
     });
   });
 
   // GET /consultations/:id/stream — SSE live pipeline updates (doctor only; transcript leaks otherwise).
-  fastify.get('/consultations/:id/stream', doctorOnly, async (req, reply) => {
+  fastify.get("/consultations/:id/stream", doctorOnly, async (req, reply) => {
     const { id } = req.params as { id: string };
     await loadInClinic(id, req.clinicId!);
     const since = Number((req.query as { since?: string }).since ?? 0) || 0;
@@ -163,40 +278,49 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     // stream, the fetch rejects, and the consult UI freezes on "Transcribing" (Phase 9.5 regression).
     const corsHeaders: Record<string, string> = {};
     for (const name of [
-      'access-control-allow-origin',
-      'access-control-allow-credentials',
-      'access-control-expose-headers',
-      'vary',
+      "access-control-allow-origin",
+      "access-control-allow-credentials",
+      "access-control-expose-headers",
+      "vary",
     ]) {
       const value = reply.getHeader(name);
-      if (typeof value === 'string') corsHeaders[name] = value;
+      if (typeof value === "string") corsHeaders[name] = value;
     }
 
     reply.hijack();
     const raw = reply.raw;
     raw.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no', // never let Nginx buffer an SSE stream
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no", // never let Nginx buffer an SSE stream
       ...corsHeaders,
     });
-    raw.write('retry: 3000\n\n');
+    raw.write("retry: 3000\n\n");
 
     const send = (eid: number, type: string, payload: unknown) => {
-      raw.write(`id: ${eid}\nevent: ${type}\ndata: ${JSON.stringify(payload)}\n\n`);
+      raw.write(
+        `id: ${eid}\nevent: ${type}\ndata: ${JSON.stringify(payload)}\n\n`,
+      );
     };
 
     // Replay anything missed since the client's Last-Event-ID, then go live.
-    for (const { id: eid, event } of await getConsultationEventsSince(fastify.redis, id, since)) {
+    for (const { id: eid, event } of await getConsultationEventsSince(
+      fastify.redis,
+      id,
+      since,
+    )) {
       send(eid, event.type, event);
     }
 
     const sub = fastify.redis.duplicate();
     await sub.subscribe(consultationChannel(id));
-    sub.on('message', (_chan, message) => {
+    sub.on("message", (_chan, message) => {
       try {
-        const { id: eid, event } = JSON.parse(message) as { id: number; event: { type: string } };
+        const { id: eid, event } = JSON.parse(message) as {
+          id: number;
+          event: { type: string };
+        };
         send(eid, event.type, event);
       } catch {
         /* ignore malformed */
@@ -204,17 +328,20 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     });
 
     // Heartbeat: keeps mobile/flaky connections alive (they drop a silent stream after ~30s).
-    const heartbeat = setInterval(() => raw.write(': ping\n\n'), 15_000);
+    const heartbeat = setInterval(() => raw.write(": ping\n\n"), 15_000);
 
-    req.raw.on('close', () => {
+    req.raw.on("close", () => {
       clearInterval(heartbeat);
-      void sub.unsubscribe().catch(() => undefined).then(() => sub.quit());
+      void sub
+        .unsubscribe()
+        .catch(() => undefined)
+        .then(() => sub.quit());
       raw.end();
     });
   });
 
   // POST /consultations/:id/confirm — the gate. Single-transaction commit (see commit.ts).
-  fastify.post('/consultations/:id/confirm', doctorOnly, async (req) => {
+  fastify.post("/consultations/:id/confirm", doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     const body = parse(ConfirmInput, req.body);
     const consult = await loadInClinic(id, req.clinicId!);
@@ -228,9 +355,14 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
       parseAllergies(patient.allergiesEnc),
     );
     if (safety.blockingErrors.length > 0) {
-      throw new AppError('Resolve blocking errors before confirming', 422, 'BLOCKING_ERRORS', {
-        blockingErrors: safety.blockingErrors,
-      });
+      throw new AppError(
+        "Resolve blocking errors before confirming",
+        422,
+        "BLOCKING_ERRORS",
+        {
+          blockingErrors: safety.blockingErrors,
+        },
+      );
     }
 
     const result = await commitConsultation(prisma, {
@@ -245,7 +377,11 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
     // Phase 4 cross-wire (§3.3): the commit moved Visit → CHECKOUT. Broadcast it AFTER the
     // transaction so the receptionist's "Ready for Checkout" section updates instantly.
     const qVisit = await loadQueueVisit(prisma, req.clinicId!, consult.visitId);
-    if (qVisit) broadcastToClinic(req.clinicId!, { type: 'queue.visit.checkout', payload: qVisit });
+    if (qVisit)
+      broadcastToClinic(req.clinicId!, {
+        type: "queue.visit.checkout",
+        payload: qVisit,
+      });
 
     // Phase 6 (§5): a follow-up that auto-scheduled an appointment broadcasts to the calendar.
     if (result.appointmentId) {
@@ -255,7 +391,7 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
       });
       if (appt) {
         broadcastToClinic(req.clinicId!, {
-          type: 'schedule.appointment.created',
+          type: "schedule.appointment.created",
           payload: serializeAppointment(appt),
         });
       }
@@ -264,54 +400,88 @@ export async function consultationRoutes(fastify: FastifyInstance): Promise<void
   });
 
   // POST /consultations/:id/reject — keep for audit, never surfaces in the timeline.
-  fastify.post('/consultations/:id/reject', doctorOnly, async (req) => {
+  fastify.post("/consultations/:id/reject", doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     const body = parse(RejectInput, req.body);
     const consult = await loadInClinic(id, req.clinicId!);
-    if (consult.status === 'CONFIRMED') throw new AppError('Consultation already confirmed', 409, 'ALREADY_CONFIRMED');
+    if (consult.status === "CONFIRMED")
+      throw new AppError(
+        "Consultation already confirmed",
+        409,
+        "ALREADY_CONFIRMED",
+      );
     await prisma.consultation.update({
       where: { id },
-      data: { status: 'REJECTED', rejectedById: req.user!.id, rejectedReason: body.reason ?? null },
+      data: {
+        status: "REJECTED",
+        rejectedById: req.user!.id,
+        rejectedReason: body.reason ?? null,
+      },
     });
-    await fastify.audit('CONSULTATION_REJECTED', 'Consultation', id, { reason: body.reason ?? null });
-    return ok({ id, status: 'REJECTED' });
+    await fastify.audit("CONSULTATION_REJECTED", "Consultation", id, {
+      reason: body.reason ?? null,
+    });
+    return ok({ id, status: "REJECTED" });
   });
 
   // POST /consultations/:id/retranscribe — re-run STT (e.g. wrong language detected).
-  fastify.post('/consultations/:id/retranscribe', doctorOnly, async (req) => {
+  fastify.post("/consultations/:id/retranscribe", doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     const consult = await loadInClinic(id, req.clinicId!);
-    if (!consult.audioStorageKey) throw new ValidationError('No audio to re-transcribe');
+    if (!consult.audioStorageKey)
+      throw new ValidationError("No audio to re-transcribe");
     const job = await prisma.job.create({
-      data: { clinicId: consult.visit.clinicId, kind: 'STT', status: 'QUEUED', inputRef: id },
+      data: {
+        clinicId: consult.visit.clinicId,
+        kind: "STT",
+        status: "QUEUED",
+        inputRef: id,
+      },
     });
     await enqueueSttJob({ consultationId: id, jobId: job.id });
-    await fastify.audit('CONSULTATION_RETRANSCRIBE', 'Consultation', id, { jobId: job.id });
+    await fastify.audit("CONSULTATION_RETRANSCRIBE", "Consultation", id, {
+      jobId: job.id,
+    });
     return ok({ jobId: job.id });
   });
 
   // POST /consultations/:id/reextract — re-run Gemini against the existing transcript.
-  fastify.post('/consultations/:id/reextract', doctorOnly, async (req) => {
+  fastify.post("/consultations/:id/reextract", doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     const consult = await loadInClinic(id, req.clinicId!);
-    if (!consult.rawTranscriptEnc) throw new ValidationError('No transcript to re-extract');
+    if (!consult.rawTranscriptEnc)
+      throw new ValidationError("No transcript to re-extract");
     const job = await prisma.job.create({
-      data: { clinicId: consult.visit.clinicId, kind: 'EXTRACTION_CLINICAL', status: 'QUEUED', inputRef: id },
+      data: {
+        clinicId: consult.visit.clinicId,
+        kind: "EXTRACTION_CLINICAL",
+        status: "QUEUED",
+        inputRef: id,
+      },
     });
-    await enqueueExtractionJob({ consultationId: id, jobId: job.id, kind: 'CLINICAL' });
-    await fastify.audit('CONSULTATION_REEXTRACT', 'Consultation', id, { jobId: job.id });
+    await enqueueExtractionJob({
+      consultationId: id,
+      jobId: job.id,
+      kind: "CLINICAL",
+    });
+    await fastify.audit("CONSULTATION_REEXTRACT", "Consultation", id, {
+      jobId: job.id,
+    });
     return ok({ jobId: job.id });
   });
 
   // PATCH /consultations/:id — per-field edits on the verification card (no DB commit yet).
-  fastify.patch('/consultations/:id', doctorOnly, async (req) => {
+  fastify.patch("/consultations/:id", doctorOnly, async (req) => {
     const { id } = req.params as { id: string };
     const body = parse(PatchInput, req.body);
     await loadInClinic(id, req.clinicId!);
     const data = ClinicalExtraction.parse(body.structuredData);
     await prisma.consultation.update({
       where: { id },
-      data: { structuredData: data as object, safetyWarnings: data.safetyWarnings },
+      data: {
+        structuredData: data as object,
+        safetyWarnings: data.safetyWarnings,
+      },
     });
     return ok({ id });
   });
