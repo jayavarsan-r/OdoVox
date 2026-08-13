@@ -114,7 +114,7 @@
     "frame": "v9-13",
     "name": "Home — calm, glanceable, habit-forming",
     "status": "MISMATCHED",
-    "changedPct": 6.434889434889435,
+    "changedPct": 6.601965601965603,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -286,27 +286,27 @@
   {
     "frame": "v9-32",
     "name": "Patients — glyph rows",
-    "status": "MISMATCHED",
-    "changedPct": 4.939276939276939,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 5.109161109161109,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-33",
     "name": "Patients — search active",
-    "status": "MISMATCHED",
-    "changedPct": 6.307476307476308,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.380133380133381,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-34",
     "name": "Patients — no match",
-    "status": "MISMATCHED",
-    "changedPct": 12.906282906282907,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 13.038610038610038,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
@@ -332,7 +332,7 @@
     "frame": "v9-37",
     "name": "Patient — Overview",
     "status": "MISMATCHED",
-    "changedPct": 22.276939276939277,
+    "changedPct": 21.523341523341525,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -341,7 +341,7 @@
     "frame": "v9-38",
     "name": "Patient — Cases journey",
     "status": "MISMATCHED",
-    "changedPct": 11.756405756405757,
+    "changedPct": 12.862758862758863,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -359,7 +359,7 @@
     "frame": "v9-40",
     "name": "Tooth map — FDI odontogram",
     "status": "MISMATCHED",
-    "changedPct": 11.191646191646191,
+    "changedPct": 11.297648297648298,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -449,7 +449,7 @@
     "frame": "v9-50",
     "name": "Reception Today",
     "status": "MISMATCHED",
-    "changedPct": 6.061425061425061,
+    "changedPct": 6.0680940680940685,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []

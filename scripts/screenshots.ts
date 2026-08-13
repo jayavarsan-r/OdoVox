@@ -203,7 +203,10 @@ async function capture(
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const text = m.text();
-    if (!BENIGN.some((re) => re.test(text))) consoleErrors.push(text);
+    if (!BENIGN.some((re) => re.test(text))) {
+      consoleErrors.push(text);
+      if (process.env.SHOTS_VERBOSE) console.log(`    [console] ${text.slice(0, 300)}`);
+    }
   });
   try {
     if (shot.transient) {

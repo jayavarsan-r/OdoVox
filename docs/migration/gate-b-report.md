@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 14 |
+| APPROVED-DEVIATION | 17 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 29 |
+| MISMATCHED | 26 |
 | NOT-BUILT | 38 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -56,7 +56,7 @@ _None. Every task closed its own decisions._
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
-| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.4% | criterion "layout" unreviewed |
+| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.6% | criterion "layout" unreviewed |
 | `v9-14` | Flow — chair free (same anatomy) | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-15` | Home — quiet morning, same bones | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-16` | Flow — day done | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
@@ -75,15 +75,15 @@ _None. Every task closed its own decisions._
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #52: The FINDINGS and PROCEDURE prose sections have no extraction fields behind them |
 | `v9-31` | Confirmed — saved | 18 | APPROVED-DEVIATION | 6.6% | — |
-| `v9-32` | Patients — glyph rows | 19 | MISMATCHED | 4.9% | criterion "layout" unreviewed |
-| `v9-33` | Patients — search active | 19 | MISMATCHED | 6.3% | criterion "layout" unreviewed |
-| `v9-34` | Patients — no match | 19 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
+| `v9-32` | Patients — glyph rows | 19 | APPROVED-DEVIATION | 5.1% | — |
+| `v9-33` | Patients — search active | 19 | APPROVED-DEVIATION | 6.4% | — |
+| `v9-34` | Patients — no match | 19 | APPROVED-DEVIATION | 13.0% | — |
 | `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
 | `v9-36` | New patient — voice intake | 20 | MISMATCHED | 14.1% | criterion "layout" unreviewed |
-| `v9-37` | Patient — Overview | 22 | MISMATCHED | 22.3% | criterion "layout" unreviewed |
-| `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 11.8% | criterion "layout" unreviewed |
+| `v9-37` | Patient — Overview | 22 | MISMATCHED | 21.5% | criterion "layout" unreviewed |
+| `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
 | `v9-39` | Case — procedure detail | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
-| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.2% | criterion "layout" unreviewed |
+| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.3% | criterion "layout" unreviewed |
 | `v9-41` | Patient — Billing tab | 22 | MISMATCHED | 10.8% | criterion "layout" unreviewed |
 | `v9-42` | Patient history — Odo timeline | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-43` | Visit record — read-only sheet | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
@@ -295,7 +295,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 
 ### `v9-13` — Home — calm, glanceable, habit-forming · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 
 - layout: **UNREVIEWED** — Frame 13's spine is in place: eyebrow date over a 24px greeting with the ＋ and avatar, day river, `.hero-c`, quick bento, 'Up next' rail, 'Needs you' rows, nav dock. 22.9% -> 15.5%.
 - typography: **UNREVIEWED**
@@ -458,17 +458,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
 
-### `v9-32` — Patients — glyph rows · MISMATCHED
+### `v9-32` — Patients — glyph rows · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 4.9%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
 
-- layout: **UNREVIEWED** — Frame 32's spine: 28px 'Patients' with search and lime ＋ circles, a filter chip row, then one card of `.vrow`s — replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED** — Rows rebuilt to the frame: 44px avatar RINGED BY STATE (live in the chair, sky for lab), name, glyph Minis for age/complaint/medical flag/outstanding, and a state dot on the right. The ＋ now opens the speed dial from the header instead of a floating button overlapping the list — the same duplicate-affordance fix as Flow.
-- content: **UNREVIEWED** — NOT-BUILT #38: the frame's '₹ Due' chip has no server filter behind it, so it is not rendered rather than shipped as a no-op. PRODUCT-DECISIONS #39 (two extra chips) and #40 (the count header).
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS** — Frame 32's spine: 28px 'Patients' with search and lime ＋ circles, a filter chip row, then one card of `.vrow`s — replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS** — Rows rebuilt to the frame: 44px avatar RINGED BY STATE (live in the chair, sky for lab), name, glyph Minis for age/complaint/medical flag/outstanding, and a state dot on the right. The ＋ now opens the speed dial from the header instead of a floating button overlapping the list — the same duplicate-affordance fix as Flow.
+- content: **PASS** — NOT-BUILT #38: the frame's '₹ Due' chip has no server filter behind it, so it is not rendered rather than shipped as a no-op. PRODUCT-DECISIONS #39 (two extra chips) and #40 (the count header).
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -477,40 +477,46 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 4.9%
 - `NOT-BUILT` #38 (deferred-to-task-34): No "₹ Due" filter chip; frame 32 has one
 - `PRODUCT-DECISION` #39 (approved): Two filter chips the frame does not show — Lab and Recent
 - `PRODUCT-DECISION` #40 (dropped): An "All patients · N" section header above the list; frame 32 goes straight to the card
+- `APPROVED-DEVIATION` #61 (approved): Patient rows show age and condition where v9 shows tooth number, sitting dots and dues
+- `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
 
-### `v9-33` — Patients — search active · MISMATCHED
+### `v9-33` — Patients — search active · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 
-- layout: **UNREVIEWED** — Search is now a MODE, as frames 33/34 draw it: the field and a Cancel replace the header entirely, rather than a bar permanently occupying a fifth of the screen. 8.4% -> 6.3%.
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS** — Search is now a MODE, as frames 33/34 draw it: the field and a Cancel replace the header entirely, rather than a bar permanently occupying a fifth of the screen. 8.4% -> 6.3%.
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #61 (approved): Patient rows show age and condition where v9 shows tooth number, sitting dots and dues
+- `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
+- `MUST-FIX` #63 (fixed): Search was missing its recents and the line explaining what it matches
 
-### `v9-34` — Patients — no match · MISMATCHED
+### `v9-34` — Patients — no match · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 13.0%
 
-- layout: **UNREVIEWED** — NEWLY CAPTURABLE. Frame 34 was one of the 49 frames nothing could reach — a state, not a route. `?search=` opens the mode and seeds the query, so a term nobody matches drives it with no new machinery.
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED** — The frame does not stop at 'nothing found' — it offers to create the person you just typed, carrying the term into /patients/new. That is the whole point of the frame, and the old screen had none of it.
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS** — NEWLY CAPTURABLE. Frame 34 was one of the 49 frames nothing could reach — a state, not a route. `?search=` opens the mode and seeds the query, so a term nobody matches drives it with no new machinery.
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS** — The frame does not stop at 'nothing found' — it offers to create the person you just typed, carrying the term into /patients/new. That is the whole point of the frame, and the old screen had none of it.
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `MUST-FIX` #63 (fixed): Search was missing its recents and the line explaining what it matches
 
 ### `v9-35` — New patient — blank · APPROVED-DEVIATION
 
@@ -548,10 +554,12 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #57 (approved): Optional fields move behind a 'More details' disclosure rather than being dropped
+- `NOT-CAPTURED` #58 (open): The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio
+- `MUST-FIX` #59 (fixed): Voice intake claimed "Filled from your voice" over a form it had filled nothing into
 
 ### `v9-37` — Patient — Overview · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 22.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 21.5%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -567,10 +575,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 22.3%
 - `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 
 ### `v9-38` — Patient — Cases journey · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 11.8%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -586,10 +595,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.8%
 - `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 
 ### `v9-40` — Tooth map — FDI odontogram · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 11.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 11.3%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -605,6 +615,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.2%
 - `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 
 ### `v9-41` — Patient — Billing tab · MISMATCHED
 
@@ -624,6 +635,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.8%
 - `PRODUCT-DECISION` #5 (approved): Patient tab renamed "Tooth Map" → "Teeth"
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 
 ### `v9-46` — Schedule — doctor day · MISMATCHED
 

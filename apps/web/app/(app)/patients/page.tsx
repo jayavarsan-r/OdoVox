@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Calendar,
@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip, Mini } from "@/components/ui/badge";
+import { MascotMoment } from "@/components/illustrations/mascot-moment";
+import { readRecents, saveRecent } from "@/lib/patients/recent-searches";
 import { InitialsAvatar } from "@/components/ui/avatar";
 import { ListSkeleton } from "@/components/ui/skeleton";
 import { usePatients } from "@/lib/queries";
@@ -131,6 +133,16 @@ function PatientsInner() {
   // Frames 33/34 replace the whole header with the field and a Cancel — search is a MODE,
   // not a bar that always sits there taking a fifth of the screen.
   const [searching, setSearching] = useState(!!params.get("search"));
+  const [recents, setRecents] = useState<string[]>([]);
+  // localStorage is client-only; read it after mount so SSR and the first paint agree.
+  useEffect(() => setRecents(readRecents()), []);
+  // Record a query once it has settled into a real search, not on every keystroke.
+  useEffect(() => {
+    const q = search.trim();
+    if (!q) return;
+    const t = setTimeout(() => setRecents(saveRecent(q)), 800);
+    return () => clearTimeout(t);
+  }, [search]);
   const [filter, setFilter] = useState<PatientFilter>("all");
   // Frame 32 puts ＋ in the header, not floating over the list. Same as Flow.
   const [dialOpen, setDialOpen] = useState(false);
@@ -210,7 +222,30 @@ function PatientsInner() {
         </>
       )}
 
-      {query.isLoading ? (
+      {/* Frame 33's empty-query state: what you searched for before, and a line saying
+          what search actually matches. A receptionist with a phone number in hand has no
+          way to learn that phone numbers work — so the screen says so, once, where they
+          are already looking. */}
+      {searching && !trimmed ? (
+        <div className="px-gutter pt-4">
+          {recents.length > 0 ? (
+            <>
+              <p className="text-[15px] font-heavy text-pine">Recent</p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {recents.map((r) => (
+                  <button key={r} type="button" onClick={() => setSearch(r)}>
+                    <Chip tone="neutral">{r}</Chip>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+          <p className="mt-4 text-[12px] font-semibold leading-[1.5] text-pine-3">
+            Search matches name, phone, and patient ID. Say a name into the mic instead of
+            typing.
+          </p>
+        </div>
+      ) : query.isLoading ? (
         <ListSkeleton />
       ) : query.isError ? (
         <EmptyState
@@ -224,6 +259,9 @@ function PatientsInner() {
         /* Frame 34 — no match. The frame does not stop at "nothing found": it offers to
            create the person you just typed, because that is what you were going to do. */
         <div className="flex flex-1 flex-col items-center justify-center gap-3 px-gutter">
+          {/* Odo asleep, not an error glyph: nothing has gone wrong, the person simply
+              isn't on file yet. */}
+          <MascotMoment pose="sleeping" size="lg" animation="none" />
           <p className="text-center text-[17px] font-heavy text-pine">
             No one named &ldquo;{trimmed}&rdquo;
           </p>

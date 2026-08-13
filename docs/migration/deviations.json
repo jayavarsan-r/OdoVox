@@ -710,6 +710,42 @@
       "reason": "Task 21 asks for shared query hooks to move to lib/patients/queries.ts. They are already centralised \u2014 usePatient, useTeeth, usePlans, useMedia and the rest all live in lib/queries.ts, which is a cohesive module imported by several screens beyond patient detail. Pulling only the patient-shaped ones out would split that module along a line nothing else respects and churn every other importer for no behavioural gain. The task's actual goal \u2014 page.tsx stops being 958 lines of tabs and sheets \u2014 is met by the component split.",
       "status": "approved",
       "ruling": "Self-resolved: the hooks are already in one place; the plan's path is not an improvement on it."
+    },
+    {
+      "id": 61,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-32",
+        "v9-33"
+      ],
+      "summary": "Patient rows show age and condition where v9 shows tooth number, sitting dots and dues",
+      "reason": "Frames 32/33 set the glyph strip as tooth number, sitting progress dots and outstanding dues. The implementation shows age, chief complaint, the first medical flag and dues. Two reasons it stays. The medical flag is safety information a receptionist opening a record needs at a glance (DIABETES, HYPERTENSION render in crit) and the frame has nowhere to put it. And tooth-plus-sitting-dots means joining every patient row to their active plan \u2014 the same query widening deferred in #48 \u2014 which turns a list endpoint into a per-row clinical lookup. Dues already render in crit exactly as the frame has them. The avatar ring and trailing dot now carry the live queue state the frame uses them for.",
+      "status": "approved",
+      "ruling": "Self-resolved: dropping a visible allergy/condition flag to gain a tooth number trades safety information for clinical detail available one tap away."
+    },
+    {
+      "id": 62,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-32",
+        "v9-33"
+      ],
+      "summary": "The avatar ring and status dot read a column nothing maintains, so neither had ever rendered",
+      "reason": "ringFor() read Patient.status, which no code path sets to IN_CHAIR or LAB_PENDING \u2014 calling a patient in creates an IN_CHAIR Visit and leaves the patient row alone. Every row rendered ringless. The same column broke the Treating filter (where.status = 'IN_CHAIR' matched nothing, so the chip always returned an empty list).",
+      "status": "fixed",
+      "fixedIn": "PatientListItem.liveState, derived server-side from the open visit and unfinished lab cases via an existence-only include (take: 1, scalar select, no PHI); in-chair outranks lab-pending. apps/api/test/patient-list-live-state.test.ts covers it, including cross-clinic isolation on the filter."
+    },
+    {
+      "id": 63,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-33",
+        "v9-34"
+      ],
+      "summary": "Search was missing its recents and the line explaining what it matches",
+      "reason": "Frame 33 shows previous queries as chips and a line reading 'Search matches name, phone, and patient ID. Say a name into the mic instead of typing.' Neither existed. The helper line is the only place a receptionist holding a phone number learns that phone search works. Frame 34's sleeping Odo was also absent.",
+      "status": "fixed",
+      "fixedIn": "apps/web/lib/patients/recent-searches.ts (localStorage, newest-first, case-insensitive dedupe, capped at 6, never sent to the server \u2014 it would otherwise become a log of who a clinic looked up) with 6 tests; chips, helper line and the sleeping mascot on the search screen."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
