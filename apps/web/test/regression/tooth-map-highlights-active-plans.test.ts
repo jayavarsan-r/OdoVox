@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { readScreen } from './read-screen';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -11,7 +12,9 @@ import { dirname, join, resolve } from 'node:path';
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const odontogram = readFileSync(join(webRoot, 'components', 'odontogram', 'odontogram.tsx'), 'utf8');
-const patientPage = readFileSync(join(webRoot, 'app', '(app)', 'patients', '[id]', 'page.tsx'), 'utf8');
+// The whole patient screen, not just page.tsx — it was split into co-located tab and
+// sheet files (Task 21) and these invariants are about the screen, not the file.
+const patientPage = readScreen('app', '(app)', 'patients', '[id]');
 
 describe('tooth map — active plan highlighting', () => {
   it('the tooth renders a sage dot indicator when it belongs to an active plan', () => {

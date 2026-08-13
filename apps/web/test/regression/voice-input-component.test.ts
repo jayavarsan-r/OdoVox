@@ -17,7 +17,10 @@ const MIGRATED_SURFACES = [
   ["components", "queue", "walk-in-sheet.tsx"], // voice walk-in (Phase 9.5)
   ["components", "queue", "checkout-sheet.tsx"], // checkout notes (Phase 9.5)
   ["app", "(app)", "patients", "new", "page.tsx"], // intake dictation (Phase 3)
-  ["app", "(app)", "patients", "[id]", "page.tsx"], // prescription dictation (Phase 3)
+  // Prescription dictation (Phase 3). Points at the sheet, not page.tsx: the patient
+  // screen was split into co-located files (Task 21) and the mic lives with the
+  // prescription form it belongs to.
+  ["app", "(app)", "patients", "[id]", "prescription-sheet.tsx"],
 ];
 
 describe("<VoiceInput> — the one shared voice control", () => {

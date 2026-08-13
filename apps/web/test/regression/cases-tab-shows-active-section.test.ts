@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import { readScreen } from './read-screen';
 
 /**
  * Regression (Phase 9.5 P1.4, Issue 8): the Cases tab must render an ACTIVE TREATMENT section
@@ -11,8 +9,9 @@ import { dirname, join, resolve } from 'node:path';
  * DRAFT plans.)
  */
 
-const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const page = readFileSync(join(webRoot, 'app', '(app)', 'patients', '[id]', 'page.tsx'), 'utf8');
+// The whole patient screen, not just page.tsx — it was split into co-located tab and
+// sheet files (Task 21) and these invariants are about the screen, not the file.
+const page = readScreen('app', '(app)', 'patients', '[id]');
 
 describe('Cases tab — active treatment section', () => {
   it('renders Active treatment above Past treatments', () => {

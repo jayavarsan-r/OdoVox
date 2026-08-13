@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join, resolve } from 'node:path';
+import { readScreen } from './read-screen';
 
 /**
  * Phase 9.6 Issue 14: receptionists must never see the "Record findings" surface — dictating
@@ -10,8 +8,9 @@ import { dirname, join, resolve } from 'node:path';
  * half so the card can't silently reappear for the wrong role.
  */
 
-const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const page = readFileSync(join(webRoot, 'app', '(app)', 'patients', '[id]', 'page.tsx'), 'utf8');
+// The whole patient screen, not just page.tsx — it was split into co-located tab and
+// sheet files (Task 21) and these invariants are about the screen, not the file.
+const page = readScreen('app', '(app)', 'patients', '[id]');
 
 describe('patient detail — record findings is role-gated', () => {
   it('derives a doctor-only flag from the active membership role', () => {
