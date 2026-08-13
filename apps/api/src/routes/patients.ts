@@ -44,7 +44,9 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     let orderBy: Prisma.PatientOrderByWithRelationInput = { createdAt: 'desc' };
-    if (q.filter === 'in_chair') where.status = 'IN_CHAIR';
+    // Queue state lives on the VISIT. `where.status = 'IN_CHAIR'` matched nothing, ever,
+    // because no code path writes that value to the patient row.
+    if (q.filter === 'in_chair') where.visits = { some: { status: 'IN_CHAIR' } };
     else if (q.filter === 'recent') {
       where.lastVisitAt = { gte: new Date(Date.now() - 30 * 864e5) };
       orderBy = { lastVisitAt: 'desc' };
@@ -59,9 +61,23 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
       orderBy,
       take: q.limit + 1,
       ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
+      // Narrow includes: existence only. `take: 1` and a scalar select keep this from
+      // becoming a second patient-record endpoint, and no PHI is pulled in.
+      include: {
+        visits: { where: { status: 'IN_CHAIR' }, select: { id: true }, take: 1 },
+        labCases: {
+          where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+          select: { id: true },
+          take: 1,
+        },
+      },
     });
     const hasMore = rows.length > q.limit;
-    const items = rows.slice(0, q.limit).map(toPatientListItem);
+    const items = rows.slice(0, q.limit).map((p) =>
+      // In the chair outranks a pending lab case: it is where the patient physically is,
+      // and only one ring can be drawn.
+      toPatientListItem(p, p.visits.length ? 'IN_CHAIR' : p.labCases.length ? 'LAB_PENDING' : null),
+    );
     return ok({ items, nextCursor: hasMore ? items[items.length - 1]!.id : null });
   });
 

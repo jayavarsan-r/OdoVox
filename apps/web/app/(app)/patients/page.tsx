@@ -28,7 +28,6 @@ import { rupees } from "@/lib/patient-ui";
 import type {
   PatientFilter,
   PatientListItem,
-  PatientStatus,
 } from "@odovox/types";
 
 /**
@@ -51,9 +50,17 @@ const FILTERS: { value: PatientFilter; label: string }[] = [
 ];
 
 /** The frame rings the avatar by state: live in the chair, sky for lab, bare otherwise. */
-function ringFor(status: PatientStatus): "live" | "sky" | "none" {
-  if (status === "IN_CHAIR") return "live";
-  if (status === "LAB_PENDING") return "sky";
+/**
+ * Frame 32's ring encodes where the patient is RIGHT NOW.
+ *
+ * It used to read `Patient.status`, which no code path ever sets to IN_CHAIR or
+ * LAB_PENDING — calling someone into the chair creates an IN_CHAIR *Visit* and leaves the
+ * patient row alone. So this returned "none" for every row and the rings had never once
+ * rendered. `liveState` is derived server-side from the open visit and lab cases.
+ */
+function ringFor(live: PatientListItem["liveState"]): "live" | "sky" | "none" {
+  if (live === "IN_CHAIR") return "live";
+  if (live === "LAB_PENDING") return "sky";
   return "none";
 }
 
@@ -92,7 +99,7 @@ function PatientRow({
       onClick={onClick}
       className="flex w-full items-center gap-3 px-4 py-2.5 text-left"
     >
-      <InitialsAvatar name={p.name} ring={ringFor(p.status)} size="md" />
+      <InitialsAvatar name={p.name} ring={ringFor(p.liveState)} size="md" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[14px] font-heavy text-pine">
           <Highlighted text={p.name} match={match} />
@@ -108,9 +115,9 @@ function PatientRow({
           ) : null}
         </span>
       </span>
-      {p.status === "IN_CHAIR" ? (
+      {p.liveState === "IN_CHAIR" ? (
         <StatusDot tone="live" />
-      ) : p.status === "LAB_PENDING" ? (
+      ) : p.liveState === "LAB_PENDING" ? (
         <StatusDot tone="sky" />
       ) : null}
     </button>

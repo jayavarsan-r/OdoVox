@@ -50,8 +50,17 @@ export function toClinicResponse(c: Clinic): ClinicResponse {
 }
 
 /** List row — never decrypts PHI. */
-export function toPatientListItem(p: Patient): PatientListItem {
+/**
+ * `liveState` is passed in rather than read off the patient: it comes from the patient's
+ * open visit / lab cases, which the list query includes. `Patient.status` cannot serve
+ * this — nothing writes IN_CHAIR or LAB_PENDING to it, so the ring it fed was always off.
+ */
+export function toPatientListItem(
+  p: Patient,
+  liveState: PatientListItem['liveState'] = null,
+): PatientListItem {
   return {
+    liveState,
     id: p.id,
     patientCode: p.patientCode,
     name: p.name,
