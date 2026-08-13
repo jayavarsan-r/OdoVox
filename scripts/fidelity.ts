@@ -28,6 +28,9 @@ const SHOTS = join(ROOT, "docs", "migration", "screenshots");
 const REF = join(SHOTS, "v9-reference");
 const IMPL = join(SHOTS, "impl");
 const OUT = join(SHOTS, "fidelity");
+/** Review verdicts and their reasons are tracked; the rest of OUT is regenerable scratch. */
+const CRITERIA_PATH = join(ROOT, "docs", "migration", "criteria.json");
+const FINDINGS_PATH = join(ROOT, "docs", "migration", "findings.json");
 
 /** The v9 `.screen` content box. Both sides must render at exactly this. */
 const CANVAS = { width: 370, height: 824 };
@@ -187,10 +190,19 @@ async function main() {
     await readFile(join(ROOT, "docs", "migration", "deviations.json"), "utf8"),
   );
 
-  /** Previously recorded criteria verdicts, so a review survives a re-run. */
+  /**
+   * Previously recorded criteria verdicts, so a review survives a re-run.
+   *
+   * These live in docs/migration/ — TRACKED — not in the ignored fidelity working set.
+   * Everything else there (PNGs, results.json) is regenerable by re-running the harness;
+   * these verdicts are human judgment about whether a screen matches its frame, and
+   * regenerating them means a person looking at side-by-sides again. Left in the ignored
+   * directory they silently vanished on a fresh clone and every reviewed frame reverted
+   * to UNREVIEWED, i.e. the migration would report itself less complete than it was.
+   */
   let prior: Record<string, Record<string, Verdict>> = {};
   try {
-    prior = JSON.parse(await readFile(join(OUT, "criteria.json"), "utf8"));
+    prior = JSON.parse(await readFile(CRITERIA_PATH, "utf8"));
   } catch {
     /* first run */
   }
@@ -198,7 +210,7 @@ async function main() {
   /** Why each criterion failed. A verdict letter with no reason is not a review. */
   let findings: Record<string, Record<string, string>> = {};
   try {
-    findings = JSON.parse(await readFile(join(OUT, "findings.json"), "utf8"));
+    findings = JSON.parse(await readFile(FINDINGS_PATH, "utf8"));
   } catch {
     /* optional */
   }
@@ -364,10 +376,7 @@ async function main() {
   // Persist criteria so a human review survives the next run.
   const toPersist: Record<string, Record<string, Verdict>> = { ...prior };
   for (const r of results) if (r.criteria) toPersist[r.frame] = r.criteria;
-  await writeFile(
-    join(OUT, "criteria.json"),
-    JSON.stringify(toPersist, null, 2),
-  );
+  await writeFile(CRITERIA_PATH, `${JSON.stringify(toPersist, null, 2)}\n`);
   await writeFile(join(OUT, "results.json"), JSON.stringify(results, null, 2));
 
   // ── report ────────────────────────────────────────────────────────────────

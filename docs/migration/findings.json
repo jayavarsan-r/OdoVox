@@ -1,0 +1,80 @@
+{
+  "$comment": "Why each criterion failed. Written by whoever reviewed the side-by-side. Gate B prints these under the frame so a FAIL is never just a letter.",
+  "v9-01": {
+    "layout": "FIXED. Was ~27px low: the frame centres Odo in the full 824 canvas (its `.ob` is `inset:0`, unlike every other onboarding frame's `inset:54px 0 0 0`), while MobileShell pads by the safe area on every page. The splash now cancels that inset.",
+    "component anatomy": "FIXED. Odo is redrawn from the spec's own `#odo-body` path with the lime blush ovals, and the size ladder is now the spec's measured diameters (34/64/120/140) instead of a scale topping out at 280 \u2014 larger than the design draws anywhere. Frame 01 wants 120 and was getting 200. Residual: the app's ambient ring wash vs the frame's soft corner gradient."
+  },
+  "v9-02": {
+    "layout": "FIXED twice. First the centring (frame 02's `.ob` is `align-items:center;text-align:center`). Then the vertical flow: the frame is TOP-ANCHORED \u2014 56px above Odo, 18px to the question, body, dots 20px under it, and only then `margin-top:auto` drops the CTA to the floor. We had the whole group vertically centred with the dots stranded beside the CTA, and an `h-56` hero box centring a 140px mascot in 224px on top of that. 10.0% -> 2.8%.",
+    "component anatomy": "FIXED. Skip link and language chips removed, 4 dots -> 3, Odo carries the frame's lime and blue sparkles on the bare canvas. (MUST-FIX #16.)",
+    "content": "FIXED. Slide 1 is frame 02's copy verbatim \u2014 'Speak. / Odovox writes the record.' The old slide 1 ('Built for Indian dental clinics') and slide 2 ('Speak. It structures itself.') said in two screens what the frame says in one, so the frame's wording replaces both rather than a slide being dropped at random. CTA is 'Continue with phone' from every slide, which is the frame's stated skip behaviour."
+  },
+  "v9-03": {
+    "layout": "FIXED. `PhoneInput` had never been migrated \u2014 48px tall, radius 8, bordered. The frame's `.field` is 56px, radius 18, white, borderless, lifted by shadow alone (now `--shadow-field`), with the `.cc` prefix at 15px/800 pine-2 behind a hairline and the value at 17.5px/700 tabular. The decorative waveform footer is gone; frame 03 has no such element and it occupied the third of the canvas the frame gives to the keypad. 7.5% -> 2.2%.",
+    "component anatomy": "FIXED. The keypad is built from the spec's own CSS \u2014 48px keys, radius 12, white, 0 3px 10px shadow, 19px/600 over 8.5px/700 letters, ghost bottom corners. Real buttons, so keyboard and screen-reader users get it too and the native keyboard still works. It only produces digits; validation and rate-limit handling are exactly where they were. STILL ABSENT: the `.mic-a`, which needs an unauthenticated dictation endpoint (NOT-BUILT #22).",
+    "content": "APPROVED-DEVIATION #21 \u2014 the terms line stays and is now styled in the v9 system (12px/600 on --pine-3). Its visible cost: it lifts the keypad ~30px above where the frame sits it, which is the honest price of keeping legal copy the frame omits.",
+    "interaction/state": "The frame draws the field MID-TYPE with the CTA live; the shot was capturing our empty resting state, so an active frame was being compared against an inactive capture. The shot now types a number (never submits, so no OTP cost). Residual: the app shows a lime focus ring the frame's focused field does not. Removing it would be a real accessibility regression, so it stays and is flagged rather than silently traded away."
+  },
+  "v9-04": {
+    "component anatomy": "The six boxes now follow the spec's `.otp i` exactly: 56px, radius 16, white, borderless with a shadow, 22px/800 tabular, and a 2.5px sky outline inset by 1px on the active box. STILL FAILING: the explicit Verify button \u2014 APPROVED-DEVIATION #14, awaiting your ruling, untouched by design.",
+    "content": "PRODUCT-DECISION #13 (masked number). The dotted footer texture is gone \u2014 frames 04 and 05 end at the resend line. (MUST-FIX #26, closed.)"
+  },
+  "v9-05": {
+    "component anatomy": "Boxes match the spec, and on a wrong code every one takes the 2.5px crit outline inset by 1px, as the frame draws. STILL FAILING: the Verify button (#14).",
+    "interaction/state": "FIXED. The digits now STAY after a wrong code, inside the crit outlines, so one wrong digit can be corrected instead of forcing a full six-digit re-entry. (MUST-FIX #15.) That change required fixing `onComplete` too: it fired on ANY edit at full length, so a correction would have re-submitted on the keystroke and walked into the verify rate limit. It now fires only on the transition INTO completeness; a correction is submitted with the Verify button, which is the accessibility argument for keeping that button in the first place. Deviation #24 (resend allegedly locked) is WITHDRAWN \u2014 `setSecondsLeft(0)` already unlocks it; the original reading came from a capture taken before the error state was reached.",
+    "content": "PRODUCT-DECISION #13 (masked number) and #23 (the attempts-left toast on top of the frame's inline message)."
+  },
+  "v9-07": {
+    "typography": "FIXED. Applied in the ruling's own order: font weight (800), container width (326px from the spec's 22px gutters), size (27px) and leading (1.15) all already matched the spec exactly, and font family is approved deviation 1 \u2014 so letter-spacing was the only lever left. A new `--tracking-question` token at -0.036em buys back exactly the 10px Geist overflows by, scoped to the `.ob-q` heading alone; the rest of the app keeps the spec's -0.02em. Verified in the browser: one line at 326px. 3.9% -> 2.8%."
+  },
+  "v9-08": {
+    "layout": "FIXED. Step 1 was a six-field form; frame 08 asks one question. It now asks five in sequence on the same route \u2014 name, contact, address, city+state, pincode+GST \u2014 each a hero `.field` with a CTA naming where it goes. Every field survives and the schema is untouched; `lib/ds/wizard` owns the question list with a test that every `stepBasicsSchema` key appears exactly once. The defaults card is now visible instead of pushed below the fold. 8.7% -> 5.1%.",
+    "typography": "FIXED with frame 07 \u2014 the same `--tracking-question` token.",
+    "component anatomy": "FIXED. The numbered 1-2-3 stepper is replaced by the spec's `.ob-dots` (6px dashes, hair-2; active 18px wide, pine) \u2014 with the step names preserved as the nav's aria-label so a screen-reader user still hears 'Step 1 of 3: Clinic'. The verified-identity chip and the defaults card are now rendered. STILL FAILING: the `.mic-a` on the field, which needs dictation wiring (see #22 for the same constraint on /phone; here the user IS authenticated, so it is buildable \u2014 it is simply not built).",
+    "content": "FIXED. The CTA no longer reads a generic 'Continue \u2192 '. The frame labels its CTA with the destination ('Next \u00b7 City'); ours names OUR next step, 'Next \u00b7 Hours' \u2014 copying the frame's literal word would be wrong, because step 2 here is Hours, not City.",
+    "$capture-note": "The verified chip renders the REAL session name or nothing. The B3-create-1 shot visits the wizard anonymously, so the chip is correctly absent from the capture while present for a real user. The shot cannot prove it; the component can.",
+    "interaction/state": "FIXED. The CTA validates only the fields its question owns and advances; the last one writes the store and routes to Hours. Back walks the questions before leaving the step \u2014 previously a single tap would have discarded four answered questions."
+  },
+  "v9-09": {
+    "layout": "PRODUCT-DECISION #17. Frame 09 is one hero code field \u2192 live check \u2192 clinic preview \u2192 sticky 'Request to join'. Ours is two fields \u2192 explicit 'Find clinic' \u2192 preview after. The workflow is the whole remaining difference, and it is yours to rule on.",
+    "component anatomy": "FIXED. The back control is a bare white `IconCircle` as the frame has it, not a chevron with a 'Join a clinic' title, and the stray Odo is gone \u2014 frame 09 has no mascot. (MUST-FIX #28.)",
+    "content": "PRODUCT-DECISION #17 \u2014 the 'Your name' field is feature parity (the join request records who is asking) and has no counterpart in the frame.",
+    "interaction/state": "PRODUCT-DECISION #17 \u2014 validate-as-you-type versus an explicit lookup press."
+  },
+  "v9-70": {
+    "content": "PARTIALLY FIXED. Days off and Rx templates now carry their values (upcoming closures from `useDayOffs`, template count from `useTemplates`) \u2014 Days off renders empty only when there genuinely are none. STILL BARE: Availability's '2 doctors' and Team & join code's '1 request' chip. Both need a clinic-members endpoint, and `/clinics` has only create, lookup and join \u2014 there is no members or pending-requests route to read. Task 31 owns that server work. Faking either would put a number on screen that no query stands behind, so they are omitted and recorded here instead."
+  },
+  "v9-13": {
+    "layout": "Frame 13's spine is in place: eyebrow date over a 24px greeting with the \uff0b and avatar, day river, `.hero-c`, quick bento, 'Up next' rail, 'Needs you' rows, nav dock. 22.9% -> 15.5%.",
+    "component anatomy": "The day river renders nothing in the capture because the seeded doctor has no appointments today \u2014 `dayRiverSegments` returns empty at total 0, which is correct behaviour, not a missing component. It needs a seeded day to be judged.",
+    "content": "TWO REAL GAPS, both the same missing join (#33, #34). The hero ring shows a placeholder dot where frame 13 shows the sitting count (2/3), and the hero subtitle reads queue context ('Now treating X \u00b7 N waiting') where the frame reads clinical context ('RCT 36 \u00b7 obturation today \u00b7 penicillin allergy'). The queue visit carries no treatment-plan or allergy data, so neither can be rendered from what /home has today. Server work Task 22 or a /home aggregate owns it.",
+    "interaction/state": "PRODUCT-DECISIONS #29-#32: the voice search field, the VoiceCommandHero, two extra quick tiles and the Recent section all exist here and in no part of frame 13. None was deleted \u2014 they are kept, restyled into the v9 language, and put to you. The floating FabMenu also has no counterpart in frame 13, where the \uff0b summons the speed dial (frame 18, Task 14) and the dock's orb carries voice."
+  },
+  "v9-21": {
+    "layout": "Frame 21's spine is in place: 28px 'Consult' with a Live chip, then 'Now treating' / 'Waiting' / 'Sent to checkout' as `.sec` rows over grouped cards rather than three loose stacks.",
+    "component anatomy": "All three row types rebuilt to the frame. In-chair: `.card.wash`, 52px live-ringed avatar, 18px/800 name, glyph Minis, a 48px Record CTA beside a 48px IconCircle \u2014 the frame puts return-to-queue on the icon, one dominant action and one escape hatch, where we had two full-width buttons. Waiting: 44px sky-ringed avatar with a lime 'Call in' chip, falling back to a pine-3 'Booked' chip when there is no action to offer. Checkout: 65% opacity with the amount as a live Mini. STILL PRESENT: a back chevron (#35) and ProfileButton (#36) the frame's header does not have.",
+    "interaction/state": "Every behaviour preserved \u2014 call-in state machine, long-press, the lime arrival flash, optimistic layoutId transitions between sections. PRODUCT-DECISION #37: the elapsed timer stays.",
+    "$delta-note": "11.1% -> 12.9%. The number ROSE because the screen now renders more of what the frame draws \u2014 grouped cards, chips, glyph rows \u2014 where before it was a sparser layout that simply had less to disagree about. Structure moved toward the frame; the percentage moved away. This is the same lesson as v9-05's Verify button."
+  },
+  "v9-22": {
+    "component anatomy": "Frame 22 rebuilt: sleeping Odo, 'No one waiting', and \u2014 the part that matters \u2014 the frame's two actions, 'Add walk-in' and 'Open schedule'. The old empty state was a message with no way forward, which is the worst thing an empty screen can be."
+  },
+  "v9-32": {
+    "layout": "Frame 32's spine: 28px 'Patients' with search and lime \uff0b circles, a filter chip row, then one card of `.vrow`s \u2014 replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.",
+    "component anatomy": "Rows rebuilt to the frame: 44px avatar RINGED BY STATE (live in the chair, sky for lab), name, glyph Minis for age/complaint/medical flag/outstanding, and a state dot on the right. The \uff0b now opens the speed dial from the header instead of a floating button overlapping the list \u2014 the same duplicate-affordance fix as Flow.",
+    "content": "NOT-BUILT #38: the frame's '\u20b9 Due' chip has no server filter behind it, so it is not rendered rather than shipped as a no-op. PRODUCT-DECISIONS #39 (two extra chips) and #40 (the count header)."
+  },
+  "v9-33": {
+    "layout": "Search is now a MODE, as frames 33/34 draw it: the field and a Cancel replace the header entirely, rather than a bar permanently occupying a fifth of the screen. 8.4% -> 6.3%."
+  },
+  "v9-34": {
+    "layout": "NEWLY CAPTURABLE. Frame 34 was one of the 49 frames nothing could reach \u2014 a state, not a route. `?search=` opens the mode and seeds the query, so a term nobody matches drives it with no new machinery.",
+    "content": "The frame does not stop at 'nothing found' \u2014 it offers to create the person you just typed, carrying the term into /patients/new. That is the whole point of the frame, and the old screen had none of it."
+  },
+  "v9-50": {
+    "layout": "Frame 50's spine is in place: eyebrow with the LIVE marker over a 28px 'Today', the two-tile money bento, 'Clinic now' with Messages in its action slot, doctor-grouped rows in ONE card, then Checkout and Recent activity.",
+    "component anatomy": "The per-doctor grouping was a card PER DOCTOR; frame 50 uses one card with each doctor announced by an eyebrow caption, and the free-chair state written into that caption rather than shown as an empty box. Money went from SEVEN tiles (4 collection + 3 stats) to the frame's two. Nothing was lost: in-chair is visible in 'Clinic now', the checkout count is that section's own action, appointments-today moved onto the section header, and Cash/Online remain in Billing \u2014 where a receptionist reconciling a drawer already goes.",
+    "interaction/state": "Every receptionist capability preserved: WalkInSheet, voice walk-in, CheckoutSheet, QueueActionSheet (long-press), ActivityFeed, per-doctor grouping, and tap-through to the patient record. Built on the tested `today-state` model \u2014 origin stays separate from status, in-chair is never a reception action.",
+    "$open": "PRODUCT-DECISION #41 covers the remaining structural gap. Frame 50's header carries only an avatar, so the frame relies on the dock ORB for actions; our floating FabMenu duplicates it and overlaps 'Recent activity'. /home and /patients were fixed by moving the dial onto a header \uff0b the frame draws \u2014 frame 50 draws none, so the same fix does not apply. Wiring the orb resolves this and the missing voice routing together."
+  }
+}
