@@ -27,6 +27,7 @@ import { getByDoctor, getCheckout } from '@/lib/queue/selectors';
 import { useActivityFeed, useQueueSnapshot } from '@/lib/queue/mutations';
 import { useTodayStats } from '@/lib/queries';
 import { useDailyCollection } from '@/lib/billing/api';
+import { pendingCheckoutPaise } from '@/lib/queue/today-state';
 import { rupeesCompact } from '@/lib/billing/format';
 import { useAuth } from '@/lib/auth';
 
@@ -94,10 +95,13 @@ function TodayInner() {
               label="COLLECTED"
               value={rupeesCompact(collection.data.totalCollectedPaise)}
             />
+            {/* Money, not a count. Beside COLLECTED, a bare "1" reads as ₹1 — and the
+                person reading it is balancing a drawer. The count still shows on the
+                Checkout section header, where it means people rather than rupees. */}
             <BentoTile
-              tone={checkout.length > 0 ? 'crit' : 'neutral'}
+              tone={pendingCheckoutPaise(checkout) > 0 ? 'crit' : 'neutral'}
               label="PENDING"
-              value={String(checkout.length)}
+              value={rupeesCompact(pendingCheckoutPaise(checkout))}
             />
           </div>
         )}

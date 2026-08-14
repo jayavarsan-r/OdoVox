@@ -58,10 +58,13 @@ function useElapsed(since: Date | string | null): string {
     return () => clearInterval(t);
   }, [since]);
   if (!since) return "";
-  const secs = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(since).getTime()) / 1000),
-  );
+  const secs = Math.floor((Date.now() - new Date(since).getTime()) / 1000);
+  // A negative elapsed means the clock and the record disagree — a device with the wrong
+  // time, a server/client skew, or a pinned clock in the screenshot harness. This used to
+  // clamp to zero and render "0:00", which asserts the patient sat down this instant. On
+  // the card a doctor uses to judge who has been waiting longest, a confident wrong number
+  // is worse than none, so the chip simply does not render.
+  if (secs < 0) return "";
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m}:${String(s).padStart(2, "0")}`;

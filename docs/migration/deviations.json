@@ -779,6 +779,95 @@
       "reason": "The screenshot harness pins the browser clock to 2026-07-13T09:41 so every capture is deterministic \u2014 that is where both panels' 'MON \u00b7 13 JUL 9:41' comes from. The SERVER runs on real time, so appointments seeded onto that date are weeks overdue as far as the API is concerned and the NO_SHOW sweep correctly retires the future ones. The capture therefore shows the two completed plus the patient in the chair, and the caption's 'to go' and '\u20b9 in' clauses have nothing to say. That is the app behaving correctly on a past-dated fixture, not a defect: on the real today the seeded day renders in full (verified \u2014 2 COMPLETED, 1 CHECKED_IN, 3 SCHEDULED survive).",
       "status": "approved",
       "ruling": "Self-resolved. Closing it properly means either moving the pinned date forward on every capture run or freezing server time too; both are harness changes with their own risks, and neither belongs in a frame task."
+    },
+    {
+      "id": 67,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "fixed",
+      "summary": "The in-chair card rendered a false \"0:00\" when the clock and the record disagreed",
+      "reason": "useElapsed clamped a negative elapsed time to zero, so any client/server skew \u2014 or the screenshot harness's pinned clock \u2014 printed '0:00', asserting the patient sat down this instant. On the card a doctor uses to judge who has been waiting longest, a confident wrong number is worse than none.",
+      "fixedIn": "apps/web/components/queue/queue-cards.tsx \u2014 a negative elapsed renders no chip at all."
+    },
+    {
+      "id": 68,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "approved",
+      "summary": "The Consult header keeps a back control that frame 21 does not draw",
+      "reason": "/consult is NOT one of the four dock tabs \u2014 a doctor arrives here from Flow's 'Continue consultation'. Removing the back control to match the frame would strand them on a screen with no way out. Navigation, not product: the frame simply does not depict the entry path.",
+      "ruling": "Self-resolved as a technical/navigation matter under the standing rule."
+    },
+    {
+      "id": 69,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "open",
+      "summary": "CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none",
+      "reason": "Frame 21's card carries a crit 'Allergy' chip beside age and sitting. The data is already on the client \u2014 QueuePatientZ.medicalFlags \u2014 so this is a rendering decision, not an API one. I have NOT implemented it, because /consult is not in the RBAC RESTRICTED list: it is a shared route a receptionist can reach by URL even though it is not in their tab bar. Rendering medical flags there would newly expose allergy information to reception. That is a clinical-exposure decision, and it is yours.",
+      "openQuestion": "Render medicalFlags on the in-chair card? Recommend YES for the safety value \u2014 the doctor about to record is exactly who should see a penicillin allergy \u2014 but paired with adding /consult to RESTRICTED as DOCTOR/ADMIN, so the chip cannot surface to reception. That second half is an RBAC change and needs your sign-off too."
+    },
+    {
+      "id": 70,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21",
+        "v9-50"
+      ],
+      "status": "open",
+      "summary": "Frames say \"CHAIR 1\"; the app says \"Room 1\" because that is what the model calls it",
+      "reason": "Both frames label the operatory 'CHAIR 1'. The schema models Rooms and the seed names them 'Room 1', which the UI renders verbatim. Dentists say chair; the data says room. Changing it is either a copy transform at the edge or a rename in the seed and model.",
+      "openQuestion": "Rename to Chair in the seed/model, transform at the edge, or keep Room?"
+    },
+    {
+      "id": 71,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "open",
+      "summary": "Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited",
+      "reason": "Frame 21's waiting rows read '11:00 \u00b7 12 min' \u2014 when they were due and how long they have actually been waiting. The app shows the chief complaint and the token number. Both are triage information and neither is wrong; they answer different questions. 'How long has this person been waiting' is the one a doctor running late asks, and the app cannot currently answer it on this screen.",
+      "openQuestion": "Switch to time + waited-minutes, or show both, or keep complaint + token?"
+    },
+    {
+      "id": 72,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "fixed",
+      "summary": "The PENDING tile showed a patient COUNT in a tile styled as money",
+      "reason": "COLLECTED rendered rupees and PENDING rendered checkout.length, in two identical tiles side by side. 'COLLECTED \u20b90 \u00b7 PENDING 1' reads as one rupee outstanding, and the person reading it is balancing a drawer. Frame 50 shows money in both.",
+      "fixedIn": "pendingCheckoutPaise() sums billDuePaise across the checkout queue; visits with no bill raised contribute nothing rather than a guessed zero, and an overpaid bill cannot subtract from what others owe. 4 tests. The count still appears on the Checkout section header, where it means people rather than rupees."
+    },
+    {
+      "id": 73,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "open",
+      "summary": "Checkout rows offer a \"Take payment\" action where frame 50 shows the amount as a chip",
+      "reason": "Frame 50's checkout rows are '\u20b9800 \u2192' \u2014 the amount, tappable. The app shows a 'Take payment' button and puts the amount inside it only on some surfaces. The app's version is more actionable; the frame's shows the receptionist the money at a glance, which is what they are scanning for. This is a workflow choice, not a styling one.",
+      "openQuestion": "Amount-as-chip per the frame, or keep the explicit Take payment action?"
+    },
+    {
+      "id": 74,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "open",
+      "summary": "Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing",
+      "reason": "The app adds a 'Recent activity' section ('Asha called Arjun in \u00b7 just now') that the frame does not draw. Conversely the frame's Clinic-now card ends with 'DR. ARJUN \u00b7 CHAIR 2 \u2014 FREE, NEXT 11:15' \u2014 which chairs are free and when they fill \u2014 and the app has no equivalent. Neither is a defect; both change what a receptionist is told.",
+      "openQuestion": "Keep Recent activity? Add the free-chair line? The second looks the more valuable of the two for a receptionist deciding where to put a walk-in."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

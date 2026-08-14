@@ -104,3 +104,18 @@ export function receptionDayState(input: DayInput): ReceptionDayState {
   if (total === 0) return "empty-day";
   return "day-done";
 }
+
+/**
+ * The money still to collect at checkout — frame 50's PENDING tile.
+ *
+ * The tile rendered `checkout.length`, a COUNT, in a tile styled identically to COLLECTED
+ * beside it, which renders money. "COLLECTED ₹0 · PENDING 1" reads as one rupee pending,
+ * and a receptionist balancing a drawer is exactly the person who will read it that way.
+ *
+ * Visits whose bill has not been raised yet contribute nothing rather than being guessed
+ * at: an un-billed checkout is an unknown amount, not a zero one, and the count beside the
+ * section header already says how many people are waiting.
+ */
+export function pendingCheckoutPaise(visits: { billDuePaise: number | null }[]): number {
+  return visits.reduce((sum, v) => sum + Math.max(0, v.billDuePaise ?? 0), 0);
+}

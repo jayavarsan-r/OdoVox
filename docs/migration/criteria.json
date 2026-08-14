@@ -210,13 +210,13 @@
     "canvas geometry": "UNREVIEWED"
   },
   "v9-21": {
-    "layout": "UNREVIEWED",
-    "typography": "UNREVIEWED",
-    "colors": "UNREVIEWED",
-    "component anatomy": "UNREVIEWED",
-    "content": "UNREVIEWED",
-    "interaction/state": "UNREVIEWED",
-    "functionality": "UNREVIEWED",
+    "layout": "PASS",
+    "typography": "PASS",
+    "colors": "PASS",
+    "component anatomy": "PASS",
+    "content": "FAIL",
+    "interaction/state": "PASS",
+    "functionality": "PASS",
     "canvas geometry": "PASS"
   },
   "v9-22": {
@@ -500,13 +500,13 @@
     "canvas geometry": "UNREVIEWED"
   },
   "v9-50": {
-    "layout": "UNREVIEWED",
-    "typography": "UNREVIEWED",
-    "colors": "UNREVIEWED",
-    "component anatomy": "UNREVIEWED",
-    "content": "UNREVIEWED",
-    "interaction/state": "UNREVIEWED",
-    "functionality": "UNREVIEWED",
+    "layout": "PASS",
+    "typography": "PASS",
+    "colors": "PASS",
+    "component anatomy": "PASS",
+    "content": "FAIL",
+    "interaction/state": "PASS",
+    "functionality": "PASS",
     "canvas geometry": "PASS"
   },
   "v9-51": {

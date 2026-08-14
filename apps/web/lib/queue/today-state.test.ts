@@ -6,8 +6,7 @@ import {
   receptionDayState,
   receptionRowState,
   type DayInput,
-  type ReceptionRowState,
-} from "./today-state";
+  type ReceptionRowState, pendingCheckoutPaise } from './today-state';
 
 describe("the nine states reception actually works in", () => {
   it("appointment booked", () => {
@@ -148,5 +147,23 @@ describe("the day as a whole", () => {
     expect(
       receptionDayState({ total: 8.9, completed: 8.4, openRows: 0.9 }),
     ).toBe("day-done");
+  });
+});
+
+describe('pendingCheckoutPaise', () => {
+  it('sums what is actually owed', () => {
+    expect(pendingCheckoutPaise([{ billDuePaise: 350_000 }, { billDuePaise: 80_000 }])).toBe(430_000);
+  });
+
+  it('skips visits with no bill raised yet rather than guessing zero into the total', () => {
+    expect(pendingCheckoutPaise([{ billDuePaise: null }, { billDuePaise: 80_000 }])).toBe(80_000);
+  });
+
+  it('never lets an overpaid bill subtract from what others owe', () => {
+    expect(pendingCheckoutPaise([{ billDuePaise: -5_000 }, { billDuePaise: 80_000 }])).toBe(80_000);
+  });
+
+  it('is zero for an empty checkout', () => {
+    expect(pendingCheckoutPaise([])).toBe(0);
   });
 });

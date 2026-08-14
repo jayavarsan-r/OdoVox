@@ -64,7 +64,7 @@ _None. Every task closed its own decisions._
 | `v9-18` | Home ＋ — speed dial open | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-19` | Day off — quick sheet | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-20` | Week in review — the Monday habit | 33 | NOT-BUILT | — | Task 33 owns this; no route or state driver reaches it yet |
-| `v9-21` | Consult — live queue | 15 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
+| `v9-21` | Consult — live queue | 15 | MISMATCHED | 10.6% | criterion "content" FAILED |
 | `v9-22` | Consult — empty | 15 | NOT-BUILT | — | Task 15 owns this; no route or state driver reaches it yet |
 | `v9-23` | Recording | 16 | APPROVED-DEVIATION | 4.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
 | `v9-24` | Recording — paused (call) | 16 | APPROVED-DEVIATION | 5.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
@@ -93,7 +93,7 @@ _None. Every task closed its own decisions._
 | `v9-47` | Schedule — reception multi-doctor | 25 | MISMATCHED | 5.0% | criterion "layout" unreviewed |
 | `v9-48` | New appointment sheet | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
 | `v9-49` | Schedule — drag to reschedule | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
-| `v9-50` | Reception Today | 26 | MISMATCHED | 6.1% | criterion "layout" unreviewed |
+| `v9-50` | Reception Today | 26 | MISMATCHED | 6.2% | criterion "content" FAILED |
 | `v9-51` | Walk-in sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-52` | Checkout sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
@@ -322,15 +322,15 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 
 ### `v9-21` — Consult — live queue · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 10.6%
 
-- layout: **UNREVIEWED** — Frame 21's spine is in place: 28px 'Consult' with a Live chip, then 'Now treating' / 'Waiting' / 'Sent to checkout' as `.sec` rows over grouped cards rather than three loose stacks.
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED** — All three row types rebuilt to the frame. In-chair: `.card.wash`, 52px live-ringed avatar, 18px/800 name, glyph Minis, a 48px Record CTA beside a 48px IconCircle — the frame puts return-to-queue on the icon, one dominant action and one escape hatch, where we had two full-width buttons. Waiting: 44px sky-ringed avatar with a lime 'Call in' chip, falling back to a pine-3 'Booked' chip when there is no action to offer. Checkout: 65% opacity with the amount as a live Mini. STILL PRESENT: a back chevron (#35) and ProfileButton (#36) the frame's header does not have.
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED** — Every behaviour preserved — call-in state machine, long-press, the lime arrival flash, optimistic layoutId transitions between sections. PRODUCT-DECISION #37: the elapsed timer stays.
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **FAIL** — Three content differences, all awaiting an owner ruling. (1) CLINICAL #69: the frame's crit allergy chip is absent from the in-chair card. The data is already on the client (QueuePatientZ.medicalFlags) so this is a render decision, but /consult is a shared route a receptionist can reach by URL, so showing it there is a clinical-exposure choice. NOT implemented pending approval. (2) #71: waiting rows show complaint + token where the frame shows appointment time + minutes waited. (3) #70: the frame says CHAIR 1, the model says Room 1. Everything else on this screen matches; the 0:00 elapsed defect was fixed (#67) and the back control is a recorded navigation deviation (#68).
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -339,6 +339,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 - `APPROVED-DEVIATION` #35 (approved): A back chevron in the /consult header; frame 21 has none
 - `PRODUCT-DECISION` #36 (approved): A ProfileButton in the /consult header; frame 21 has none
 - `PRODUCT-DECISION` #37 (approved): The in-chair card shows an elapsed timer; frame 21 does not
+- `MUST-FIX` #67 (fixed): The in-chair card rendered a false "0:00" when the clock and the record disagreed
+- `APPROVED-DEVIATION` #68 (approved): The Consult header keeps a back control that frame 21 does not draw
+- `PRODUCT-DECISION` #69 (open): CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none
+- `PRODUCT-DECISION` #70 (open): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
+- `PRODUCT-DECISION` #71 (open): Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited
 
 ### `v9-23` — Recording · APPROVED-DEVIATION
 
@@ -676,21 +681,25 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 
 ### `v9-50` — Reception Today · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.1%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
 
-- layout: **UNREVIEWED** — Frame 50's spine is in place: eyebrow with the LIVE marker over a 28px 'Today', the two-tile money bento, 'Clinic now' with Messages in its action slot, doctor-grouped rows in ONE card, then Checkout and Recent activity.
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED** — The per-doctor grouping was a card PER DOCTOR; frame 50 uses one card with each doctor announced by an eyebrow caption, and the free-chair state written into that caption rather than shown as an empty box. Money went from SEVEN tiles (4 collection + 3 stats) to the frame's two. Nothing was lost: in-chair is visible in 'Clinic now', the checkout count is that section's own action, appointments-today moved onto the section header, and Cash/Online remain in Billing — where a receptionist reconciling a drawer already goes.
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED** — Every receptionist capability preserved: WalkInSheet, voice walk-in, CheckoutSheet, QueueActionSheet (long-press), ActivityFeed, per-doctor grouping, and tap-through to the patient record. Built on the tested `today-state` model — origin stays separate from status, in-chair is never a reception action.
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **FAIL** — Three content differences awaiting an owner ruling: #70 CHAIR vs Room; #73 checkout rows show a 'Take payment' action where the frame shows the amount as a tappable chip; #74 the app adds a 'Recent activity' feed the frame does not have, and lacks the frame's free-chair footer ('DR. ARJUN · CHAIR 2 — FREE, NEXT 11:15'). The money bento itself now matches: PENDING rendered a patient COUNT in a tile styled as money and now sums billDuePaise (#72).
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `PRODUCT-DECISION` #41 (fixed): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
+- `PRODUCT-DECISION` #70 (open): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
+- `MUST-FIX` #72 (fixed): The PENDING tile showed a patient COUNT in a tile styled as money
+- `PRODUCT-DECISION` #73 (open): Checkout rows offer a "Take payment" action where frame 50 shows the amount as a chip
+- `PRODUCT-DECISION` #74 (open): Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing
 
 ### `v9-54` — Billing — densified · MISMATCHED
 

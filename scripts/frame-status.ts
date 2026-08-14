@@ -55,24 +55,40 @@ async function main(): Promise<void> {
     );
   }
 
-  const status: FrameStatus[] = v9.map((r) => ({
-    frame: r.frame,
-    name: r.name,
-    status: r.verdict,
-    changedPct: r.changedPct,
-    gateB: r.verdict,
-    openMustFix: r.deviations
-      .filter((d) => d.class === "MUST-FIX" && d.status !== "fixed")
-      .map((d) => `#${d.id}: ${d.summary}`),
-    openDecisions: r.deviations
-      .filter(
-        (d) =>
-          (d.class === "PRODUCT-DECISION" ||
-            d.class === "APPROVED-DEVIATION") &&
-          d.status === "open",
-      )
-      .map((d) => `#${d.id}: ${d.summary}`),
-  }));
+  const status: FrameStatus[] = v9.map((r) => {
+    const openMustFix = r.deviations.filter(
+      (d) => d.class === "MUST-FIX" && d.status !== "fixed",
+    );
+    const openDecisions = r.deviations.filter(
+      (d) =>
+        (d.class === "PRODUCT-DECISION" || d.class === "APPROVED-DEVIATION") &&
+        d.status === "open",
+    );
+
+    /**
+     * BLOCKED is not a Gate B verdict — it is a reading of one.
+     *
+     * A frame whose only remaining differences are PRODUCT-DECISION items is not
+     * mismatched: the implementation is finished and correct, and someone has to choose
+     * between two defensible answers. Counting it as MISMATCHED alongside frames that are
+     * genuinely wrong hides how much work is actually left and who it is waiting on.
+     * BLOCKED means the ball is with the owner.
+     */
+    const blocked =
+      r.verdict === "MISMATCHED" &&
+      openMustFix.length === 0 &&
+      openDecisions.some((d) => d.class === "PRODUCT-DECISION");
+
+    return {
+      frame: r.frame,
+      name: r.name,
+      status: blocked ? "BLOCKED" : r.verdict,
+      changedPct: r.changedPct,
+      gateB: r.verdict,
+      openMustFix: openMustFix.map((d) => `#${d.id}: ${d.summary}`),
+      openDecisions: openDecisions.map((d) => `#${d.id}: ${d.summary}`),
+    };
+  });
 
   await writeFile(OUT, `${JSON.stringify(status, null, 2)}\n`);
 
@@ -81,8 +97,25 @@ async function main(): Promise<void> {
 
   const done =
     (tally.get("MATCHED") ?? 0) + (tally.get("APPROVED-DEVIATION") ?? 0);
+
+  /** Fixed order, and every bucket printed even at zero — a missing line reads as an
+   *  oversight, and the counts have to be seen to sum to 81. */
+  const ORDER = [
+    "MATCHED",
+    "APPROVED-DEVIATION",
+    "MISMATCHED",
+    "BLOCKED",
+    "NOT-BUILT",
+    "NOT-CAPTURED",
+    "CROSS-CUTTING",
+    "OUT-OF-SCOPE",
+  ];
+  for (const k of ORDER) if (!tally.has(k)) tally.set(k, 0);
+
   console.log(`\n81-frame ledger → ${OUT}\n`);
-  for (const [k, v] of [...tally].sort((a, b) => b[1] - a[1])) {
+  for (const [k, v] of [...tally].sort(
+    (a, b) => ORDER.indexOf(a[0]) - ORDER.indexOf(b[0]),
+  )) {
     console.log(`  ${k.padEnd(20)} ${String(v).padStart(3)}`);
   }
   const total = [...tally.values()].reduce((a, b) => a + b, 0);

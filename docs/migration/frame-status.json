@@ -185,11 +185,15 @@
   {
     "frame": "v9-21",
     "name": "Consult — live queue",
-    "status": "MISMATCHED",
-    "changedPct": 12.926640926640925,
+    "status": "BLOCKED",
+    "changedPct": 10.609336609336609,
     "gateB": "MISMATCHED",
     "openMustFix": [],
-    "openDecisions": []
+    "openDecisions": [
+      "#69: CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none",
+      "#70: Frames say \"CHAIR 1\"; the app says \"Room 1\" because that is what the model calls it",
+      "#71: Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited"
+    ]
   },
   {
     "frame": "v9-22",
@@ -448,11 +452,15 @@
   {
     "frame": "v9-50",
     "name": "Reception Today",
-    "status": "MISMATCHED",
-    "changedPct": 6.0680940680940685,
+    "status": "BLOCKED",
+    "changedPct": 6.17023517023517,
     "gateB": "MISMATCHED",
     "openMustFix": [],
-    "openDecisions": []
+    "openDecisions": [
+      "#70: Frames say \"CHAIR 1\"; the app says \"Room 1\" because that is what the model calls it",
+      "#73: Checkout rows offer a \"Take payment\" action where frame 50 shows the amount as a chip",
+      "#74: Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing"
+    ]
   },
   {
     "frame": "v9-51",
