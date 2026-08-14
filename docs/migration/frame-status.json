@@ -113,9 +113,9 @@
   {
     "frame": "v9-13",
     "name": "Home — calm, glanceable, habit-forming",
-    "status": "MISMATCHED",
-    "changedPct": 6.601965601965603,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 14.098631098631099,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

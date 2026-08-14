@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 17 |
+| APPROVED-DEVIATION | 18 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 26 |
+| MISMATCHED | 25 |
 | NOT-BUILT | 38 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -56,7 +56,7 @@ _None. Every task closed its own decisions._
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
-| `v9-13` | Home — calm, glanceable, habit-forming | 13 | MISMATCHED | 6.6% | criterion "layout" unreviewed |
+| `v9-13` | Home — calm, glanceable, habit-forming | 13 | APPROVED-DEVIATION | 14.1% | — |
 | `v9-14` | Flow — chair free (same anatomy) | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-15` | Home — quiet morning, same bones | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-16` | Flow — day done | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
@@ -293,17 +293,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #28 (fixed): The back control carries a "Join a clinic" text label and a stray Odo sits top-right
 
-### `v9-13` — Home — calm, glanceable, habit-forming · MISMATCHED
+### `v9-13` — Home — calm, glanceable, habit-forming · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 
-- layout: **UNREVIEWED** — Frame 13's spine is in place: eyebrow date over a 24px greeting with the ＋ and avatar, day river, `.hero-c`, quick bento, 'Up next' rail, 'Needs you' rows, nav dock. 22.9% -> 15.5%.
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED** — The day river renders nothing in the capture because the seeded doctor has no appointments today — `dayRiverSegments` returns empty at total 0, which is correct behaviour, not a missing component. It needs a seeded day to be judged.
-- content: **UNREVIEWED** — TWO REAL GAPS, both the same missing join (#33, #34). The hero ring shows a placeholder dot where frame 13 shows the sitting count (2/3), and the hero subtitle reads queue context ('Now treating X · N waiting') where the frame reads clinical context ('RCT 36 · obturation today · penicillin allergy'). The queue visit carries no treatment-plan or allergy data, so neither can be rendered from what /home has today. Server work Task 22 or a /home aggregate owns it.
-- interaction/state: **UNREVIEWED** — PRODUCT-DECISIONS #29-#32: the voice search field, the VoiceCommandHero, two extra quick tiles and the Recent section all exist here and in no part of frame 13. None was deleted — they are kept, restyled into the v9 language, and put to you. The floating FabMenu also has no counterpart in frame 13, where the ＋ summons the speed dial (frame 18, Task 14) and the dock's orb carries voice.
-- functionality: **UNREVIEWED**
+- layout: **PASS** — Frame 13's spine is in place: eyebrow date over a 24px greeting with the ＋ and avatar, day river, `.hero-c`, quick bento, 'Up next' rail, 'Needs you' rows, nav dock. 22.9% -> 15.5%.
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS** — The day river renders nothing in the capture because the seeded doctor has no appointments today — `dayRiverSegments` returns empty at total 0, which is correct behaviour, not a missing component. It needs a seeded day to be judged.
+- content: **PASS** — TWO REAL GAPS, both the same missing join (#33, #34). The hero ring shows a placeholder dot where frame 13 shows the sitting count (2/3), and the hero subtitle reads queue context ('Now treating X · N waiting') where the frame reads clinical context ('RCT 36 · obturation today · penicillin allergy'). The queue visit carries no treatment-plan or allergy data, so neither can be rendered from what /home has today. Server work Task 22 or a /home aggregate owns it.
+- interaction/state: **PASS** — PRODUCT-DECISIONS #29-#32: the voice search field, the VoiceCommandHero, two extra quick tiles and the Recent section all exist here and in no part of frame 13. None was deleted — they are kept, restyled into the v9 language, and put to you. The floating FabMenu also has no counterpart in frame 13, where the ＋ summons the speed dial (frame 18, Task 14) and the dock's orb carries voice.
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -316,6 +316,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 - `NOT-BUILT` #33 (fixed): The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)
 - `NOT-BUILT` #34 (fixed): The hero subtitle reads queue context, not the frame's clinical line
 - `PRODUCT-DECISION` #41 (fixed): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
+- `MUST-FIX` #64 (fixed): The day river counted cancelled appointments and put the chair marker on the wrong patient
+- `MUST-FIX` #65 (fixed): The seed created no appointments at all, so Home, Up next and Schedule were empty in every demo
+- `APPROVED-DEVIATION` #66 (approved): The captured river is shorter than frame 13's, because the harness pins the clock to a past date
 
 ### `v9-21` — Consult — live queue · MISMATCHED
 

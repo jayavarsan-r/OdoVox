@@ -746,6 +746,39 @@
       "reason": "Frame 33 shows previous queries as chips and a line reading 'Search matches name, phone, and patient ID. Say a name into the mic instead of typing.' Neither existed. The helper line is the only place a receptionist holding a phone number learns that phone search works. Frame 34's sleeping Odo was also absent.",
       "status": "fixed",
       "fixedIn": "apps/web/lib/patients/recent-searches.ts (localStorage, newest-first, case-insensitive dedupe, capped at 6, never sent to the server \u2014 it would otherwise become a log of who a clinic looked up) with 6 tests; chips, helper line and the sleeping mascot on the search screen."
+    },
+    {
+      "id": 64,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The day river counted cancelled appointments and put the chair marker on the wrong patient",
+      "reason": "Frame 13's river is the habit hook \u2014 one segment per appointment, lime done, dark in the chair. It was fed `appointments.length` raw, so cancellations and no-shows drew as work still ahead: a doctor with three call-offs saw a day that was fuller than it was. And the chair marker was placed at index `done`, assuming the patient in the chair is always the next one after the finished ones \u2014 a walk-in seen between booked slots put the dark segment on somebody else. The caption also mixed sources, taking 'to go' from the live queue rather than the day, and omitted the frame's takings clause entirely.",
+      "status": "fixed",
+      "fixedIn": "apps/web/lib/queue/day-river-view.ts \u2014 dayShape() filters CANCELLED/NO_SHOW and locates the chair by patientId against the FILTERED list; dayCaption() builds the frame's line and drops clauses that would read as bad news rather than no news ('0 seen \u00b7 0 to go \u00b7 \u20b90 in' at 9am describes a disaster; it is just early). 11 tests."
+    },
+    {
+      "id": 65,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The seed created no appointments at all, so Home, Up next and Schedule were empty in every demo",
+      "reason": "Nothing in the seed made an Appointment. The day river therefore rendered null (it returns null at zero segments), 'Up next' was always empty and the Schedule screen had nothing in it \u2014 in every demo and every screenshot, regardless of what else was going on. Frame 13's central element could not be captured because the data to draw it did not exist.",
+      "status": "fixed",
+      "fixedIn": "packages/db/prisma/seed.ts seeds a believable mid-morning \u2014 two seen, one in the chair, three ahead \u2014 rebuilt each run rather than upserted so yesterday's demo does not pile up behind today's. SEED_TODAY=YYYY-MM-DD hangs them on a chosen date; the default is today."
+    },
+    {
+      "id": 66,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The captured river is shorter than frame 13's, because the harness pins the clock to a past date",
+      "reason": "The screenshot harness pins the browser clock to 2026-07-13T09:41 so every capture is deterministic \u2014 that is where both panels' 'MON \u00b7 13 JUL 9:41' comes from. The SERVER runs on real time, so appointments seeded onto that date are weeks overdue as far as the API is concerned and the NO_SHOW sweep correctly retires the future ones. The capture therefore shows the two completed plus the patient in the chair, and the caption's 'to go' and '\u20b9 in' clauses have nothing to say. That is the app behaving correctly on a past-dated fixture, not a defect: on the real today the seeded day renders in full (verified \u2014 2 COMPLETED, 1 CHECKED_IN, 3 SCHEDULED survive).",
+      "status": "approved",
+      "ruling": "Self-resolved. Closing it properly means either moving the pinned date forward on every capture run or freezing server time too; both are harness changes with their own risks, and neither belongs in a frame task."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

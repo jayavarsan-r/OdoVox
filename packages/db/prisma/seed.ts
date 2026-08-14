@@ -969,9 +969,69 @@ async function main() {
     },
   });
 
+  // --- Today's appointments -------------------------------------------------
+  //
+  // Nothing seeded appointments before this, so /home's day river (frame 13's habit hook),
+  // "Up next", and the whole Schedule screen were empty in every demo and every capture —
+  // the doctor's home screen showed an empty day no matter what else was going on.
+  //
+  // A believable mid-morning: two seen, Akhilesh in the chair, three ahead. Times are
+  // anchored to TODAY in clinic-local terms so the day always looks current, and the
+  // whole set is deleted and rebuilt rather than upserted, because yesterday's demo
+  // appointments must not pile up behind today's.
+  const meera = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: 'PT-0001' },
+  });
+  const fatima = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: 'PT-0003' },
+  });
+
+  // Which day to hang them on. Defaults to today, so a human opening the demo sees their
+  // own day. The screenshot harness pins the browser clock to a fixed date for
+  // determinism, so a capture run seeds with SEED_TODAY set to that same date — otherwise
+  // the app asks for a day the seed never filled and Home renders an empty schedule.
+  const dayStart = process.env.SEED_TODAY ? new Date(`${process.env.SEED_TODAY}T00:00:00`) : new Date();
+  if (Number.isNaN(dayStart.getTime())) {
+    throw new Error(`SEED_TODAY must be an ISO date (YYYY-MM-DD), got "${process.env.SEED_TODAY}"`);
+  }
+  dayStart.setHours(0, 0, 0, 0);
+  const at = (h: number, m: number) => new Date(dayStart.getTime() + (h * 60 + m) * 60_000);
+
+  await prisma.appointment.deleteMany({ where: { clinicId: clinic.id, seriesId: 'seed-today' } });
+  const todaysAppointments = [
+    { patient: meera, hour: 9, min: 0, status: 'COMPLETED' as const, hint: 'Scaling' },
+    { patient: fatima, hour: 9, min: 45, status: 'COMPLETED' as const, hint: 'Filling review' },
+    { patient: akhilesh, hour: 10, min: 30, status: 'CHECKED_IN' as const, hint: 'RCT sitting 2' },
+    { patient: arjun, hour: 11, min: 15, status: 'SCHEDULED' as const, hint: 'Routine cleaning' },
+    { patient: meera, hour: 12, min: 0, status: 'SCHEDULED' as const, hint: 'Crown fitting' },
+    { patient: fatima, hour: 12, min: 45, status: 'SCHEDULED' as const, hint: 'Follow-up' },
+  ];
+  for (const [i, a] of todaysAppointments.entries()) {
+    await prisma.appointment.create({
+      data: {
+        clinicId: clinic.id,
+        patientId: a.patient.id,
+        doctorId: doctor.id,
+        roomId: room1.id,
+        startsAt: at(a.hour, a.min),
+        endsAt: at(a.hour, a.min + 30),
+        durationMinutes: 30,
+        status: a.status,
+        procedureHint: a.hint,
+        seriesId: 'seed-today',
+        seriesIndex: i + 1,
+        seriesTotal: todaysAppointments.length,
+        createdById: doctor.id,
+      },
+    });
+  }
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);
+  console.warn(
+    `   ${dayStart.toDateString()}: ${todaysAppointments.length} appointments — 2 seen, 1 in the chair, 3 ahead`,
+  );
   console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
   console.warn(
     `   Patients: ${patientSeed.length + 1} | Lab: 1 vendor + 3 cases (DRAFT/SENT/READY) | Inventory: 4 categories, 8 items (1 low-stock), 5 movements`,

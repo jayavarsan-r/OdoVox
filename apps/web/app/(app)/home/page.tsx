@@ -39,6 +39,7 @@ import { useQueueStore } from "@/lib/queue/store";
 import { getInChair, getWaiting } from "@/lib/queue/selectors";
 import { useQueueSnapshot } from "@/lib/queue/mutations";
 import { heroClinicalLine } from "@/lib/queue/home-summary";
+import { dayCaption, dayShape } from "@/lib/queue/day-river-view";
 import { flowState } from "@/lib/queue/home-state";
 import { useDailyCollection } from "@/lib/billing/api";
 import { rupees } from "@/lib/queue/checkout-form";
@@ -114,8 +115,21 @@ export default function DoctorHomePage() {
     "Doctor";
   const firstName = raw.charAt(0).toUpperCase() + raw.slice(1);
 
-  const done = appointments.filter((a) => a.status === "COMPLETED").length;
-  const total = appointments.length;
+  // The day's shape, filtered and indexed properly (lib/queue/day-river-view).
+  //
+  // The inline version counted `appointments.length` — cancellations included, so a day
+  // with three call-offs drew three segments of work that no longer existed — and placed
+  // the chair marker at `done`, assuming the patient in the chair is always the next one
+  // after the finished ones. A walk-in seen between booked slots put the dark segment on
+  // the wrong patient.
+  const shape = dayShape(appointments, inChair?.patient.id ?? null);
+  const done = shape.done;
+  const total = shape.total;
+  const caption = dayCaption(
+    shape,
+    inChair ? (inChair.patient.name.split(" ")[0] ?? null) : null,
+    collection.data?.totalCollectedPaise ?? null,
+  );
   const needsCount = needsYou.data?.items.length ?? 0;
 
   /**
@@ -168,24 +182,30 @@ export default function DoctorHomePage() {
       {/* The day river — every appointment today as one segment, the chair as the marker. */}
       <DayRiver
         className="mt-3.5 px-gutter"
-        total={appointments.length}
+        total={total}
         done={done}
-        currentIndex={inChair ? done : null}
+        currentIndex={shape.currentIndex}
         onSelect={() => router.push("/schedule")}
         caption={
-          <>
-            {done} seen
-            {inChair ? (
-              <>
-                {" · "}
-                <b className="font-heavy text-pine">
-                  {inChair.patient.name.split(" ")[0]} in the chair
-                </b>
-              </>
-            ) : null}
-            {" · "}
-            {waiting.length} to go
-          </>
+          caption.text ? (
+            <>
+              {caption.chairName ? (
+                // The chair clause is the one a doctor looks for, so it carries the
+                // weight — the frame sets it in pine while the rest stays pine-2.
+                caption.text.split(new RegExp(`(${caption.chairName} in the chair)`)).map((part, i) =>
+                  part === `${caption.chairName} in the chair` ? (
+                    <b key={i} className="font-heavy text-pine">
+                      {part}
+                    </b>
+                  ) : (
+                    part
+                  ),
+                )
+              ) : (
+                caption.text
+              )}
+            </>
+          ) : null
         }
       />
 
