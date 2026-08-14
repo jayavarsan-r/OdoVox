@@ -57,12 +57,10 @@
     "component anatomy": "Frame 22 rebuilt: sleeping Odo, 'No one waiting', and \u2014 the part that matters \u2014 the frame's two actions, 'Add walk-in' and 'Open schedule'. The old empty state was a message with no way forward, which is the worst thing an empty screen can be."
   },
   "v9-32": {
-    "layout": "Frame 32's spine: 28px 'Patients' with search and lime \uff0b circles, a filter chip row, then one card of `.vrow`s \u2014 replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.",
-    "component anatomy": "Rows rebuilt to the frame: 44px avatar RINGED BY STATE (live in the chair, sky for lab), name, glyph Minis for age/complaint/medical flag/outstanding, and a state dot on the right. The \uff0b now opens the speed dial from the header instead of a floating button overlapping the list \u2014 the same duplicate-affordance fix as Flow.",
-    "content": "NOT-BUILT #38: the frame's '\u20b9 Due' chip has no server filter behind it, so it is not rendered rather than shipped as a no-op. PRODUCT-DECISIONS #39 (two extra chips) and #40 (the count header)."
+    "content": "RESOLVED by owner ruling on #61. The medical-flag chip is removed \u2014 reception queue is not a clinical record, and it was rendered only because it sat in the payload. The row now carries what reception works with: identity, live queue state on the ring and trailing dot, complaint, and dues in crit. The frame's tooth and sitting-progress glyphs are PREFERRED by the ruling but require a per-row active-plan join that does not exist; recorded as NOT-BUILT #76 and deferred to the patient-plan task rather than faked or hardcoded, exactly as instructed."
   },
   "v9-33": {
-    "layout": "Search is now a MODE, as frames 33/34 draw it: the field and a Cancel replace the header entirely, rather than a bar permanently occupying a fifth of the screen. 8.4% -> 6.3%."
+    "content": "RESOLVED by owner ruling on #61. The medical-flag chip is removed \u2014 reception queue is not a clinical record, and it was rendered only because it sat in the payload. The row now carries what reception works with: identity, live queue state on the ring and trailing dot, complaint, and dues in crit. The frame's tooth and sitting-progress glyphs are PREFERRED by the ruling but require a per-row active-plan join that does not exist; recorded as NOT-BUILT #76 and deferred to the patient-plan task rather than faked or hardcoded, exactly as instructed. Frame 33's recents chips and helper line ship (#63); the sleeping mascot ships on frame 34."
   },
   "v9-34": {
     "layout": "NEWLY CAPTURABLE. Frame 34 was one of the 49 frames nothing could reach \u2014 a state, not a route. `?search=` opens the mode and seeds the query, so a term nobody matches drives it with no new machinery.",

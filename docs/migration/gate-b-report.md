@@ -73,10 +73,10 @@ _None. Every task closed its own decisions._
 | `v9-27` | Verification — conflict, clinical red | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-28` | Verification — resolved inline | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #52: The FINDINGS and PROCEDURE prose sections have no extraction fields behind them |
+| `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.5% | NOT-BUILT #52: The FINDINGS and PROCEDURE prose sections have no extraction fields behind them |
 | `v9-31` | Confirmed — saved | 18 | APPROVED-DEVIATION | 6.6% | — |
-| `v9-32` | Patients — glyph rows | 19 | APPROVED-DEVIATION | 5.1% | — |
-| `v9-33` | Patients — search active | 19 | APPROVED-DEVIATION | 6.4% | — |
+| `v9-32` | Patients — glyph rows | 19 | APPROVED-DEVIATION | 4.9% | NOT-BUILT #76: Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist |
+| `v9-33` | Patients — search active | 19 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #76: Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist |
 | `v9-34` | Patients — no match | 19 | APPROVED-DEVIATION | 13.0% | — |
 | `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
 | `v9-36` | New patient — voice intake | 20 | MISMATCHED | 14.1% | criterion "layout" unreviewed |
@@ -430,7 +430,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
 
 ### `v9-30` — Verification — clean day, readable prose · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
 
 - layout: **PASS**
 - typography: **PASS**
@@ -468,13 +468,13 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 
 ### `v9-32` — Patients — glyph rows · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 4.9%
 
-- layout: **PASS** — Frame 32's spine: 28px 'Patients' with search and lime ＋ circles, a filter chip row, then one card of `.vrow`s — replacing a stack of separately-bordered cards each with a coloured left bar. 6.7% -> 5.0%.
+- layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
-- component anatomy: **PASS** — Rows rebuilt to the frame: 44px avatar RINGED BY STATE (live in the chair, sky for lab), name, glyph Minis for age/complaint/medical flag/outstanding, and a state dot on the right. The ＋ now opens the speed dial from the header instead of a floating button overlapping the list — the same duplicate-affordance fix as Flow.
-- content: **PASS** — NOT-BUILT #38: the frame's '₹ Due' chip has no server filter behind it, so it is not rendered rather than shipped as a no-op. PRODUCT-DECISIONS #39 (two extra chips) and #40 (the count header).
+- component anatomy: **PASS**
+- content: **PASS** — RESOLVED by owner ruling on #61. The medical-flag chip is removed — reception queue is not a clinical record, and it was rendered only because it sat in the payload. The row now carries what reception works with: identity, live queue state on the ring and trailing dot, complaint, and dues in crit. The frame's tooth and sitting-progress glyphs are PREFERRED by the ruling but require a per-row active-plan join that does not exist; recorded as NOT-BUILT #76 and deferred to the patient-plan task rather than faked or hardcoded, exactly as instructed.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
@@ -485,18 +485,19 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
 - `NOT-BUILT` #38 (deferred-to-task-34): No "₹ Due" filter chip; frame 32 has one
 - `PRODUCT-DECISION` #39 (approved): Two filter chips the frame does not show — Lab and Recent
 - `PRODUCT-DECISION` #40 (dropped): An "All patients · N" section header above the list; frame 32 goes straight to the card
-- `PRODUCT-DECISION` #61 (open): REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues
+- `MUST-FIX` #61 (fixed): Reception's patient rows carried a medical flag; ruled out — reception queue is not a clinical record
 - `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
+- `NOT-BUILT` #76 (open): Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist
 
 ### `v9-33` — Patients — search active · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
 
-- layout: **PASS** — Search is now a MODE, as frames 33/34 draw it: the field and a Cancel replace the header entirely, rather than a bar permanently occupying a fifth of the screen. 8.4% -> 6.3%.
+- layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS**
-- content: **PASS**
+- content: **PASS** — RESOLVED by owner ruling on #61. The medical-flag chip is removed — reception queue is not a clinical record, and it was rendered only because it sat in the payload. The row now carries what reception works with: identity, live queue state on the ring and trailing dot, complaint, and dues in crit. The frame's tooth and sitting-progress glyphs are PREFERRED by the ruling but require a per-row active-plan join that does not exist; recorded as NOT-BUILT #76 and deferred to the patient-plan task rather than faked or hardcoded, exactly as instructed. Frame 33's recents chips and helper line ship (#63); the sleeping mascot ships on frame 34.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
@@ -504,9 +505,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
-- `PRODUCT-DECISION` #61 (open): REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues
+- `MUST-FIX` #61 (fixed): Reception's patient rows carried a medical flag; ruled out — reception queue is not a clinical record
 - `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
 - `MUST-FIX` #63 (fixed): Search was missing its recents and the line explaining what it matches
+- `NOT-BUILT` #76 (open): Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist
 
 ### `v9-34` — Patients — no match · APPROVED-DEVIATION
 

@@ -618,14 +618,16 @@
     },
     {
       "id": 53,
-      "class": "PRODUCT-DECISION",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-27"
       ],
-      "summary": "Frame 27 greys out Confirm on an allergy conflict; today the doctor may override with an audited warning",
+      "summary": "Confirm stays available over an allergy conflict; the dentist decides and the override is audited",
       "reason": "Frame 27 shows 'Confirm & save' disabled while the allergy conflict is unresolved, and the task brief repeats it. That is a CLINICAL POLICY change, not a visual one. Today allergy_conflict is an advisory warning, not a blocking error: the API's own prompt says 'Do NOT remove the prescription \u2014 flag it; the doctor decides', and confirming over a live warning is a supported, audited path (confirmedWithWarning -> CONSULTATION_CONFIRMED_WITH_WARNING). Disabling Confirm would remove a doctor's documented authority to prescribe against a flag they have judged \u2014 for example a recorded 'rash' that they know to be tolerable. Implemented as today: Confirm is gated by BLOCKING errors only, and the conflict is drawn loudly on the drug.",
-      "status": "open",
-      "openQuestion": "Should an unresolved allergy conflict HARD-BLOCK confirm, overriding the doctor? Recommend no \u2014 keep the override with its audit trail, since the alternative is a clinician unable to file a record they believe is correct. If yes, the API's warning/blocking classification must change too, so the two layers do not disagree."
+      "status": "approved",
+      "openQuestion": "Should an unresolved allergy conflict HARD-BLOCK confirm, overriding the doctor? Recommend no \u2014 keep the override with its audit trail, since the alternative is a clinician unable to file a record they believe is correct. If yes, the API's warning/blocking classification must change too, so the two layers do not disagree.",
+      "ruling": "OWNER RULING: 'KEEP Confirm & Save available during an allergy conflict. Do NOT hard-block confirmation. The current behavior is: OdoVox detects/receives an allergy conflict; OdoVox clearly warns the dentist; dentist reviews the conflict; dentist may remove/change the prescription; dentist may explicitly override the warning if clinically appropriate; the override is recorded in the audit trail. Do NOT invent automatic drug substitutions. Do NOT allow Gemini/LLM output to determine whether an allergy conflict is an absolute contraindication. Any future hard-block policy must come from an explicit clinical safety policy/knowledge layer, not visual matching of the V9 frame.'",
+      "fixedIn": "No code change \u2014 the ruling confirms the behaviour already shipped, and records WHY it is correct rather than incidental. Confirm is gated by BLOCKING errors only; an allergy conflict is advisory, drawn loudly on the drug itself (red rail, red name, one factual line). Overriding it commits through the existing confirmedWithWarning path and lands in AuditLog as CONSULTATION_CONFIRMED_WITH_WARNING. Frame 27's greyed-out CTA is therefore an APPROVED DEVIATION: matching it would remove a clinician's documented authority on the strength of a visual, which the ruling forbids. Related: #51 stays NOT-BUILT \u2014 no automatic substitution is invented, and the conflict action removes the drug rather than choosing a replacement."
     },
     {
       "id": 54,
@@ -713,16 +715,17 @@
     },
     {
       "id": 61,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-32",
         "v9-33"
       ],
-      "summary": "REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues",
+      "summary": "Reception's patient rows carried a medical flag; ruled out \u2014 reception queue is not a clinical record",
       "reason": "Reopened at the owner's instruction. I had closed this as an APPROVED-DEVIATION on my own judgement, which was not mine to make.\n\nWHAT THE V9 FRAME SHOWS (frames 32/33): each row is avatar, name, then a glyph strip of TOOTH NUMBER, SITTING PROGRESS DOTS (filled/current/remaining) and DUES in crit \u2014 plus a trailing status dot. It reads as a treatment-progress list.\n\nWHAT THE IMPLEMENTATION SHOWS: avatar, name, then AGE, CHIEF COMPLAINT, the first MEDICAL FLAG in crit (DIABETES, HYPERTENSION) and DUES in crit \u2014 plus the trailing status dot. It reads as a patient-identity list. The avatar ring and dot now carry live queue state (#62).\n\nLOST BY MATCHING THE FRAME: the medical flag, which is the only place a receptionist opening a record sees a condition before they act, and the frame has nowhere to put it. Age also goes \u2014 the everyday disambiguator between two patients with the same name.\n\nGAINED BY MATCHING THE FRAME: which tooth is being treated and how far through the plan the patient is, without opening the record. For a clinic scanning for 'who is mid-RCT' that is the more useful list.\n\nWHICH KIND OF DECISION: primarily WORKFLOW \u2014 who is scanning this list and what for. It has a CLINICAL edge, because dropping the medical flag removes safety information from a receptionist-visible surface. It is not a visual decision; both versions are the same component with different facts in it. It also carries a technical cost: tooth + sitting dots require joining every row to its active plan, the widening deferred in #48.",
-      "status": "open",
-      "ruling": null,
-      "openQuestion": "Which list is this? Options: (a) keep as-is \u2014 identity + safety, no extra query; (b) match the frame \u2014 treatment progress, losing the medical flag and needing the plan join; (c) both, dropping age to make room, still needing the join. I recommend (c) if the join is acceptable, since it keeps the safety flag and gains the clinical progress, but this is your ruling and I am not resolving it."
+      "status": "fixed",
+      "ruling": "OWNER RULING: 'I am choosing the receptionist/queue workflow over exposing clinical information on the queue card. The receptionist-facing patient/queue card should NOT display medical flags or allergies. #69 established the clinical/privacy boundary. Medical flags are clinically relevant to the dentist, not a general receptionist queue surface. The doctor-facing /consult surface already exposes the relevant allergy information. Do not expose medical conditions simply because they happen to exist in the payload. KEEP: patient identity, operational queue information, dues/billing information, complaint if it is already part of the approved workflow. PREFER tooth / treatment sitting / treatment progress IF the required structured data already exists or is introduced by an already-planned task. DO NOT create speculative clinical data. RECEPTION QUEUE \u2260 CLINICAL RECORD.'",
+      "openQuestion": "Which list is this? Options: (a) keep as-is \u2014 identity + safety, no extra query; (b) match the frame \u2014 treatment progress, losing the medical flag and needing the plan join; (c) both, dropping age to make room, still needing the join. I recommend (c) if the join is acceptable, since it keeps the safety flag and gains the clinical progress, but this is your ruling and I am not resolving it.",
+      "fixedIn": "The medical-flag chip is removed from the /patients row. What remains is what reception works with: identity (name, age), the live queue state on the avatar ring and trailing dot, the complaint, and dues in crit. The doctor still sees allergies where they act on them \u2014 prominently on the in-chair card behind DOCTOR/ADMIN (#69). The privacy regression test now treats /patients as a reception surface, so a future edit cannot quietly put flags back."
     },
     {
       "id": 62,
@@ -890,6 +893,18 @@
       "summary": "The free-room footer says which rooms are free but not when they next fill",
       "reason": "Frame 50 reads 'CHAIR 2 \u2014 FREE, NEXT 11:15'. The free half is implemented from real snapshot state (#74). The 'NEXT' half needs the next appointment per room, which /today does not fetch \u2014 it has the queue snapshot and daily stats, not the schedule. Guessing it would put a time in front of reception that nobody booked.",
       "openQuestion": "Fetch today's schedule on /today to complete the footer? It is one query already used by /home. Recommend yes, but it is added data on a reception screen and therefore your call."
+    },
+    {
+      "id": 76,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-32",
+        "v9-33"
+      ],
+      "status": "open",
+      "summary": "Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist",
+      "reason": "Frames 32/33 show tooth number and sitting-progress dots on each row. The owner ruled these PREFERRED over the removed medical flag, but only if the structured data already exists or an already-planned task introduces it \u2014 and explicitly: do not fake it, do not hardcode it, record the backend dependency, defer it to the appropriate patient-plan task.\n\nIt does not exist. PatientListItem carries no plan or sitting data, and producing it means joining every row to its ACTIVE TreatmentPlan and current Sitting \u2014 the same widening deferred in #48 for the consultation context. On a paginated list that is a per-row clinical lookup on a reception endpoint, which also needs a privacy read: sitting progress is treatment information, and #61 has just drawn that line.\n\nRecorded and deferred. The rows ship with identity, queue state, complaint and dues.",
+      "openQuestion": "Which task owns this? It pairs naturally with #48 (activePlan on ConsultationContext) as one piece of work that decides how plan/sitting data reaches list surfaces, including whether a reception surface should carry it at all under the #61 boundary."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

@@ -106,12 +106,21 @@ function PatientRow({
         <span className="block truncate text-[14px] font-heavy text-pine">
           <Highlighted text={p.name} match={match} />
         </span>
+        {/* RECEPTION QUEUE ≠ CLINICAL RECORD (owner ruling on #61).
+            
+            This row used to carry the patient's first medical flag in crit. /patients is
+            in the receptionist tab bar, and a medical condition is clinically relevant to
+            the dentist, not to a general reception surface — it was rendered here only
+            because it happened to be in the payload. The doctor still sees allergies
+            where they act on them: prominently on the in-chair card (#69), which lives
+            behind DOCTOR/ADMIN.
+            
+            What stays is what reception works with: who they are, why they came, what
+            they owe. The frame's tooth and sitting-progress glyphs need a per-row join to
+            the active treatment plan that does not exist yet — deferred, not faked (#76). */}
         <span className="mt-1 flex flex-wrap items-center gap-1.5">
           <Mini tone="neutral">{p.age}</Mini>
           {p.chiefComplaint ? <Mini tone="lav">{p.chiefComplaint}</Mini> : null}
-          {p.medicalFlags.length > 0 ? (
-            <Mini tone="crit">{p.medicalFlags[0]}</Mini>
-          ) : null}
           {p.outstandingPaise > 0 ? (
             <Mini tone="crit">{rupees(p.outstandingPaise)}</Mini>
           ) : null}

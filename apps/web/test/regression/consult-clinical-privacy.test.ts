@@ -78,6 +78,10 @@ describe("the allergy indicator uses existing patient medicalFlags", () => {
 describe("no medical flag leaks through the receptionist workflow", () => {
   const RECEPTION_SURFACES = [
     ["app", "(app)", "today", "page.tsx"],
+    // /patients is in the receptionist tab bar. Ruled on #61: RECEPTION QUEUE IS NOT A
+    // CLINICAL RECORD — the row carried the patient's first medical flag purely because
+    // it was in the payload.
+    ["app", "(app)", "patients", "page.tsx"],
     ["components", "queue", "checkout-sheet.tsx"],
     ["components", "queue", "walk-in-sheet.tsx"],
   ];

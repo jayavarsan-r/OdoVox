@@ -239,13 +239,11 @@
   {
     "frame": "v9-27",
     "name": "Verification — conflict, clinical red",
-    "status": "BLOCKED",
+    "status": "NOT-BUILT",
     "changedPct": null,
     "gateB": "NOT-BUILT",
     "openMustFix": [],
-    "openDecisions": [
-      "#53: Frame 27 greys out Confirm on an allergy conflict; today the doctor may override with an audited warning"
-    ]
+    "openDecisions": []
   },
   {
     "frame": "v9-28",
@@ -269,7 +267,7 @@
     "frame": "v9-30",
     "name": "Verification — clean day, readable prose",
     "status": "APPROVED-DEVIATION",
-    "changedPct": 6.16040716040716,
+    "changedPct": 6.474201474201474,
     "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
@@ -286,24 +284,20 @@
   {
     "frame": "v9-32",
     "name": "Patients — glyph rows",
-    "status": "BLOCKED",
-    "changedPct": 5.109161109161109,
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 4.934713934713935,
     "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
-    "openDecisions": [
-      "#61: REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues"
-    ]
+    "openDecisions": []
   },
   {
     "frame": "v9-33",
     "name": "Patients — search active",
-    "status": "BLOCKED",
-    "changedPct": 6.380133380133381,
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.207792207792208,
     "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
-    "openDecisions": [
-      "#61: REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues"
-    ]
+    "openDecisions": []
   },
   {
     "frame": "v9-34",
