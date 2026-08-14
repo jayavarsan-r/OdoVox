@@ -6,7 +6,7 @@ import {
   receptionDayState,
   receptionRowState,
   type DayInput,
-  type ReceptionRowState, pendingCheckoutPaise } from './today-state';
+  type ReceptionRowState, pendingCheckoutPaise, freeRooms } from './today-state';
 
 describe("the nine states reception actually works in", () => {
   it("appointment booked", () => {
@@ -165,5 +165,37 @@ describe('pendingCheckoutPaise', () => {
 
   it('is zero for an empty checkout', () => {
     expect(pendingCheckoutPaise([])).toBe(0);
+  });
+});
+
+describe('freeRooms', () => {
+  const rooms = [
+    { id: 'r1', name: 'Room 1', status: 'AVAILABLE' },
+    { id: 'r2', name: 'Room 2', status: 'AVAILABLE' },
+    { id: 'r3', name: 'Room 3', status: 'OFFLINE' },
+  ];
+
+  it('lists rooms nobody is sitting in', () => {
+    expect(freeRooms(rooms, ['r1'])).toEqual([{ roomName: 'Room 2', nextAt: null }]);
+  });
+
+  it('never offers an OFFLINE room', () => {
+    // Sending a walk-in to a chair that is out of service is worse than saying nothing.
+    expect(freeRooms(rooms, []).map((r) => r.roomName)).toEqual(['Room 1', 'Room 2']);
+  });
+
+  it('says when a free room fills again', () => {
+    expect(freeRooms(rooms, ['r1'], { r2: '11:15' })).toEqual([
+      { roomName: 'Room 2', nextAt: '11:15' },
+    ]);
+  });
+
+  it('uses the room name from the data rather than renaming it', () => {
+    // #70: the model says Room; the UI must not claim Chair.
+    expect(freeRooms(rooms, ['r2', 'r3'])[0]!.roomName).toBe('Room 1');
+  });
+
+  it('is empty when every room is occupied', () => {
+    expect(freeRooms(rooms, ['r1', 'r2'])).toEqual([]);
   });
 });

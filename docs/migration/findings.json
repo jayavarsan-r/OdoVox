@@ -51,7 +51,7 @@
     "interaction/state": "PRODUCT-DECISIONS #29-#32: the voice search field, the VoiceCommandHero, two extra quick tiles and the Recent section all exist here and in no part of frame 13. None was deleted \u2014 they are kept, restyled into the v9 language, and put to you. The floating FabMenu also has no counterpart in frame 13, where the \uff0b summons the speed dial (frame 18, Task 14) and the dock's orb carries voice."
   },
   "v9-21": {
-    "content": "Three content differences, all awaiting an owner ruling. (1) CLINICAL #69: the frame's crit allergy chip is absent from the in-chair card. The data is already on the client (QueuePatientZ.medicalFlags) so this is a render decision, but /consult is a shared route a receptionist can reach by URL, so showing it there is a clinical-exposure choice. NOT implemented pending approval. (2) #71: waiting rows show complaint + token where the frame shows appointment time + minutes waited. (3) #70: the frame says CHAIR 1, the model says Room 1. Everything else on this screen matches; the 0:00 elapsed defect was fixed (#67) and the back control is a recorded navigation deviation (#68)."
+    "content": "RESOLVED by owner ruling. #69: the allergy indicator now renders on the in-chair card ('Penicillin allergy', crit, from existing medicalFlags) and /consult is DOCTOR/ADMIN only. #71: waiting rows carry patient, #token and time waited, complaint retained. #70: room names stay as the data has them, presented in the frame's treatment. The remaining pixel difference is data \u2014 the reference shows three waiting patients and a fuller queue than the deterministic fixture holds \u2014 plus the harness's pinned clock, which zeroes the waited label because check-in timestamps are real-time (see #66 for the same effect on v9-13)."
   },
   "v9-22": {
     "component anatomy": "Frame 22 rebuilt: sleeping Odo, 'No one waiting', and \u2014 the part that matters \u2014 the frame's two actions, 'Add walk-in' and 'Open schedule'. The old empty state was a message with no way forward, which is the worst thing an empty screen can be."
@@ -69,6 +69,6 @@
     "content": "The frame does not stop at 'nothing found' \u2014 it offers to create the person you just typed, carrying the term into /patients/new. That is the whole point of the frame, and the old screen had none of it."
   },
   "v9-50": {
-    "content": "Three content differences awaiting an owner ruling: #70 CHAIR vs Room; #73 checkout rows show a 'Take payment' action where the frame shows the amount as a tappable chip; #74 the app adds a 'Recent activity' feed the frame does not have, and lacks the frame's free-chair footer ('DR. ARJUN \u00b7 CHAIR 2 \u2014 FREE, NEXT 11:15'). The money bento itself now matches: PENDING rendered a patient COUNT in a tile styled as money and now sums billDuePaise (#72)."
+    "content": "RESOLVED by owner ruling. #72: PENDING shows money, not a patient count. #73: checkout rows show the amount AND the Take payment action, stacked so the patient's name is not truncated. #74: Recent activity removed; the free-room footer implemented from real snapshot state. #70: room names as the data has them. One acknowledged gap remains, recorded as NOT-BUILT #75 \u2014 the footer's 'NEXT 11:15' needs per-room appointment times /today does not fetch, and is omitted rather than guessed."
   }
 }

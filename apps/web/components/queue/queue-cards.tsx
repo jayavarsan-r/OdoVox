@@ -11,6 +11,7 @@ import { Chip, Mini } from "@/components/ui/badge";
 import { InitialsAvatar as DsAvatar } from "@/components/ui/avatar";
 import { IconCircle } from "@/components/ds";
 import { rupees } from "@/lib/queue/checkout-form";
+import { flagChips } from "@/lib/queue/medical-flags";
 import { cn } from "@/lib/utils";
 
 export function initials(name: string): string {
@@ -71,6 +72,28 @@ function useElapsed(since: Date | string | null): string {
 }
 
 /**
+ * "12 min" — coarse on purpose. A waiting room is judged in minutes, and a seconds
+ * counter ticking beside a patient's name reads as a stopwatch on them. Under a minute
+ * says "just now" rather than "0 min", which would look like a stalled clock.
+ */
+function useWaitedLabel(since: Date | string | null): string {
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!since) return;
+    const t = setInterval(() => force((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, [since]);
+  if (!since) return "";
+  const mins = Math.floor((Date.now() - new Date(since).getTime()) / 60_000);
+  // Negative means the clock and the record disagree; say nothing rather than guess.
+  if (mins < 0) return "";
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  return `${h}h ${mins % 60}m`;
+}
+
+/**
  * Frame 21's "Now treating" card: `.card.wash`, a 52px live-ringed avatar, the name at
  * 18px/800, glyph `Mini`s underneath, then a 48px `.cta` beside a 48px `.icirc`.
  *
@@ -92,6 +115,7 @@ export function InChairCard({
   busyReturn?: boolean;
 }) {
   const elapsed = useElapsed(visit.calledInAt);
+  const flags = flagChips(visit.patient.medicalFlags);
   return (
     <motion.div layoutId={`visit-${visit.id}`} {...springScale}>
       <Card wash className="p-[15px]">
@@ -103,6 +127,18 @@ export function InChairCard({
             </p>
             <span className="mt-[5px] flex flex-wrap items-center gap-1.5">
               <Mini tone="neutral">Token {visit.tokenNumber}</Mini>
+              {/* Frame 21's clinical indicator, ruled in on #69: allergies first and named
+                  ("Penicillin allergy", not "Allergy"), built only from the medicalFlags
+                  the queue already carries. The encrypted allergies column never travels
+                  here. /consult is DOCTOR/ADMIN only so this cannot reach reception. */}
+              {flags.chips.map((c) => (
+                <Mini key={c.label} tone={c.tone}>
+                  {c.label}
+                </Mini>
+              ))}
+              {flags.more > 0 ? (
+                <Mini tone="neutral">+{flags.more} more</Mini>
+              ) : null}
               {visit.chiefComplaint ? (
                 <Mini tone="neutral">{visit.chiefComplaint}</Mini>
               ) : null}
@@ -160,6 +196,8 @@ export function WaitingRow({
   onOpen?: () => void;
   onLongPress?: () => void;
 }) {
+  // How long they have actually been here, from check-in.
+  const waited = useWaitedLabel(visit.checkedInAt);
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
   const startPress = () => {
     if (!onLongPress) return;
@@ -207,9 +245,15 @@ export function WaitingRow({
                 <Info className="size-3.5 shrink-0 text-pine-3" />
               ) : null}
             </span>
-            <span className="mt-1 flex flex-wrap gap-1.5">
-              <Mini tone="neutral">{visit.chiefComplaint ?? "Walk-in"}</Mini>
+            {/* Ruled on #71: patient, queue position and WAITING TIME are all required.
+                The row previously answered "who and why" but never "how long", which is
+                the question a doctor running late actually asks. The complaint stays
+                while it fits — it is dropped only when the row would otherwise crowd,
+                and it remains one tap away on the detail sheet. */}
+            <span className="mt-1 flex flex-wrap items-center gap-1.5">
               <Mini tone="neutral">#{visit.tokenNumber}</Mini>
+              {waited ? <Mini tone="sky">{waited} waiting</Mini> : null}
+              <Mini tone="neutral">{visit.chiefComplaint ?? "Walk-in"}</Mini>
             </span>
           </span>
         </button>
@@ -232,7 +276,8 @@ export function WaitingRow({
 
 /**
  * Frame 21's "Sent to checkout" row, drawn at 65% opacity: the work is done, so it
- * recedes. The doctor sees the amount and nothing else; the receptionist gets the CTA.
+ * recedes. The doctor sees the amount alone — they have no payment to take. The
+ * receptionist sees the amount AND the action (#73).
  */
 export function CheckoutRow({
   visit,
@@ -261,12 +306,23 @@ export function CheckoutRow({
           </p>
         ) : null}
       </div>
+      {/* Ruled on #73: the amount and the action are not alternatives. The amount answers
+          "how much?", the button answers "what do I do?", and a receptionist scanning the
+          checkout queue needs the first before they commit to the second. */}
       {onTakePayment ? (
-        <button type="button" onClick={onTakePayment} className="shrink-0">
-          <Chip tone="lime">
-            Take payment <ChevronRight className="size-3" />
-          </Chip>
-        </button>
+        // Amount over action, stacked: side by side they ate the row and truncated the
+        // patient's name to "Akhile…". The name is the thing being identified — it does
+        // not get squeezed so a button can sit on one line.
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          {visit.billDuePaise != null ? (
+            <Mini tone="live">{rupees(visit.billDuePaise)}</Mini>
+          ) : null}
+          <button type="button" onClick={onTakePayment}>
+            <Chip tone="lime">
+              Take payment <ChevronRight className="size-3" />
+            </Chip>
+          </button>
+        </span>
       ) : visit.billDuePaise != null ? (
         <Mini tone="live">{rupees(visit.billDuePaise)}</Mini>
       ) : (

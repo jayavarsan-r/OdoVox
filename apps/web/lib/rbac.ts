@@ -51,6 +51,12 @@ export function landingRoute(role: Role): string {
 const RESTRICTED: { prefix: string; roles: Role[] }[] = [
   { prefix: "/home", roles: ["DOCTOR", "ADMIN"] },
   { prefix: "/clinic", roles: ["DOCTOR", "ADMIN"] },
+  // /consult carries clinical detail — the in-chair card shows the patient's medical
+  // flags so the doctor about to record sees an allergy before they prescribe. It was a
+  // SHARED route: not in the receptionist tab bar, but reachable by URL, which would have
+  // put those flags in front of reception. Restricted so the clinical surface and the
+  // people entitled to it stay the same set.
+  { prefix: "/consult", roles: ["DOCTOR", "ADMIN"] },
   { prefix: "/today", roles: ["RECEPTIONIST", "ADMIN"] },
   { prefix: "/billing", roles: ["RECEPTIONIST", "ADMIN"] },
 ];

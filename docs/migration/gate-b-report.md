@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 18 |
+| APPROVED-DEVIATION | 20 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 25 |
+| MISMATCHED | 23 |
 | NOT-BUILT | 38 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -64,7 +64,7 @@ _None. Every task closed its own decisions._
 | `v9-18` | Home ＋ — speed dial open | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-19` | Day off — quick sheet | 14 | NOT-BUILT | — | Task 14 owns this; no route or state driver reaches it yet |
 | `v9-20` | Week in review — the Monday habit | 33 | NOT-BUILT | — | Task 33 owns this; no route or state driver reaches it yet |
-| `v9-21` | Consult — live queue | 15 | MISMATCHED | 10.6% | criterion "content" FAILED |
+| `v9-21` | Consult — live queue | 15 | APPROVED-DEVIATION | 12.8% | — |
 | `v9-22` | Consult — empty | 15 | NOT-BUILT | — | Task 15 owns this; no route or state driver reaches it yet |
 | `v9-23` | Recording | 16 | APPROVED-DEVIATION | 4.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
 | `v9-24` | Recording — paused (call) | 16 | APPROVED-DEVIATION | 5.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
@@ -93,7 +93,7 @@ _None. Every task closed its own decisions._
 | `v9-47` | Schedule — reception multi-doctor | 25 | MISMATCHED | 5.0% | criterion "layout" unreviewed |
 | `v9-48` | New appointment sheet | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
 | `v9-49` | Schedule — drag to reschedule | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
-| `v9-50` | Reception Today | 26 | MISMATCHED | 6.2% | criterion "content" FAILED |
+| `v9-50` | Reception Today | 26 | APPROVED-DEVIATION | 5.8% | NOT-BUILT #75: The free-room footer says which rooms are free but not when they next fill |
 | `v9-51` | Walk-in sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-52` | Checkout sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
@@ -320,15 +320,15 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 - `MUST-FIX` #65 (fixed): The seed created no appointments at all, so Home, Up next and Schedule were empty in every demo
 - `APPROVED-DEVIATION` #66 (approved): The captured river is shorter than frame 13's, because the harness pins the clock to a past date
 
-### `v9-21` — Consult — live queue · MISMATCHED
+### `v9-21` — Consult — live queue · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 10.6%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 
 - layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS**
-- content: **FAIL** — Three content differences, all awaiting an owner ruling. (1) CLINICAL #69: the frame's crit allergy chip is absent from the in-chair card. The data is already on the client (QueuePatientZ.medicalFlags) so this is a render decision, but /consult is a shared route a receptionist can reach by URL, so showing it there is a clinical-exposure choice. NOT implemented pending approval. (2) #71: waiting rows show complaint + token where the frame shows appointment time + minutes waited. (3) #70: the frame says CHAIR 1, the model says Room 1. Everything else on this screen matches; the 0:00 elapsed defect was fixed (#67) and the back control is a recorded navigation deviation (#68).
+- content: **PASS** — RESOLVED by owner ruling. #69: the allergy indicator now renders on the in-chair card ('Penicillin allergy', crit, from existing medicalFlags) and /consult is DOCTOR/ADMIN only. #71: waiting rows carry patient, #token and time waited, complaint retained. #70: room names stay as the data has them, presented in the frame's treatment. The remaining pixel difference is data — the reference shows three waiting patients and a fuller queue than the deterministic fixture holds — plus the harness's pinned clock, which zeroes the waited label because check-in timestamps are real-time (see #66 for the same effect on v9-13).
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
@@ -341,9 +341,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.6%
 - `PRODUCT-DECISION` #37 (approved): The in-chair card shows an elapsed timer; frame 21 does not
 - `MUST-FIX` #67 (fixed): The in-chair card rendered a false "0:00" when the clock and the record disagreed
 - `APPROVED-DEVIATION` #68 (approved): The Consult header keeps a back control that frame 21 does not draw
-- `PRODUCT-DECISION` #69 (open): CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none
-- `PRODUCT-DECISION` #70 (open): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
-- `PRODUCT-DECISION` #71 (open): Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited
+- `MUST-FIX` #69 (fixed): CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none
+- `APPROVED-DEVIATION` #70 (approved): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
+- `MUST-FIX` #71 (fixed): Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited
 
 ### `v9-23` — Recording · APPROVED-DEVIATION
 
@@ -485,7 +485,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
 - `NOT-BUILT` #38 (deferred-to-task-34): No "₹ Due" filter chip; frame 32 has one
 - `PRODUCT-DECISION` #39 (approved): Two filter chips the frame does not show — Lab and Recent
 - `PRODUCT-DECISION` #40 (dropped): An "All patients · N" section header above the list; frame 32 goes straight to the card
-- `APPROVED-DEVIATION` #61 (approved): Patient rows show age and condition where v9 shows tooth number, sitting dots and dues
+- `PRODUCT-DECISION` #61 (open): REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues
 - `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
 
 ### `v9-33` — Patients — search active · APPROVED-DEVIATION
@@ -504,7 +504,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
-- `APPROVED-DEVIATION` #61 (approved): Patient rows show age and condition where v9 shows tooth number, sitting dots and dues
+- `PRODUCT-DECISION` #61 (open): REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues
 - `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
 - `MUST-FIX` #63 (fixed): Search was missing its recents and the line explaining what it matches
 
@@ -679,15 +679,15 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 
-### `v9-50` — Reception Today · MISMATCHED
+### `v9-50` — Reception Today · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 5.8%
 
 - layout: **PASS**
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS**
-- content: **FAIL** — Three content differences awaiting an owner ruling: #70 CHAIR vs Room; #73 checkout rows show a 'Take payment' action where the frame shows the amount as a tappable chip; #74 the app adds a 'Recent activity' feed the frame does not have, and lacks the frame's free-chair footer ('DR. ARJUN · CHAIR 2 — FREE, NEXT 11:15'). The money bento itself now matches: PENDING rendered a patient COUNT in a tile styled as money and now sums billDuePaise (#72).
+- content: **PASS** — RESOLVED by owner ruling. #72: PENDING shows money, not a patient count. #73: checkout rows show the amount AND the Take payment action, stacked so the patient's name is not truncated. #74: Recent activity removed; the free-room footer implemented from real snapshot state. #70: room names as the data has them. One acknowledged gap remains, recorded as NOT-BUILT #75 — the footer's 'NEXT 11:15' needs per-room appointment times /today does not fetch, and is omitted rather than guessed.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
@@ -696,10 +696,11 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `PRODUCT-DECISION` #41 (fixed): Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero
-- `PRODUCT-DECISION` #70 (open): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
+- `APPROVED-DEVIATION` #70 (approved): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
 - `MUST-FIX` #72 (fixed): The PENDING tile showed a patient COUNT in a tile styled as money
-- `PRODUCT-DECISION` #73 (open): Checkout rows offer a "Take payment" action where frame 50 shows the amount as a chip
-- `PRODUCT-DECISION` #74 (open): Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing
+- `MUST-FIX` #73 (fixed): Checkout rows offer a "Take payment" action where frame 50 shows the amount as a chip
+- `MUST-FIX` #74 (fixed): Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing
+- `NOT-BUILT` #75 (open): The free-room footer says which rooms are free but not when they next fill
 
 ### `v9-54` — Billing — densified · MISMATCHED
 

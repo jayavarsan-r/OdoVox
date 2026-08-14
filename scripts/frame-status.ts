@@ -68,14 +68,17 @@ async function main(): Promise<void> {
     /**
      * BLOCKED is not a Gate B verdict — it is a reading of one.
      *
-     * A frame whose only remaining differences are PRODUCT-DECISION items is not
-     * mismatched: the implementation is finished and correct, and someone has to choose
-     * between two defensible answers. Counting it as MISMATCHED alongside frames that are
-     * genuinely wrong hides how much work is actually left and who it is waiting on.
-     * BLOCKED means the ball is with the owner.
+     * A frame carrying an unresolved PRODUCT-DECISION is not finished, whatever the pixel
+     * comparison says, and it is not MISMATCHED either: the implementation may be perfect
+     * and someone still has to choose between two defensible answers. BLOCKED means the
+     * ball is with the owner.
+     *
+     * It deliberately outranks APPROVED-DEVIATION. Gate B can pass every criterion while a
+     * product question on that same frame is open — which is how a frame gets counted
+     * COMPLETE on the strength of a judgement nobody with the authority to make it ever
+     * made. An open MUST-FIX still wins, because then the code is simply wrong.
      */
     const blocked =
-      r.verdict === "MISMATCHED" &&
       openMustFix.length === 0 &&
       openDecisions.some((d) => d.class === "PRODUCT-DECISION");
 

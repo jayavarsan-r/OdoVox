@@ -119,3 +119,33 @@ export function receptionDayState(input: DayInput): ReceptionDayState {
 export function pendingCheckoutPaise(visits: { billDuePaise: number | null }[]): number {
   return visits.reduce((sum, v) => sum + Math.max(0, v.billDuePaise ?? 0), 0);
 }
+
+/**
+ * Frame 50's free-chair footer: "DR. ARJUN · CHAIR 2 — FREE, NEXT 11:15".
+ *
+ * Ruled in on #74 because it is real operational state, not decoration — it is what a
+ * receptionist reads before deciding where to put a walk-in. Built from the rooms the
+ * queue snapshot already carries plus the next booked start, so nothing is invented.
+ *
+ * Room NAMES come straight from the data (#70): the model says "Room 1" and that is what
+ * shows. Calling it a chair in the UI while the schema calls it a room would invent
+ * operational semantics the rest of the system does not share.
+ */
+export interface FreeRoomLine {
+  roomName: string;
+  /** Local time the next appointment fills it, or null when the rest of the day is clear. */
+  nextAt: string | null;
+}
+
+export function freeRooms(
+  rooms: { id: string; name: string; status: string }[],
+  occupiedRoomIds: (string | null)[],
+  nextStartByRoom: Record<string, string | null> = {},
+): FreeRoomLine[] {
+  const busy = new Set(occupiedRoomIds.filter((r): r is string => !!r));
+  return rooms
+    // OFFLINE rooms are not free — they are out of service, and offering one to a walk-in
+    // sends the patient to a chair nobody can use.
+    .filter((r) => r.status !== 'OFFLINE' && !busy.has(r.id))
+    .map((r) => ({ roomName: r.name, nextAt: nextStartByRoom[r.id] ?? null }));
+}

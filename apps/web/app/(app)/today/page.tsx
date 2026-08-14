@@ -18,16 +18,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WaitingRow, CheckoutRow } from '@/components/queue/queue-cards';
 import { RealtimeDot } from '@/components/queue/realtime-dot';
 import { OfflineBanner } from '@/components/ds';
-import { ActivityFeed } from '@/components/queue/activity-feed';
 import { WalkInSheet } from '@/components/queue/walk-in-sheet';
 import { CheckoutSheet } from '@/components/queue/checkout-sheet';
 import { QueueActionSheet } from '@/components/queue/queue-action-sheet';
 import { useQueueStore } from '@/lib/queue/store';
 import { getByDoctor, getCheckout } from '@/lib/queue/selectors';
-import { useActivityFeed, useQueueSnapshot } from '@/lib/queue/mutations';
+import { useQueueSnapshot } from '@/lib/queue/mutations';
 import { useTodayStats } from '@/lib/queries';
 import { useDailyCollection } from '@/lib/billing/api';
-import { pendingCheckoutPaise } from '@/lib/queue/today-state';
+import { pendingCheckoutPaise, freeRooms } from '@/lib/queue/today-state';
 import { rupeesCompact } from '@/lib/billing/format';
 import { useAuth } from '@/lib/auth';
 
@@ -37,7 +36,6 @@ function TodayInner() {
   const stats = useTodayStats();
   const collection = useDailyCollection();
   const snapshot = useQueueSnapshot('all');
-  useActivityFeed(true);
   const state = useQueueStore((s) => s.state);
 
   // The orb's "Add walk-in" row routes to /today?walkin=1 — open the sheet on arrival.
@@ -48,7 +46,13 @@ function TodayInner() {
   const [actionVisit, setActionVisit] = useState<VisitWithPatient | null>(null);
 
   const doctorQueues = getByDoctor(state).filter((d) => d.available || d.inChair || d.waiting.length > 0);
+  // Rooms nobody is sitting in — real snapshot state, not a guess (#74).
+  const openRooms = freeRooms(
+    state.rooms,
+    getByDoctor(state).map((d) => d.inChair?.roomId ?? null),
+  );
   const checkout = getCheckout(state);
+
   // Frame 50: "MON · 13 JUL" — short weekday, middot separator.
   const now = new Date();
   const eyebrow = `${now.toLocaleDateString('en-IN', { weekday: 'short' })} · ${now.getDate()} ${now.toLocaleDateString('en-IN', { month: 'short' })}`;
@@ -165,6 +169,17 @@ function TodayInner() {
                   ))}
                 </div>
               ))}
+              {/* Frame 50's free-chair footer, ruled in on #74: which rooms are open,
+                  which is what reception reads before placing a walk-in. Room NAMES come
+                  from the data (#70) — the model says Room, so the UI says Room rather
+                  than inventing a "Chair" the rest of the system does not use. The
+                  frame's "NEXT 11:15" needs per-room appointment times, which this screen
+                  does not fetch; it is omitted rather than guessed. */}
+              {openRooms.length > 0 ? (
+                <p className="px-4 pb-2 pt-1.5 text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">
+                  {openRooms.map((r) => `${r.roomName} — free`).join(' · ')}
+                </p>
+              ) : null}
             </Card>
           )}
         </section>
@@ -192,12 +207,6 @@ function TodayInner() {
           )}
         </section>
 
-        <section>
-          <SectionHeader title="Recent activity" />
-          <div className="px-gutter">
-            <ActivityFeed />
-          </div>
-        </section>
       </div>
 
       {/* No floating FAB here. Frame 50's header carries only an avatar, so the frame

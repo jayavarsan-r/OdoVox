@@ -713,15 +713,16 @@
     },
     {
       "id": 61,
-      "class": "APPROVED-DEVIATION",
+      "class": "PRODUCT-DECISION",
       "frames": [
         "v9-32",
         "v9-33"
       ],
-      "summary": "Patient rows show age and condition where v9 shows tooth number, sitting dots and dues",
-      "reason": "Frames 32/33 set the glyph strip as tooth number, sitting progress dots and outstanding dues. The implementation shows age, chief complaint, the first medical flag and dues. Two reasons it stays. The medical flag is safety information a receptionist opening a record needs at a glance (DIABETES, HYPERTENSION render in crit) and the frame has nowhere to put it. And tooth-plus-sitting-dots means joining every patient row to their active plan \u2014 the same query widening deferred in #48 \u2014 which turns a list endpoint into a per-row clinical lookup. Dues already render in crit exactly as the frame has them. The avatar ring and trailing dot now carry the live queue state the frame uses them for.",
-      "status": "approved",
-      "ruling": "Self-resolved: dropping a visible allergy/condition flag to gain a tooth number trades safety information for clinical detail available one tap away."
+      "summary": "REOPENED: patient rows show age + condition where frame 32 shows tooth, sitting dots and dues",
+      "reason": "Reopened at the owner's instruction. I had closed this as an APPROVED-DEVIATION on my own judgement, which was not mine to make.\n\nWHAT THE V9 FRAME SHOWS (frames 32/33): each row is avatar, name, then a glyph strip of TOOTH NUMBER, SITTING PROGRESS DOTS (filled/current/remaining) and DUES in crit \u2014 plus a trailing status dot. It reads as a treatment-progress list.\n\nWHAT THE IMPLEMENTATION SHOWS: avatar, name, then AGE, CHIEF COMPLAINT, the first MEDICAL FLAG in crit (DIABETES, HYPERTENSION) and DUES in crit \u2014 plus the trailing status dot. It reads as a patient-identity list. The avatar ring and dot now carry live queue state (#62).\n\nLOST BY MATCHING THE FRAME: the medical flag, which is the only place a receptionist opening a record sees a condition before they act, and the frame has nowhere to put it. Age also goes \u2014 the everyday disambiguator between two patients with the same name.\n\nGAINED BY MATCHING THE FRAME: which tooth is being treated and how far through the plan the patient is, without opening the record. For a clinic scanning for 'who is mid-RCT' that is the more useful list.\n\nWHICH KIND OF DECISION: primarily WORKFLOW \u2014 who is scanning this list and what for. It has a CLINICAL edge, because dropping the medical flag removes safety information from a receptionist-visible surface. It is not a visual decision; both versions are the same component with different facts in it. It also carries a technical cost: tooth + sitting dots require joining every row to its active plan, the widening deferred in #48.",
+      "status": "open",
+      "ruling": null,
+      "openQuestion": "Which list is this? Options: (a) keep as-is \u2014 identity + safety, no extra query; (b) match the frame \u2014 treatment progress, losing the medical flag and needing the plan join; (c) both, dropping age to make room, still needing the join. I recommend (c) if the join is acceptable, since it keeps the safety flag and gains the clinical progress, but this is your ruling and I am not resolving it."
     },
     {
       "id": 62,
@@ -804,37 +805,43 @@
     },
     {
       "id": 69,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-21"
       ],
-      "status": "open",
+      "status": "fixed",
       "summary": "CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none",
       "reason": "Frame 21's card carries a crit 'Allergy' chip beside age and sitting. The data is already on the client \u2014 QueuePatientZ.medicalFlags \u2014 so this is a rendering decision, not an API one. I have NOT implemented it, because /consult is not in the RBAC RESTRICTED list: it is a shared route a receptionist can reach by URL even though it is not in their tab bar. Rendering medical flags there would newly expose allergy information to reception. That is a clinical-exposure decision, and it is yours.",
-      "openQuestion": "Render medicalFlags on the in-chair card? Recommend YES for the safety value \u2014 the doctor about to record is exactly who should see a penicillin allergy \u2014 but paired with adding /consult to RESTRICTED as DOCTOR/ADMIN, so the chip cannot surface to reception. That second half is an RBAC change and needs your sign-off too."
+      "openQuestion": "Render medicalFlags on the in-chair card? Recommend YES for the safety value \u2014 the doctor about to record is exactly who should see a penicillin allergy \u2014 but paired with adding /consult to RESTRICTED as DOCTOR/ADMIN, so the chip cannot surface to reception. That second half is an RBAC change and needs your sign-off too.",
+      "ruling": "OWNER RULING (verbatim intent): KEEP the allergy indicator on the in-chair card. Do NOT expose medical flags to receptionists through /consult. Change /consult RBAC so it is explicitly DOCTOR/ADMIN only. The allergy indicator should be concise and high-signal, e.g. 'Penicillin allergy', not a dump of medical history. Do not invent new medical data. Use the existing medicalFlags data.",
+      "fixedIn": "rbac.ts restricts /consult to DOCTOR/ADMIN (it was a SHARED route reachable by URL). lib/queue/medical-flags.ts turns stored flags into concise labels \u2014 allergies first and named, capped at two with a counted overflow so a long history cannot become the dump the ruling forbids. Rendered on the in-chair card only, from QueuePatientZ.medicalFlags; the encrypted allergies column never travels to the queue. test/regression/consult-clinical-privacy.test.ts proves all five required properties: DOCTOR and ADMIN can reach /consult, RECEPTIONIST cannot (including deep links), rendering uses medicalFlags, and no receptionist surface reads a patient's flags."
     },
     {
       "id": 70,
-      "class": "PRODUCT-DECISION",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-21",
         "v9-50"
       ],
-      "status": "open",
+      "status": "approved",
       "summary": "Frames say \"CHAIR 1\"; the app says \"Room 1\" because that is what the model calls it",
       "reason": "Both frames label the operatory 'CHAIR 1'. The schema models Rooms and the seed names them 'Room 1', which the UI renders verbatim. Dentists say chair; the data says room. Changing it is either a copy transform at the edge or a rename in the seed and model.",
-      "openQuestion": "Rename to Chair in the seed/model, transform at the edge, or keep Room?"
+      "openQuestion": "Rename to Chair in the seed/model, transform at the edge, or keep Room?",
+      "ruling": "OWNER RULING (verbatim intent): Do NOT invent or change the underlying data model merely to reproduce the frame. Preserve the existing authoritative room/chair data. If the current domain model says Room 1, display Room 1 accurately. Adapt the visual presentation to the frame without creating false operational semantics.",
+      "fixedIn": "Room names render verbatim from the data on both screens, including the new free-room footer ('ROOM 2 \u2014 FREE'). The frame's CHAIR presentation is matched in treatment \u2014 eyebrow caps, pine-3, inline state \u2014 while the noun stays the model's. A test asserts freeRooms() returns the data's name rather than a renamed one."
     },
     {
       "id": 71,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-21"
       ],
-      "status": "open",
+      "status": "fixed",
       "summary": "Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited",
       "reason": "Frame 21's waiting rows read '11:00 \u00b7 12 min' \u2014 when they were due and how long they have actually been waiting. The app shows the chief complaint and the token number. Both are triage information and neither is wrong; they answer different questions. 'How long has this person been waiting' is the one a doctor running late asks, and the app cannot currently answer it on this screen.",
-      "openQuestion": "Switch to time + waited-minutes, or show both, or keep complaint + token?"
+      "openQuestion": "Switch to time + waited-minutes, or show both, or keep complaint + token?",
+      "ruling": "OWNER RULING (verbatim intent): Do not choose between useful information merely to match pixels. The waiting row should communicate patient, token/queue position, and waiting time. Complaint may be included if it fits without overcrowding; otherwise expose it in the row/detail interaction. Do not remove existing operational information merely for pixel similarity.",
+      "fixedIn": "The waiting row now carries all three: patient, #token, and time waited from checkedInAt. The complaint stays alongside them. The label is coarse by design \u2014 minutes, then hours, 'just now' under a minute \u2014 because a seconds counter beside a patient's name reads as a stopwatch on them, and a negative elapsed (clock skew) renders nothing rather than a confident wrong number."
     },
     {
       "id": 72,
@@ -849,25 +856,40 @@
     },
     {
       "id": 73,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
       "frames": [
         "v9-50"
       ],
-      "status": "open",
+      "status": "fixed",
       "summary": "Checkout rows offer a \"Take payment\" action where frame 50 shows the amount as a chip",
       "reason": "Frame 50's checkout rows are '\u20b9800 \u2192' \u2014 the amount, tappable. The app shows a 'Take payment' button and puts the amount inside it only on some surfaces. The app's version is more actionable; the frame's shows the receptionist the money at a glance, which is what they are scanning for. This is a workflow choice, not a styling one.",
-      "openQuestion": "Amount-as-chip per the frame, or keep the explicit Take payment action?"
+      "openQuestion": "Amount-as-chip per the frame, or keep the explicit Take payment action?",
+      "ruling": "OWNER RULING (verbatim intent): Keep the amount AND provide the checkout action. Amount answers 'how much?', action answers 'what do I do?'. Do not make them mutually exclusive.",
+      "fixedIn": "Reception checkout rows show the amount and the Take payment action, stacked rather than side by side \u2014 side by side they truncated the patient's name to 'Akhile\u2026', and the name is the thing being identified. The doctor's view on /consult keeps the amount alone; they have no payment to take."
     },
     {
       "id": 74,
-      "class": "PRODUCT-DECISION",
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "fixed",
+      "summary": "Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing",
+      "reason": "The app adds a 'Recent activity' section ('Asha called Arjun in \u00b7 just now') that the frame does not draw. Conversely the frame's Clinic-now card ends with 'DR. ARJUN \u00b7 CHAIR 2 \u2014 FREE, NEXT 11:15' \u2014 which chairs are free and when they fill \u2014 and the app has no equivalent. Neither is a defect; both change what a receptionist is told.",
+      "openQuestion": "Keep Recent activity? Add the free-chair line? The second looks the more valuable of the two for a receptionist deciding where to put a walk-in.",
+      "ruling": "OWNER RULING (verbatim intent): Remove Recent Activity from this screen if it is not part of the approved frame and there is no strong workflow reason for it to remain here. Do not preserve old UI simply because it already exists. Implement the missing free-chair footer if its information represents real operational state.",
+      "fixedIn": "Recent activity removed from /today, along with its now-unused feed subscription. The free-room footer is built from the rooms already in the queue snapshot: OFFLINE rooms are excluded because sending a walk-in to a chair that is out of service is worse than saying nothing. The frame's 'NEXT 11:15' half needs per-room appointment times this screen does not fetch, so it is omitted rather than guessed \u2014 recorded below as the remaining gap."
+    },
+    {
+      "id": 75,
+      "class": "NOT-BUILT",
       "frames": [
         "v9-50"
       ],
       "status": "open",
-      "summary": "Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing",
-      "reason": "The app adds a 'Recent activity' section ('Asha called Arjun in \u00b7 just now') that the frame does not draw. Conversely the frame's Clinic-now card ends with 'DR. ARJUN \u00b7 CHAIR 2 \u2014 FREE, NEXT 11:15' \u2014 which chairs are free and when they fill \u2014 and the app has no equivalent. Neither is a defect; both change what a receptionist is told.",
-      "openQuestion": "Keep Recent activity? Add the free-chair line? The second looks the more valuable of the two for a receptionist deciding where to put a walk-in."
+      "summary": "The free-room footer says which rooms are free but not when they next fill",
+      "reason": "Frame 50 reads 'CHAIR 2 \u2014 FREE, NEXT 11:15'. The free half is implemented from real snapshot state (#74). The 'NEXT' half needs the next appointment per room, which /today does not fetch \u2014 it has the queue snapshot and daily stats, not the schedule. Guessing it would put a time in front of reception that nobody booked.",
+      "openQuestion": "Fetch today's schedule on /today to complete the footer? It is one query already used by /home. Recommend yes, but it is added data on a reception screen and therefore your call."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

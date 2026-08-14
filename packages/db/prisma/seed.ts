@@ -360,7 +360,10 @@ async function main() {
   // consultations so a fresh DB shows both a confirmed record and a pending verification card.
   const akhilesh = await prisma.patient.upsert({
     where: { clinicId_patientCode: { clinicId: clinic.id, patientCode: 'PT-0004' } },
-    update: {},
+    // The in-chair demo patient carries an allergy, because frame 21's whole clinical
+    // point is the indicator on the card of the person about to be prescribed for. With
+    // an empty flag list the safety affordance is invisible in every demo and capture.
+    update: { medicalFlags: ['PENICILLIN_ALLERGY'] },
     create: {
       clinicId: clinic.id,
       patientCode: 'PT-0004',
@@ -370,7 +373,7 @@ async function main() {
       gender: 'MALE',
       bloodGroup: 'O+',
       addressEnc: encryptField('Jayanagar, Bengaluru'),
-      medicalFlags: [],
+      medicalFlags: ['PENICILLIN_ALLERGY'],
       chiefComplaint: 'Ongoing root canal, upper left',
       status: 'ACTIVE',
       createdById: doctor.id,
