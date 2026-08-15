@@ -330,7 +330,7 @@
     "frame": "v9-37",
     "name": "Patient — Overview",
     "status": "MISMATCHED",
-    "changedPct": 21.523341523341525,
+    "changedPct": 21.27834327834328,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -357,7 +357,7 @@
     "frame": "v9-40",
     "name": "Tooth map — FDI odontogram",
     "status": "MISMATCHED",
-    "changedPct": 11.297648297648298,
+    "changedPct": 11.243594243594243,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []

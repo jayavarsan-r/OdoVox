@@ -545,7 +545,7 @@ export const SHOTS: Shot[] = [
     frame: "v9-40",
     prepare: async (page) => {
       await openFirstRow(/\/patients\/[^/]+$/)(page);
-      await patientTab("Tooth Map")(page);
+      await patientTab("Teeth")(page);
     },
   },
   {

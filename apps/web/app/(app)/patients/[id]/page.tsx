@@ -23,7 +23,7 @@ type Tab = 'overview' | 'cases' | 'teeth' | 'media' | 'billing';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'cases', label: 'Cases' },
-  { id: 'teeth', label: 'Tooth Map' },
+  { id: 'teeth', label: 'Teeth' },
   { id: 'media', label: 'Media' },
   { id: 'billing', label: 'Billing' },
 ];
@@ -103,19 +103,28 @@ export default function PatientDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="sticky top-0 z-10 mt-4 flex gap-1 overflow-x-auto border-b border-border bg-background px-3">
+      {/* `.ptabs` — the spec's inset pill group, replacing the underline row.
+      
+          FIVE tabs, not the frame's four: the app has Media, which has no frame and must
+          not be dropped. They share the width evenly, so the group stays one object rather
+          than a scrolling strip that hides whichever tab falls off the right edge. */}
+      <div className="sticky top-0 z-10 mx-4 mt-[14px] flex gap-0.5 rounded-pill bg-[rgba(31,42,35,0.05)] p-1 backdrop-blur">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
+            aria-current={tab === t.id ? 'page' : undefined}
             className={cn(
-              'relative shrink-0 px-3 py-2.5 text-sm font-medium transition-colors',
-              tab === t.id ? 'text-ink' : 'text-text-muted',
+              // No horizontal padding and slightly tighter tracking: five tabs share a
+              // 370px row where the frame had four, and the frame's 13px/px-3 truncated
+              // the active tab's own label to "Overvi…".
+              'h-[34px] min-w-0 flex-1 rounded-pill text-[12.5px] tracking-tight transition-colors',
+              tab === t.id
+                ? 'bg-white font-heavy text-pine shadow-[0_3px_10px_rgba(31,42,35,0.12)]'
+                : 'font-semibold text-pine-2',
             )}
           >
             {t.label}
-            {tab === t.id ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-pill bg-lime" /> : null}
           </button>
         ))}
       </div>

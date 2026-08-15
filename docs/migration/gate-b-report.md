@@ -80,10 +80,10 @@ _None. Every task closed its own decisions._
 | `v9-34` | Patients — no match | 19 | APPROVED-DEVIATION | 13.0% | — |
 | `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
 | `v9-36` | New patient — voice intake | 20 | MISMATCHED | 14.1% | criterion "layout" unreviewed |
-| `v9-37` | Patient — Overview | 22 | MISMATCHED | 21.5% | criterion "layout" unreviewed |
+| `v9-37` | Patient — Overview | 22 | MISMATCHED | 21.3% | criterion "layout" unreviewed |
 | `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
 | `v9-39` | Case — procedure detail | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
-| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.3% | criterion "layout" unreviewed |
+| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.2% | criterion "layout" unreviewed |
 | `v9-41` | Patient — Billing tab | 22 | MISMATCHED | 10.8% | criterion "layout" unreviewed |
 | `v9-42` | Patient history — Odo timeline | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-43` | Visit record — read-only sheet | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
@@ -569,7 +569,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 
 ### `v9-37` — Patient — Overview · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 21.5%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 21.3%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -609,7 +609,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 
 ### `v9-40` — Tooth map — FDI odontogram · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 11.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 11.2%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
