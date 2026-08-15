@@ -18,12 +18,15 @@ describe('patient detail — record findings is role-gated', () => {
     expect(page).toMatch(/canRecordFindings = role === 'DOCTOR' \|\| role === 'ADMIN'/);
   });
 
-  it('renders the "Record findings" hero only behind the doctor gate', () => {
-    // The hero must sit inside a canRecordFindings conditional, not render unconditionally.
-    const heroIdx = page.indexOf('title="Record findings"');
-    expect(heroIdx).toBeGreaterThan(-1);
-    const before = page.slice(Math.max(0, heroIdx - 300), heroIdx);
-    expect(before).toMatch(/canRecordFindings \? \(/);
+  it('renders the "Record findings" action only behind the doctor gate', () => {
+    // Frame 37 (ruling B2) turned the dark HeroCard into the action row's primary CTA.
+    // The GATE is what this protects, not the widget.
+    //
+    // Matched as a gate-then-control PAIR rather than by finding the first occurrence of
+    // the phrase: the empty state on the Cases tab says "Tap Record findings…" as prose,
+    // and searching for the words alone lands there and reports a gate that is missing
+    // from a sentence that never had one.
+    expect(page).toMatch(/canRecordFindings \? \(\s*<Button[\s\S]{0,240}?Record findings/);
   });
 
   it('gates the "Continue treatment" recorder button the same way', () => {

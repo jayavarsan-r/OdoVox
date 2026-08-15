@@ -9,6 +9,7 @@ import {
 import { z } from 'zod';
 import type { Patient, Prisma } from '@odovox/db';
 import { AppError, ForbiddenError, NotFoundError } from '../lib/errors.js';
+import { isClinicalRole } from '../lib/clinical-role.js';
 import { ok, parse } from '../lib/http.js';
 import { decryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
@@ -115,10 +116,11 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ ...plan, progress: planProgress(plan.procedures) });
   });
 
-  // Detail: full nested structure — procedures → sittings (visit date + decrypted notes), plus
-  // prescriptions and x-rays across the plan's sitting visits.
+  // Detail: full nested structure — procedures → sittings (visit date, and notes for
+  // clinical roles only), plus prescriptions and x-rays across the plan's sitting visits.
   fastify.get('/plans/:id', anyRole, async (req) => {
     const { id } = req.params as { id: string };
+    const clinical = isClinicalRole(req.role);
     const plan = await prisma.treatmentPlan.findUnique({
       where: { id },
       include: {
@@ -156,12 +158,17 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
         totalSittings: p.totalSittings,
         completedSittings: p.completedSittings,
         status: p.status,
+        // The journey stays visible to reception — date, number, completion, which visit —
+        // because that is operational. The NOTES are encrypted clinical prose ("extirpation,
+        // dressing") and are decrypted only for clinical roles (ruling B4). Withheld here
+        // rather than filtered in React: notesEnc must not reach a client that may not read
+        // it, and `decryptField` is not even called for those roles.
         sittings: p.sittings.map((s) => ({
           id: s.id,
           sittingNumber: s.sittingNumber,
           date: s.visit?.startedAt ?? s.completedAt ?? s.createdAt,
           completed: s.completedAt != null,
-          notes: s.notesEnc ? decryptField(s.notesEnc) : null,
+          notes: clinical && s.notesEnc ? decryptField(s.notesEnc) : null,
           visitId: s.visitId,
         })),
       })),

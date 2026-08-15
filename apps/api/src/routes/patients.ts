@@ -13,6 +13,7 @@ import { encryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
 import { createWithUniquePatientCode } from '../lib/patient-code.js';
 import { toPatientListItem, toPatientResponse } from '../lib/serialize.js';
+import { isClinicalRole } from '../lib/clinical-role.js';
 
 const startOfToday = () => {
   const d = new Date();
@@ -115,7 +116,9 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
     const { id } = req.params as { id: string };
     const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });
     if (!patient) throw new NotFoundError('Patient not found');
-    return ok(toPatientResponse(patient));
+    // Reception keeps the record — they book, bill and phone from it — without the
+    // clinical half of it (ruling B1).
+    return ok(toPatientResponse(patient, isClinicalRole(req.role)));
   });
 
   // ---- update ---------------------------------------------------------------
@@ -142,7 +145,7 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
 
     const updated = await prisma.patient.update({ where: { id }, data });
     await fastify.audit('PATIENT_UPDATED', 'Patient', id, { changedFields: Object.keys(input) });
-    return ok(toPatientResponse(updated));
+    return ok(toPatientResponse(updated, isClinicalRole(req.role)));
   });
 
   // ---- soft delete (doctor/admin only) --------------------------------------

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, Pill, CalendarPlus, IndianRupee } from 'lucide-react';
+import { Mic, Phone, Pill, CalendarPlus, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { HeroCard } from '@/components/ds';
+import { IconCircle } from '@/components/ds';
 import { Odontogram, type ToothStatus } from '@/components/odontogram/odontogram';
 import { api } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth';
@@ -14,9 +14,9 @@ import { PatientWhatsAppCard } from '@/components/whatsapp/patient-whatsapp-card
 import { UpcomingAppointments } from './upcoming-appointments';
 import { PrescriptionSheet } from './prescription-sheet';
 import { NewVisitSheet } from './new-visit-sheet';
-import { Section, ProgressBar, QuickAction } from './ui-bits';
+import { Section, ProgressBar } from './ui-bits';
 
-export function OverviewTab({ patientId, patientName, records, onOpenTeeth, onOpenBilling }: { patientId: string; patientName: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void; onOpenBilling: () => void }) {
+export function OverviewTab({ patientId, patientName, patientPhone, records, onOpenTeeth, onOpenBilling }: { patientId: string; patientName: string; patientPhone?: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void; onOpenBilling: () => void }) {
   const toast = useToast();
   const router = useRouter();
   const completedProcedures = useCompletedProcedures(patientId);
@@ -44,20 +44,42 @@ export function OverviewTab({ patientId, patientName, records, onOpenTeeth, onOp
 
   return (
     <div className="space-y-5">
-      {canRecordFindings ? (
-        <HeroCard
-          variant="dark"
-          icon={<Mic />}
-          title="Record findings"
-          subtitle="Voice consultation"
-          onClick={() => void startConsultation()}
-        />
-      ) : null}
+      {/* Frame 37's action row (ruling B2: reorganize, never remove).
+      
+          Recording is the dominant surface — a full-width lime CTA — with the two
+          everyday actions as circles beside it. The three equally-weighted pastel tiles
+          are gone as a LAYOUT, not as features: Prescribe becomes the Rx circle, phone is
+          new here (the frame has it and a patient record with no way to call the patient
+          was a gap), and New visit / Collect move to a secondary row below where they
+          stay one tap away without competing with the primary action.
 
-      <div className="grid grid-cols-3 gap-2">
-        <QuickAction label="Prescribe" icon={<Pill className="size-5" />} accent="bg-peach-soft" onClick={() => setRx(true)} />
-        <QuickAction label="New visit" icon={<CalendarPlus className="size-5" />} accent="bg-sky-soft" onClick={() => setVisitOpen(true)} />
-        <QuickAction label="Collect" icon={<IndianRupee className="size-5" />} accent="bg-lime-soft" onClick={onOpenBilling} />
+          The recording CTA stays doctor-only. */}
+      <div className="flex items-center gap-2.5">
+        {canRecordFindings ? (
+          <Button block className="h-12 flex-1" onClick={() => void startConsultation()}>
+            <Mic /> Record findings
+          </Button>
+        ) : null}
+        <IconCircle
+          size="lg"
+          tone="surface"
+          aria-label={`Call ${patientName}`}
+          onClick={() => patientPhone && window.open(`tel:${patientPhone}`)}
+        >
+          <Phone />
+        </IconCircle>
+        <IconCircle size="lg" tone="surface" aria-label="New prescription" onClick={() => setRx(true)}>
+          <Pill />
+        </IconCircle>
+      </div>
+
+      <div className="flex gap-2.5">
+        <Button variant="outline" className="h-11 flex-1 text-[13px]" onClick={() => setVisitOpen(true)}>
+          <CalendarPlus className="size-4" /> New visit
+        </Button>
+        <Button variant="outline" className="h-11 flex-1 text-[13px]" onClick={onOpenBilling}>
+          <IndianRupee className="size-4" /> Collect
+        </Button>
       </div>
 
       <Section title="Current treatment">

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Trash2, UserX } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, MoreHorizontal, Trash2, UserX } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -10,9 +10,14 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { EmptyState } from '@/components/ds';
 import { type ToothStatus } from '@/components/odontogram/odontogram';
 import { useToast } from '@/lib/toast';
-import { usePatient, useTeeth, useDeletePatient } from '@/lib/queries';
-import { initials, statusStyle } from '@/lib/patient-ui';
+import { usePatient, useTeeth, useDeletePatient, usePlans } from '@/lib/queries';
+
 import { cn } from '@/lib/utils';
+import { IconCircle } from '@/components/ds';
+import { InitialsAvatar } from '@/components/ui/avatar';
+import { Chip } from '@/components/ui/badge';
+import { flagChips } from '@/lib/queue/medical-flags';
+import { rupees } from '@/lib/billing/format';
 import { OverviewTab } from './overview-tab';
 import { CasesTab } from './cases-tab';
 import { TeethTab } from './teeth-tab';
@@ -28,12 +33,41 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'billing', label: 'Billing' },
 ];
 
+/** One of frame 37's three facts. Quiet label, loud value. */
+function StatCard({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  label: string;
+  value: string;
+  tone?: 'neutral' | 'crit';
+}) {
+  return (
+    <div className="rounded-2xl bg-white px-3 py-2.5 text-center shadow-elev-1">
+      <p
+        className={cn(
+          'text-[15px] font-heavy leading-none tracking-tight tabular-nums',
+          tone === 'crit' ? 'text-crit' : 'text-pine',
+        )}
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 export default function PatientDetailPage() {
   const router = useRouter();
   const toast = useToast();
   const { id } = useParams<{ id: string }>();
   const [tab, setTab] = useState<Tab>('overview');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const plans = usePlans(id);
 
   const patient = usePatient(id);
   const teeth = useTeeth(id);
@@ -65,7 +99,23 @@ export default function PatientDetailPage() {
     );
   }
   const p = patient.data;
-  const s = statusStyle(p.status);
+  const flags = flagChips(p.medicalFlags);
+
+  // Sittings across every ACTIVE plan — the frame's "2/3". Plans are already fetched for
+  // the tabs, so this costs no extra request.
+  const activePlans = (plans.data ?? []).filter((pl) => pl.status === 'ACTIVE');
+  const sittingsDone = activePlans.reduce((n, pl) => n + pl.progress.completedSittings, 0);
+  const sittingsTotal = activePlans.reduce((n, pl) => n + pl.progress.totalSittings, 0);
+  const sittingsLabel = sittingsTotal > 0 ? `${sittingsDone}/${sittingsTotal}` : '—';
+
+  // "8 Jul". A patient who has never been seen shows a dash, not today's date.
+  const lastVisitLabel = p.lastVisitAt
+    ? new Date(p.lastVisitAt).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'Asia/Kolkata',
+      })
+    : '—';
 
   const doDelete = async () => {
     try {
@@ -79,28 +129,79 @@ export default function PatientDetailPage() {
 
   return (
     <AnimatedPage className="flex flex-1 flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-3 pt-3">
-        <button onClick={() => router.back()} aria-label="Back" className="-ml-1 flex size-10 items-center justify-center rounded-pill hover:bg-muted">
-          <ChevronLeft className="size-5" />
-        </button>
-        <span className="text-sm font-medium text-muted-foreground">Patient</span>
-        <button onClick={() => setConfirmDelete(true)} aria-label="Delete patient" className="flex size-10 items-center justify-center rounded-pill text-danger hover:bg-muted">
-          <Trash2 className="size-5" />
-        </button>
+      {/* Frame 37's identity block: a back circle and an overflow menu, then the patient
+          centred under a lime-ringed avatar.
+
+          Delete moved OUT of the top bar into the ⋯ menu. It was a bare red trash icon one
+          tap from the back button — the frame's own arrangement is the safer one, and
+          nothing is lost: the same action, one tap further from an accident. */}
+      <header className="flex items-center justify-between px-gutter pt-2">
+        <IconCircle size="md" tone="surface" aria-label="Back" onClick={() => router.back()}>
+          <ChevronLeft />
+        </IconCircle>
+        <IconCircle
+          size="md"
+          tone="surface"
+          aria-label="More actions"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <MoreHorizontal />
+        </IconCircle>
+      </header>
+
+      {menuOpen ? (
+        <div className="mx-gutter mt-2 overflow-hidden rounded-2xl bg-white shadow-elev-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setConfirmDelete(true);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-3 text-left text-[13.5px] font-heavy text-crit"
+          >
+            <Trash2 className="size-4" /> Delete patient
+          </button>
+        </div>
+      ) : null}
+
+      <div className="mt-1 flex flex-col items-center px-gutter">
+        <InitialsAvatar name={p.name} ring="lime" size="xl" />
+        <h1 className="mt-2.5 truncate text-[22px] font-heavy tracking-tight text-pine">
+          {p.name}
+        </h1>
+        {/* AGE · SEX · PATIENT CODE (ruling B3). The phone is not repeated here — it has
+            its own action below, and the code is what staff quote to each other. */}
+        <p className="mt-0.5 text-[12.5px] font-semibold text-pine-2">
+          {p.age} · {p.gender.charAt(0).toUpperCase()} · {p.patientCode}
+        </p>
+
+        {/* Clinical flags. The server sends these ONLY to DOCTOR/ADMIN (ruling B1), so a
+            receptionist's payload has an empty array and this renders nothing — the gate
+            is the data boundary, and this is just what is left after it. */}
+        {flags.chips.length > 0 ? (
+          <span className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+            {flags.chips.map((c) => (
+              <Chip key={c.label} tone={c.tone}>
+                {c.tone === 'crit' ? <AlertTriangle className="size-3" /> : null}
+                {c.label}
+              </Chip>
+            ))}
+            {flags.more > 0 ? <Chip tone="neutral">+{flags.more}</Chip> : null}
+          </span>
+        ) : null}
       </div>
 
-      {/* Identity */}
-      <div className="flex items-center gap-3 px-5 pt-2">
-        <span className={cn('flex size-14 items-center justify-center rounded-pill text-lg font-semibold ring-2 ring-lime/40 ring-offset-2 ring-offset-background', s.avatar)}>
-          {initials(p.name)}
-        </span>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{p.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {p.age} · {p.gender.toLowerCase()} · <span className="font-mono">{p.phone}</span>
-          </p>
-        </div>
+      {/* Three facts worth knowing before you act: how far through treatment, when they
+          were last here, what they owe. */}
+      <div className="mt-3.5 grid grid-cols-3 gap-gap-tight px-gutter">
+        <StatCard label="SITTINGS" value={sittingsLabel} />
+        <StatCard label="LAST VISIT" value={lastVisitLabel} />
+        <StatCard
+          label="BALANCE"
+          value={rupees(p.outstandingPaise)}
+          tone={p.outstandingPaise > 0 ? 'crit' : 'neutral'}
+        />
       </div>
 
       {/* `.ptabs` — the spec's inset pill group, replacing the underline row.
@@ -130,7 +231,7 @@ export default function PatientDetailPage() {
       </div>
 
       <div className="flex-1 px-5 py-4">
-        {tab === 'overview' && <OverviewTab patientId={id} patientName={patient.data?.name ?? ''} records={records} onOpenTeeth={() => setTab('teeth')} onOpenBilling={() => setTab('billing')} />}
+        {tab === 'overview' && <OverviewTab patientId={id} patientName={p.name} patientPhone={p.phone} records={records} onOpenTeeth={() => setTab('teeth')} onOpenBilling={() => setTab('billing')} />}
         {tab === 'cases' && <CasesTab patientId={id} />}
         {tab === 'teeth' && <TeethTab patientId={id} records={records} />}
         {tab === 'media' && <MediaTab patientId={id} />}
