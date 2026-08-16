@@ -1029,6 +1029,48 @@ async function main() {
     });
   }
 
+  // --- An ACTIVE multi-sitting plan --------------------------------------------
+  //
+  // Plans are otherwise created only by the confirm transaction, which produces sitting
+  // COUNTS but no per-sitting rows for work that has not happened yet. Frame 38's journey
+  // needs the shape a real course of treatment has: one sitting done, one under way, one
+  // still ahead. Seeded explicitly so the Cases tab has something deterministic to draw.
+  await prisma.treatmentPlan.deleteMany({ where: { patientId: akhilesh.id, name: 'RCT · Tooth 36' } });
+  const rctPlan = await prisma.treatmentPlan.create({
+    data: {
+      patientId: akhilesh.id,
+      name: 'RCT · Tooth 36',
+      description: 'Root canal therapy, lower left first molar',
+      status: 'ACTIVE',
+      estimatedCostPaise: 900_000,
+      createdById: doctor.id,
+    },
+  });
+  const rctProcedure = await prisma.procedure.create({
+    data: {
+      planId: rctPlan.id,
+      name: 'RCT',
+      toothNumbers: [36],
+      totalSittings: 3,
+      completedSittings: 1,
+      status: 'IN_PROGRESS',
+    },
+  });
+  await prisma.sitting.createMany({
+    data: [
+      {
+        procedureId: rctProcedure.id,
+        sittingNumber: 1,
+        completedAt: new Date(dayStart.getTime() - 15 * 864e5),
+        notesEnc: encryptField('extirpation, dressing'),
+      },
+      // Under way: linked to the visit the patient is in right now.
+      { procedureId: rctProcedure.id, sittingNumber: 2, visitId: pendingVisit.id },
+      // Ahead: booked but not attended, so it carries no date of its own.
+      { procedureId: rctProcedure.id, sittingNumber: 3 },
+    ],
+  });
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);

@@ -26,7 +26,11 @@ describe('Cases tab — active treatment section', () => {
     expect(page).toMatch(/status !== 'ACTIVE' && p\.status !== 'DRAFT'/);
   });
 
-  it('active card carries a next-sitting hint', () => {
-    expect(page).toMatch(/Next: sitting/);
+  it('the active case shows which sitting comes next', () => {
+    // Frame 38 replaced the "Next: sitting N" text with the vertical journey, which says
+    // the same thing more precisely — which sittings happened, which is under way, which
+    // are ahead. The invariant is that the next step is visible, not the sentence.
+    expect(page).toMatch(/caseJourney\(/);
+    expect(page).toMatch(/<VerticalJourney/);
   });
 });

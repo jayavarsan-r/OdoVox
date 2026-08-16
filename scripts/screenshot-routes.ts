@@ -151,7 +151,11 @@ const patientTab = (label: string) => async (page: Page) => {
  * success. A plausible-but-wrong screenshot is worse than a crash, so this throws
  * when nothing navigates.
  */
-const ROW_MIN_HEIGHT = 56; // rows are >=56px tall; filter chips and nav are ~40px
+// Rows are taller than filter chips and nav items (~34-40px), which is the distinction
+// that matters — clicking a chip re-filters the list out from under us. 48px, not 56:
+// removing the medical-flag chip from reception rows (ruling #61) made a row without a
+// complaint about 52px, and the old threshold silently skipped every one of them.
+const ROW_MIN_HEIGHT = 48;
 
 const openFirstRow = (urlPattern: RegExp) => async (page: Page) => {
   const start = page.url();

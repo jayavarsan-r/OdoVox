@@ -200,6 +200,12 @@ async function capture(
 ) {
   const page = await ctx.newPage();
   const consoleErrors: string[] = [];
+  if (process.env.SHOTS_VERBOSE) {
+    page.on("response", (r) => {
+      if (r.status() >= 400) console.log(`    [http ${r.status()}] ${r.url()}`);
+    });
+    page.on("pageerror", (e) => console.log(`    [pageerror] ${String(e).slice(0, 300)}`));
+  }
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const text = m.text();

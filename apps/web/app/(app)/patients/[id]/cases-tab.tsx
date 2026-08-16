@@ -7,14 +7,47 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { Chip } from '@/components/ui/badge';
+import { VerticalJourney } from '@/components/ds';
+import { caseJourney } from '@/lib/patients/case-journey';
 import { EmptyState } from '@/components/ds';
 import { useToast } from '@/lib/toast';
-import { usePlans, useCreatePlan } from '@/lib/queries';
+import { usePlans, useCreatePlan, usePlan } from '@/lib/queries';
 import { rupees } from '@/lib/patient-ui';
 import { useLabCases } from '@/lib/lab-queries';
 import { labCaseTypeLabel, labStatusStyle } from '@/lib/lab-ui';
 import { cn } from '@/lib/utils';
 import { ProgressBar } from './ui-bits';
+
+/**
+ * The active plan's sittings as frame 38's vertical journey.
+ *
+ * Fetched per-plan because the plans LIST returns progress counts only — the individual
+ * sittings live on /plans/:id, which is also where the clinical boundary is enforced
+ * (reception's response carries notes: null and never decrypts them, ruling B4).
+ */
+function ActivePlanJourney({ planId, onOpen }: { planId: string; onOpen: () => void }) {
+  const plan = usePlan(planId);
+  if (plan.isLoading) return <Spinner />;
+  const procedures = plan.data?.procedures ?? [];
+  if (procedures.length === 0) return null;
+
+  return (
+    <div className="space-y-3 rounded-2xl bg-white p-4 shadow-elev-1">
+      {procedures.map((proc) => (
+        <div key={proc.id}>
+          {procedures.length > 1 ? (
+            <p className="mb-1 text-[12.5px] font-heavy text-pine-2">{proc.name}</p>
+          ) : null}
+          <VerticalJourney sittings={caseJourney(proc.sittings, proc.name)} />
+        </div>
+      ))}
+      <button type="button" onClick={onOpen} className="text-[12.5px] font-heavy text-pine-2">
+        Open case →
+      </button>
+    </div>
+  );
+}
 
 export function CasesTab({ patientId }: { patientId: string }) {
   const toast = useToast();
@@ -71,24 +104,35 @@ export function CasesTab({ patientId }: { patientId: string }) {
           const goTo = (id: string) => router.push(`/patients/${patientId}/plans/${id}`);
           return (
             <>
+              {/* Frame 38: the active plan opens as a JOURNEY rather than a progress bar.
+                  A bar says how far; the journey says which sittings happened, which is
+                  under way, and what is still to come — the thing a doctor and a
+                  receptionist are both actually asking. */}
               {activePlans.length ? (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Active treatment</p>
-                  {activePlans.map((pl) => (
-                    <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-lg border border-sage/40 bg-sage-tint/40 p-4 text-left active:scale-[0.99]">
+                  <p className="text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">
+                    Active treatment
+                  </p>
+                  <p className="text-[15px] font-heavy text-pine">
+                    {activePlans[0]!.name}
+                    <span className="ml-2 align-middle">
+                      <Chip tone={activePlans[0]!.status === 'DRAFT' ? 'neutral' : 'live'}>
+                        {activePlans[0]!.status === 'DRAFT' ? 'Not started' : 'Active'}
+                      </Chip>
+                    </span>
+                  </p>
+                  <ActivePlanJourney planId={activePlans[0]!.id} onOpen={() => goTo(activePlans[0]!.id)} />
+                  {activePlans.slice(1).map((pl) => (
+                    <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-2xl bg-white p-4 text-left shadow-elev-1 active:scale-[0.99]">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-ink">{pl.name}</p>
-                        <span className="rounded-pill bg-sage-tint px-2 py-0.5 text-xs text-sage-deep">
+                        <p className="text-[14px] font-heavy text-pine">{pl.name}</p>
+                        <Chip tone={pl.status === 'DRAFT' ? 'neutral' : 'live'}>
                           {pl.status === 'DRAFT' ? 'Not started' : 'Active'}
-                        </span>
+                        </Chip>
                       </div>
                       <ProgressBar percent={pl.progress.percent} />
-                      <p className="mt-1 text-xs text-text-muted">
-                        {pl.progress.completedSittings} of {pl.progress.totalSittings} sittings completed
-                        {pl.progress.completedSittings < pl.progress.totalSittings
-                          ? ` · Next: sitting ${pl.progress.completedSittings + 1}`
-                          : ''}{' '}
-                        · {rupees(pl.estimatedCostPaise)}
+                      <p className="mt-1 text-[11.5px] font-semibold text-pine-2">
+                        {pl.progress.completedSittings} of {pl.progress.totalSittings} sittings · {rupees(pl.estimatedCostPaise)}
                       </p>
                     </button>
                   ))}
@@ -96,7 +140,7 @@ export function CasesTab({ patientId }: { patientId: string }) {
               ) : null}
               {pastPlans.length ? (
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Past treatments · {pastPlans.length}</p>
+                  <p className="text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">Past treatments · {pastPlans.length}</p>
                   {pastPlans.map((pl) => (
                     <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-lg border border-border bg-surface p-4 text-left active:scale-[0.99]">
                       <div className="flex items-center justify-between">
