@@ -905,6 +905,39 @@
       "summary": "Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist",
       "reason": "Frames 32/33 show tooth number and sitting-progress dots on each row. The owner ruled these PREFERRED over the removed medical flag, but only if the structured data already exists or an already-planned task introduces it \u2014 and explicitly: do not fake it, do not hardcode it, record the backend dependency, defer it to the appropriate patient-plan task.\n\nIt does not exist. PatientListItem carries no plan or sitting data, and producing it means joining every row to its ACTIVE TreatmentPlan and current Sitting \u2014 the same widening deferred in #48 for the consultation context. On a paginated list that is a per-row clinical lookup on a reception endpoint, which also needs a privacy read: sitting progress is treatment information, and #61 has just drawn that line.\n\nRecorded and deferred. The rows ship with identity, queue state, complaint and dues.",
       "openQuestion": "Which task owns this? It pairs naturally with #48 (activePlan on ConsultationContext) as one piece of work that decides how plan/sitting data reaches list surfaces, including whether a reception surface should carry it at all under the #61 boundary."
+    },
+    {
+      "id": 77,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-41"
+      ],
+      "status": "open",
+      "summary": "Frame 41's \"Remind\" needs a payment-reminder WhatsApp template that does not exist",
+      "reason": "Frame 41 pairs 'Collect \u20b93,000' with a 'Remind' action. The clinic has four seeded WhatsApp templates \u2014 appointment_reminder_24h, appointment_reminder_1h, prescription_ready, lab_case_ready \u2014 and none is about money. WhatsApp business templates must be approved by Meta before they can send, so adding a payment reminder is a compliance step with a real approval cycle, not a UI detail. Wiring the button to a non-existent key would produce a control that fails at send time. Omitted and recorded, per the ruling's instruction to omit rather than fabricate. Collect ships and works.",
+      "openQuestion": "Add a payment-reminder template? It needs the copy drafted and submitted for approval, and a decision about whether payment chasing over WhatsApp is something the product does at all."
+    },
+    {
+      "id": 78,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-41"
+      ],
+      "status": "approved",
+      "summary": "The billing headline drops gross 'Billed' for the frame's OUTSTANDING / PAID pair",
+      "reason": "The tab showed three figures \u2014 Billed, Paid, Due. Frame 41 shows two: OUTSTANDING in crit and PAID \u00b7 ALL TIME. Gross billed is the one figure that changes no decision a receptionist is making at that moment, and it remains on every bill row below, so nothing is lost.",
+      "ruling": "Self-resolved as presentation: no figure is removed from the screen, only from the headline."
+    },
+    {
+      "id": 79,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-41"
+      ],
+      "status": "fixed",
+      "summary": "The billing tab fetched bills twice, from two different endpoints",
+      "reason": "Rows came from useBills() and the summary from /patients/:id/billing. Two requests, two snapshots: a payment landing between them left a row and the total above it disagreeing. The ruling forbids a second billing source of truth, and this was one.",
+      "fixedIn": "Rows and summary both come from /patients/:id/billing, which now carries the derived description and payment context. One request, one snapshot."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

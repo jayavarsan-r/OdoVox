@@ -14,6 +14,7 @@ import { requireRole } from '../lib/rbac.js';
 import { createWithUniquePatientCode } from '../lib/patient-code.js';
 import { toPatientListItem, toPatientResponse } from '../lib/serialize.js';
 import { isClinicalRole } from '../lib/clinical-role.js';
+import { billDescription, paymentContext } from '../lib/billing/bill-context.js';
 
 const startOfToday = () => {
   const d = new Date();
@@ -223,19 +224,40 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
     const { id } = req.params as { id: string };
     const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });
     if (!patient) throw new NotFoundError('Patient not found');
-    const bills = await prisma.bill.findMany({ where: { patientId: id }, orderBy: { createdAt: 'desc' } });
+    // Additive read model for frame 41: what each bill was FOR, and when/how it was paid.
+    // Both derive from records that already exist — BillItem.description and Payment — so
+    // there is no second billing source of truth and nothing new is stored. Narrow selects:
+    // only the columns the derivation reads.
+    const bills = await prisma.bill.findMany({
+      where: { patientId: id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: { select: { description: true, subtotalPaise: true } },
+        payments: {
+          select: { method: true, status: true, receivedAt: true, createdAt: true },
+        },
+      },
+    });
     const totalBilled = bills.reduce((s, b) => s + b.totalPaise, 0);
     const totalPaid = bills.reduce((s, b) => s + b.paidPaise, 0);
     return ok({
       summary: { totalBilledPaise: totalBilled, totalPaidPaise: totalPaid, outstandingPaise: patient.outstandingPaise },
-      bills: bills.map((b) => ({
-        id: b.id,
-        visitId: b.visitId,
-        totalPaise: b.totalPaise,
-        paidPaise: b.paidPaise,
-        status: b.status,
-        createdAt: b.createdAt,
-      })),
+      bills: bills.map((b) => {
+        const payment = paymentContext(b.payments);
+        return {
+          id: b.id,
+          visitId: b.visitId,
+          billNumber: b.billNumber,
+          totalPaise: b.totalPaise,
+          paidPaise: b.paidPaise,
+          balancePaise: b.balancePaise,
+          status: b.status,
+          createdAt: b.createdAt,
+          // Null rather than a guess wherever the records cannot answer.
+          description: billDescription(b.items),
+          payment,
+        };
+      }),
     });
   });
 }
