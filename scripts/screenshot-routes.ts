@@ -550,6 +550,12 @@ export const SHOTS: Shot[] = [
     prepare: async (page) => {
       await openFirstRow(/\/patients\/[^/]+$/)(page);
       await patientTab("Teeth")(page);
+      // Frame 40 IS the selected state: the chart with a tooth open and its status panel
+      // below. Tapping a real tooth also proves the interaction survived the restyle —
+      // selection, the panel, and the plan link all come from the same click a doctor makes.
+      await page.getByRole("button", { name: /^Tooth 36\b/ }).first().click();
+      await page.getByText(/Save/).first().waitFor({ timeout: 10_000 });
+      await page.waitForTimeout(300);
     },
   },
   {

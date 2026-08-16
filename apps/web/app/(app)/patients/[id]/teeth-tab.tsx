@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Chip } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { Odontogram, OdontogramLegend, TOOTH_STATUSES, TOOTH_TONE, type ToothStatus } from '@/components/odontogram/odontogram';
+import { Odontogram, OdontogramLegend, TOOTH_STATUSES, type ToothStatus } from '@/components/odontogram/odontogram';
 import { useToast } from '@/lib/toast';
 import { useTeeth, useUpsertTooth, usePlans } from '@/lib/queries';
 import { cn } from '@/lib/utils';
@@ -52,40 +52,88 @@ export function TeethTab({ patientId, records }: { patientId: string; records: R
       </div>
       <OdontogramLegend />
 
-      <BottomSheet open={selected != null} onClose={() => setSelected(null)} title={`Tooth ${selected ?? ''}`}>
-        <div className="space-y-4">
-          {(() => {
-            const pl = planForTooth(selected);
-            return pl ? (
-              <button
-                type="button"
-                onClick={() => router.push(`/patients/${patientId}/plans/${pl.id}`)}
-                className="flex w-full items-center justify-between rounded-lg bg-sage-tint px-3 py-2 text-left text-xs text-sage-deep"
-              >
-                <span>Active plan: {pl.name} · {pl.progress.completedSittings} of {pl.progress.totalSittings} sittings</span>
-                <ChevronLeft className="size-4 rotate-180" />
-              </button>
-            ) : null;
-          })()}
-          <div className="flex flex-wrap gap-2">
+      {/* Frame 40: the status panel opens INLINE, below the chart — no sheet, no
+          navigation jump. The doctor keeps the odontogram in view while they set a
+          status, which is the whole point: the chart is the context for the decision.
+
+          Everything the sheet did, this does — status chips, encrypted notes, per-tooth
+          history, the active-plan link and Save. Nothing was dropped for the restyle. */}
+      {selected != null ? (
+        <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+          <div className="flex items-center gap-2.5">
+            <Chip tone="lime">Tooth {selected}</Chip>
+            {(() => {
+              const pl = planForTooth(selected);
+              return pl ? (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/patients/${patientId}/plans/${pl.id}`)}
+                  className="min-w-0 flex-1 truncate text-left text-[13px] font-heavy text-pine"
+                >
+                  {pl.name} · sitting {pl.progress.completedSittings + 1} of{' '}
+                  {pl.progress.totalSittings} →
+                </button>
+              ) : (
+                <span className="text-[13px] font-semibold text-pine-3">Set status</span>
+              );
+            })()}
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              aria-label="Close tooth panel"
+              className="shrink-0 text-pine-3"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
             {TOOTH_STATUSES.map((st) => (
-              <button key={st} type="button" onClick={() => setStatus(st)} className={cn('rounded-pill border px-3 py-1.5 text-xs font-medium', status === st ? TOOTH_TONE[st] + ' ring-2 ring-ink ring-offset-1' : 'border-border bg-surface')}>{st}</button>
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatus(st)}
+                className={cn(
+                  'rounded-pill px-3.5 py-1.5 text-[12.5px] font-heavy transition-colors',
+                  status === st ? 'bg-pine text-white' : 'bg-paper text-pine-2',
+                )}
+              >
+                {st}
+              </button>
             ))}
           </div>
-          <Input placeholder="Notes (encrypted)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+          <Input
+            className="mt-3"
+            placeholder="Notes (encrypted)"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+
           {history.length > 0 ? (
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-text-subtle">History</p>
-              <div className="space-y-1">
-                {history.slice().reverse().map((h, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">{new Date(h.date).toLocaleDateString('en-IN')} · {h.status}{h.notes ? ` · ${h.notes}` : ''}</p>
-                ))}
+            <div className="mt-3">
+              <p className="text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">
+                History
+              </p>
+              <div className="mt-1 space-y-0.5">
+                {history
+                  .slice()
+                  .reverse()
+                  .map((h, i) => (
+                    <p key={i} className="text-[11.5px] font-semibold text-pine-2">
+                      {new Date(h.date).toLocaleDateString('en-IN')} · {h.status}
+                      {h.notes ? ` · ${h.notes}` : ''}
+                    </p>
+                  ))}
               </div>
             </div>
           ) : null}
-          <Button className="w-full" loading={upsert.isPending} onClick={save}>Save</Button>
+
+          <Button block className="mt-3.5 h-12" loading={upsert.isPending} onClick={save}>
+            {planForTooth(selected) ? 'Save · link to plan' : 'Save'}
+          </Button>
         </div>
-      </BottomSheet>
+      ) : null}
     </div>
   );
 }
