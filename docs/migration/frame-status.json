@@ -329,18 +329,18 @@
   {
     "frame": "v9-37",
     "name": "Patient — Overview",
-    "status": "MISMATCHED",
-    "changedPct": 21.27834327834328,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 13.593190593190593,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-38",
     "name": "Patient — Cases journey",
-    "status": "MISMATCHED",
-    "changedPct": 12.862758862758863,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 13.48016848016848,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
@@ -356,18 +356,18 @@
   {
     "frame": "v9-40",
     "name": "Tooth map — FDI odontogram",
-    "status": "MISMATCHED",
-    "changedPct": 11.243594243594243,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 13.603369603369602,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-41",
     "name": "Patient — Billing tab",
-    "status": "MISMATCHED",
-    "changedPct": 10.750789750789751,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 11.706563706563706,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

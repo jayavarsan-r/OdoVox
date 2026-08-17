@@ -938,6 +938,42 @@
       "summary": "The billing tab fetched bills twice, from two different endpoints",
       "reason": "Rows came from useBills() and the summary from /patients/:id/billing. Two requests, two snapshots: a payment landing between them left a row and the total above it disagreeing. The ruling forbids a second billing source of truth, and this was one.",
       "fixedIn": "Rows and summary both come from /patients/:id/billing, which now carries the derived description and payment context. One request, one snapshot."
+    },
+    {
+      "id": 80,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
+      "status": "approved",
+      "summary": "The full identity block stays on every tab; v9 shows a compact header on 38/40/41",
+      "reason": "Frame 37 gives the patient a large centred identity block. Frames 38, 40 and 41 replace it with a compact strip \u2014 small avatar, name, one action \u2014 to buy vertical space for the tab's own content. The implementation keeps the full block throughout.\n\nIt is a real difference and it costs roughly 150px on three tabs. It is recorded rather than built because the compact header carries a DIFFERENT action per tab (+ Plan on Cases, PDF on Billing, nothing on Teeth), which is four header variants and a per-tab action contract \u2014 more than a restyle, and it interacts with the Task 23 case-detail screen that owns some of those actions. Nothing is lost meanwhile: the identity, the flags and the three stats stay visible on every tab, which is more context than the frames give, not less.",
+      "ruling": "Self-resolved as layout: no information or action is removed, only repeated."
+    },
+    {
+      "id": 81,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-38"
+      ],
+      "status": "open",
+      "summary": "Frame 38's \"Schedule remaining\" has no endpoint to book a plan's outstanding sittings",
+      "reason": "The journey card pairs PDF with 'Schedule remaining'. PDF is real and now wired \u2014 /plans/:id/pdf already renders the plan. Nothing books a plan's remaining sittings in one action: appointments are created individually, and a bulk scheduler needs slot selection, doctor availability and a conflict story. A button that silently did nothing would be worse than its absence.",
+      "openQuestion": "Build bulk sitting scheduling? It is a scheduling feature with its own design, not a button \u2014 recommend it be scoped with the Schedule work rather than folded into a patient tab."
+    },
+    {
+      "id": 82,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-38"
+      ],
+      "status": "approved",
+      "summary": "Journey steps are titled by procedure; v9 titles them by clinical step name",
+      "reason": "Frame 38 reads 'Sitting 1 \u00b7 Access opening', 'Sitting 2 \u00b7 Cleaning & shaping' \u2014 the clinical step each sitting performs. A Sitting has a number and encrypted notes; it has no step-name field, and inventing one per sitting number would be the app asserting a clinical protocol it has no source for (RCT step 2 is not universally 'cleaning & shaping'). Steps are titled by the procedure instead, and the doctor's own note carries the detail where it exists \u2014 '28 Jun \u00b7 extirpation, dressing', which is the same information from an authoritative source.",
+      "ruling": "Self-resolved: naming clinical steps from a number would be inventing clinical truth."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

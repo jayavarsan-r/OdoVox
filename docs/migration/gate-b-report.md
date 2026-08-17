@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 20 |
+| APPROVED-DEVIATION | 24 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 23 |
+| MISMATCHED | 19 |
 | NOT-BUILT | 38 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -80,11 +80,11 @@ _None. Every task closed its own decisions._
 | `v9-34` | Patients — no match | 19 | APPROVED-DEVIATION | 13.0% | — |
 | `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
 | `v9-36` | New patient — voice intake | 20 | MISMATCHED | 14.1% | criterion "layout" unreviewed |
-| `v9-37` | Patient — Overview | 22 | MISMATCHED | 21.3% | criterion "layout" unreviewed |
-| `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 12.9% | criterion "layout" unreviewed |
+| `v9-37` | Patient — Overview | 22 | APPROVED-DEVIATION | 13.6% | — |
+| `v9-38` | Patient — Cases journey | 22 | APPROVED-DEVIATION | 13.5% | NOT-BUILT #81: Frame 38's "Schedule remaining" has no endpoint to book a plan's outstanding sittings |
 | `v9-39` | Case — procedure detail | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
-| `v9-40` | Tooth map — FDI odontogram | 22 | MISMATCHED | 11.2% | criterion "layout" unreviewed |
-| `v9-41` | Patient — Billing tab | 22 | MISMATCHED | 10.8% | criterion "layout" unreviewed |
+| `v9-40` | Tooth map — FDI odontogram | 22 | APPROVED-DEVIATION | 13.6% | — |
+| `v9-41` | Patient — Billing tab | 22 | APPROVED-DEVIATION | 11.7% | NOT-BUILT #77: Frame 41's "Remind" needs a payment-reminder WhatsApp template that does not exist |
 | `v9-42` | Patient history — Odo timeline | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-43` | Visit record — read-only sheet | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-44` | Prescription sheet — dose dots | 24 | NOT-BUILT | — | Task 24 owns this; no route or state driver reaches it yet |
@@ -567,17 +567,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 - `NOT-CAPTURED` #58 (open): The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio
 - `MUST-FIX` #59 (fixed): Voice intake claimed "Filled from your voice" over a form it had filled nothing into
 
-### `v9-37` — Patient — Overview · MISMATCHED
+### `v9-37` — Patient — Overview · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 21.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 13.6%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS** — Reviewed against the side-by-side. Identity block, stat cards, action row and pill tabs match. Clinical flags render for DOCTOR/ADMIN only — the payload itself carries none for reception (B1). Deviations: the full identity block repeats on every tab where v9 compacts it (#80), and the app keeps New visit, Collect and the WhatsApp card, which the frame does not show but which B2 ruled must be preserved and reorganized rather than deleted.
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -586,18 +586,19 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 21.3%
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
+- `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
 
-### `v9-38` — Patient — Cases journey · MISMATCHED
+### `v9-38` — Patient — Cases journey · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 13.5%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS** — Journey verified on screen with real sittings: done / in-progress / ahead, and clinical notes visible to the doctor only (B4). Deviations: 'Schedule remaining' has no endpoint (#81) and steps are titled by procedure rather than by an invented clinical step name (#82). PDF is wired to the real /plans/:id/pdf.
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -606,18 +607,21 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.9%
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
+- `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
+- `NOT-BUILT` #81 (open): Frame 38's "Schedule remaining" has no endpoint to book a plan's outstanding sittings
+- `APPROVED-DEVIATION` #82 (approved): Journey steps are titled by procedure; v9 titles them by clinical step name
 
-### `v9-40` — Tooth map — FDI odontogram · MISMATCHED
+### `v9-40` — Tooth map — FDI odontogram · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 11.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 13.6%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS** — Verified by driving a real tooth tap, not by the render alone: the panel opens INLINE below the chart with the plan link, status chips, encrypted notes, history and Save. Selection and active-plan highlighting both survived the restyle; the tooth-map regression guard passes untouched.
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -626,18 +630,19 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.2%
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
+- `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
 
-### `v9-41` — Patient — Billing tab · MISMATCHED
+### `v9-41` — Patient — Billing tab · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 10.8%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 11.7%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS** — Bento pair, bill rows with derived descriptions and payment context, and the Collect CTA. Every value comes from authoritative records: BillItem.description and Payment. A bill settled across two methods reads 'Mixed' rather than picking one. Deviations: 'Remind' needs a payment-reminder WhatsApp template that does not exist (#77), and the headline shows OUTSTANDING/PAID rather than three figures (#78).
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -646,6 +651,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.8%
 - `APPROVED-DEVIATION` #10 (approved): Patient detail keeps 5 tabs (Media has no frame)
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
+- `NOT-BUILT` #77 (open): Frame 41's "Remind" needs a payment-reminder WhatsApp template that does not exist
+- `APPROVED-DEVIATION` #78 (approved): The billing headline drops gross 'Billed' for the frame's OUTSTANDING / PAID pair
+- `MUST-FIX` #79 (fixed): The billing tab fetched bills twice, from two different endpoints
+- `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
 
 ### `v9-46` — Schedule — doctor day · MISMATCHED
 

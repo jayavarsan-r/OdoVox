@@ -68,5 +68,17 @@
   },
   "v9-50": {
     "content": "RESOLVED by owner ruling. #72: PENDING shows money, not a patient count. #73: checkout rows show the amount AND the Take payment action, stacked so the patient's name is not truncated. #74: Recent activity removed; the free-room footer implemented from real snapshot state. #70: room names as the data has them. One acknowledged gap remains, recorded as NOT-BUILT #75 \u2014 the footer's 'NEXT 11:15' needs per-room appointment times /today does not fetch, and is omitted rather than guessed."
+  },
+  "v9-37": {
+    "content": "Reviewed against the side-by-side. Identity block, stat cards, action row and pill tabs match. Clinical flags render for DOCTOR/ADMIN only \u2014 the payload itself carries none for reception (B1). Deviations: the full identity block repeats on every tab where v9 compacts it (#80), and the app keeps New visit, Collect and the WhatsApp card, which the frame does not show but which B2 ruled must be preserved and reorganized rather than deleted."
+  },
+  "v9-38": {
+    "content": "Journey verified on screen with real sittings: done / in-progress / ahead, and clinical notes visible to the doctor only (B4). Deviations: 'Schedule remaining' has no endpoint (#81) and steps are titled by procedure rather than by an invented clinical step name (#82). PDF is wired to the real /plans/:id/pdf."
+  },
+  "v9-40": {
+    "content": "Verified by driving a real tooth tap, not by the render alone: the panel opens INLINE below the chart with the plan link, status chips, encrypted notes, history and Save. Selection and active-plan highlighting both survived the restyle; the tooth-map regression guard passes untouched."
+  },
+  "v9-41": {
+    "content": "Bento pair, bill rows with derived descriptions and payment context, and the Collect CTA. Every value comes from authoritative records: BillItem.description and Payment. A bill settled across two methods reads 'Mixed' rather than picking one. Deviations: 'Remind' needs a payment-reminder WhatsApp template that does not exist (#77), and the headline shows OUTSTANDING/PAID rather than three figures (#78)."
   }
 }

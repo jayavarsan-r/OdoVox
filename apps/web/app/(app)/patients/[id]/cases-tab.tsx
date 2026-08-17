@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { FileText } from 'lucide-react';
 import { Chip } from '@/components/ui/badge';
 import { VerticalJourney } from '@/components/ds';
 import { caseJourney } from '@/lib/patients/case-journey';
 import { EmptyState } from '@/components/ds';
 import { useToast } from '@/lib/toast';
-import { usePlans, useCreatePlan, usePlan } from '@/lib/queries';
+import { usePlans, useCreatePlan, usePlan, fetchPlanPdfUrl } from '@/lib/queries';
 import { rupees } from '@/lib/patient-ui';
 import { useLabCases } from '@/lib/lab-queries';
 import { labCaseTypeLabel, labStatusStyle } from '@/lib/lab-ui';
@@ -42,9 +43,28 @@ function ActivePlanJourney({ planId, onOpen }: { planId: string; onOpen: () => v
           <VerticalJourney sittings={caseJourney(proc.sittings, proc.name)} />
         </div>
       ))}
-      <button type="button" onClick={onOpen} className="text-[12.5px] font-heavy text-pine-2">
-        Open case →
-      </button>
+      {/* Frame 38's card actions. PDF is real — /plans/:id/pdf already renders the plan.
+          "Schedule remaining" is NOT here: no endpoint books a plan's outstanding sittings
+          in one action, and a button that silently did nothing would be worse than its
+          absence (recorded as a deviation). */}
+      <div className="flex items-center gap-2.5 pt-1">
+        <Button
+          variant="outline"
+          className="h-10 flex-1 text-[13px]"
+          onClick={async () => {
+            try {
+              window.open(await fetchPlanPdfUrl(planId), '_blank');
+            } catch {
+              /* the toast belongs to the caller's error boundary */
+            }
+          }}
+        >
+          <FileText className="size-4" /> PDF
+        </Button>
+        <button type="button" onClick={onOpen} className="text-[12.5px] font-heavy text-pine-2">
+          Open case →
+        </button>
+      </div>
     </div>
   );
 }

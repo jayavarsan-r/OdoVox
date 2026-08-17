@@ -30,9 +30,9 @@ describe('patient detail — record findings is role-gated', () => {
   });
 
   it('gates the "Continue treatment" recorder button the same way', () => {
-    const btnIdx = page.indexOf('Continue treatment');
-    expect(btnIdx).toBeGreaterThan(-1);
-    const before = page.slice(Math.max(0, btnIdx - 400), btnIdx);
-    expect(before).toMatch(/canRecordFindings \? \(/);
+    // Pair-matched like the CTA above rather than by a fixed character window: frame 37's
+    // active-case card sits between the gate and the button, and a proximity window
+    // reports a missing gate whenever anything is added in between.
+    expect(page).toMatch(/canRecordFindings \? \(\s*<Button[\s\S]{0,300}?Continue treatment/);
   });
 });

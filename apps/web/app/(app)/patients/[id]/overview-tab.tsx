@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, Phone, Pill, CalendarPlus, IndianRupee } from 'lucide-react';
+import { ChevronRight, Mic, Phone, Pill, CalendarPlus, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { IconCircle } from '@/components/ds';
+import { IconCircle, ProgressRing } from '@/components/ds';
+import { Mini } from '@/components/ui/badge';
+import { rupees } from '@/lib/billing/format';
 import { Odontogram, type ToothStatus } from '@/components/odontogram/odontogram';
 import { api } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth';
@@ -14,7 +16,7 @@ import { PatientWhatsAppCard } from '@/components/whatsapp/patient-whatsapp-card
 import { UpcomingAppointments } from './upcoming-appointments';
 import { PrescriptionSheet } from './prescription-sheet';
 import { NewVisitSheet } from './new-visit-sheet';
-import { Section, ProgressBar } from './ui-bits';
+import { Section } from './ui-bits';
 
 export function OverviewTab({ patientId, patientName, patientPhone, records, onOpenTeeth, onOpenBilling }: { patientId: string; patientName: string; patientPhone?: string; records: Record<number, ToothStatus>; onOpenTeeth: () => void; onOpenBilling: () => void }) {
   const toast = useToast();
@@ -82,31 +84,59 @@ export function OverviewTab({ patientId, patientName, patientPhone, records, onO
         </Button>
       </div>
 
-      <Section title="Current treatment">
-        {activePlan ? (
-          <div className="rounded-lg border border-sage/40 bg-sage-tint/40 p-4">
-            <button type="button" onClick={() => router.push(`/patients/${patientId}/plans/${activePlan.id}`)} className="w-full text-left">
-              <p className="text-sm font-semibold text-ink">{activePlan.name}{activePlan.teeth.length ? ` · Tooth ${activePlan.teeth.join(', ')}` : ''}</p>
-              <ProgressBar percent={activePlan.progress.percent} />
-              <p className="mt-1 text-xs text-text-muted">{activePlan.progress.completedSittings} of {activePlan.progress.totalSittings} sittings completed</p>
-            </button>
-            {canRecordFindings ? (
-              <Button variant="ghost" size="sm" className="mt-2 w-full" loading={starting} onClick={() => void startConsultation()}>
-                <Mic className="size-4" /> Continue treatment
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted-foreground">No active treatment yet.</div>
-        )}
-      </Section>
+      {/* Frame 37's active-case card: a progress RING rather than a bar, because it reads
+          as a single glanceable figure ("2/3") beside the case name instead of a length the
+          eye has to measure. Tapping it opens the case; Continue treatment stays doctor-only. */}
+      {activePlan ? (
+        <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+          <button
+            type="button"
+            onClick={() => router.push(`/patients/${patientId}/plans/${activePlan.id}`)}
+            className="flex w-full items-center gap-3.5 text-left"
+          >
+            <ProgressRing
+              value={activePlan.progress.completedSittings}
+              max={activePlan.progress.totalSittings}
+              size={60}
+            />
+            <span className="min-w-0 flex-1">
+              {/* Only append teeth when the plan name does not already carry them —
+                  a plan called "RCT · Tooth 36" was rendering "RCT · Tooth 36 · Tooth 36". */}
+              <span className="block truncate text-[14.5px] font-heavy text-pine">
+                {activePlan.name}
+                {activePlan.teeth.length && !/tooth/i.test(activePlan.name)
+                  ? ` · Tooth ${activePlan.teeth.join(', ')}`
+                  : ''}
+              </span>
+              <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                {activePlan.progress.completedSittings < activePlan.progress.totalSittings ? (
+                  <Mini tone="lav">
+                    Next: sitting {activePlan.progress.completedSittings + 1}
+                  </Mini>
+                ) : null}
+                <Mini tone="neutral">{rupees(activePlan.estimatedCostPaise)}</Mini>
+              </span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-pine-3" aria-hidden />
+          </button>
+          {canRecordFindings ? (
+            <Button variant="outline" className="mt-3 h-11 w-full text-[13px]" loading={starting} onClick={() => void startConsultation()}>
+              <Mic className="size-4" /> Continue treatment
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-white p-4 text-[13px] font-semibold text-pine-3 shadow-elev-1">
+          No active treatment yet.
+        </div>
+      )}
 
       <UpcomingAppointments patientId={patientId} />
 
       <PatientWhatsAppCard patientId={patientId} patientName={patientName} />
 
-      <Section title="Affected teeth" action={<button onClick={onOpenTeeth} className="text-sm text-muted-foreground">Open →</button>}>
-        <div className="rounded-lg border border-border bg-surface p-3">
+      <Section title="Teeth" action={<button onClick={onOpenTeeth} className="text-[12.5px] font-heavy text-pine-2">Map →</button>}>
+        <div className="rounded-2xl bg-white p-3 shadow-elev-1">
           <Odontogram records={records} compact activePlanTeeth={[...new Set((plans.data ?? []).filter((p) => p.status === 'ACTIVE').flatMap((p) => p.teeth))]} onToothTap={onOpenTeeth} />
         </div>
       </Section>

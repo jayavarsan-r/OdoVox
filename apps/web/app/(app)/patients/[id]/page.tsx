@@ -101,12 +101,14 @@ export default function PatientDetailPage() {
   const p = patient.data;
   const flags = flagChips(p.medicalFlags);
 
-  // Sittings across every ACTIVE plan — the frame's "2/3". Plans are already fetched for
-  // the tabs, so this costs no extra request.
+  // The frame's "2/3" — the PRIMARY active plan's progress, the same case the Overview
+  // card shows. Summing across every active plan produced a headline of 1/4 sitting above
+  // a card reading 1/3, which looks like one of them is wrong.
   const activePlans = (plans.data ?? []).filter((pl) => pl.status === 'ACTIVE');
-  const sittingsDone = activePlans.reduce((n, pl) => n + pl.progress.completedSittings, 0);
-  const sittingsTotal = activePlans.reduce((n, pl) => n + pl.progress.totalSittings, 0);
-  const sittingsLabel = sittingsTotal > 0 ? `${sittingsDone}/${sittingsTotal}` : '—';
+  const primaryPlan = activePlans[0];
+  const sittingsLabel = primaryPlan
+    ? `${primaryPlan.progress.completedSittings}/${primaryPlan.progress.totalSittings}`
+    : '—';
 
   // "8 Jul". A patient who has never been seen shows a dash, not today's date.
   const lastVisitLabel = p.lastVisitAt
