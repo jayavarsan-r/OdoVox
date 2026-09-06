@@ -390,14 +390,14 @@
     "canvas geometry": "PASS"
   },
   "v9-39": {
-    "layout": "UNREVIEWED",
-    "typography": "UNREVIEWED",
-    "colors": "UNREVIEWED",
-    "component anatomy": "UNREVIEWED",
-    "content": "UNREVIEWED",
-    "interaction/state": "UNREVIEWED",
-    "functionality": "UNREVIEWED",
-    "canvas geometry": "UNREVIEWED"
+    "layout": "PASS",
+    "typography": "PASS",
+    "colors": "PASS",
+    "component anatomy": "PASS",
+    "content": "PASS",
+    "interaction/state": "PASS",
+    "functionality": "PASS",
+    "canvas geometry": "PASS"
   },
   "v9-40": {
     "layout": "PASS",

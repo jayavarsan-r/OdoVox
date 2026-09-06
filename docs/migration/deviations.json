@@ -955,14 +955,14 @@
     },
     {
       "id": 81,
-      "class": "NOT-BUILT",
+      "class": "MUST-FIX",
       "frames": [
         "v9-38"
       ],
       "status": "open",
-      "summary": "Frame 38's \"Schedule remaining\" has no endpoint to book a plan's outstanding sittings",
-      "reason": "The journey card pairs PDF with 'Schedule remaining'. PDF is real and now wired \u2014 /plans/:id/pdf already renders the plan. Nothing books a plan's remaining sittings in one action: appointments are created individually, and a bulk scheduler needs slot selection, doctor availability and a conflict story. A button that silently did nothing would be worse than its absence.",
-      "openQuestion": "Build bulk sitting scheduling? It is a scheduling feature with its own design, not a button \u2014 recommend it be scoped with the Schedule work rather than folded into a patient tab."
+      "summary": "Frame 38's \"Schedule remaining\" \u2014 the capability EXISTS; the Cases card does not reach it",
+      "reason": "CORRECTION. This was recorded as NOT-BUILT on the claim that nothing books a plan's outstanding sittings in one action. That claim was wrong, and I did not check hard enough before writing it: POST /appointments/recurring exists, useCreateRecurring() calls it, and the case-detail page already renders a full 'Schedule remaining sittings' control \u2014 interval choice (weekly / fortnightly / monthly), a dated preview of every sitting it will create, and a SERIES_UNSCHEDULED error path for slots it cannot place.\n\nSo the real gap is navigational, not functional: frame 38's card has no route to a control that is one screen away. Task 23 builds that case-detail screen to the frame and performs its link audit, which is the right place to close this.",
+      "openQuestion": null
     },
     {
       "id": 82,
@@ -974,6 +974,39 @@
       "summary": "Journey steps are titled by procedure; v9 titles them by clinical step name",
       "reason": "Frame 38 reads 'Sitting 1 \u00b7 Access opening', 'Sitting 2 \u00b7 Cleaning & shaping' \u2014 the clinical step each sitting performs. A Sitting has a number and encrypted notes; it has no step-name field, and inventing one per sitting number would be the app asserting a clinical protocol it has no source for (RCT step 2 is not universally 'cleaning & shaping'). Steps are titled by the procedure instead, and the doctor's own note carries the detail where it exists \u2014 '28 Jun \u00b7 extirpation, dressing', which is the same information from an authoritative source.",
       "ruling": "Self-resolved: naming clinical steps from a number would be inventing clinical truth."
+    },
+    {
+      "id": 83,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "open",
+      "summary": "Sitting rows show no per-sitting fee \u2014 Sitting has no cost field",
+      "reason": "Frame 39's sitting rows read '28 Jun \u00b7 \u20b92,500' \u2014 what that individual visit cost. A Sitting carries a number, a visit link, encrypted notes and a completion time; it has no money on it, and bills attach to visits and procedures rather than to sittings. Splitting a procedure's bill evenly across its sittings would invent a per-visit price nobody charged. The row shows its date; the money lives on the FEES tile as a plan total, which IS derived from real bill items.",
+      "openQuestion": "Should a sitting carry its own charge? It would need a product decision about whether clinics price per sitting or per procedure \u2014 they do both \u2014 before any schema change."
+    },
+    {
+      "id": 84,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "fixed",
+      "summary": "The case screen was titled \"Treatment Plan\" rather than naming the case",
+      "reason": "Every other surface refers to this case as 'RCT \u00b7 Tooth 36'. Landing on a screen headed 'Treatment Plan' makes a doctor check they opened the right one. The header now carries the case's own name, with the sitting chip beside it.",
+      "fixedIn": "caseTitle() builds it from the plan name plus its teeth, appending the tooth only when the name does not already carry it \u2014 the same duplication that produced 'RCT \u00b7 Tooth 36 \u00b7 Tooth 36' on the Overview card."
+    },
+    {
+      "id": 85,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "approved",
+      "summary": "FEES and NEXT read empty in the capture because the fixture has no billed or booked work",
+      "reason": "FEES shows \u20b90 / 9,000 because no bill item in the seed points at this plan's procedure \u2014 the derivation is correct and tested (7 tests), there is simply nothing paid to report. NEXT reads 'Not booked' for the pinned-clock reason already recorded as #66: the harness freezes the browser at 2026-07-13 while the server runs on real time, so an appointment seeded onto that date is in the past as far as the API is concerned. Both are fixture conditions, not defects.",
+      "ruling": "Self-resolved as a test-fixture matter, consistent with #66."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

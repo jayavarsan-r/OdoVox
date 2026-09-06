@@ -152,6 +152,8 @@ export interface PlanDetail {
   description: string | null;
   status: string;
   estimatedCostPaise: number;
+  /** Actually paid against this plan, derived from its own bill items (frame 39). */
+  paidPaise: number;
   createdAt: string;
   completedAt: string | null;
   cancelledAt: string | null;

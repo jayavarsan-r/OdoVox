@@ -1071,6 +1071,38 @@ async function main() {
     ],
   });
 
+  // Tie the demo day to the plan so frame 39's NEXT tile and the Cases journey have a
+  // booked sitting to point at. The appointments are created above without a plan, because
+  // the plan does not exist yet at that point; this links the one that is genuinely this
+  // plan's next sitting.
+  const nextRctAppt = await prisma.appointment.findFirst({
+    where: { clinicId: clinic.id, patientId: akhilesh.id, status: 'SCHEDULED' },
+    orderBy: { startsAt: 'asc' },
+  });
+  if (nextRctAppt) {
+    await prisma.appointment.update({
+      where: { id: nextRctAppt.id },
+      data: { treatmentPlanId: rctPlan.id, sittingNumber: 2, procedureHint: 'obturation · final' },
+    });
+  }
+
+  // And a lab case raised from this plan, so frame 39's "Linked" section has both halves.
+  await prisma.labCase.deleteMany({ where: { treatmentPlanId: rctPlan.id } });
+  await prisma.labCase.create({
+    data: {
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      doctorId: doctor.id,
+      caseNumber: 'LB-112',
+      type: 'CROWN',
+      teeth: [36],
+      material: 'Zirconia',
+      status: 'SENT',
+      treatmentPlanId: rctPlan.id,
+      createdById: doctor.id,
+    },
+  });
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);

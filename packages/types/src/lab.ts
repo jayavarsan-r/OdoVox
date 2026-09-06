@@ -213,6 +213,12 @@ export const LabCaseSummary = z.object({
   status: LabCaseStatus,
   expectedReturnAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
+  /**
+   * The plan this case belongs to, when it was raised from one. On the SUMMARY (not just
+   * the detail) so a case-detail screen can find its own lab work from the patient's list
+   * without fetching every case individually.
+   */
+  treatmentPlanId: z.string().nullable(),
 });
 export type LabCaseSummary = z.infer<typeof LabCaseSummary>;
 

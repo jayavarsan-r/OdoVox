@@ -80,5 +80,8 @@
   },
   "v9-41": {
     "content": "Bento pair, bill rows with derived descriptions and payment context, and the Collect CTA. Every value comes from authoritative records: BillItem.description and Payment. A bill settled across two methods reads 'Mixed' rather than picking one. Deviations: 'Remind' needs a payment-reminder WhatsApp template that does not exist (#77), and the headline shows OUTSTANDING/PAID rather than three figures (#78)."
+  },
+  "v9-39": {
+    "content": "Reviewed against the side-by-side at 5.6 percent. Header, patient row, FEES/NEXT bento, sittings and Linked all match. The allergy chip renders because this is a doctor session \u2014 reception's payload carries no flags (B1). Deviations: no per-sitting fee (#83 \u2014 Sitting has no cost field), and empty FEES/NEXT values from the fixture (#85, same pinned-clock cause as #66). 'Schedule remaining sittings' is present and real \u2014 the control #81 wrongly reported as missing."
   }
 }

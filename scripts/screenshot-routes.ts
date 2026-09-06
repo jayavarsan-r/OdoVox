@@ -569,6 +569,25 @@ export const SHOTS: Shot[] = [
     },
   },
   {
+    /**
+     * Frame 39 — case detail. Reached the way a doctor reaches it: open the patient, go to
+     * Cases, and tap into the active plan. That also exercises the link the frame exists to
+     * make work — every "RCT 36" reference in the app is supposed to land here.
+     */
+    slug: "E11-case-detail",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-39",
+    prepare: async (page) => {
+      await openFirstRow(/\/patients\/[^/]+$/)(page);
+      await patientTab("Cases")(page);
+      await page.getByRole("button", { name: /open case/i }).first().click();
+      await page.waitForURL(/\/plans\/[^/]+$/, { timeout: 15_000 });
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(400);
+    },
+  },
+  {
     slug: "E10-patient-billing",
     path: "/patients",
     role: "doctor",

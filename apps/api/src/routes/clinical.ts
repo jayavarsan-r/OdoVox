@@ -10,6 +10,7 @@ import { z } from 'zod';
 import type { Patient, Prisma } from '@odovox/db';
 import { AppError, ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { isClinicalRole } from '../lib/clinical-role.js';
+import { planPaidPaise } from '../lib/billing/plan-paid.js';
 import { ok, parse } from '../lib/http.js';
 import { decryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
@@ -148,8 +149,24 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     ]);
 
     const { patient: _patient, procedures, ...rest } = plan;
+
+    // Frame 39's FEES tile: "₹5,500 / 8,000" — what has actually been paid against THIS
+    // plan, over its estimate. Derived, not stored: BillItem rows carry sourceType
+    // 'procedure' and sourceId pointing at a Procedure, and a Procedure belongs to a plan.
+    // Only money on a bill that has actually been paid counts, so the tile can never claim
+    // a draft bill as revenue.
+    const procedureIds = procedures.map((p) => p.id);
+    const planItems = procedureIds.length
+      ? await prisma.billItem.findMany({
+          where: { sourceType: 'procedure', sourceId: { in: procedureIds } },
+          select: { subtotalPaise: true, bill: { select: { totalPaise: true, paidPaise: true } } },
+        })
+      : [];
+    const paidPaise = planPaidPaise(planItems);
+
     return ok({
       ...rest,
+      paidPaise,
       progress: planProgress(procedures),
       procedures: procedures.map((p) => ({
         id: p.id,
