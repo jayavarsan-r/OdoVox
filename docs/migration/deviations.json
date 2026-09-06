@@ -1008,6 +1008,50 @@
       "summary": "FEES and NEXT read empty in the capture because the fixture has no billed or booked work",
       "reason": "FEES shows \u20b90 / 9,000 because no bill item in the seed points at this plan's procedure \u2014 the derivation is correct and tested (7 tests), there is simply nothing paid to report. NEXT reads 'Not booked' for the pinned-clock reason already recorded as #66: the harness freezes the browser at 2026-07-13 while the server runs on real time, so an appointment seeded onto that date is in the past as far as the API is concerned. Both are fixture conditions, not defects.",
       "ruling": "Self-resolved as a test-fixture matter, consistent with #66."
+    },
+    {
+      "id": 86,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-42"
+      ],
+      "status": "approved",
+      "summary": "History is a route reached from the overflow menu, not a sixth tab",
+      "reason": "The plan allows either, provided no existing tab is removed, and none is. Five tabs already crowd a 370px row \u2014 the labels had to lose their padding when 'Overview' truncated \u2014 so a sixth would truncate them again. History lives at /patients/[id]/history, reached from the record's overflow menu.",
+      "ruling": "Self-resolved: the plan delegates the choice explicitly."
+    },
+    {
+      "id": 87,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-42"
+      ],
+      "status": "open",
+      "summary": "A recorded allergy has no date \u2014 frame 42 shows one ('2019')",
+      "reason": "Frame 42 dates the permanent medical fact: 'Penicillin allergy recorded \u2014 2019'. The patient record stores allergies as encrypted free text with no timestamp and no author, so there is no year to show. The entry carries a null date and is pinned under 'ON RECORD' at the end of the timeline rather than being given a fabricated one \u2014 a wrong date on a clinical fact is worse than no date, because it invites reasoning about when the patient developed it.",
+      "openQuestion": "Should allergies become dated, authored records rather than a free-text column? That is a clinical data-model decision \u2014 it would let the timeline show when and by whom \u2014 and it needs your ruling before any schema change."
+    },
+    {
+      "id": 88,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-42"
+      ],
+      "status": "fixed",
+      "summary": "The seed recorded the same allergy in one place and not the other",
+      "reason": "Akhilesh carried medicalFlags ['PENICILLIN_ALLERGY'] but no allergiesEnc. The in-chair card reads flags and the history reads the encrypted field, so the demo asserted the patient was allergic on one screen and silent about it on another. Both now carry it.",
+      "fixedIn": "packages/db/prisma/seed.ts sets medicalFlags and allergiesEnc together."
+    },
+    {
+      "id": 89,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "fixed",
+      "summary": "Re-running the seed failed on the lab case's unique caseNumber",
+      "reason": "The new lab-case fixture cleaned up by treatmentPlanId, but the plan is recreated with a fresh id on every run, so the delete never matched the previous run's case and the second seed died on (clinicId, caseNumber). `pnpm db:seed` is the documented way back to a known demo; it has to survive being run twice.",
+      "fixedIn": "Deletes by caseNumber. Verified by running the seed twice in a row."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

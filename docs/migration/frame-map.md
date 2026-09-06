@@ -7,8 +7,8 @@ bucket: "unmapped" reads as "optional", and these are real product states.
 
 | Accounting | Meaning | Count |
 | --- | --- | --- |
-| MAPPED | a shot renders it; Gate B can judge it | 45 |
-| PLANNED | a plan task owns it; nothing captures it yet | 37 |
+| MAPPED | a shot renders it; Gate B can judge it | 46 |
+| PLANNED | a plan task owns it; nothing captures it yet | 36 |
 | CROSS-CUTTING | a contract validated by tests, not one screenshot | 3 |
 | OUT-OF-SCOPE | explicitly ruled out by the owner | 1 |
 | **UNASSIGNED** | **no shot and no task — a hole in the plan** | **0** |
@@ -56,7 +56,7 @@ bucket: "unmapped" reads as "optional", and these are real product states.
 | `v9-39` | Case — procedure detail | v9-master | 23 | `/patients` | doctor | MAPPED |
 | `v9-40` | Tooth map — FDI odontogram | v9-master | 22 | `/patients` | doctor | MAPPED |
 | `v9-41` | Patient — Billing tab | v9-master | 22 | `/patients` | doctor | MAPPED |
-| `v9-42` | Patient history — Odo timeline | v9-master | 23 | — | — | PLANNED |
+| `v9-42` | Patient history — Odo timeline | v9-master | 23 | `/patients` | doctor | MAPPED |
 | `v9-43` | Visit record — read-only sheet | v9-master | 23 | — | — | PLANNED |
 | `v9-44` | Prescription sheet — dose dots | v9-master | 24 | — | — | PLANNED |
 | `v9-45` | Prescription — conflict caught | v9-master | 24 | — | — | PLANNED |

@@ -83,5 +83,8 @@
   },
   "v9-39": {
     "content": "Reviewed against the side-by-side at 5.6 percent. Header, patient row, FEES/NEXT bento, sittings and Linked all match. The allergy chip renders because this is a doctor session \u2014 reception's payload carries no flags (B1). Deviations: no per-sitting fee (#83 \u2014 Sitting has no cost field), and empty FEES/NEXT values from the fixture (#85, same pinned-clock cause as #66). 'Schedule remaining sittings' is present and real \u2014 the control #81 wrongly reported as missing."
+  },
+  "v9-42": {
+    "content": "Reviewed against the side-by-side at 2.9 percent. Month grouping, visit cards with tooth, fee, doctor and a confirmed tick, and the permanent medical fact in the verification rail's red all match. The fact is assembled ONLY for clinical roles \u2014 an API test asserts reception's payload contains no medical entry and the plaintext appears nowhere in it (B1/B4). Deviations: a route rather than a sixth tab (recorded), and the fact carries no date because the record stores none."
   }
 }

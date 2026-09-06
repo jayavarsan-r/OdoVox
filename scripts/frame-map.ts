@@ -72,6 +72,7 @@ const FRAME_TO_SHOT: Record<string, string> = {
   "v9-39": "E11-case-detail",
   "v9-40": "E8-patient-teeth",
   "v9-41": "E10-patient-billing",
+  "v9-42": "E12-patient-history",
   "v9-46": "G1-schedule-day",
   "v9-47": "G2-schedule-multi",
   "v9-50": "H1-today",

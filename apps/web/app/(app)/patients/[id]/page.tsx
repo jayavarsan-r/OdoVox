@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { AlertTriangle, ChevronLeft, MoreHorizontal, Trash2, UserX } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, History, MoreHorizontal, Trash2, UserX } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -154,6 +154,18 @@ export default function PatientDetailPage() {
 
       {menuOpen ? (
         <div className="mx-gutter mt-2 overflow-hidden rounded-2xl bg-white shadow-elev-1">
+          {/* History is a route, not a sixth tab — five already crowd a 370px row. It
+              lives in the overflow menu so it is reachable without costing a tab. */}
+          <button
+            type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              router.push(`/patients/${id}/history`);
+            }}
+            className="flex w-full items-center gap-2 border-b border-hair px-4 py-3 text-left text-[13.5px] font-heavy text-pine"
+          >
+            <History className="size-4" /> Full history
+          </button>
           <button
             type="button"
             onClick={() => {

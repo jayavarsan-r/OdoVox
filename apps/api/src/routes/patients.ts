@@ -7,9 +7,10 @@ import {
   type ToothHistoryEntry,
 } from '@odovox/types';
 import type { Prisma } from '@odovox/db';
+import type { HistoryEntry } from '@odovox/types';
 import { NotFoundError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
-import { encryptField } from '../lib/encryption.js';
+import { encryptField, decryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
 import { createWithUniquePatientCode } from '../lib/patient-code.js';
 import { toPatientListItem, toPatientResponse } from '../lib/serialize.js';
@@ -220,6 +221,83 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // ---- billing rollup -------------------------------------------------------
+  /**
+   * Frame 42 — the patient's timeline.
+   *
+   * Assembled from records that already exist rather than a new table: visits carry the
+   * date and doctor, their consultation says whether a clinical record was actually
+   * confirmed, bills carry what was charged, and prescriptions count against the visit.
+   *
+   * The clinical boundary applies here too (rulings B1/B4). A recorded allergy is a
+   * medical fact, so it is only assembled for clinical roles — a receptionist gets the
+   * operational timeline, which is what they book and bill from, and no medical facts.
+   */
+  fastify.get('/patients/:id/history', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });
+    if (!patient) throw new NotFoundError('Patient not found');
+
+    const visits = await prisma.visit.findMany({
+      where: { patientId: id, deletedAt: null, status: { in: ['COMPLETED', 'CHECKOUT'] } },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+      take: 100,
+      include: {
+        doctor: { select: { name: true } },
+        consultation: { select: { status: true, structuredData: true } },
+        bills: { select: { totalPaise: true } },
+        prescriptions: { select: { id: true } },
+      },
+    });
+
+    const entries: HistoryEntry[] = visits.map((v): HistoryEntry => {
+      const data = (v.consultation?.structuredData ?? {}) as {
+        procedure?: string | null;
+        teeth?: number[];
+        sittingCurrent?: number | null;
+      };
+      const sitting = data.sittingCurrent != null ? ` · Sitting ${data.sittingCurrent}` : '';
+      return {
+        id: v.id,
+        kind: 'visit' as const,
+        at: v.startedAt ?? v.completedAt ?? v.createdAt,
+        title: `${data.procedure ?? v.chiefComplaint ?? 'Visit'}${sitting}`,
+        teeth: Array.isArray(data.teeth) ? data.teeth : [],
+        feePaise: v.bills.length ? v.bills.reduce((n, b) => n + b.totalPaise, 0) : null,
+        doctorName: v.doctor?.name ?? null,
+        confirmed: v.consultation?.status === 'CONFIRMED',
+        prescriptionCount: v.prescriptions.length,
+        detail: null,
+      };
+    });
+
+    // The permanent facts. Only for roles entitled to clinical detail — this is the same
+    // allergy information withheld from reception everywhere else, and a timeline is not a
+    // loophole in that boundary.
+    if (isClinicalRole(req.role)) {
+      // Decrypt only here, inside the clinical-role branch — reception's request never
+      // reaches this line, so the plaintext is never even materialised for them.
+      const allergies = patient.allergiesEnc ? decryptField(patient.allergiesEnc) : null;
+      if (allergies && allergies.trim() && !/^none/i.test(allergies.trim())) {
+        entries.push({
+          id: `fact-allergy-${patient.id}`,
+          kind: 'fact' as const,
+          // No recorded date exists for an allergy — the column is free text with no
+          // timestamp — so it is null rather than a guessed year (see deviations).
+          at: null,
+          title: `${allergies.trim()} allergy recorded`,
+          teeth: [],
+          feePaise: null,
+          doctorName: null,
+          confirmed: false,
+          prescriptionCount: 0,
+          detail: 'applies to every Rx',
+        });
+      }
+    }
+
+    return ok({ entries });
+  });
+
   fastify.get('/patients/:id/billing', anyRole, async (req) => {
     const { id } = req.params as { id: string };
     const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });

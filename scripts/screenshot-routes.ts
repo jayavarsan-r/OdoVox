@@ -588,6 +588,24 @@ export const SHOTS: Shot[] = [
     },
   },
   {
+    /**
+     * Frame 42 — the patient's history. Reached from the patient record's overflow menu,
+     * which is the only way in, so the shot also proves that route exists.
+     */
+    slug: "E12-patient-history",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-42",
+    prepare: async (page) => {
+      await openFirstRow(/\/patients\/[^/]+$/)(page);
+      await page.getByRole("button", { name: /more actions/i }).first().click();
+      await page.getByRole("button", { name: /full history/i }).click();
+      await page.waitForURL(/\/history$/, { timeout: 15_000 });
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(400);
+    },
+  },
+  {
     slug: "E10-patient-billing",
     path: "/patients",
     role: "doctor",

@@ -16,3 +16,4 @@ export * from './media.js';
 export * from './home.js';
 export * from './extraction.js';
 export * from './whatsapp.js';
+export * from './history.js';

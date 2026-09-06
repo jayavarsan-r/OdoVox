@@ -9,10 +9,10 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 25 |
+| APPROVED-DEVIATION | 26 |
 | OUT-OF-SCOPE | 1 |
 | MISMATCHED | 19 |
-| NOT-BUILT | 37 |
+| NOT-BUILT | 36 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
@@ -85,7 +85,7 @@ _None. Every task closed its own decisions._
 | `v9-39` | Case — procedure detail | 23 | APPROVED-DEVIATION | 5.6% | NOT-BUILT #83: Sitting rows show no per-sitting fee — Sitting has no cost field |
 | `v9-40` | Tooth map — FDI odontogram | 22 | APPROVED-DEVIATION | 13.6% | — |
 | `v9-41` | Patient — Billing tab | 22 | APPROVED-DEVIATION | 11.7% | NOT-BUILT #77: Frame 41's "Remind" needs a payment-reminder WhatsApp template that does not exist |
-| `v9-42` | Patient history — Odo timeline | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
+| `v9-42` | Patient history — Odo timeline | 23 | APPROVED-DEVIATION | 2.9% | NOT-BUILT #87: A recorded allergy has no date — frame 42 shows one ('2019') |
 | `v9-43` | Visit record — read-only sheet | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-44` | Prescription sheet — dose dots | 24 | NOT-BUILT | — | Task 24 owns this; no route or state driver reaches it yet |
 | `v9-45` | Prescription — conflict caught | 24 | NOT-BUILT | — | Task 24 owns this; no route or state driver reaches it yet |
@@ -630,6 +630,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.6%
 - `NOT-BUILT` #83 (open): Sitting rows show no per-sitting fee — Sitting has no cost field
 - `MUST-FIX` #84 (fixed): The case screen was titled "Treatment Plan" rather than naming the case
 - `APPROVED-DEVIATION` #85 (approved): FEES and NEXT read empty in the capture because the fixture has no billed or booked work
+- `MUST-FIX` #89 (fixed): Re-running the seed failed on the lab case's unique caseNumber
 
 ### `v9-40` — Tooth map — FDI odontogram · APPROVED-DEVIATION
 
@@ -675,6 +676,26 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.7%
 - `APPROVED-DEVIATION` #78 (approved): The billing headline drops gross 'Billed' for the frame's OUTSTANDING / PAID pair
 - `MUST-FIX` #79 (fixed): The billing tab fetched bills twice, from two different endpoints
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
+
+### `v9-42` — Patient history — Odo timeline · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 2.9%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS** — Reviewed against the side-by-side at 2.9 percent. Month grouping, visit cards with tooth, fee, doctor and a confirmed tick, and the permanent medical fact in the verification rail's red all match. The fact is assembled ONLY for clinical roles — an API test asserts reception's payload contains no medical entry and the plaintext appears nowhere in it (B1/B4). Deviations: a route rather than a sixth tab (recorded), and the fact carries no date because the record stores none.
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #86 (approved): History is a route reached from the overflow menu, not a sixth tab
+- `NOT-BUILT` #87 (open): A recorded allergy has no date — frame 42 shows one ('2019')
+- `MUST-FIX` #88 (fixed): The seed recorded the same allergy in one place and not the other
 
 ### `v9-46` — Schedule — doctor day · MISMATCHED
 

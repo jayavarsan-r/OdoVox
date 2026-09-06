@@ -363,7 +363,13 @@ async function main() {
     // The in-chair demo patient carries an allergy, because frame 21's whole clinical
     // point is the indicator on the card of the person about to be prescribed for. With
     // an empty flag list the safety affordance is invisible in every demo and capture.
-    update: { medicalFlags: ['PENICILLIN_ALLERGY'] },
+    // Both halves of the same clinical fact: the FLAG drives the in-chair card's chip,
+    // the encrypted ALLERGIES field drives the history's permanent red node. Seeding only
+    // one left the demo saying a patient was allergic on one screen and not on another.
+    update: {
+      medicalFlags: ['PENICILLIN_ALLERGY'],
+      allergiesEnc: encryptField('Penicillin'),
+    },
     create: {
       clinicId: clinic.id,
       patientCode: 'PT-0004',
@@ -374,6 +380,7 @@ async function main() {
       bloodGroup: 'O+',
       addressEnc: encryptField('Jayanagar, Bengaluru'),
       medicalFlags: ['PENICILLIN_ALLERGY'],
+      allergiesEnc: encryptField('Penicillin'),
       chiefComplaint: 'Ongoing root canal, upper left',
       status: 'ACTIVE',
       createdById: doctor.id,
@@ -1087,7 +1094,10 @@ async function main() {
   }
 
   // And a lab case raised from this plan, so frame 39's "Linked" section has both halves.
-  await prisma.labCase.deleteMany({ where: { treatmentPlanId: rctPlan.id } });
+  // Delete by caseNumber, not by plan: the plan is recreated with a fresh id on every
+  // run, so a plan-scoped delete never matched the previous run's case and the unique
+  // (clinicId, caseNumber) constraint failed the whole seed on the second run.
+  await prisma.labCase.deleteMany({ where: { clinicId: clinic.id, caseNumber: 'LB-112' } });
   await prisma.labCase.create({
     data: {
       clinicId: clinic.id,

@@ -339,7 +339,7 @@
     "frame": "v9-38",
     "name": "Patient — Cases journey",
     "status": "APPROVED-DEVIATION",
-    "changedPct": 13.48016848016848,
+    "changedPct": 13.499122499122498,
     "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
@@ -374,9 +374,9 @@
   {
     "frame": "v9-42",
     "name": "Patient history — Odo timeline",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 2.8641628641628643,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
