@@ -347,9 +347,9 @@
   {
     "frame": "v9-39",
     "name": "Case — procedure detail",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 5.648648648648648,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

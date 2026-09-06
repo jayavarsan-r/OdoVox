@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 24 |
+| APPROVED-DEVIATION | 25 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 20 |
+| MISMATCHED | 19 |
 | NOT-BUILT | 37 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -32,7 +32,7 @@ gradually reinterpreting its own design.
 
 ### Open MUST-FIX — work, not questions
 
-- **#81** v9-38 — Frame 38's "Schedule remaining" — the capability EXISTS; the Cases card does not reach it
+_None. Every MUST-FIX item is closed._
 
 ### Awaiting your ruling — untouched by design
 
@@ -81,7 +81,7 @@ _None. Every task closed its own decisions._
 | `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
 | `v9-36` | New patient — voice intake | 20 | MISMATCHED | 14.1% | criterion "layout" unreviewed |
 | `v9-37` | Patient — Overview | 22 | APPROVED-DEVIATION | 13.6% | — |
-| `v9-38` | Patient — Cases journey | 22 | MISMATCHED | 13.5% | MUST-FIX #81: Frame 38's "Schedule remaining" — the capability EXISTS; the Cases card does not reach it |
+| `v9-38` | Patient — Cases journey | 22 | APPROVED-DEVIATION | 13.5% | — |
 | `v9-39` | Case — procedure detail | 23 | APPROVED-DEVIATION | 5.6% | NOT-BUILT #83: Sitting rows show no per-sitting fee — Sitting has no cost field |
 | `v9-40` | Tooth map — FDI odontogram | 22 | APPROVED-DEVIATION | 13.6% | — |
 | `v9-41` | Patient — Billing tab | 22 | APPROVED-DEVIATION | 11.7% | NOT-BUILT #77: Frame 41's "Remind" needs a payment-reminder WhatsApp template that does not exist |
@@ -588,7 +588,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 13.6%
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
 
-### `v9-38` — Patient — Cases journey · MISMATCHED
+### `v9-38` — Patient — Cases journey · APPROVED-DEVIATION
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 13.5%
 
@@ -608,7 +608,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 13.5%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
-- `MUST-FIX` #81 (open): Frame 38's "Schedule remaining" — the capability EXISTS; the Cases card does not reach it
+- `MUST-FIX` #81 (fixed): Frame 38's "Schedule remaining" — the capability EXISTS; the Cases card does not reach it
 - `APPROVED-DEVIATION` #82 (approved): Journey steps are titled by procedure; v9 titles them by clinical step name
 
 ### `v9-39` — Case — procedure detail · APPROVED-DEVIATION

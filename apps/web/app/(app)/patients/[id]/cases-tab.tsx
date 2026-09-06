@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
-import { FileText } from 'lucide-react';
+import { ChevronRight, FileText } from 'lucide-react';
 import { Chip } from '@/components/ui/badge';
 import { VerticalJourney } from '@/components/ds';
 import { caseJourney } from '@/lib/patients/case-journey';
+import { caseTitle } from '@/lib/patients/case-title';
 import { EmptyState } from '@/components/ds';
 import { useToast } from '@/lib/toast';
 import { usePlans, useCreatePlan, usePlan, fetchPlanPdfUrl } from '@/lib/queries';
@@ -133,14 +134,25 @@ export function CasesTab({ patientId }: { patientId: string }) {
                   <p className="text-[9.5px] font-heavy uppercase tracking-eyebrow text-pine-3">
                     Active treatment
                   </p>
-                  <p className="text-[15px] font-heavy text-pine">
-                    {activePlans[0]!.name}
-                    <span className="ml-2 align-middle">
-                      <Chip tone={activePlans[0]!.status === 'DRAFT' ? 'neutral' : 'live'}>
-                        {activePlans[0]!.status === 'DRAFT' ? 'Not started' : 'Active'}
-                      </Chip>
+                  {/* The case name navigates to case detail, like every other place the
+                      app renders one (Global Constraint 10). It was the one render site
+                      that did not — which is what made "Schedule remaining" look missing
+                      (#81): the control is on that screen, and this heading is how you
+                      reach it from here. Named with caseTitle() so the words match the
+                      screen it opens. */}
+                  <button
+                    type="button"
+                    onClick={() => goTo(activePlans[0]!.id)}
+                    className="flex w-full items-center gap-2 text-left"
+                  >
+                    <span className="min-w-0 truncate text-[15px] font-heavy text-pine">
+                      {caseTitle(activePlans[0]!.name, undefined, activePlans[0]!.teeth)}
                     </span>
-                  </p>
+                    <Chip tone={activePlans[0]!.status === 'DRAFT' ? 'neutral' : 'live'}>
+                      {activePlans[0]!.status === 'DRAFT' ? 'Not started' : 'Active'}
+                    </Chip>
+                    <ChevronRight className="size-4 shrink-0 text-pine-3" aria-hidden />
+                  </button>
                   <ActivePlanJourney planId={activePlans[0]!.id} onOpen={() => goTo(activePlans[0]!.id)} />
                   {activePlans.slice(1).map((pl) => (
                     <button key={pl.id} type="button" onClick={() => goTo(pl.id)} className="w-full rounded-2xl bg-white p-4 text-left shadow-elev-1 active:scale-[0.99]">
