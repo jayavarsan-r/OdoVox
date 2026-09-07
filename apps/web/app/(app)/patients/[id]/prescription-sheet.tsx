@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Pill, Plus, FileText, Star, X } from 'lucide-react';
+import { Pill, Plus, FileText, Star, X, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Chip } from '@/components/ui/badge';
+import { DoseDots } from '@/components/ds';
+import { warningLabel, warningsFor } from '@/lib/patients/rx-conflicts';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { VoiceInput } from '@/components/voice/voice-input';
 import { useToast } from '@/lib/toast';
-import { useCreatePrescription, fetchPrescriptionPdfUrl, useTemplates, useApplyTemplate, useCreateTemplate } from '@/lib/queries';
+import { useCreatePrescription, fetchPrescriptionPdfUrl, useTemplates, useApplyTemplate, useCreateTemplate, usePatient } from '@/lib/queries';
 import { cn } from '@/lib/utils';
 
 const FREQ = ['OD', 'BD', 'TID', 'QID', 'SOS'];
@@ -35,6 +38,10 @@ export function PrescriptionSheet({ patientId, open, onClose }: { patientId: str
   const [meds, setMeds] = useState<Med[]>([]);
   const [instructions, setInstructions] = useState('');
   const [savedId, setSavedId] = useState<string | null>(null);
+  // The safety layer's own warnings, kept so each medcard can show the flag on the drug it
+  // concerns rather than only in a toast that scrolls away.
+  const [safetyWarnings, setSafetyWarnings] = useState<string[]>([]);
+  const patient = usePatient(patientId);
 
   // Phase 5: template picker. `applied` is the template currently populating the sheet (null = none).
   const [templateSearch, setTemplateSearch] = useState('');
@@ -107,6 +114,7 @@ export function PrescriptionSheet({ patientId, open, onClose }: { patientId: str
       })),
     );
     setApplied(templateUsed);
+    setSafetyWarnings(safetyWarnings);
     if (safetyWarnings.length) toast.info(`Safety: ${safetyWarnings.join(', ')} — verify before saving.`);
     else if (templateUsed) toast.info(`Applied “${templateUsed.name}” from your voice — review and edit.`);
     else toast.info('Filled from your voice — review and edit.');
@@ -188,26 +196,117 @@ export function PrescriptionSheet({ patientId, open, onClose }: { patientId: str
 
           <div className="flex flex-wrap gap-2">
             {MED_SUGGESTIONS.map((m) => (
-              <button key={m} type="button" onClick={() => addMed(m)} className="rounded-pill border border-border px-3 py-1 text-xs">{m}</button>
+              <button key={m} type="button" onClick={() => addMed(m)}>
+                <Chip tone="neutral">{m}</Chip>
+              </button>
             ))}
           </div>
-          {meds.map((med, i) => (
-            <div key={i} className="space-y-2 rounded-lg border border-border p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{med.name}</p>
-                <button onClick={() => setMeds((ms) => ms.filter((_, j) => j !== i))} className="text-danger" aria-label="Remove">−</button>
-              </div>
-              <div className="flex gap-2">
-                <Input className="flex-1" placeholder="Dosage" value={med.dosage} onChange={(e) => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, dosage: e.target.value } : x)))} />
-                <Input className="w-20" type="number" min={1} value={med.durationDays} onChange={(e) => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, durationDays: Number(e.target.value) } : x)))} />
-              </div>
-              <div className="flex gap-1.5">
-                {FREQ.map((f) => (
-                  <button key={f} type="button" onClick={() => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, frequency: f } : x)))} className={cn('flex-1 rounded-md border py-1.5 text-xs', med.frequency === f ? 'border-ink bg-ink text-paper' : 'border-border')}>{f}</button>
+
+          {/* Frame 44's `.medcard`: white, 22px radius, a lav Rx circle, the name at 16/800,
+              dose dots and duration on one line. Editing stays inline — a prescription is
+              corrected while it is being written, not in a second screen. */}
+          {meds.map((med, i) => {
+            const warns = warningsFor(med.name, safetyWarnings);
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'rounded-[22px] bg-white p-[14px_15px] shadow-elev-1',
+                  // Frame 45 outlines the offending card. The flag is on the drug, not in a
+                  // banner away from it — the same treatment as the verification card.
+                  warns.length > 0 && 'outline outline-2 outline-offset-[-1px] outline-crit',
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-lavender-soft">
+                    <Pill className="size-4 text-pine" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn('truncate text-[16px] font-heavy', warns.length ? 'text-crit' : 'text-pine')}>
+                      {med.name}
+                    </p>
+                    <span className="mt-1 flex items-center gap-2">
+                      <DoseDots frequency={med.frequency} />
+                      <span className="text-[11.5px] font-semibold text-pine-3">
+                        {med.dosage} · {med.durationDays} days
+                      </span>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMeds((ms) => ms.filter((_, j) => j !== i))}
+                    aria-label={`Remove ${med.name}`}
+                    className="shrink-0 text-pine-3"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+
+                {/* The conflict the SERVER flagged, on the row it concerns. Nothing here
+                    decides what conflicts: matching drug names against allergies would mean
+                    asserting amoxicillin is a penicillin, which needs clinical knowledge
+                    this app does not have (#51) and rule 7 forbids inventing. */}
+                {warns.map((w) => (
+                  <div
+                    key={w}
+                    className="mt-2.5 flex items-center gap-2 rounded-[14px] border-[1.5px] border-crit bg-white px-3 py-2"
+                  >
+                    <TriangleAlert className="size-3.5 shrink-0 text-crit" />
+                    <span className="min-w-0 flex-1 text-[12px] font-bold leading-tight text-crit">
+                      {warningLabel(w, patient.data?.allergies ?? null)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMeds((ms) => ms.filter((_, j) => j !== i))}
+                      className="shrink-0 text-[12px] font-heavy text-pine-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 ))}
+
+                <div className="mt-2.5 flex gap-2">
+                  <Input
+                    className="flex-1"
+                    placeholder="Dosage"
+                    value={med.dosage}
+                    onChange={(e) => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, dosage: e.target.value } : x)))}
+                  />
+                  <Input
+                    className="w-20"
+                    type="number"
+                    min={1}
+                    value={med.durationDays}
+                    onChange={(e) => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, durationDays: Number(e.target.value) } : x)))}
+                  />
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  {FREQ.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setMeds((ms) => ms.map((x, j) => (j === i ? { ...x, frequency: f } : x)))}
+                      className={cn(
+                        'flex-1 rounded-pill py-1.5 text-[12px] font-heavy',
+                        med.frequency === f ? 'bg-pine text-white' : 'bg-paper text-pine-2',
+                      )}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+
+          {/* The dose legend renders ONCE, above the CTA — repeating it on every card turns
+              a reference into noise the eye stops reading. */}
+          {meds.length > 0 ? (
+            <p className="flex items-center gap-2 pt-1 text-[10px] font-heavy uppercase tracking-eyebrow text-pine-3">
+              <DoseDots frequency="TID" /> DOSE · morning — afternoon — night
+            </p>
+          ) : null}
+
           <Input placeholder="Instructions (after food…)" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
           {meds.length > 0 && !applied ? (
             <Button variant="ghost" size="sm" className="w-full" loading={createTemplate.isPending} onClick={saveAsTemplate}>

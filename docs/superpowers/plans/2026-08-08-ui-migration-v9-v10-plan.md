@@ -917,6 +917,12 @@ Per-tooth media folds in under the panel.
 
 ## Task 23: Case detail, patient history, and visit record — frames 39, 42, 43
 
+> **Status:** frames 39 and 42 are through Gate B (APPROVED-DEVIATION, 5.6% / 2.9%), and
+> the link audit is done — every plan/procedure name now reaches case detail, which closed
+> #81. Frame 43 is NOT built and is blocked on the same extraction gap as #52: its body is
+> FINDINGS and PROCEDURE prose that ClinicalExtraction does not carry. Recorded as #90;
+> scheduled with extraction work rather than here.
+
 **Case detail (39)** — `app/(app)/patients/[id]/plans/[planId]/page.tsx`.
 **This is where every "RCT 36" reference in the app must land.**
 

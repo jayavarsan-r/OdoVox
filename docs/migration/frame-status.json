@@ -401,11 +401,13 @@
   {
     "frame": "v9-45",
     "name": "Prescription — conflict caught",
-    "status": "NOT-BUILT",
+    "status": "BLOCKED",
     "changedPct": null,
     "gateB": "NOT-BUILT",
     "openMustFix": [],
-    "openDecisions": []
+    "openDecisions": [
+      "#91: CLINICAL: frame 45 LOCKS 'Share Rx PDF' while an allergy conflict is unresolved"
+    ]
   },
   {
     "frame": "v9-46",

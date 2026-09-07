@@ -1052,6 +1052,51 @@
       "summary": "Re-running the seed failed on the lab case's unique caseNumber",
       "reason": "The new lab-case fixture cleaned up by treatmentPlanId, but the plan is recreated with a fresh id on every run, so the delete never matched the previous run's case and the second seed died on (clinicId, caseNumber). `pnpm db:seed` is the documented way back to a known demo; it has to survive being run twice.",
       "fixedIn": "Deletes by caseNumber. Verified by running the seed twice in a row."
+    },
+    {
+      "id": 90,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-43"
+      ],
+      "status": "open",
+      "summary": "The visit-record sheet needs FINDINGS and PROCEDURE prose that is not extracted",
+      "reason": "Frame 43 is a read-only record of one visit, and its body is two narrative sections \u2014 FINDINGS ('Deep caries distal 36, tenderness on percussion...') and PROCEDURE ('Access opening under LA, four canals located...'). ClinicalExtraction has one free-text field, `notes`, which is where dictated patient advice lands; there is no findings field and no procedure narrative. The rest of the sheet is buildable \u2014 audioDurationMs exists, bills and prescriptions are joinable, and Amend has its append-only ConsultationEdit path \u2014 but a visit record whose two clinical sections are empty is not the record the frame describes, and generating that prose is exactly what product rule 7 forbids.\n\nSitting rows on frame 39 therefore do not offer to open it: they render without a chevron rather than as buttons that lead somewhere disappointing.",
+      "openQuestion": "Same dependency as #52 \u2014 add `findings` and `procedureNarrative` to ClinicalExtraction and the clinical prompt. Recommend scheduling both with extraction work, where the prompt and its tests live, rather than inside a UI task."
+    },
+    {
+      "id": 91,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-45"
+      ],
+      "status": "open",
+      "summary": "CLINICAL: frame 45 LOCKS 'Share Rx PDF' while an allergy conflict is unresolved",
+      "reason": "Frame 45 greys the share button and captions it 'Locked while a conflict is unresolved'. That is a clinical hard block, and product rules 4 and 8 reserve those for you: the dentist is the final clinical decision maker, and a hard-block policy must come from an explicit clinical decision rather than from matching a frame.\n\nYou already ruled the equivalent question on the verification card (#53): Confirm stays available over an allergy conflict, the dentist may override, and the override is audited. The consistent answer here is that Share stays available.\n\nBut it is NOT obviously the same act, which is why I am not deciding it. Confirming a record files what happened. Sharing a prescription PDF hands the patient a document telling them to take a drug the record says they react to \u2014 the artefact leaves the clinic and outlives the conversation. A hard block is more defensible here than on Confirm.\n\nNOT IMPLEMENTED. Share remains available and the conflict is drawn loudly on the drug itself.",
+      "openQuestion": "Three options. (a) Consistent with #53: Share stays available, conflict shown loudly, override audited. (b) Hard block per the frame. (c) Middle: Share stays available but requires an explicit acknowledgement that is recorded, the way confirmedWithWarning already works. I recommend (c) \u2014 it keeps the dentist deciding while making the decision auditable on a document that leaves the building. Either (b) or (c) is a clinical-policy decision and needs your ruling."
+    },
+    {
+      "id": 92,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-45"
+      ],
+      "status": "open",
+      "summary": "Frame 45's 'Swap' chip is an automatic drug substitution \u2014 forbidden by rule 6",
+      "reason": "The conflict row in frame 45 offers a pine 'Swap' chip beside 'Remove'. Swapping means naming a replacement drug, which product rule 6 forbids outright ('AI must not invent medication substitutions') and which #51 already records as having no knowledge base behind it. The row ships with 'Remove', which is the action the safety model actually recognises as resolving the conflict, and it says Remove so the doctor is never told the app chose a replacement.",
+      "openQuestion": "Same dependency as #51 \u2014 a substitution knowledge base with clinical sign-off."
+    },
+    {
+      "id": 93,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-44",
+        "v9-45"
+      ],
+      "status": "approved",
+      "summary": "Conflicts are shown only where the SERVER flagged them, never computed on the client",
+      "reason": "Frame 45 marks the offending medicine. The implementation renders exactly the warnings the safety layer returned, keyed to the drug they name. It does NOT match medicine names against the patient's allergies itself: doing so would mean asserting that amoxicillin is a penicillin \u2014 clinical class knowledge the app does not have (#51) \u2014 and product rule 7 forbids converting that uncertainty into clinical truth. A medicine typed by hand therefore carries no flag unless the server flagged it, which is honest about what the app actually knows.",
+      "ruling": "Self-resolved: rules 6 and 7 already decide it; nothing new is being chosen."
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
