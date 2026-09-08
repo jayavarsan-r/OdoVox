@@ -906,11 +906,36 @@ export const SHOTS: Shot[] = [
     },
   },
   {
+    /**
+     * Frame 29 — seven medicines. The frame's own requirement is that the row anatomy is
+     * identical at n=2 and n=12, so this exists to prove nothing squeezes as the list grows.
+     *
+     * Reached by calling in Suresh Iyer (PT-0005) specifically, rather than whoever happens
+     * to be at the head of the queue: his seeded demo recording is the one that dictates
+     * seven medicines. Two patients wait in the seeded queue, so "call in the next one"
+     * would be a coin toss between a two-medicine card and this.
+     */
     slug: "D11-verify-seven",
     path: "/consult",
     role: "doctor",
     frame: "v9-29",
-    pending: true,
+    prepare: async (page) => {
+      // Call in Suresh by name — his row's own Call in button, not the first on the page.
+      const row = page
+        .locator("li,div")
+        .filter({ hasText: /Suresh/i })
+        .filter({ has: page.getByRole("button", { name: /call in/i }) })
+        .last();
+      await row.getByRole("button", { name: /call in/i }).click();
+      await page
+        .getByRole("button", { name: /^record$/i })
+        .first()
+        .waitFor({ timeout: 15_000 });
+      await recordAndVerify(page);
+      // Seven rows, and the section says so. If the extractor ever finds fewer, this fails
+      // rather than capturing a short list under a frame that exists to test a long one.
+      await page.getByText(/Medicines · 7/).waitFor({ timeout: 15_000 });
+    },
   },
   {
     slug: "E13-visit-record",

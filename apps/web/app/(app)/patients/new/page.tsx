@@ -27,12 +27,18 @@ const GENDERS: { label: string; value: 'MALE' | 'FEMALE' | 'OTHER' }[] = [
   { label: 'Other', value: 'OTHER' },
 ];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-const FLAGS = ['Blood thinner', 'Diabetes', 'Heart condition', 'Pregnant', 'Hypertension', 'Asthma'].map(
-  (f) => ({ label: f, value: f }),
-);
+const FLAGS = [
+  'Blood thinner',
+  'Diabetes',
+  'Heart condition',
+  'Pregnant',
+  'Hypertension',
+  'Asthma',
+].map((f) => ({ label: f, value: f }));
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genCode = () =>
-  'PT-' + Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+  'PT-' +
+  Array.from({ length: 6 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
 
 type FormValues = CreatePatientInput;
 
@@ -75,7 +81,11 @@ export default function NewPatientPage() {
   // entry ?walkin=1) get an "Add to queue?" sheet after create; doctors keep the direct route
   // (POST /visits is reception-side — doctors queue via consultations).
   const role = useAuth((s) => s.activeMembership?.role);
-  const [queueFor, setQueueFor] = useState<{ id: string; name: string; complaint: string | null } | null>(null);
+  const [queueFor, setQueueFor] = useState<{
+    id: string;
+    name: string;
+    complaint: string | null;
+  } | null>(null);
   // Frame 36: fields that arrived by voice wear a lime spine, and it fades on first touch —
   // the form IS the review step, so the mark has to say "unreviewed", not "spoken".
   const [voiced, setVoiced] = useState<Set<string>>(new Set());
@@ -109,7 +119,9 @@ export default function NewPatientPage() {
   // "Speak patient details" → intake extraction prefills the form, which is itself the review
   // surface — the doctor edits any field before Create. Phase 9.6 Issue 2: chief complaint and
   // allergies come through too; flags not matching a known chip render as custom chips below.
-  const onIntake = ({ intake: i }: {
+  const onIntake = ({
+    intake: i,
+  }: {
     intake: {
       name: string | null;
       phone: string | null;
@@ -182,12 +194,29 @@ export default function NewPatientPage() {
   const values = watch();
   const missing = missingRequired(values);
 
+  /**
+   * The allergies free-text split into chips for the prominent readout above (#102).
+   * Comma-separated is what the extractor writes and what a receptionist types; anything
+   * blank is dropped so a trailing comma cannot render an empty red chip.
+   */
+  const allergyChips = (values.allergies ?? '')
+    .split(',')
+    .map((a) => a.trim())
+    .filter(Boolean);
+
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const patient = await createPatient.mutateAsync({ ...values, patientCode: code });
+      const patient = await createPatient.mutateAsync({
+        ...values,
+        patientCode: code,
+      });
       toast.success('Patient created.');
       if (offerQueue) {
-        setQueueFor({ id: patient.id, name: patient.name, complaint: values.chiefComplaint ?? null });
+        setQueueFor({
+          id: patient.id,
+          name: patient.name,
+          complaint: values.chiefComplaint ?? null,
+        });
       } else {
         router.replace(`/patients/${patient.id}`);
       }
@@ -230,7 +259,9 @@ export default function NewPatientPage() {
                 <Mic className="size-5" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-heavy tracking-snug text-pine">Say it in one breath</p>
+                <p className="text-[14px] font-heavy tracking-snug text-pine">
+                  Say it in one breath
+                </p>
                 <p className="mt-[3px] text-[12.5px] font-semibold italic leading-[1.45] text-pine-2">
                   &ldquo;Ramesh Kumar, forty-two, diabetic, pain in lower left since Tuesday&rdquo;
                 </p>
@@ -273,7 +304,10 @@ export default function NewPatientPage() {
                 placeholder="—"
                 voiced={voiced.has('age')}
                 invalid={!!errors.age}
-                {...register('age', { valueAsNumber: true, onChange: () => clearVoiced('age') })}
+                {...register('age', {
+                  valueAsNumber: true,
+                  onChange: () => clearVoiced('age'),
+                })}
               />
             </Field>
             <Field label="PHONE" error={errors.phone?.message}>
@@ -312,6 +346,49 @@ export default function NewPatientPage() {
               )}
             />
           </Field>
+
+          {/*
+            CHIEF COMPLAINT is a primary field, not a disclosure (#103). It is why the
+            patient is here and the first thing the doctor reads; it lived under "More
+            details" beside address and referred-by, which misread its weight. Frame 36
+            puts it here, between age/gender and the flags.
+          */}
+          <Field label="CHIEF COMPLAINT" error={errors.chiefComplaint?.message}>
+            <Input
+              id="chiefComplaint"
+              placeholder="What brings the patient in?"
+              voiced={voiced.has('chiefComplaint')}
+              {...register('chiefComplaint', {
+                onChange: () => clearVoiced('chiefComplaint'),
+              })}
+            />
+          </Field>
+
+          {/*
+            A recorded allergy is the most safety-critical thing this form captures, and it
+            was the least visible: it sat in the free-text ALLERGIES field under "More
+            details" while six flag chips the patient does NOT have took the prominent row
+            (#102). Product rule 2 — doctor-facing surfaces surface allergies prominently —
+            and frame 36 agree, so it reads here in crit red.
+
+            This is a READOUT, not a second input. The field under More details stays the
+            editable source of truth; showing the same fact in two editable places is how
+            they drift apart.
+          */}
+          {allergyChips.length > 0 ? (
+            <Field label="ALLERGIES">
+              <div className="flex flex-wrap gap-2">
+                {allergyChips.map((a) => (
+                  <span
+                    key={a}
+                    className="rounded-pill bg-crit/10 px-3 py-1.5 text-xs font-heavy text-crit"
+                  >
+                    Allergy: {a}
+                  </span>
+                ))}
+              </div>
+            </Field>
+          ) : null}
 
           <Field label="FLAGS">
             <Controller
@@ -354,21 +431,18 @@ export default function NewPatientPage() {
             </button>
             {moreOpen ? (
               <div className="space-y-[15px] border-t border-hair px-[15px] pb-[15px] pt-[13px]">
-                <Field label="CHIEF COMPLAINT" error={errors.chiefComplaint?.message}>
-                  <Input
-                    id="chiefComplaint"
-                    placeholder="What brings the patient in?"
-                    voiced={voiced.has('chiefComplaint')}
-                    {...register('chiefComplaint', { onChange: () => clearVoiced('chiefComplaint') })}
-                  />
-                </Field>
-
-                <Field label="ALLERGIES" hint="Encrypted at rest." error={errors.allergies?.message}>
+                <Field
+                  label="ALLERGIES"
+                  hint="Encrypted at rest."
+                  error={errors.allergies?.message}
+                >
                   <Input
                     id="allergies"
                     placeholder="e.g. Penicillin, Latex"
                     voiced={voiced.has('allergies')}
-                    {...register('allergies', { onChange: () => clearVoiced('allergies') })}
+                    {...register('allergies', {
+                      onChange: () => clearVoiced('allergies'),
+                    })}
                   />
                 </Field>
 
@@ -377,7 +451,9 @@ export default function NewPatientPage() {
                       coerce to undefined so an empty pick never invalidates the form (Issue 3). */}
                   <Select
                     defaultValue=""
-                    {...register('bloodGroup', { setValueAs: (v) => (v === '' ? undefined : v) })}
+                    {...register('bloodGroup', {
+                      setValueAs: (v) => (v === '' ? undefined : v),
+                    })}
                   >
                     <option value="">—</option>
                     {BLOOD_GROUPS.map((b) => (
@@ -403,7 +479,13 @@ export default function NewPatientPage() {
           className="sticky bottom-0 bg-gradient-to-t from-paper-warm via-paper-warm to-transparent px-gutter pt-4"
           style={{ paddingBottom: 'calc(10px + var(--safe-bottom))' }}
         >
-          <Button type="submit" size="lg" block disabled={!isValid} loading={createPatient.isPending}>
+          <Button
+            type="submit"
+            size="lg"
+            block
+            disabled={!isValid}
+            loading={createPatient.isPending}
+          >
             Create patient
           </Button>
           <p className="mt-2.5 text-center text-[11.5px] font-semibold text-pine-3">

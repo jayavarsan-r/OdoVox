@@ -939,6 +939,39 @@ async function main() {
     },
   });
 
+  // (4) WAITING — Suresh Iyer, the long-prescription demo.
+  //
+  // He exists so frame 29 (seven medicines) can be reached the way every other state is:
+  // call him in from the queue, record, and let the pipeline run. The mock STT has a
+  // recording keyed to his patientCode that dictates seven medicines; without him in the
+  // queue there is no honest route to a prescription list of that length, and the frame
+  // stays unreachable — which is exactly the hole deviation #55 described.
+  const suresh = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: "PT-0005" },
+  });
+  await prisma.visit.upsert({
+    where: { id: `seed-visit-${clinic.id}-waiting-2` },
+    update: {
+      status: "WAITING",
+      roomId: null,
+      checkedInAt: new Date(Date.now() - 4 * 60 * 1000),
+      calledInAt: null,
+      startedAt: null,
+      endedAt: null,
+    },
+    create: {
+      id: `seed-visit-${clinic.id}-waiting-2`,
+      clinicId: clinic.id,
+      patientId: suresh.id,
+      doctorId: doctor.id,
+      assignedDoctorId: doctor.id,
+      status: "WAITING",
+      tokenNumber: 4,
+      checkedInAt: new Date(Date.now() - 4 * 60 * 1000),
+      chiefComplaint: "Pain, lower left",
+    },
+  });
+
   // --- Queue events (so a fresh DB shows a populated activity feed) ---------
   const queueEventCount = await prisma.queueEvent.count({
     where: { clinicId: clinic.id },
@@ -1370,7 +1403,7 @@ async function main() {
   console.warn("✅ Seed complete:");
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
   console.warn(
-    `   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`,
+    `   Queue: 2 WAITING (Arjun, Suresh) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`,
   );
   console.warn(
     `   ${dayStart.toDateString()}: ${todaysAppointments.length} appointments — 2 seen, 1 in the chair, 3 ahead`,
