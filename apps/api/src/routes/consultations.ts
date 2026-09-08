@@ -304,28 +304,58 @@ export async function consultationRoutes(
       );
     };
 
-    // Replay anything missed since the client's Last-Event-ID, then go live.
+    // SUBSCRIBE FIRST, then replay, then flush what arrived in between.
+    //
+    // The obvious order — replay the backlog, then subscribe — drops every event published in
+    // the gap between the two awaits. It is a small window, but the pipeline's transitions are
+    // milliseconds apart, so under load it lands squarely inside it: a client that reconnects
+    // mid-consultation silently never receives TRANSCRIBING or EXTRACTING and sits on a screen
+    // that never advances. (Found as a flaky e2e assertion; the flake was the bug reporting
+    // itself honestly.)
+    //
+    // So: open the subscription first and buffer whatever it delivers, replay the backlog, then
+    // flush the buffer. `lastSent` de-duplicates the overlap — an event can legitimately appear
+    // in both the backlog and the buffer, and ids are monotonic, so anything not greater than
+    // the last id we sent has already gone out.
+    const sub = fastify.redis.duplicate();
+    let lastSent = since;
+    let buffered: { id: number; event: { type: string } }[] | null = [];
+
+    const deliver = (eid: number, event: { type: string }) => {
+      if (eid <= lastSent) return;
+      lastSent = eid;
+      send(eid, event.type, event);
+    };
+
+    sub.on("message", (_chan, message) => {
+      try {
+        const parsed = JSON.parse(message) as {
+          id: number;
+          event: { type: string };
+        };
+        // Still replaying: hold it. Live: send it.
+        if (buffered) buffered.push(parsed);
+        else deliver(parsed.id, parsed.event);
+      } catch {
+        /* ignore malformed */
+      }
+    });
+    await sub.subscribe(consultationChannel(id));
+
     for (const { id: eid, event } of await getConsultationEventsSince(
       fastify.redis,
       id,
       since,
     )) {
-      send(eid, event.type, event);
+      deliver(eid, event);
     }
 
-    const sub = fastify.redis.duplicate();
-    await sub.subscribe(consultationChannel(id));
-    sub.on("message", (_chan, message) => {
-      try {
-        const { id: eid, event } = JSON.parse(message) as {
-          id: number;
-          event: { type: string };
-        };
-        send(eid, event.type, event);
-      } catch {
-        /* ignore malformed */
-      }
-    });
+    // Flush in id order — the buffer is chronological, but the backlog may have overlapped it.
+    const pending = buffered;
+    buffered = null;
+    for (const { id: eid, event } of pending.sort((a, b) => a.id - b.id)) {
+      deliver(eid, event);
+    }
 
     // Heartbeat: keeps mobile/flaky connections alive (they drop a silent stream after ~30s).
     const heartbeat = setInterval(() => raw.write(": ping\n\n"), 15_000);
