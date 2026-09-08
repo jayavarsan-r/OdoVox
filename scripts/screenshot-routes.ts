@@ -147,6 +147,31 @@ const startRecording = async (page: Page) => {
   await page.waitForTimeout(400);
 };
 
+/**
+ * Record a real consultation and wait for the verification card.
+ *
+ * The whole pipeline runs: upload → STT → extraction → READY over SSE. On dev's mock
+ * providers that takes a couple of seconds and produces real structured data, so the card
+ * renders the same fields a live Sarvam+Gemini run would.
+ *
+ * Anchored on Re-record, NOT on the CTA: the verification CTA reads "Save findings", which
+ * is the same label the recorder's STOPPED state uses for a completely different action.
+ * Re-record exists only on the verification card, so it is the one unambiguous signal that
+ * we are actually there.
+ */
+const recordAndVerify = async (page: Page) => {
+  await startRecording(page);
+  await page.waitForTimeout(1200); // capture something real to send
+  await page.getByRole("button", { name: /finish/i }).click();
+  await page.getByRole("button", { name: /save findings/i }).click();
+  // Generous: a real provider run is not instant and this must not become a flaky gate.
+  await page
+    .getByRole("button", { name: /^re-record$/i })
+    .waitFor({ timeout: 60_000 });
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(600);
+};
+
 /** Tap a tab by its visible label on the patient-detail page. */
 const patientTab = (label: string) => async (page: Page) => {
   await page.getByRole("button", { name: label, exact: true }).first().click();
@@ -427,23 +452,7 @@ export const SHOTS: Shot[] = [
     path: "/consult",
     role: "doctor",
     frame: "v9-30",
-    prepare: async (page) => {
-      await startRecording(page);
-      await page.waitForTimeout(1200);
-      await page.getByRole("button", { name: /finish/i }).click();
-      await page.getByRole("button", { name: /save findings/i }).click();
-      // The whole pipeline: upload → STT → extraction → READY over SSE. Generous, because
-      // a real provider run is not instant and this must not be a flaky gate.
-      //
-      // Anchored on Re-record, not on the CTA: the verification CTA currently reads
-      // "Save findings", which is the SAME label the recorder's STOPPED state uses for a
-      // completely different action. Re-record only exists on the verification card.
-      await page
-        .getByRole("button", { name: /^re-record$/i })
-        .waitFor({ timeout: 60_000 });
-      await page.waitForLoadState("networkidle");
-      await page.waitForTimeout(600);
-    },
+    prepare: recordAndVerify,
   },
   {
     /**
@@ -840,19 +849,61 @@ export const SHOTS: Shot[] = [
     frame: "v9-22",
     pending: true,
   },
+  /**
+   * Frames 27–28 — the verification card carrying a REAL allergy conflict.
+   *
+   * These were built long ago and could not be reached: the harness records through
+   * Chromium's fake capture device, whose audio the mock extractor parses into nothing, so
+   * no seeded recording ever prescribed something the patient was allergic to (#55).
+   *
+   * The seeded demo recordings close that (lib/stt/mock-provider.ts). Nothing is injected:
+   * PT-0004 — Akhilesh Guhan, whom the seed already puts in the chair — carries a penicillin
+   * allergy, his demo recording dictates amoxicillin, and the conflict that appears is
+   * computed by the real safety layer from the real patient record. The driver clicks
+   * exactly the buttons a doctor clicks.
+   */
   {
     slug: "D9-verify-conflict",
     path: "/consult",
     role: "doctor",
     frame: "v9-27",
-    pending: true,
+    prepare: async (page) => {
+      await recordAndVerify(page);
+      // Anchored on the medicines section's own count, not on a colour: if the conflict
+      // ever stops being detected this shot fails loudly, rather than quietly capturing a
+      // verification card with no warning on it.
+      await page.getByText(/\d+ conflicts?/).waitFor({ timeout: 15_000 });
+    },
   },
   {
+    /**
+     * Frame 28 — the same conflict, resolved inline. The doctor removes the offending drug
+     * and the warning re-renders as handled rather than vanishing: the card's invariant is
+     * that a resolved warning is never silently dropped.
+     */
     slug: "D10-verify-resolved",
     path: "/consult",
     role: "doctor",
     frame: "v9-28",
-    pending: true,
+    prepare: async (page) => {
+      await recordAndVerify(page);
+      await page.getByText(/\d+ conflicts?/).waitFor({ timeout: 15_000 });
+      // Resolved the way a doctor resolves it: remove the conflicting medicine. Product
+      // rule 6 forbids an automatic substitution, so there is no "swap" affordance to click.
+      //
+      // EXACT name, deliberately. The medicine row is itself a <button>, so its accessible
+      // name concatenates everything inside it — including the nested Remove pill. A loose
+      // /remove/i therefore matches the ROW first and clicks that instead, which expands the
+      // row and leaves the conflict standing.
+      await page
+        .getByRole("button", { name: /^remove$/i })
+        .first()
+        .click();
+      // "✓ checked", not "✓ no conflicts": a resolved warning re-renders with a check and is
+      // never silently dropped, so "I dealt with that" stays distinguishable from "nothing
+      // was ever raised".
+      await page.getByText(/✓ checked/).waitFor({ timeout: 10_000 });
+    },
   },
   {
     slug: "D11-verify-seven",

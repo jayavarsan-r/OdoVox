@@ -92,7 +92,9 @@ export function MedicineRow({
           <span className="flex-1 text-xs font-bold text-crit">
             {conflict.fact}
           </span>
-          {conflict.action}
+          <span className="pointer-events-auto relative z-10">
+            {conflict.action}
+          </span>
         </span>
       ) : resolved ? (
         <span className="mt-[5px] flex items-center gap-2">
@@ -107,7 +109,7 @@ export function MedicineRow({
                 e.stopPropagation();
                 resolved.onUndo?.();
               }}
-              className="text-2xs font-heavy text-pine-2"
+              className="pointer-events-auto relative z-10 text-2xs font-heavy text-pine-2"
             >
               Undo
             </button>
@@ -129,16 +131,33 @@ export function MedicineRow({
   );
 
   if (!onClick) return <div className={classes}>{body}</div>;
+
+  /**
+   * The row is a DIV with a stretched hit-area button behind its content — not a <button>
+   * wrapping everything.
+   *
+   * It used to be the wrapper, which put the conflict's "Remove" chip and the resolved
+   * row's "Undo" INSIDE a button. That is invalid HTML (React said so in the console) and
+   * it broke the row's accessible name: a button's name is the concatenation of everything
+   * inside it, so the row announced itself as "Amoxicillin 500mg TID 5 days Allergy
+   * conflict … Remove". A screen-reader user could not tell the row from the action, and
+   * `getByRole("button", { name: /remove/i })` matched the ROW first — which is how this
+   * was found.
+   *
+   * Now the hit area sits at z-0 under content that ignores pointer events, and the real
+   * action buttons opt back in with `pointer-events-auto z-10`. Visually identical; the
+   * row gets an explicit name of its own, and the actions are siblings rather than
+   * descendants.
+   */
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        classes,
-        "focus-visible:outline-none focus-visible:shadow-[var(--ring-lime)]",
-      )}
-    >
-      {body}
-    </button>
+    <div className={cn(classes, "relative")}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`Edit ${name}`}
+        className="absolute inset-0 z-0 rounded-[inherit] focus-visible:outline-none focus-visible:shadow-[var(--ring-lime)]"
+      />
+      <span className="pointer-events-none relative block">{body}</span>
+    </div>
   );
 }

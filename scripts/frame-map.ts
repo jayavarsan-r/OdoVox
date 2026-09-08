@@ -58,8 +58,12 @@ const FRAME_TO_SHOT: Record<string, string> = {
   "v9-25": "D4-processing",
   "v9-26": "D5-failed",
   // 30 is the clean verification state — the one the harness reaches with ordinary seed
-  // data. 27/28 (allergy conflict, then resolved) and 29 (seven medicines) need specific
-  // clinical data that only exists if the doctor dictated it; see deviations #51 and #54.
+  // data. 27/28 (allergy conflict, then resolved) needed clinical data that only existed if
+  // the doctor dictated it; the seeded demo recordings supply it now, so both are reached
+  // through the real pipeline (deviation #55, resolved). 29 (seven medicines) still needs
+  // its demo patient put in the chair by the driver.
+  "v9-27": "D9-verify-conflict",
+  "v9-28": "D10-verify-resolved",
   "v9-30": "D6-verify",
   "v9-31": "D7-saved",
   "v9-32": "E1-patients",

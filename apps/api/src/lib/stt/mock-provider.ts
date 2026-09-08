@@ -40,9 +40,13 @@ const CANNED_TRANSCRIPTS = [
 const DEMO_FIXTURES: Record<string, string> = {
   // PT-0004 is seeded with medicalFlags PENICILLIN_ALLERGY and allergiesEnc 'Penicillin'.
   // Amoxicillin is a penicillin. The conflict the doctor is warned about is genuine.
+  // The fee is dictated because a dentist dictates it — without one the FEES tile on the
+  // verification card renders an em-dash, and the demo shows an empty tile that the real
+  // screen would never show.
   "PT-0004":
-    "RCT on 36 completed, second sitting. Amoxicillin 500mg TID for 5 days and " +
-    "Ibuprofen 400mg BD after food for 3 days. Review next week.",
+    "RCT on 36 completed, second sitting. Fees 3000. " +
+    "Amoxicillin 500mg TID for 5 days and Ibuprofen 400mg BD after food for 3 days. " +
+    "Review next week.",
 
   // A prescription long enough to exercise the list, not a clinically model one — its point is
   // seven rows, and the doctor still confirms every one of them.

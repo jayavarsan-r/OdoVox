@@ -284,6 +284,16 @@
       "status": "withdrawn"
     },
     {
+      "id": 25,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "Availability's \"2 doctors\" and Team's \"1 request\" values are absent",
+      "reason": "Both need a clinic-members endpoint. /clinics has only create, lookup and join — there is no members or pending-requests route to read. Task 31 owns that server work.",
+      "status": "open"
+    },
+    {
       "id": 26,
       "class": "MUST-FIX",
       "frames": [
@@ -316,16 +326,6 @@
       "reason": "Frame 09 uses a bare white IconCircle and has no mascot. Both are additions, not workflow.",
       "status": "fixed",
       "fixedIn": "Gate B remediation — MUST-FIX pass"
-    },
-    {
-      "id": 25,
-      "class": "NOT-BUILT",
-      "frames": [
-        "v9-70"
-      ],
-      "summary": "Availability's \"2 doctors\" and Team's \"1 request\" values are absent",
-      "reason": "Both need a clinic-members endpoint. /clinics has only create, lookup and join — there is no members or pending-requests route to read. Task 31 owns that server work.",
-      "status": "open"
     },
     {
       "id": 29,
@@ -592,15 +592,16 @@
     },
     {
       "id": 51,
-      "class": "NOT-BUILT",
+      "class": "APPROVED-DEVIATION",
       "frames": [
         "v9-27",
         "v9-28"
       ],
       "summary": "Frame 27's \"Swap → Azithro 500\" — no drug-substitution knowledge base exists",
       "reason": "The frame resolves an allergy conflict by swapping to a NAMED alternative antibiotic, and frame 28 shows the result ('swapped for Amoxicillin · allergy-safe'). Nothing in the app knows that azithromycin is the penicillin-safe substitute: SafetyWarning carries code, message, field and detail — no alternative — and there is no substitution table anywhere in the API. Hardcoding one inside a UI task would be inventing prescribing advice, which is the single thing this product must never do. The conflict rail ships with the frame's full anatomy (red rail, red drug name, one factual line, inline action) and the action is 'Remove', which is the resolution the safety model actually recognises (isResolved: the flagged medicine is no longer prescribed). It says Remove rather than Swap so the doctor is never told the app chose a replacement drug.",
-      "status": "open",
-      "openQuestion": "Build drug substitution? It needs a clinical data source, an owner for its correctness, and a decision about liability — the app would be suggesting a specific prescription. Recommend a dedicated task with clinical sign-off, not a migration task."
+      "status": "approved",
+      "openQuestion": "Build drug substitution? It needs a clinical data source, an owner for its correctness, and a decision about liability — the app would be suggesting a specific prescription. Recommend a dedicated task with clinical sign-off, not a migration task.",
+      "reclassified": "2026-09-07 - was NOT-BUILT/open, which read as work still to come. It is not: product rule 6 ('AI must not invent medication substitutions') forbids the swap permanently, and no drug-substitution knowledge base is planned. The card resolves a conflict by REMOVING the drug -- the resolution the safety model actually recognises -- and the button says 'Remove' rather than implying the app chose a replacement. Reclassified so the ledger states a settled decision instead of a pending task."
     },
     {
       "id": 52,
@@ -1124,6 +1125,78 @@
       "summary": "GATE C: a frame does not close until its screen actually works",
       "reason": "2026-09-07 - OWNER DIRECTION, verbatim: 'in the end i want complete end to end working app.' Visual fidelity is necessary but not sufficient. On top of Gate A (nothing lost) and Gate B (matches the design), every frame must pass Gate C: the route is reachable through real navigation; every control on it is wired to a real endpoint or a real client action; the flow it belongs to can be completed end to end against the live API with seeded data; and there are no dead buttons, placeholder screens or TODO surfaces. A screen that photographs correctly but does nothing is NOT complete.",
       "status": "approved"
+    },
+    {
+      "id": 96,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27"
+      ],
+      "summary": "The conflict line states the allergy and the class; it cannot state when it was recorded or the reaction",
+      "reason": "Frame 27's line reads 'Penicillin allergy — recorded 2019, reaction: rash'. The record stores an allergy as encrypted free text (Patient.allergiesEnc) plus a medicalFlags enum. There is no recorded-on date and no reaction field, so two thirds of that line has nothing behind it. Inventing them is exactly what product rule 7 forbids — turning uncertain information into clinical truth on screen.\n\nSo the line says what is actually known and why it matters: 'Allergy conflict: patient lists Penicillin. Amoxicillin is a penicillin. Verify before prescribing.' It is longer than the frame's and wraps to three lines rather than two. That cost is accepted: the frame's compactness comes from data the clinic never captured.\n\nIf the allergy model later gains a recorded-at and a reaction, this line should shorten to the frame's shape.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 97,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-28"
+      ],
+      "summary": "The resolved warning lands in the SAFETY banner, not inline on a swapped row",
+      "reason": "Frame 28 shows the resolution on the row itself: 'Azithromycin 500 — swapped for Amoxicillin · allergy-safe [Undo]'. That shape depends on deviation #51 — a swap the app deliberately does not perform, because product rule 6 forbids the AI inventing a medication substitution.\n\nResolving by REMOVAL leaves no row for the resolved warning to sit on. Dropping it there would break the card's stated invariant that a resolved warning re-renders with a check and is never silently removed — 'I dealt with that' must not look like 'nothing was ever raised'. So partitionSafety() routes it to the standalone SAFETY block, struck through with a check.\n\nThe consequence visible in the capture: medicine count reads 'Medicines · 1' where the frame reads 2, because the conflicting drug is gone rather than replaced.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 98,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28"
+      ],
+      "summary": "NEXT SITTING shows the date; the frame also shows a time and the procedure",
+      "reason": "The frame reads 'Thu 16 Jul · 10:00 · obturation'. What the extraction produces is a follow-up INTERVAL ('review next week') — afterDays — not a booked slot. There is no time because nothing has been scheduled yet, and no procedure name because the next sitting's procedure is not dictated.\n\nPrinting a plausible 10:00 would be a fabricated appointment a receptionist could act on. The tile shows the date it can derive and stays a link to the real booking flow, where a time is chosen against actual availability.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 99,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29"
+      ],
+      "summary": "The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw",
+      "reason": "Two additions the frames do not show, both retained under the Gate A rule that functionality is never removed for pixel fidelity:\n\n1. '+ Add medicine' — the doctor must be able to add a drug the dictation missed. Without it the only route is re-recording the whole consultation.\n2. The TOOTH tile carries the procedure ('RCT') beneath the number. The frame's tile shows the number alone; the tooth and what was done to it are read together everywhere else in this app.\n\nBoth are additive and neither displaces frame content.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 100,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28"
+      ],
+      "summary": "The prose region is empty, leaving vertical space the frames fill with FINDINGS and PROCEDURE",
+      "reason": "A visible consequence of ruling #52/#90 rather than a separate decision, recorded because it is what a reviewer sees first in the side-by-side: with no findings or procedure narrative extracted, the band between the medicine list and the CTA is blank, where the frames carry two paragraphs.\n\nThe sections are omitted rather than filled — PaperBlock renders what has data and never generates prose (product rule 7). The layout is not re-tuned to close the gap, because the gap is honest: it shows the record is thinner than the design assumed, and it will fill in on its own if the extraction fields are added later.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 101,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29"
+      ],
+      "summary": "GATE C FIX: the medicine row was a <button> containing the Remove and Undo buttons",
+      "reason": "Found while driving frame 28's capture. MedicineRow wrapped its whole body in a <button> whenever it had an onClick, so the conflict's 'Remove' chip and the resolved row's 'Undo' were buttons nested inside a button. React logged it on every render ('In HTML, %s cannot be a descendant of <%s>').\n\nIt was not only invalid. A button's accessible name is the concatenation of its contents, so the row announced itself as 'Amoxicillin 500mg TID 5 days Allergy conflict: patient lists Penicillin … Remove'. A screen-reader user could not distinguish the row from the action inside it — and the capture driver could not either: getByRole('button', { name: /remove/i }) matched the ROW and clicked that instead, which is how it surfaced.\n\nThe row is now a div with a stretched hit-area button behind content that ignores pointer events; the real actions opt back in above it. Pixel-identical, correctly nested, and the row carries an explicit name of its own.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

@@ -83,8 +83,64 @@ const ALIVE = [
   /onSubmit=/,
 ];
 
-function scanSource(src: string, file: string): Finding[] {
+/**
+ * Blank out comments, preserving length and newlines so every offset and line number still
+ * lines up with the original source.
+ *
+ * Without this the audit reads prose as code. It flagged a genuine `<button>` written inside
+ * a doc comment that was explaining why the component no longer uses one — the comment
+ * describing the fix was reported as the defect. Documentation should not be able to fail a
+ * gate.
+ */
+function stripComments(src: string): string {
+  const out = src.split("");
+  let i = 0;
+  let quote: string | null = null;
+
+  while (i < src.length) {
+    const c = src[i]!;
+    const next = src[i + 1];
+
+    if (quote) {
+      if (c === "\\") i += 2;
+      else {
+        if (c === quote) quote = null;
+        i++;
+      }
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+      i++;
+      continue;
+    }
+    if (c === "/" && next === "*") {
+      while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) {
+        if (src[i] !== "\n") out[i] = " ";
+        i++;
+      }
+      if (i < src.length) {
+        out[i] = " ";
+        out[i + 1] = " ";
+        i += 2;
+      }
+      continue;
+    }
+    if (c === "/" && next === "/") {
+      while (i < src.length && src[i] !== "\n") {
+        out[i] = " ";
+        i++;
+      }
+      continue;
+    }
+    i++;
+  }
+  return out.join("");
+}
+
+function scanSource(raw: string, file: string): Finding[] {
   const out: Finding[] = [];
+  const src = stripComments(raw);
   const lines = src.split("\n");
 
   lines.forEach((line, i) => {
@@ -102,7 +158,8 @@ function scanSource(src: string, file: string): Finding[] {
     }
 
     for (const p of PLACEHOLDER) {
-      if (p.test(line) && !line.trimStart().startsWith("*")) {
+      // No comment guard needed here any more — stripComments already blanked them.
+      if (p.test(line)) {
         out.push({
           file,
           line: n,

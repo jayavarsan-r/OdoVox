@@ -7,8 +7,8 @@ bucket: "unmapped" reads as "optional", and these are real product states.
 
 | Accounting | Meaning | Count |
 | --- | --- | --- |
-| MAPPED | a shot renders it; Gate B can judge it | 46 |
-| PLANNED | a plan task owns it; nothing captures it yet | 36 |
+| MAPPED | a shot renders it; Gate B can judge it | 48 |
+| PLANNED | a plan task owns it; nothing captures it yet | 34 |
 | CROSS-CUTTING | a contract validated by tests, not one screenshot | 3 |
 | OUT-OF-SCOPE | explicitly ruled out by the owner | 1 |
 | **UNASSIGNED** | **no shot and no task — a hole in the plan** | **0** |
@@ -41,8 +41,8 @@ bucket: "unmapped" reads as "optional", and these are real product states.
 | `v9-24` | Recording — paused (call) | v9-master | 16 | `/consult` | doctor | MAPPED |
 | `v9-25` | Processing — one state + bar | v9-master | 16 | `/consult` | doctor | MAPPED |
 | `v9-26` | Processing — failed | v9-master | 16 | `/consult` | doctor | MAPPED |
-| `v9-27` | Verification — conflict, clinical red | v9-master | 18 | — | — | PLANNED |
-| `v9-28` | Verification — resolved inline | v9-master | 18 | — | — | PLANNED |
+| `v9-27` | Verification — conflict, clinical red | v9-master | 18 | `/consult` | doctor | MAPPED |
+| `v9-28` | Verification — resolved inline | v9-master | 18 | `/consult` | doctor | MAPPED |
 | `v9-29` | Verification — seven medicines | v9-master | 18 | — | — | PLANNED |
 | `v9-30` | Verification — clean day, readable prose | v9-master | 18 | `/consult` | doctor | MAPPED |
 | `v9-31` | Confirmed — saved | v9-master | 18 | `/consult` | doctor | MAPPED |

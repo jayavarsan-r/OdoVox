@@ -9,10 +9,10 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 26 |
+| APPROVED-DEVIATION | 28 |
 | OUT-OF-SCOPE | 1 |
 | MISMATCHED | 19 |
-| NOT-BUILT | 36 |
+| NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
 
@@ -70,10 +70,10 @@ _None. Every task closed its own decisions._
 | `v9-24` | Recording — paused (call) | 16 | APPROVED-DEVIATION | 5.7% | NOT-BUILT #48: The recording strip shows age but not the sitting number ("36 · S2") |
 | `v9-25` | Processing — one state + bar | 16 | APPROVED-DEVIATION | 2.6% | — |
 | `v9-26` | Processing — failed | 16 | APPROVED-DEVIATION | 6.5% | NOT-BUILT #42: Frame 26's second action, "Keep audio · review later", does not exist |
-| `v9-27` | Verification — conflict, clinical red | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-28` | Verification — resolved inline | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
+| `v9-27` | Verification — conflict, clinical red | 18 | APPROVED-DEVIATION | 13.8% | — |
+| `v9-28` | Verification — resolved inline | 18 | APPROVED-DEVIATION | 6.5% | — |
 | `v9-29` | Verification — seven medicines | 18 | NOT-BUILT | — | Task 18 owns this; no route or state driver reaches it yet |
-| `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.5% | NOT-BUILT #52: The FINDINGS and PROCEDURE prose sections have no extraction fields behind them |
+| `v9-30` | Verification — clean day, readable prose | 18 | APPROVED-DEVIATION | 6.5% | — |
 | `v9-31` | Confirmed — saved | 18 | APPROVED-DEVIATION | 6.6% | — |
 | `v9-32` | Patients — glyph rows | 19 | APPROVED-DEVIATION | 4.9% | NOT-BUILT #76: Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist |
 | `v9-33` | Patients — search active | 19 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #76: Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist |
@@ -151,6 +151,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 0.6%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-02` — Welcome · APPROVED-DEVIATION
 
@@ -169,6 +171,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.8%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #16 (fixed): /welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-03` — Phone · APPROVED-DEVIATION
 
@@ -190,6 +194,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.3%
 - `APPROVED-DEVIATION` #20 (approved): A lime focus ring on the .field; the frame's focused field has none
 - `APPROVED-DEVIATION` #21 (approved): A "By continuing you agree to our terms." line; frame 03 has none
 - `NOT-BUILT` #22 (open): No .mic-a affordance on /phone
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-04` — OTP — auto-read · APPROVED-DEVIATION
 
@@ -210,6 +216,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 1.5%
 - `APPROVED-DEVIATION` #14 (approved): An explicit "Verify" button; frames 04/05 auto-submit on the sixth digit
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #26 (fixed): A dotted texture sits behind the resend area; frames 04/05 have none
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-05` — OTP — wrong code · APPROVED-DEVIATION
 
@@ -233,6 +241,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.3%
 - `APPROVED-DEVIATION` #23 (approved): A "Wrong code. N attempts left." toast on top of the frame's inline message
 - `NOT-BUILT` #24 (withdrawn): WITHDRAWN — false finding. Resend already unlocks immediately on a wrong code.
 - `MUST-FIX` #26 (fixed): A dotted texture sits behind the resend area; frames 04/05 have none
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-07` — Role · APPROVED-DEVIATION
 
@@ -253,6 +263,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.8%
 - `MUST-FIX` #12 (reverted): /role used tap→navigate; frame 07 is select→sticky CTA "Continue as doctor"
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #19 (fixed): The .ob-q question wraps to two lines where frames 07 and 08 set it on one
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-08` — Create clinic — conversational · APPROVED-DEVIATION
 
@@ -273,6 +285,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #19 (fixed): The .ob-q question wraps to two lines where frames 07 and 08 set it on one
 - `MUST-FIX` #27 (fixed): Step 1 is missing frame 08's .ob-dots, verified-identity chip and defaults card, and its CTA reads "Continue →" not "Next · City"
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-09` — Join by code + preview · MISMATCHED
 
@@ -292,6 +306,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 - `APPROVED-DEVIATION` #17 (approved): /clinic-join is a two-field form + explicit "Find clinic"; frame 09 is one hero code field with a live check and a clinic preview
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #28 (fixed): The back control carries a "Join a clinic" text label and a stray Odo sits top-right
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-13` — Home — calm, glanceable, habit-forming · APPROVED-DEVIATION
 
@@ -319,6 +335,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 - `MUST-FIX` #64 (fixed): The day river counted cancelled appointments and put the chair marker on the wrong patient
 - `MUST-FIX` #65 (fixed): The seed created no appointments at all, so Home, Up next and Schedule were empty in every demo
 - `APPROVED-DEVIATION` #66 (approved): The captured river is shorter than frame 13's, because the harness pins the clock to a past date
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-21` — Consult — live queue · APPROVED-DEVIATION
 
@@ -344,6 +362,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 - `MUST-FIX` #69 (fixed): CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none
 - `APPROVED-DEVIATION` #70 (approved): Frames say "CHAIR 1"; the app says "Room 1" because that is what the model calls it
 - `MUST-FIX` #71 (fixed): Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-23` — Recording · APPROVED-DEVIATION
 
@@ -365,6 +385,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 4.7%
 - `MUST-FIX` #45 (fixed): The recording screen is restyled but not recomposed to frame 23
 - `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
 - `NOT-BUILT` #48 (open): The recording strip shows age but not the sitting number ("36 · S2")
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-24` — Recording — paused (call) · APPROVED-DEVIATION
 
@@ -387,6 +409,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.7%
 - `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
 - `NOT-BUILT` #48 (open): The recording strip shows age but not the sitting number ("36 · S2")
 - `NOT-BUILT` #49 (open): Auto-pause on interruption — frame 24's "Paused automatically for a phone call"
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-25` — Processing — one state + bar · APPROVED-DEVIATION
 
@@ -407,6 +431,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.6%
 - `MUST-FIX` #43 (fixed): The transcript was shown under the processing bar; the dentist must not see the pipeline
 - `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
 - `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-26` — Processing — failed · APPROVED-DEVIATION
 
@@ -427,6 +453,65 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
 - `NOT-BUILT` #42 (open): Frame 26's second action, "Keep audio · review later", does not exist
 - `NOT-BUILT` #44 (partially-fixed): Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven
 - `MUST-FIX` #46 (fixed): A rejected consultation made its visit permanently un-recordable — the root cause of #44
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+
+### `v9-27` — Verification — conflict, clinical red · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 13.8%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
+- `APPROVED-DEVIATION` #51 (approved): Frame 27's "Swap → Azithro 500" — no drug-substitution knowledge base exists
+- `APPROVED-DEVIATION` #52 (approved): The FINDINGS and PROCEDURE prose sections have no extraction fields behind them
+- `APPROVED-DEVIATION` #53 (approved): Confirm stays available over an allergy conflict; the dentist decides and the override is audited
+- `NOT-CAPTURED` #55 (resolved): The conflict, resolved and seven-medicine states need clinical data no seeded recording produces
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #96 (approved): The conflict line states the allergy and the class; it cannot state when it was recorded or the reaction
+- `APPROVED-DEVIATION` #98 (approved): NEXT SITTING shows the date; the frame also shows a time and the procedure
+- `APPROVED-DEVIATION` #99 (approved): The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw
+- `APPROVED-DEVIATION` #100 (approved): The prose region is empty, leaving vertical space the frames fill with FINDINGS and PROCEDURE
+- `APPROVED-DEVIATION` #101 (approved): GATE C FIX: the medicine row was a <button> containing the Remove and Undo buttons
+
+### `v9-28` — Verification — resolved inline · APPROVED-DEVIATION
+
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
+
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
+- canvas geometry: **PASS**
+
+- `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
+- `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
+- `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
+- `APPROVED-DEVIATION` #51 (approved): Frame 27's "Swap → Azithro 500" — no drug-substitution knowledge base exists
+- `APPROVED-DEVIATION` #52 (approved): The FINDINGS and PROCEDURE prose sections have no extraction fields behind them
+- `NOT-CAPTURED` #55 (resolved): The conflict, resolved and seven-medicine states need clinical data no seeded recording produces
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #97 (approved): The resolved warning lands in the SAFETY banner, not inline on a swapped row
+- `APPROVED-DEVIATION` #98 (approved): NEXT SITTING shows the date; the frame also shows a time and the procedure
+- `APPROVED-DEVIATION` #99 (approved): The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw
+- `APPROVED-DEVIATION` #100 (approved): The prose region is empty, leaving vertical space the frames fill with FINDINGS and PROCEDURE
+- `APPROVED-DEVIATION` #101 (approved): GATE C FIX: the medicine row was a <button> containing the Remove and Undo buttons
 
 ### `v9-30` — Verification — clean day, readable prose · APPROVED-DEVIATION
 
@@ -445,8 +530,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.5%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
-- `NOT-BUILT` #52 (open): The FINDINGS and PROCEDURE prose sections have no extraction fields behind them
+- `APPROVED-DEVIATION` #52 (approved): The FINDINGS and PROCEDURE prose sections have no extraction fields behind them
 - `APPROVED-DEVIATION` #54 (approved): Frame 30 packs medicines into a half-width tile beside NEXT; one composition ships for all four states
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-31` — Confirmed — saved · APPROVED-DEVIATION
 
@@ -465,6 +552,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.6%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #50 (approved): Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-32` — Patients — glyph rows · APPROVED-DEVIATION
 
@@ -488,6 +577,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 4.9%
 - `MUST-FIX` #61 (fixed): Reception's patient rows carried a medical flag; ruled out — reception queue is not a clinical record
 - `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
 - `NOT-BUILT` #76 (open): Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-33` — Patients — search active · APPROVED-DEVIATION
 
@@ -509,6 +600,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.2%
 - `MUST-FIX` #62 (fixed): The avatar ring and status dot read a column nothing maintains, so neither had ever rendered
 - `MUST-FIX` #63 (fixed): Search was missing its recents and the line explaining what it matches
 - `NOT-BUILT` #76 (open): Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-34` — Patients — no match · APPROVED-DEVIATION
 
@@ -527,6 +620,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 13.0%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `MUST-FIX` #63 (fixed): Search was missing its recents and the line explaining what it matches
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-35` — New patient — blank · APPROVED-DEVIATION
 
@@ -546,6 +641,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.1%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #56 (approved): The disabled-CTA line names what is actually missing instead of frame 35's static copy
 - `APPROVED-DEVIATION` #57 (approved): Optional fields move behind a 'More details' disclosure rather than being dropped
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-36` — New patient — voice intake · MISMATCHED
 
@@ -564,8 +661,10 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.1%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #57 (approved): Optional fields move behind a 'More details' disclosure rather than being dropped
-- `NOT-CAPTURED` #58 (open): The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio
+- `NOT-CAPTURED` #58 (resolved): The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio
 - `MUST-FIX` #59 (fixed): Voice intake claimed "Filled from your voice" over a form it had filled nothing into
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-37` — Patient — Overview · APPROVED-DEVIATION
 
@@ -587,6 +686,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 13.6%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-38` — Patient — Cases journey · APPROVED-DEVIATION
 
@@ -610,6 +711,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 13.5%
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
 - `MUST-FIX` #81 (fixed): Frame 38's "Schedule remaining" — the capability EXISTS; the Cases card does not reach it
 - `APPROVED-DEVIATION` #82 (approved): Journey steps are titled by procedure; v9 titles them by clinical step name
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-39` — Case — procedure detail · APPROVED-DEVIATION
 
@@ -631,6 +734,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.6%
 - `MUST-FIX` #84 (fixed): The case screen was titled "Treatment Plan" rather than naming the case
 - `APPROVED-DEVIATION` #85 (approved): FEES and NEXT read empty in the capture because the fixture has no billed or booked work
 - `MUST-FIX` #89 (fixed): Re-running the seed failed on the lab case's unique caseNumber
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-40` — Tooth map — FDI odontogram · APPROVED-DEVIATION
 
@@ -652,6 +757,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 13.6%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #60 (approved): Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-41` — Patient — Billing tab · APPROVED-DEVIATION
 
@@ -676,6 +783,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 11.7%
 - `APPROVED-DEVIATION` #78 (approved): The billing headline drops gross 'Billed' for the frame's OUTSTANDING / PAID pair
 - `MUST-FIX` #79 (fixed): The billing tab fetched bills twice, from two different endpoints
 - `APPROVED-DEVIATION` #80 (approved): The full identity block stays on every tab; v9 shows a compact header on 38/40/41
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-42` — Patient history — Odo timeline · APPROVED-DEVIATION
 
@@ -696,6 +805,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.9%
 - `APPROVED-DEVIATION` #86 (approved): History is a route reached from the overflow menu, not a sixth tab
 - `NOT-BUILT` #87 (open): A recorded allergy has no date — frame 42 shows one ('2019')
 - `MUST-FIX` #88 (fixed): The seed recorded the same allergy in one place and not the other
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-46` — Schedule — doctor day · MISMATCHED
 
@@ -713,6 +824,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-47` — Schedule — reception multi-doctor · MISMATCHED
 
@@ -730,6 +843,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-50` — Reception Today · APPROVED-DEVIATION
 
@@ -753,6 +868,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.8%
 - `MUST-FIX` #73 (fixed): Checkout rows offer a "Take payment" action where frame 50 shows the amount as a chip
 - `MUST-FIX` #74 (fixed): Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing
 - `NOT-BUILT` #75 (open): The free-room footer says which rooms are free but not when they next fill
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-54` — Billing — densified · MISMATCHED
 
@@ -770,6 +887,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-55` — Outstanding dues · MISMATCHED
 
@@ -787,6 +906,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.6%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-56` — Lab list — stat pills, not tiles · MISMATCHED
 
@@ -804,6 +925,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.3%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-58` — Lab — case detail · MISMATCHED
 
@@ -821,6 +944,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 15.4%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-59` — The ＋ — quick New-case sheet · MISMATCHED
 
@@ -839,6 +964,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 39.7%
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #9 (deferred-to-task-28): /lab/new kept as a page; the frame shows a sheet
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-61` — Lab vendors · MISMATCHED
 
@@ -856,6 +983,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.4%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-62` — Patient inbox · MISMATCHED
 
@@ -873,6 +1002,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.1%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-65` — Lab inbox — quiet verdicts · MISMATCHED
 
@@ -890,6 +1021,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.7%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-67` — Inventory — stock · MISMATCHED
 
@@ -907,6 +1040,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.7%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-68` — Inventory — item detail · MISMATCHED
 
@@ -924,6 +1059,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-70` — More — module hub · MISMATCHED
 
@@ -944,6 +1081,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 - `APPROVED-DEVIATION` #8 (approved): /more shows 3 module tiles for a doctor, not 4
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `NOT-BUILT` #25 (open): Availability's "2 doctors" and Team's "1 request" values are absent
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-72` — WhatsApp settings · MISMATCHED
 
@@ -961,6 +1100,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-73` — Availability — weekly hours · MISMATCHED
 
@@ -978,6 +1119,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.2%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-74` — Days off · MISMATCHED
 
@@ -995,6 +1138,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.9%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
 ### `v9-75` — Prescription templates · MISMATCHED
 
@@ -1012,3 +1157,5 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.0%
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
 - `APPROVED-DEVIATION` #2 (approved): design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
+- `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
+- `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works

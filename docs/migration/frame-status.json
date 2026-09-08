@@ -239,18 +239,18 @@
   {
     "frame": "v9-27",
     "name": "Verification — conflict, clinical red",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 13.805896805896806,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-28",
     "name": "Verification — resolved inline",
-    "status": "NOT-BUILT",
-    "changedPct": null,
-    "gateB": "NOT-BUILT",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.468234468234469,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
@@ -401,13 +401,11 @@
   {
     "frame": "v9-45",
     "name": "Prescription — conflict caught",
-    "status": "BLOCKED",
+    "status": "NOT-BUILT",
     "changedPct": null,
     "gateB": "NOT-BUILT",
     "openMustFix": [],
-    "openDecisions": [
-      "#91: CLINICAL: frame 45 LOCKS 'Share Rx PDF' while an allergy conflict is unresolved"
-    ]
+    "openDecisions": []
   },
   {
     "frame": "v9-46",
