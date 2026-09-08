@@ -55,14 +55,25 @@ exactly like code bugs:
 | `Connection is closed` from ioredis        | `odovox-redis` simply isn't up     |
 
 Diagnose in one command — `lsof -nP -iTCP:5432 -sTCP:LISTEN` shows both
-listeners. Work around it by addressing Docker over the **LAN IP** rather than
-localhost (`ipconfig getifaddr en0`), without touching `.env`:
+listeners.
+
+**Fix it by moving Docker off the contended ports, not by chasing an IP.** Give
+the compose services ports nothing else wants, and `localhost` becomes
+unambiguous again:
 
 ```bash
-docker compose up -d                       # redis is easy to forget
-export DATABASE_URL="postgresql://odovox:odovox@<LAN-IP>:5432/odovox?schema=public"
-export S3_ENDPOINT="http://<LAN-IP>:9002"  # compose maps MinIO to 9002
+POSTGRES_PORT=5433 MINIO_PORT=9002 docker compose up -d   # redis is easy to forget
+export DATABASE_URL="postgresql://odovox:odovox@localhost:5433/odovox?schema=public"
+export S3_ENDPOINT="http://localhost:9002"
 ```
+
+The named volumes survive the remap, so no data is lost.
+
+Addressing Docker over the machine's **LAN IP** also works and needs no compose
+change — but the IP is DHCP-assigned and moves. It changed mid-session once
+(172.16.61.56 → 192.168.0.103) and the running API started returning 500s from
+`Can't reach database server`, which reads like an outage rather than a stale
+env var. Prefer the ports.
 
 This has been rediscovered from scratch twice. If the API suite fails wholesale
 and your diff is web-only, it is this — not a regression.

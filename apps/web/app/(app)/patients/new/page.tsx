@@ -295,6 +295,28 @@ export default function NewPatientPage() {
               1fr column refuses to shrink below its content's intrinsic width and the phone
               field ran off the right edge of a 370px screen. Same trap as flex-1 without
               min-w-0, which the field itself also needed. */}
+          <Field label="PHONE" error={errors.phone?.message}>
+            <Controller
+              control={control}
+              name="phone"
+              render={({ field }) => (
+                <PhoneInput
+                  value={field.value}
+                  onChange={(v) => {
+                    clearVoiced('phone');
+                    field.onChange(v);
+                  }}
+                  invalid={!!errors.phone}
+                  voiced={voiced.has('phone')}
+                />
+              )}
+            />
+          </Field>
+
+          {/* Frame 36 groups AGE and GENDER on one row and gives PHONE the full width.
+              Age and gender are read together — "34, female" is one fact about the patient —
+              and the phone number is the longest value on the form, so it is the one that
+              actually needs the width. */}
           <div className="grid grid-cols-[96px_minmax(0,1fr)] gap-[11px]">
             <Field label="AGE" error={errors.age?.message}>
               <Input
@@ -310,42 +332,24 @@ export default function NewPatientPage() {
                 })}
               />
             </Field>
-            <Field label="PHONE" error={errors.phone?.message}>
+            <Field label="GENDER" error={errors.gender?.message}>
               <Controller
                 control={control}
-                name="phone"
+                name="gender"
                 render={({ field }) => (
-                  <PhoneInput
+                  <Segmented
+                    label="Gender"
+                    options={GENDERS}
                     value={field.value}
                     onChange={(v) => {
-                      clearVoiced('phone');
+                      clearVoiced('gender');
                       field.onChange(v);
                     }}
-                    invalid={!!errors.phone}
-                    voiced={voiced.has('phone')}
                   />
                 )}
               />
             </Field>
           </div>
-
-          <Field label="GENDER" error={errors.gender?.message}>
-            <Controller
-              control={control}
-              name="gender"
-              render={({ field }) => (
-                <Segmented
-                  label="Gender"
-                  options={GENDERS}
-                  value={field.value}
-                  onChange={(v) => {
-                    clearVoiced('gender');
-                    field.onChange(v);
-                  }}
-                />
-              )}
-            />
-          </Field>
 
           {/*
             CHIEF COMPLAINT is a primary field, not a disclosure (#103). It is why the
