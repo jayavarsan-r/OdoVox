@@ -41,6 +41,32 @@ cannot be the cause. Reset the dev DB rather than "fixing" the failure.
 Because API tests share the dev database, **a running `pnpm dev` can make them
 fail.** Consider stopping it before a full `pnpm verify`.
 
+### Native services shadow Docker's — check this BEFORE debugging the API suite
+
+This machine runs Homebrew Postgres and MinIO that bind the same ports as the
+compose stack, on `127.0.0.1`. Docker binds `*`. `localhost` resolves to the
+native one, so the API talks to the wrong server and fails in ways that look
+exactly like code bugs:
+
+| Symptom                                    | Actually                           |
+| ------------------------------------------ | ---------------------------------- |
+| `P1010 User was denied access`             | native Postgres — no `odovox` role |
+| `InvalidAccessKeyId`, ~30 storage failures | native MinIO on 9000               |
+| `Connection is closed` from ioredis        | `odovox-redis` simply isn't up     |
+
+Diagnose in one command — `lsof -nP -iTCP:5432 -sTCP:LISTEN` shows both
+listeners. Work around it by addressing Docker over the **LAN IP** rather than
+localhost (`ipconfig getifaddr en0`), without touching `.env`:
+
+```bash
+docker compose up -d                       # redis is easy to forget
+export DATABASE_URL="postgresql://odovox:odovox@<LAN-IP>:5432/odovox?schema=public"
+export S3_ENDPOINT="http://<LAN-IP>:9002"  # compose maps MinIO to 9002
+```
+
+This has been rediscovered from scratch twice. If the API suite fails wholesale
+and your diff is web-only, it is this — not a regression.
+
 ## Non-negotiables
 
 - **Money is integer paise.** Never a float, never rupees in the DB. Format only

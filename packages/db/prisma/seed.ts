@@ -1,13 +1,13 @@
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { config as loadEnv } from 'dotenv';
-import { PrismaClient } from '@prisma/client';
-import { STARTER_TEMPLATES } from '../src/starter-templates.js';
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import crypto from "node:crypto";
+import { config as loadEnv } from "dotenv";
+import { PrismaClient } from "@prisma/client";
+import { STARTER_TEMPLATES } from "../src/starter-templates.js";
 
 // Load the repo-root .env so the seed has DATABASE_URL + PHI_ENCRYPTION_KEY.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-loadEnv({ path: path.resolve(__dirname, '../../../.env') });
+loadEnv({ path: path.resolve(__dirname, "../../../.env") });
 
 const prisma = new PrismaClient();
 
@@ -18,54 +18,61 @@ const prisma = new PrismaClient();
  */
 function encryptField(plaintext: string): string {
   const b64 = process.env.PHI_ENCRYPTION_KEY;
-  if (!b64) throw new Error('PHI_ENCRYPTION_KEY is required to seed encrypted PHI');
-  const key = Buffer.from(b64, 'base64');
-  if (key.length !== 32) throw new Error('PHI_ENCRYPTION_KEY must decode to exactly 32 bytes');
-  const version = Number(process.env.PHI_KEY_VERSION ?? '1') & 0xff;
+  if (!b64)
+    throw new Error("PHI_ENCRYPTION_KEY is required to seed encrypted PHI");
+  const key = Buffer.from(b64, "base64");
+  if (key.length !== 32)
+    throw new Error("PHI_ENCRYPTION_KEY must decode to exactly 32 bytes");
+  const version = Number(process.env.PHI_KEY_VERSION ?? "1") & 0xff;
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const ciphertext = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
   const tag = cipher.getAuthTag();
-  return Buffer.concat([Buffer.from([version]), iv, ciphertext, tag]).toString('base64');
+  return Buffer.concat([Buffer.from([version]), iv, ciphertext, tag]).toString(
+    "base64",
+  );
 }
 
 async function main() {
-  console.warn('🌱 Seeding Odovox demo data…');
+  console.warn("🌱 Seeding Odovox demo data…");
 
   // --- Users ---------------------------------------------------------------
   const doctor = await prisma.user.upsert({
-    where: { phone: '9000000001' },
+    where: { phone: "9000000001" },
     update: {},
-    create: { phone: '9000000001', name: 'Dr. Asha Menon' },
+    create: { phone: "9000000001", name: "Dr. Asha Menon" },
   });
 
   const receptionist = await prisma.user.upsert({
-    where: { phone: '9000000002' },
+    where: { phone: "9000000002" },
     update: {},
-    create: { phone: '9000000002', name: 'Ravi Kumar' },
+    create: { phone: "9000000002", name: "Ravi Kumar" },
   });
 
   // --- Clinic --------------------------------------------------------------
   const clinic = await prisma.clinic.upsert({
-    where: { joinCode: 'SMILE7' },
+    where: { joinCode: "SMILE7" },
     update: {},
     create: {
-      name: 'Smile Dental Care',
-      joinCode: 'SMILE7',
-      addressLine: '12 MG Road',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      pincode: '560001',
-      contactPhone: '8000000000',
-      openingTime: '09:00',
-      closingTime: '20:00',
-      lunchStart: '13:30',
-      lunchEnd: '14:30',
+      name: "Smile Dental Care",
+      joinCode: "SMILE7",
+      addressLine: "12 MG Road",
+      city: "Bengaluru",
+      state: "Karnataka",
+      pincode: "560001",
+      contactPhone: "8000000000",
+      openingTime: "09:00",
+      closingTime: "20:00",
+      lunchStart: "13:30",
+      lunchEnd: "14:30",
       weeklyOffDays: [0],
       chairsCount: 2,
-      timezone: 'Asia/Kolkata',
-      whatsappAccountStatus: 'connected',
-      whatsappAccountPhoneNumber: '+918000000000',
+      timezone: "Asia/Kolkata",
+      whatsappAccountStatus: "connected",
+      whatsappAccountPhoneNumber: "+918000000000",
       whatsappBudgetPaise: 50000, // ₹500 monthly budget
     },
   });
@@ -74,8 +81,8 @@ async function main() {
   await prisma.clinic.update({
     where: { id: clinic.id },
     data: {
-      whatsappAccountStatus: 'connected',
-      whatsappAccountPhoneNumber: '+918000000000',
+      whatsappAccountStatus: "connected",
+      whatsappAccountPhoneNumber: "+918000000000",
       whatsappBudgetPaise: 50000,
     },
   });
@@ -86,23 +93,25 @@ async function main() {
     create: {
       clinicId: clinic.id,
       userId: doctor.id,
-      role: 'DOCTOR',
+      role: "DOCTOR",
       isAdmin: true,
-      status: 'ACTIVE',
-      qualification: 'BDS, MDS (Endodontics)',
-      registrationNumberEnc: encryptField('KA-DENT-12345'),
-      specialization: 'Root Canal Therapy',
+      status: "ACTIVE",
+      qualification: "BDS, MDS (Endodontics)",
+      registrationNumberEnc: encryptField("KA-DENT-12345"),
+      specialization: "Root Canal Therapy",
     },
   });
 
   await prisma.clinicMember.upsert({
-    where: { clinicId_userId: { clinicId: clinic.id, userId: receptionist.id } },
+    where: {
+      clinicId_userId: { clinicId: clinic.id, userId: receptionist.id },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
       userId: receptionist.id,
-      role: 'RECEPTIONIST',
-      status: 'ACTIVE',
+      role: "RECEPTIONIST",
+      status: "ACTIVE",
     },
   });
 
@@ -112,8 +121,8 @@ async function main() {
       clinicId: clinic.id,
       doctorId: doctor.id,
       dayOfWeek,
-      startTime: '09:00',
-      endTime: '18:00',
+      startTime: "09:00",
+      endTime: "18:00",
     })),
     skipDuplicates: true,
   });
@@ -122,57 +131,88 @@ async function main() {
   const room1 = await prisma.room.upsert({
     where: { id: `seed-room-${clinic.id}-1` },
     update: {},
-    create: { id: `seed-room-${clinic.id}-1`, clinicId: clinic.id, name: 'Room 1', number: '1' },
+    create: {
+      id: `seed-room-${clinic.id}-1`,
+      clinicId: clinic.id,
+      name: "Room 1",
+      number: "1",
+    },
   });
   await prisma.room.upsert({
     where: { id: `seed-room-${clinic.id}-2` },
     update: {},
-    create: { id: `seed-room-${clinic.id}-2`, clinicId: clinic.id, name: 'Room 2', number: '2' },
+    create: {
+      id: `seed-room-${clinic.id}-2`,
+      clinicId: clinic.id,
+      name: "Room 2",
+      number: "2",
+    },
   });
 
   // --- Patients (with encrypted PHI) --------------------------------------
   const patientSeed = [
     {
-      patientCode: 'PT-0001',
-      name: 'Meera Nair',
-      phone: '9876543210',
+      patientCode: "PT-0001",
+      name: "Meera Nair",
+      phone: "9876543210",
       age: 34,
-      gender: 'FEMALE' as const,
-      bloodGroup: 'O+',
-      address: 'Indiranagar, Bengaluru',
-      medicalHistory: 'Hypertension, controlled with medication.',
-      allergies: 'Penicillin',
-      medicalFlags: ['HYPERTENSION'],
+      gender: "FEMALE" as const,
+      bloodGroup: "O+",
+      address: "Indiranagar, Bengaluru",
+      medicalHistory: "Hypertension, controlled with medication.",
+      allergies: "Penicillin",
+      medicalFlags: ["HYPERTENSION"],
     },
     {
-      patientCode: 'PT-0002',
-      name: 'Arjun Reddy',
-      phone: '9123456780',
+      patientCode: "PT-0002",
+      name: "Arjun Reddy",
+      phone: "9123456780",
       age: 28,
-      gender: 'MALE' as const,
-      bloodGroup: 'B+',
-      address: 'Koramangala, Bengaluru',
+      gender: "MALE" as const,
+      bloodGroup: "B+",
+      address: "Koramangala, Bengaluru",
       medicalHistory: null,
       allergies: null,
       medicalFlags: [],
     },
     {
-      patientCode: 'PT-0003',
-      name: 'Fatima Sheikh',
-      phone: '9988776655',
+      patientCode: "PT-0003",
+      name: "Fatima Sheikh",
+      phone: "9988776655",
       age: 45,
-      gender: 'FEMALE' as const,
-      bloodGroup: 'A+',
-      address: 'Whitefield, Bengaluru',
-      medicalHistory: 'Type 2 diabetes.',
-      allergies: 'None known',
-      medicalFlags: ['DIABETES'],
+      gender: "FEMALE" as const,
+      bloodGroup: "A+",
+      address: "Whitefield, Bengaluru",
+      medicalHistory: "Type 2 diabetes.",
+      allergies: "None known",
+      medicalFlags: ["DIABETES"],
+    },
+    {
+      // The long-prescription demo. The mock STT has a seeded recording keyed to this
+      // patientCode that dictates seven medicines, so the prescription list can be built
+      // against and reviewed at a realistic length — reached by recording a consultation for
+      // them, exactly as any other. No allergy: the length is the only thing being exercised.
+      patientCode: "PT-0005",
+      name: "Suresh Iyer",
+      phone: "9845012345",
+      age: 52,
+      gender: "MALE" as const,
+      bloodGroup: "AB+",
+      address: "Jayanagar, Bengaluru",
+      medicalHistory: "Acid reflux.",
+      allergies: "None known",
+      medicalFlags: [],
     },
   ];
 
   for (const p of patientSeed) {
     await prisma.patient.upsert({
-      where: { clinicId_patientCode: { clinicId: clinic.id, patientCode: p.patientCode } },
+      where: {
+        clinicId_patientCode: {
+          clinicId: clinic.id,
+          patientCode: p.patientCode,
+        },
+      },
       update: {},
       create: {
         clinicId: clinic.id,
@@ -183,17 +223,19 @@ async function main() {
         gender: p.gender,
         bloodGroup: p.bloodGroup,
         addressEnc: p.address ? encryptField(p.address) : null,
-        medicalHistoryEnc: p.medicalHistory ? encryptField(p.medicalHistory) : null,
+        medicalHistoryEnc: p.medicalHistory
+          ? encryptField(p.medicalHistory)
+          : null,
         allergiesEnc: p.allergies ? encryptField(p.allergies) : null,
         medicalFlags: p.medicalFlags,
-        status: 'ACTIVE',
+        status: "ACTIVE",
         createdById: doctor.id,
       },
     });
   }
 
   const firstPatient = await prisma.patient.findFirstOrThrow({
-    where: { clinicId: clinic.id, patientCode: 'PT-0001' },
+    where: { clinicId: clinic.id, patientCode: "PT-0001" },
   });
 
   // --- Lab vendor + sample cases (Phase 7) --------------------------------
@@ -204,19 +246,21 @@ async function main() {
     create: {
       id: `seed-labvendor-${clinic.id}`,
       clinicId: clinic.id,
-      name: 'Saveetha Dental Lab',
-      contactPhoneEnc: encryptField('9840012345'),
-      contactPersonName: 'Mr. Karthik',
-      addressEnc: encryptField('Poonamallee High Rd, Chennai 600077'),
-      email: 'orders@saveethalab.in',
+      name: "Saveetha Dental Lab",
+      contactPhoneEnc: encryptField("9840012345"),
+      contactPersonName: "Mr. Karthik",
+      addressEnc: encryptField("Poonamallee High Rd, Chennai 600077"),
+      email: "orders@saveethalab.in",
       defaultTurnaroundDays: 7,
-      specialties: ['crown', 'bridge', 'denture'],
-      notes: 'Primary crown & bridge lab.',
+      specialties: ["crown", "bridge", "denture"],
+      notes: "Primary crown & bridge lab.",
       createdById: doctor.id,
     },
   });
 
-  const labCaseCount = await prisma.labCase.count({ where: { clinicId: clinic.id } });
+  const labCaseCount = await prisma.labCase.count({
+    where: { clinicId: clinic.id },
+  });
   if (labCaseCount === 0) {
     const now = Date.now();
     // 1) DRAFT — impression just taken, not sent.
@@ -226,17 +270,17 @@ async function main() {
         patientId: firstPatient.id,
         doctorId: doctor.id,
         vendorId: labVendor.id,
-        caseNumber: 'LC-SM0001AA',
-        type: 'CROWN',
+        caseNumber: "LC-SM0001AA",
+        type: "CROWN",
         teeth: [26],
-        material: 'Zirconia',
-        shade: 'A2',
-        description: 'Crown for missing molar.',
+        material: "Zirconia",
+        shade: "A2",
+        description: "Crown for missing molar.",
         impressionTakenAt: new Date(now),
-        status: 'DRAFT',
+        status: "DRAFT",
         costPaise: 250000,
         patientChargePaise: 1500000,
-        notesEnc: encryptField('Patient prefers a natural shade.'),
+        notesEnc: encryptField("Patient prefers a natural shade."),
         createdById: doctor.id,
       },
     });
@@ -247,16 +291,16 @@ async function main() {
         patientId: firstPatient.id,
         doctorId: doctor.id,
         vendorId: labVendor.id,
-        caseNumber: 'LC-SM0002BB',
-        type: 'BRIDGE',
+        caseNumber: "LC-SM0002BB",
+        type: "BRIDGE",
         teeth: [14, 15, 16],
-        material: 'PFM',
-        shade: 'A3',
-        description: '3-unit posterior bridge.',
+        material: "PFM",
+        shade: "A3",
+        description: "3-unit posterior bridge.",
         impressionTakenAt: new Date(now - 2 * DAY_MS),
         sentAt: new Date(now - 2 * DAY_MS),
         expectedReturnAt: new Date(now + 5 * DAY_MS),
-        status: 'SENT',
+        status: "SENT",
         costPaise: 600000,
         createdById: doctor.id,
       },
@@ -268,17 +312,17 @@ async function main() {
         patientId: firstPatient.id,
         doctorId: doctor.id,
         vendorId: labVendor.id,
-        caseNumber: 'LC-SM0003CC',
-        type: 'DENTURE_PARTIAL',
+        caseNumber: "LC-SM0003CC",
+        type: "DENTURE_PARTIAL",
         teeth: [34, 35, 36, 37],
-        material: 'Acrylic',
-        shade: 'A2',
-        description: 'Lower partial denture.',
+        material: "Acrylic",
+        shade: "A2",
+        description: "Lower partial denture.",
         impressionTakenAt: new Date(now - 9 * DAY_MS),
         sentAt: new Date(now - 9 * DAY_MS),
         expectedReturnAt: new Date(now - 2 * DAY_MS),
         returnedAt: new Date(now - 1 * DAY_MS),
-        status: 'READY',
+        status: "READY",
         costPaise: 450000,
         patientChargePaise: 1800000,
         createdById: doctor.id,
@@ -288,10 +332,20 @@ async function main() {
 
   // --- Inventory categories + items + movements (Phase 7) ------------------
   const catDefs = [
-    { key: 'consumables', name: 'Consumables', iconName: 'box', sortOrder: 0 },
-    { key: 'anaesthetics', name: 'Anaesthetics', iconName: 'syringe', sortOrder: 1 },
-    { key: 'instruments', name: 'Instruments', iconName: 'wrench', sortOrder: 2 },
-    { key: 'xray', name: 'X-ray', iconName: 'scan', sortOrder: 3 },
+    { key: "consumables", name: "Consumables", iconName: "box", sortOrder: 0 },
+    {
+      key: "anaesthetics",
+      name: "Anaesthetics",
+      iconName: "syringe",
+      sortOrder: 1,
+    },
+    {
+      key: "instruments",
+      name: "Instruments",
+      iconName: "wrench",
+      sortOrder: 2,
+    },
+    { key: "xray", name: "X-ray", iconName: "scan", sortOrder: 3 },
   ];
   const catByKey: Record<string, string> = {};
   for (const c of catDefs) {
@@ -310,16 +364,73 @@ async function main() {
     catByKey[c.key] = row.id;
   }
 
-  const EXP_2026 = new Date('2026-12-31T00:00:00.000Z');
+  const EXP_2026 = new Date("2026-12-31T00:00:00.000Z");
   const itemDefs = [
-    { key: 'ligno', name: 'Lignocaine 2% carpule', cat: 'anaesthetics', unit: 'carpule', stock: 20, reorder: 10, expiry: EXP_2026 },
-    { key: 'gloves', name: 'Latex gloves L', cat: 'consumables', unit: 'piece', stock: 200, reorder: 100 },
-    { key: 'composite', name: 'Composite resin A2', cat: 'consumables', unit: 'piece', stock: 2, reorder: 5 }, // LOW STOCK demo
-    { key: 'needles', name: 'Disposable needles 30G', cat: 'consumables', unit: 'piece', stock: 50, reorder: 30 },
-    { key: 'suction', name: 'Suction tips', cat: 'consumables', unit: 'piece', stock: 300, reorder: 100 },
-    { key: 'burs', name: 'Dental burs assorted', cat: 'instruments', unit: 'piece', stock: 25, reorder: 10 },
-    { key: 'probe', name: 'Periodontal probe', cat: 'instruments', unit: 'piece', stock: 5, reorder: 3 },
-    { key: 'films', name: 'X-ray films size 2', cat: 'xray', unit: 'piece', stock: 100, reorder: 50 },
+    {
+      key: "ligno",
+      name: "Lignocaine 2% carpule",
+      cat: "anaesthetics",
+      unit: "carpule",
+      stock: 20,
+      reorder: 10,
+      expiry: EXP_2026,
+    },
+    {
+      key: "gloves",
+      name: "Latex gloves L",
+      cat: "consumables",
+      unit: "piece",
+      stock: 200,
+      reorder: 100,
+    },
+    {
+      key: "composite",
+      name: "Composite resin A2",
+      cat: "consumables",
+      unit: "piece",
+      stock: 2,
+      reorder: 5,
+    }, // LOW STOCK demo
+    {
+      key: "needles",
+      name: "Disposable needles 30G",
+      cat: "consumables",
+      unit: "piece",
+      stock: 50,
+      reorder: 30,
+    },
+    {
+      key: "suction",
+      name: "Suction tips",
+      cat: "consumables",
+      unit: "piece",
+      stock: 300,
+      reorder: 100,
+    },
+    {
+      key: "burs",
+      name: "Dental burs assorted",
+      cat: "instruments",
+      unit: "piece",
+      stock: 25,
+      reorder: 10,
+    },
+    {
+      key: "probe",
+      name: "Periodontal probe",
+      cat: "instruments",
+      unit: "piece",
+      stock: 5,
+      reorder: 3,
+    },
+    {
+      key: "films",
+      name: "X-ray films size 2",
+      cat: "xray",
+      unit: "piece",
+      stock: 100,
+      reorder: 50,
+    },
   ];
   const itemByKey: Record<string, string> = {};
   for (const it of itemDefs) {
@@ -341,16 +452,61 @@ async function main() {
     itemByKey[it.key] = row.id;
   }
 
-  const movementCount = await prisma.inventoryMovement.count({ where: { clinicId: clinic.id } });
+  const movementCount = await prisma.inventoryMovement.count({
+    where: { clinicId: clinic.id },
+  });
   if (movementCount === 0) {
     const now = Date.now();
     await prisma.inventoryMovement.createMany({
       data: [
-        { clinicId: clinic.id, itemId: itemByKey['ligno']!, kind: 'PURCHASE', quantity: 30, pricePerUnitPaise: 1200, totalPricePaise: 36000, batchNumber: 'LIG-2026-01', byUserId: doctor.id, createdAt: new Date(now - 28 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['gloves']!, kind: 'PURCHASE', quantity: 300, pricePerUnitPaise: 800, totalPricePaise: 240000, byUserId: receptionist.id, createdAt: new Date(now - 21 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['ligno']!, kind: 'CONSUMPTION', quantity: -10, procedureName: 'RCT', byUserId: doctor.id, createdAt: new Date(now - 14 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['gloves']!, kind: 'CONSUMPTION', quantity: -100, procedureName: 'General', byUserId: doctor.id, createdAt: new Date(now - 7 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['composite']!, kind: 'CONSUMPTION', quantity: -8, procedureName: 'Restorations', byUserId: doctor.id, createdAt: new Date(now - 3 * DAY_MS) },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey["ligno"]!,
+          kind: "PURCHASE",
+          quantity: 30,
+          pricePerUnitPaise: 1200,
+          totalPricePaise: 36000,
+          batchNumber: "LIG-2026-01",
+          byUserId: doctor.id,
+          createdAt: new Date(now - 28 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey["gloves"]!,
+          kind: "PURCHASE",
+          quantity: 300,
+          pricePerUnitPaise: 800,
+          totalPricePaise: 240000,
+          byUserId: receptionist.id,
+          createdAt: new Date(now - 21 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey["ligno"]!,
+          kind: "CONSUMPTION",
+          quantity: -10,
+          procedureName: "RCT",
+          byUserId: doctor.id,
+          createdAt: new Date(now - 14 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey["gloves"]!,
+          kind: "CONSUMPTION",
+          quantity: -100,
+          procedureName: "General",
+          byUserId: doctor.id,
+          createdAt: new Date(now - 7 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey["composite"]!,
+          kind: "CONSUMPTION",
+          quantity: -8,
+          procedureName: "Restorations",
+          byUserId: doctor.id,
+          createdAt: new Date(now - 3 * DAY_MS),
+        },
       ],
     });
   }
@@ -359,7 +515,9 @@ async function main() {
   // Akhilesh Guhan is the voice-demo patient (the RCT-on-26 narrative). We seed two
   // consultations so a fresh DB shows both a confirmed record and a pending verification card.
   const akhilesh = await prisma.patient.upsert({
-    where: { clinicId_patientCode: { clinicId: clinic.id, patientCode: 'PT-0004' } },
+    where: {
+      clinicId_patientCode: { clinicId: clinic.id, patientCode: "PT-0004" },
+    },
     // The in-chair demo patient carries an allergy, because frame 21's whole clinical
     // point is the indicator on the card of the person about to be prescribed for. With
     // an empty flag list the safety affordance is invisible in every demo and capture.
@@ -367,22 +525,22 @@ async function main() {
     // the encrypted ALLERGIES field drives the history's permanent red node. Seeding only
     // one left the demo saying a patient was allergic on one screen and not on another.
     update: {
-      medicalFlags: ['PENICILLIN_ALLERGY'],
-      allergiesEnc: encryptField('Penicillin'),
+      medicalFlags: ["PENICILLIN_ALLERGY"],
+      allergiesEnc: encryptField("Penicillin"),
     },
     create: {
       clinicId: clinic.id,
-      patientCode: 'PT-0004',
-      name: 'Akhilesh Guhan',
-      phone: '9001234567',
+      patientCode: "PT-0004",
+      name: "Akhilesh Guhan",
+      phone: "9001234567",
       age: 34,
-      gender: 'MALE',
-      bloodGroup: 'O+',
-      addressEnc: encryptField('Jayanagar, Bengaluru'),
-      medicalFlags: ['PENICILLIN_ALLERGY'],
-      allergiesEnc: encryptField('Penicillin'),
-      chiefComplaint: 'Ongoing root canal, upper left',
-      status: 'ACTIVE',
+      gender: "MALE",
+      bloodGroup: "O+",
+      addressEnc: encryptField("Jayanagar, Bengaluru"),
+      medicalFlags: ["PENICILLIN_ALLERGY"],
+      allergiesEnc: encryptField("Penicillin"),
+      chiefComplaint: "Ongoing root canal, upper left",
+      status: "ACTIVE",
       createdById: doctor.id,
     },
   });
@@ -398,14 +556,14 @@ async function main() {
       patientId: akhilesh.id,
       doctorId: doctor.id,
       assignedDoctorId: doctor.id,
-      status: 'CHECKOUT',
+      status: "CHECKOUT",
       tokenNumber: 1,
       checkedInAt: new Date(Date.now() - 75 * 60 * 1000),
       calledInAt: new Date(Date.now() - 60 * 60 * 1000),
       checkoutStartedAt: new Date(Date.now() - 30 * 60 * 1000),
       startedAt: new Date(Date.now() - 60 * 60 * 1000),
       endedAt: new Date(Date.now() - 30 * 60 * 1000),
-      chiefComplaint: 'Ongoing root canal, upper left',
+      chiefComplaint: "Ongoing root canal, upper left",
     },
   });
 
@@ -413,7 +571,9 @@ async function main() {
   // Phase 8 billing demo data: 3 bills (PAID / PARTIAL / DRAFT), 4 payments
   // (2 Cash, 1 UPI, 1 Razorpay) and 1 partial refund.
   // -------------------------------------------------------------------------
-  const billPrefix = (clinic.joinCode.replace(/[^A-Za-z]/g, '') + 'XX').slice(0, 2).toUpperCase();
+  const billPrefix = (clinic.joinCode.replace(/[^A-Za-z]/g, "") + "XX")
+    .slice(0, 2)
+    .toUpperCase();
   const nameSnap = akhilesh.name;
   const phoneSnap = akhilesh.phone;
 
@@ -433,7 +593,7 @@ async function main() {
       totalPaise: 350000,
       paidPaise: 350000,
       balancePaise: 0,
-      status: 'PAID',
+      status: "PAID",
       finalizedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       paidInFullAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       createdById: doctor.id,
@@ -441,9 +601,9 @@ async function main() {
         create: [
           {
             clinicId: clinic.id,
-            kind: 'PROCEDURE',
-            description: 'Scaling & polishing (full mouth)',
-            sourceType: 'manual',
+            kind: "PROCEDURE",
+            description: "Scaling & polishing (full mouth)",
+            sourceType: "manual",
             quantity: 1,
             unitPricePaise: 350000,
             subtotalPaise: 350000,
@@ -463,8 +623,8 @@ async function main() {
       patientId: akhilesh.id,
       paymentNumber: `PAY-${billPrefix}000001`,
       amountPaise: 150000,
-      method: 'CASH',
-      status: 'SUCCEEDED',
+      method: "CASH",
+      status: "SUCCEEDED",
       idempotencyKey: `seed-${clinic.id}-cash1`,
       receivedById: doctor.id,
       receivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
@@ -480,10 +640,10 @@ async function main() {
       patientId: akhilesh.id,
       paymentNumber: `PAY-${billPrefix}000002`,
       amountPaise: 200000,
-      method: 'UPI_MANUAL',
-      status: 'SUCCEEDED',
-      upiId: 'akhilesh@oksbi',
-      upiTxnRef: '418723004511',
+      method: "UPI_MANUAL",
+      status: "SUCCEEDED",
+      upiId: "akhilesh@oksbi",
+      upiTxnRef: "418723004511",
       idempotencyKey: `seed-${clinic.id}-upi1`,
       receivedById: doctor.id,
       receivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
@@ -507,26 +667,26 @@ async function main() {
       paidPaise: 1000000,
       refundedPaise: 200000,
       balancePaise: 700000, // 1,500,000 - 1,000,000 + 200,000
-      status: 'PARTIAL',
+      status: "PARTIAL",
       finalizedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      notes: 'Patient on a 2-installment plan',
+      notes: "Patient on a 2-installment plan",
       createdById: doctor.id,
       items: {
         create: [
           {
             clinicId: clinic.id,
-            kind: 'PROCEDURE',
-            description: 'Root canal therapy — 26',
-            sourceType: 'manual',
+            kind: "PROCEDURE",
+            description: "Root canal therapy — 26",
+            sourceType: "manual",
             quantity: 1,
             unitPricePaise: 900000,
             subtotalPaise: 900000,
           },
           {
             clinicId: clinic.id,
-            kind: 'LAB_CHARGE',
-            description: 'Crown — Zirconia (26)',
-            sourceType: 'manual',
+            kind: "LAB_CHARGE",
+            description: "Crown — Zirconia (26)",
+            sourceType: "manual",
             quantity: 1,
             unitPricePaise: 600000,
             subtotalPaise: 600000,
@@ -546,8 +706,8 @@ async function main() {
       patientId: akhilesh.id,
       paymentNumber: `PAY-${billPrefix}000003`,
       amountPaise: 500000,
-      method: 'CASH',
-      status: 'SUCCEEDED',
+      method: "CASH",
+      status: "SUCCEEDED",
       idempotencyKey: `seed-${clinic.id}-cash2`,
       receivedById: doctor.id,
       receivedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -563,10 +723,10 @@ async function main() {
       patientId: akhilesh.id,
       paymentNumber: `PAY-${billPrefix}000004`,
       amountPaise: 500000,
-      method: 'RAZORPAY',
-      status: 'PARTIAL_REFUND',
-      razorpayLinkId: 'plink_seed_demo',
-      razorpayPaymentId: 'pay_seed_demo',
+      method: "RAZORPAY",
+      status: "PARTIAL_REFUND",
+      razorpayLinkId: "plink_seed_demo",
+      razorpayPaymentId: "pay_seed_demo",
       razorpayFee: 10000,
       refundedAmountPaise: 200000,
       idempotencyKey: `seed-${clinic.id}-rzp1`,
@@ -586,11 +746,11 @@ async function main() {
       billId: billPartial.id,
       refundNumber: `RF-${billPrefix}000001`,
       amountPaise: 200000,
-      reason: 'Crown shade revised — partial adjustment',
-      method: 'RAZORPAY',
-      razorpayRefundId: 'rfnd_seed_demo',
-      razorpayStatus: 'processed',
-      status: 'SUCCEEDED',
+      reason: "Crown shade revised — partial adjustment",
+      method: "RAZORPAY",
+      razorpayRefundId: "rfnd_seed_demo",
+      razorpayStatus: "processed",
+      status: "SUCCEEDED",
       processedById: doctor.id,
       processedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
     },
@@ -612,15 +772,15 @@ async function main() {
       subtotalPaise: 350000,
       totalPaise: 350000,
       balancePaise: 350000,
-      status: 'DRAFT',
+      status: "DRAFT",
       createdById: doctor.id,
       items: {
         create: [
           {
             clinicId: clinic.id,
-            kind: 'PROCEDURE',
-            description: 'Root canal therapy — 26 (sitting 3)',
-            sourceType: 'manual',
+            kind: "PROCEDURE",
+            description: "Root canal therapy — 26 (sitting 3)",
+            sourceType: "manual",
             quantity: 1,
             unitPricePaise: 350000,
             subtotalPaise: 350000,
@@ -637,29 +797,35 @@ async function main() {
       id: `seed-consult-${clinic.id}-rct`,
       visitId: confirmedVisit.id,
       rawTranscriptEnc: encryptField(
-        'RCT on 26 completed, third sitting. Amoxicillin 500mg TID for 5 days. Review next week.',
+        "RCT on 26 completed, third sitting. Amoxicillin 500mg TID for 5 days. Review next week.",
       ),
       structuredData: {
-        procedure: 'RCT',
+        procedure: "RCT",
         teeth: [26],
         sittingCurrent: 3,
         sittingTotal: 4,
-        status: 'COMPLETED',
+        status: "COMPLETED",
         prescriptions: [
-          { name: 'Amoxicillin', dosage: '500mg', frequency: 'TID', durationDays: 5, instructions: null },
+          {
+            name: "Amoxicillin",
+            dosage: "500mg",
+            frequency: "TID",
+            durationDays: 5,
+            instructions: null,
+          },
         ],
         followUp: { afterDays: 7, procedureHint: null },
-        toothStatusUpdates: [{ tooth: 26, status: 'RCT', note: null }],
+        toothStatusUpdates: [{ tooth: 26, status: "RCT", note: null }],
         notes: null,
         clarifications: [],
         safetyWarnings: [],
       },
-      languageCode: 'en-IN',
-      provider: 'mock+mock',
+      languageCode: "en-IN",
+      provider: "mock+mock",
       sttLatencyMs: 820,
       extractionLatencyMs: 1180,
       safetyWarnings: [],
-      status: 'CONFIRMED',
+      status: "CONFIRMED",
       confirmedById: doctor.id,
       confirmedAt: new Date(Date.now() - 30 * 60 * 1000),
     },
@@ -675,7 +841,7 @@ async function main() {
     // "Queue: 1 WAITING · 1 IN_CHAIR · 1 CHECKOUT". `pnpm db:seed` is the documented way
     // to get back to a known demo, so it has to actually do that.
     update: {
-      status: 'IN_CHAIR',
+      status: "IN_CHAIR",
       roomId: room1.id,
       calledInAt: new Date(Date.now() - 5 * 60 * 1000),
       startedAt: new Date(),
@@ -688,12 +854,12 @@ async function main() {
       doctorId: doctor.id,
       assignedDoctorId: doctor.id,
       roomId: room1.id,
-      status: 'IN_CHAIR',
+      status: "IN_CHAIR",
       tokenNumber: 2,
       checkedInAt: new Date(Date.now() - 20 * 60 * 1000),
       calledInAt: new Date(Date.now() - 5 * 60 * 1000),
       startedAt: new Date(),
-      chiefComplaint: 'Sensitivity, lower right',
+      chiefComplaint: "Sensitivity, lower right",
     },
   });
 
@@ -704,7 +870,7 @@ async function main() {
     // reopened (correctly — you do not un-file a clinical record). Re-seeding puts the
     // demo back to a consultation waiting for review.
     update: {
-      status: 'PENDING_REVIEW',
+      status: "PENDING_REVIEW",
       confirmedAt: null,
       confirmedById: null,
       rejectedById: null,
@@ -714,40 +880,46 @@ async function main() {
       id: `seed-consult-${clinic.id}-pending`,
       visitId: pendingVisit.id,
       rawTranscriptEnc: encryptField(
-        'Composite filling on 46, caries removed. Ibuprofen 400mg BD for 3 days after food. Review in 2 weeks.',
+        "Composite filling on 46, caries removed. Ibuprofen 400mg BD for 3 days after food. Review in 2 weeks.",
       ),
       structuredData: {
-        procedure: 'Filling',
+        procedure: "Filling",
         teeth: [46],
         sittingCurrent: 1,
         sittingTotal: 1,
-        status: 'COMPLETED',
+        status: "COMPLETED",
         prescriptions: [
-          { name: 'Ibuprofen', dosage: '400mg', frequency: 'BD', durationDays: 3, instructions: 'after food' },
+          {
+            name: "Ibuprofen",
+            dosage: "400mg",
+            frequency: "BD",
+            durationDays: 3,
+            instructions: "after food",
+          },
         ],
-        followUp: { afterDays: 14, procedureHint: 'Review' },
-        toothStatusUpdates: [{ tooth: 46, status: 'FILLED', note: null }],
+        followUp: { afterDays: 14, procedureHint: "Review" },
+        toothStatusUpdates: [{ tooth: 46, status: "FILLED", note: null }],
         notes: null,
         clarifications: [],
         safetyWarnings: [],
       },
-      languageCode: 'en-IN',
-      provider: 'mock+mock',
+      languageCode: "en-IN",
+      provider: "mock+mock",
       sttLatencyMs: 760,
       extractionLatencyMs: 1230,
       safetyWarnings: [],
-      status: 'PENDING_REVIEW',
+      status: "PENDING_REVIEW",
     },
   });
 
   // (3) WAITING — Arjun Reddy checked in for a routine cleaning, in Dr. Asha's queue.
   const arjun = await prisma.patient.findFirstOrThrow({
-    where: { clinicId: clinic.id, patientCode: 'PT-0002' },
+    where: { clinicId: clinic.id, patientCode: "PT-0002" },
   });
   const waitingVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-waiting` },
     update: {
-      status: 'WAITING',
+      status: "WAITING",
       roomId: null,
       checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
       calledInAt: null,
@@ -760,15 +932,17 @@ async function main() {
       patientId: arjun.id,
       doctorId: doctor.id,
       assignedDoctorId: doctor.id,
-      status: 'WAITING',
+      status: "WAITING",
       tokenNumber: 3,
       checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
-      chiefComplaint: 'Routine cleaning',
+      chiefComplaint: "Routine cleaning",
     },
   });
 
   // --- Queue events (so a fresh DB shows a populated activity feed) ---------
-  const queueEventCount = await prisma.queueEvent.count({ where: { clinicId: clinic.id } });
+  const queueEventCount = await prisma.queueEvent.count({
+    where: { clinicId: clinic.id },
+  });
   if (queueEventCount === 0) {
     await prisma.queueEvent.createMany({
       data: [
@@ -776,7 +950,7 @@ async function main() {
           clinicId: clinic.id,
           visitId: waitingVisit.id,
           patientId: arjun.id,
-          type: 'CHECKED_IN',
+          type: "CHECKED_IN",
           byUserId: receptionist.id,
           createdAt: new Date(Date.now() - 8 * 60 * 1000),
         },
@@ -784,7 +958,7 @@ async function main() {
           clinicId: clinic.id,
           visitId: pendingVisit.id,
           patientId: akhilesh.id,
-          type: 'CALLED_IN',
+          type: "CALLED_IN",
           byUserId: doctor.id,
           metadata: { roomId: room1.id },
           createdAt: new Date(Date.now() - 5 * 60 * 1000),
@@ -793,7 +967,7 @@ async function main() {
           clinicId: clinic.id,
           visitId: confirmedVisit.id,
           patientId: akhilesh.id,
-          type: 'CHECKOUT_STARTED',
+          type: "CHECKOUT_STARTED",
           byUserId: doctor.id,
           createdAt: new Date(Date.now() - 30 * 60 * 1000),
         },
@@ -823,59 +997,64 @@ async function main() {
   const now = Date.now();
   const WHATSAPP_TEMPLATES = [
     {
-      templateKey: 'appointment_reminder_24h',
-      templateName: 'appointment_reminder_24h',
-      category: 'UTILITY' as const,
-      body: 'Hi {{1}}, this is a reminder for your appointment at {{2}} tomorrow at {{3}}. Reply 1 to confirm, 2 to reschedule.',
-      variables: ['patient_name', 'clinic_name', 'appt_time'],
+      templateKey: "appointment_reminder_24h",
+      templateName: "appointment_reminder_24h",
+      category: "UTILITY" as const,
+      body: "Hi {{1}}, this is a reminder for your appointment at {{2}} tomorrow at {{3}}. Reply 1 to confirm, 2 to reschedule.",
+      variables: ["patient_name", "clinic_name", "appt_time"],
     },
     {
-      templateKey: 'appointment_reminder_1h',
-      templateName: 'appointment_reminder_1h',
-      category: 'UTILITY' as const,
-      body: 'Hi {{1}}, your appointment at {{2}} is in 1 hour. Please arrive 10 minutes early.',
-      variables: ['patient_name', 'clinic_name'],
+      templateKey: "appointment_reminder_1h",
+      templateName: "appointment_reminder_1h",
+      category: "UTILITY" as const,
+      body: "Hi {{1}}, your appointment at {{2}} is in 1 hour. Please arrive 10 minutes early.",
+      variables: ["patient_name", "clinic_name"],
     },
     {
-      templateKey: 'prescription_ready',
-      templateName: 'prescription_ready',
-      category: 'SERVICE' as const,
-      body: 'Hi {{1}}, your prescription from your visit on {{2}} is attached. {{3}} - Dr. {{4}}',
-      variables: ['patient_name', 'visit_date', 'note', 'doctor_name'],
+      templateKey: "prescription_ready",
+      templateName: "prescription_ready",
+      category: "SERVICE" as const,
+      body: "Hi {{1}}, your prescription from your visit on {{2}} is attached. {{3}} - Dr. {{4}}",
+      variables: ["patient_name", "visit_date", "note", "doctor_name"],
     },
     {
-      templateKey: 'lab_case_ready',
-      templateName: 'lab_case_ready',
-      category: 'SERVICE' as const,
-      body: 'Hi {{1}}, your {{2}} is ready for fitting at {{3}}. Please call to schedule your appointment.',
-      variables: ['patient_name', 'case_type', 'clinic_name'],
+      templateKey: "lab_case_ready",
+      templateName: "lab_case_ready",
+      category: "SERVICE" as const,
+      body: "Hi {{1}}, your {{2}} is ready for fitting at {{3}}. Please call to schedule your appointment.",
+      variables: ["patient_name", "case_type", "clinic_name"],
     },
     {
-      templateKey: 'payment_receipt',
-      templateName: 'payment_receipt',
-      category: 'UTILITY' as const,
-      body: 'Thank you {{1}} for your payment of ₹{{2}}. Receipt #{{3}} is attached.',
-      variables: ['patient_name', 'amount', 'receipt_number'],
+      templateKey: "payment_receipt",
+      templateName: "payment_receipt",
+      category: "UTILITY" as const,
+      body: "Thank you {{1}} for your payment of ₹{{2}}. Receipt #{{3}} is attached.",
+      variables: ["patient_name", "amount", "receipt_number"],
     },
     {
-      templateKey: 'outstanding_balance_reminder',
-      templateName: 'outstanding_balance_reminder',
-      category: 'UTILITY' as const,
-      body: 'Hi {{1}}, you have an outstanding balance of ₹{{2}} at {{3}}. Please contact us to settle.',
-      variables: ['patient_name', 'amount', 'clinic_name'],
+      templateKey: "outstanding_balance_reminder",
+      templateName: "outstanding_balance_reminder",
+      category: "UTILITY" as const,
+      body: "Hi {{1}}, you have an outstanding balance of ₹{{2}} at {{3}}. Please contact us to settle.",
+      variables: ["patient_name", "amount", "clinic_name"],
     },
   ];
 
   for (const t of WHATSAPP_TEMPLATES) {
     await prisma.whatsAppTemplate.upsert({
-      where: { clinicId_templateKey: { clinicId: clinic.id, templateKey: t.templateKey } },
-      update: { approvalStatus: 'APPROVED', isEnabled: true },
+      where: {
+        clinicId_templateKey: {
+          clinicId: clinic.id,
+          templateKey: t.templateKey,
+        },
+      },
+      update: { approvalStatus: "APPROVED", isEnabled: true },
       create: {
         clinicId: clinic.id,
         templateKey: t.templateKey,
         templateName: t.templateName,
         category: t.category,
-        approvalStatus: 'APPROVED',
+        approvalStatus: "APPROVED",
         body: t.body,
         variables: t.variables,
         estimatedCostPaise: 35,
@@ -884,62 +1063,74 @@ async function main() {
   }
 
   // Opt every demo patient in so smoke tests can send without a manual consent step.
-  const allPatients = await prisma.patient.findMany({ where: { clinicId: clinic.id } });
+  const allPatients = await prisma.patient.findMany({
+    where: { clinicId: clinic.id },
+  });
   for (const p of allPatients) {
     await prisma.patientWhatsAppConsent.upsert({
       where: { clinicId_patientId: { clinicId: clinic.id, patientId: p.id } },
-      update: { status: 'OPTED_IN' },
+      update: { status: "OPTED_IN" },
       create: {
         clinicId: clinic.id,
         patientId: p.id,
-        status: 'OPTED_IN',
+        status: "OPTED_IN",
         optedInAt: new Date(now - 30 * DAY_MS),
         optedInByUserId: receptionist.id,
-        optedInMethod: 'signup_form',
+        optedInMethod: "signup_form",
       },
     });
   }
 
   // 2 sample outbound messages (1 SENT, 1 DELIVERED) for the inbox/message-history preview.
   const reminderTpl = await prisma.whatsAppTemplate.findFirstOrThrow({
-    where: { clinicId: clinic.id, templateKey: 'appointment_reminder_24h' },
+    where: { clinicId: clinic.id, templateKey: "appointment_reminder_24h" },
   });
   await prisma.whatsAppMessage.upsert({
-    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-out-sent' } },
+    where: {
+      clinicId_idempotencyKey: {
+        clinicId: clinic.id,
+        idempotencyKey: "seed:wa-out-sent",
+      },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
       patientId: akhilesh.id,
-      direction: 'OUTBOUND',
+      direction: "OUTBOUND",
       templateId: reminderTpl.id,
-      templateVariables: { 1: akhilesh.name, 2: clinic.name, 3: '10:30 AM' },
+      templateVariables: { 1: akhilesh.name, 2: clinic.name, 3: "10:30 AM" },
       body: `Hi ${akhilesh.name}, this is a reminder for your appointment at ${clinic.name} tomorrow at 10:30 AM. Reply 1 to confirm, 2 to reschedule.`,
-      providerMessageId: 'mock-seed-sent-1',
-      providerStatus: 'sent',
+      providerMessageId: "mock-seed-sent-1",
+      providerStatus: "sent",
       costPaise: 35,
-      idempotencyKey: 'seed:wa-out-sent',
-      triggerType: 'MANUAL',
-      status: 'SENT',
+      idempotencyKey: "seed:wa-out-sent",
+      triggerType: "MANUAL",
+      status: "SENT",
       sentAt: new Date(now - 2 * 60 * 60 * 1000),
       createdById: receptionist.id,
     },
   });
   await prisma.whatsAppMessage.upsert({
-    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-out-delivered' } },
+    where: {
+      clinicId_idempotencyKey: {
+        clinicId: clinic.id,
+        idempotencyKey: "seed:wa-out-delivered",
+      },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
       patientId: akhilesh.id,
-      direction: 'OUTBOUND',
+      direction: "OUTBOUND",
       templateId: reminderTpl.id,
-      templateVariables: { 1: akhilesh.name, 2: clinic.name, 3: '9:00 AM' },
+      templateVariables: { 1: akhilesh.name, 2: clinic.name, 3: "9:00 AM" },
       body: `Hi ${akhilesh.name}, your appointment at ${clinic.name} is in 1 hour. Please arrive 10 minutes early.`,
-      providerMessageId: 'mock-seed-delivered-1',
-      providerStatus: 'delivered',
+      providerMessageId: "mock-seed-delivered-1",
+      providerStatus: "delivered",
       costPaise: 35,
-      idempotencyKey: 'seed:wa-out-delivered',
-      triggerType: 'MANUAL',
-      status: 'DELIVERED',
+      idempotencyKey: "seed:wa-out-delivered",
+      triggerType: "MANUAL",
+      status: "DELIVERED",
       sentAt: new Date(now - 26 * 60 * 60 * 1000),
       deliveredAt: new Date(now - 26 * 60 * 60 * 1000 + 5000),
       createdById: receptionist.id,
@@ -949,31 +1140,39 @@ async function main() {
   // 1 sample inbound message → creates an OPEN conversation with an unread count for the inbox.
   const inboundAt = new Date(now - 15 * 60 * 1000);
   const convo = await prisma.patientConversation.upsert({
-    where: { clinicId_patientId: { clinicId: clinic.id, patientId: akhilesh.id } },
+    where: {
+      clinicId_patientId: { clinicId: clinic.id, patientId: akhilesh.id },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
       patientId: akhilesh.id,
-      status: 'OPEN',
-      category: 'RESCHEDULE_REQUEST',
+      status: "OPEN",
+      category: "RESCHEDULE_REQUEST",
       lastInboundAt: inboundAt,
       windowExpiresAt: new Date(inboundAt.getTime() + 24 * 60 * 60 * 1000),
       lastMessageAt: inboundAt,
-      lastMessagePreview: "I'd like to reschedule. Tomorrow doesn't work for me.",
+      lastMessagePreview:
+        "I'd like to reschedule. Tomorrow doesn't work for me.",
       unreadCount: 1,
     },
   });
   await prisma.whatsAppMessage.upsert({
-    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-in-1' } },
+    where: {
+      clinicId_idempotencyKey: {
+        clinicId: clinic.id,
+        idempotencyKey: "seed:wa-in-1",
+      },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
       patientId: akhilesh.id,
-      direction: 'INBOUND',
+      direction: "INBOUND",
       body: "I'd like to reschedule. Tomorrow doesn't work for me.",
-      idempotencyKey: 'seed:wa-in-1',
-      inboundType: 'text',
-      status: 'RECEIVED',
+      idempotencyKey: "seed:wa-in-1",
+      inboundType: "text",
+      status: "RECEIVED",
       conversationId: convo.id,
       createdAt: inboundAt,
     },
@@ -990,31 +1189,74 @@ async function main() {
   // whole set is deleted and rebuilt rather than upserted, because yesterday's demo
   // appointments must not pile up behind today's.
   const meera = await prisma.patient.findFirstOrThrow({
-    where: { clinicId: clinic.id, patientCode: 'PT-0001' },
+    where: { clinicId: clinic.id, patientCode: "PT-0001" },
   });
   const fatima = await prisma.patient.findFirstOrThrow({
-    where: { clinicId: clinic.id, patientCode: 'PT-0003' },
+    where: { clinicId: clinic.id, patientCode: "PT-0003" },
   });
 
   // Which day to hang them on. Defaults to today, so a human opening the demo sees their
   // own day. The screenshot harness pins the browser clock to a fixed date for
   // determinism, so a capture run seeds with SEED_TODAY set to that same date — otherwise
   // the app asks for a day the seed never filled and Home renders an empty schedule.
-  const dayStart = process.env.SEED_TODAY ? new Date(`${process.env.SEED_TODAY}T00:00:00`) : new Date();
+  const dayStart = process.env.SEED_TODAY
+    ? new Date(`${process.env.SEED_TODAY}T00:00:00`)
+    : new Date();
   if (Number.isNaN(dayStart.getTime())) {
-    throw new Error(`SEED_TODAY must be an ISO date (YYYY-MM-DD), got "${process.env.SEED_TODAY}"`);
+    throw new Error(
+      `SEED_TODAY must be an ISO date (YYYY-MM-DD), got "${process.env.SEED_TODAY}"`,
+    );
   }
   dayStart.setHours(0, 0, 0, 0);
-  const at = (h: number, m: number) => new Date(dayStart.getTime() + (h * 60 + m) * 60_000);
+  const at = (h: number, m: number) =>
+    new Date(dayStart.getTime() + (h * 60 + m) * 60_000);
 
-  await prisma.appointment.deleteMany({ where: { clinicId: clinic.id, seriesId: 'seed-today' } });
+  await prisma.appointment.deleteMany({
+    where: { clinicId: clinic.id, seriesId: "seed-today" },
+  });
   const todaysAppointments = [
-    { patient: meera, hour: 9, min: 0, status: 'COMPLETED' as const, hint: 'Scaling' },
-    { patient: fatima, hour: 9, min: 45, status: 'COMPLETED' as const, hint: 'Filling review' },
-    { patient: akhilesh, hour: 10, min: 30, status: 'CHECKED_IN' as const, hint: 'RCT sitting 2' },
-    { patient: arjun, hour: 11, min: 15, status: 'SCHEDULED' as const, hint: 'Routine cleaning' },
-    { patient: meera, hour: 12, min: 0, status: 'SCHEDULED' as const, hint: 'Crown fitting' },
-    { patient: fatima, hour: 12, min: 45, status: 'SCHEDULED' as const, hint: 'Follow-up' },
+    {
+      patient: meera,
+      hour: 9,
+      min: 0,
+      status: "COMPLETED" as const,
+      hint: "Scaling",
+    },
+    {
+      patient: fatima,
+      hour: 9,
+      min: 45,
+      status: "COMPLETED" as const,
+      hint: "Filling review",
+    },
+    {
+      patient: akhilesh,
+      hour: 10,
+      min: 30,
+      status: "CHECKED_IN" as const,
+      hint: "RCT sitting 2",
+    },
+    {
+      patient: arjun,
+      hour: 11,
+      min: 15,
+      status: "SCHEDULED" as const,
+      hint: "Routine cleaning",
+    },
+    {
+      patient: meera,
+      hour: 12,
+      min: 0,
+      status: "SCHEDULED" as const,
+      hint: "Crown fitting",
+    },
+    {
+      patient: fatima,
+      hour: 12,
+      min: 45,
+      status: "SCHEDULED" as const,
+      hint: "Follow-up",
+    },
   ];
   for (const [i, a] of todaysAppointments.entries()) {
     await prisma.appointment.create({
@@ -1028,7 +1270,7 @@ async function main() {
         durationMinutes: 30,
         status: a.status,
         procedureHint: a.hint,
-        seriesId: 'seed-today',
+        seriesId: "seed-today",
         seriesIndex: i + 1,
         seriesTotal: todaysAppointments.length,
         createdById: doctor.id,
@@ -1042,13 +1284,15 @@ async function main() {
   // COUNTS but no per-sitting rows for work that has not happened yet. Frame 38's journey
   // needs the shape a real course of treatment has: one sitting done, one under way, one
   // still ahead. Seeded explicitly so the Cases tab has something deterministic to draw.
-  await prisma.treatmentPlan.deleteMany({ where: { patientId: akhilesh.id, name: 'RCT · Tooth 36' } });
+  await prisma.treatmentPlan.deleteMany({
+    where: { patientId: akhilesh.id, name: "RCT · Tooth 36" },
+  });
   const rctPlan = await prisma.treatmentPlan.create({
     data: {
       patientId: akhilesh.id,
-      name: 'RCT · Tooth 36',
-      description: 'Root canal therapy, lower left first molar',
-      status: 'ACTIVE',
+      name: "RCT · Tooth 36",
+      description: "Root canal therapy, lower left first molar",
+      status: "ACTIVE",
       estimatedCostPaise: 900_000,
       createdById: doctor.id,
     },
@@ -1056,11 +1300,11 @@ async function main() {
   const rctProcedure = await prisma.procedure.create({
     data: {
       planId: rctPlan.id,
-      name: 'RCT',
+      name: "RCT",
       toothNumbers: [36],
       totalSittings: 3,
       completedSittings: 1,
-      status: 'IN_PROGRESS',
+      status: "IN_PROGRESS",
     },
   });
   await prisma.sitting.createMany({
@@ -1069,10 +1313,14 @@ async function main() {
         procedureId: rctProcedure.id,
         sittingNumber: 1,
         completedAt: new Date(dayStart.getTime() - 15 * 864e5),
-        notesEnc: encryptField('extirpation, dressing'),
+        notesEnc: encryptField("extirpation, dressing"),
       },
       // Under way: linked to the visit the patient is in right now.
-      { procedureId: rctProcedure.id, sittingNumber: 2, visitId: pendingVisit.id },
+      {
+        procedureId: rctProcedure.id,
+        sittingNumber: 2,
+        visitId: pendingVisit.id,
+      },
       // Ahead: booked but not attended, so it carries no date of its own.
       { procedureId: rctProcedure.id, sittingNumber: 3 },
     ],
@@ -1083,13 +1331,17 @@ async function main() {
   // the plan does not exist yet at that point; this links the one that is genuinely this
   // plan's next sitting.
   const nextRctAppt = await prisma.appointment.findFirst({
-    where: { clinicId: clinic.id, patientId: akhilesh.id, status: 'SCHEDULED' },
-    orderBy: { startsAt: 'asc' },
+    where: { clinicId: clinic.id, patientId: akhilesh.id, status: "SCHEDULED" },
+    orderBy: { startsAt: "asc" },
   });
   if (nextRctAppt) {
     await prisma.appointment.update({
       where: { id: nextRctAppt.id },
-      data: { treatmentPlanId: rctPlan.id, sittingNumber: 2, procedureHint: 'obturation · final' },
+      data: {
+        treatmentPlanId: rctPlan.id,
+        sittingNumber: 2,
+        procedureHint: "obturation · final",
+      },
     });
   }
 
@@ -1097,34 +1349,44 @@ async function main() {
   // Delete by caseNumber, not by plan: the plan is recreated with a fresh id on every
   // run, so a plan-scoped delete never matched the previous run's case and the unique
   // (clinicId, caseNumber) constraint failed the whole seed on the second run.
-  await prisma.labCase.deleteMany({ where: { clinicId: clinic.id, caseNumber: 'LB-112' } });
+  await prisma.labCase.deleteMany({
+    where: { clinicId: clinic.id, caseNumber: "LB-112" },
+  });
   await prisma.labCase.create({
     data: {
       clinicId: clinic.id,
       patientId: akhilesh.id,
       doctorId: doctor.id,
-      caseNumber: 'LB-112',
-      type: 'CROWN',
+      caseNumber: "LB-112",
+      type: "CROWN",
       teeth: [36],
-      material: 'Zirconia',
-      status: 'SENT',
+      material: "Zirconia",
+      status: "SENT",
       treatmentPlanId: rctPlan.id,
       createdById: doctor.id,
     },
   });
 
-  console.warn('✅ Seed complete:');
+  console.warn("✅ Seed complete:");
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
-  console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);
+  console.warn(
+    `   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`,
+  );
   console.warn(
     `   ${dayStart.toDateString()}: ${todaysAppointments.length} appointments — 2 seen, 1 in the chair, 3 ahead`,
   );
-  console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
+  console.warn(
+    `   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`,
+  );
   console.warn(
     `   Patients: ${patientSeed.length + 1} | Lab: 1 vendor + 3 cases (DRAFT/SENT/READY) | Inventory: 4 categories, 8 items (1 low-stock), 5 movements`,
   );
-  console.warn('   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan');
-  console.warn(`   Prescription templates: ${STARTER_TEMPLATES.length} starters (RCT pack, Post-extraction, …)`);
+  console.warn(
+    "   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan",
+  );
+  console.warn(
+    `   Prescription templates: ${STARTER_TEMPLATES.length} starters (RCT pack, Post-extraction, …)`,
+  );
 }
 
 main()
@@ -1132,7 +1394,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (err) => {
-    console.error('❌ Seed failed:', err);
+    console.error("❌ Seed failed:", err);
     await prisma.$disconnect();
     process.exit(1);
   });

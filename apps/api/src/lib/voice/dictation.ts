@@ -1,7 +1,7 @@
-import { ForbiddenError } from '../errors.js';
-import { storage } from '../storage.js';
-import { getSttProvider } from '../stt/index.js';
-import type { SttLogger } from '../stt/index.js';
+import { ForbiddenError } from "../errors.js";
+import { storage } from "../storage.js";
+import { getSttProvider } from "../stt/index.js";
+import type { SttLogger } from "../stt/index.js";
 
 /**
  * Shared short-clip dictation plumbing (Phase 9.7). Every dictate endpoint — in routes/dictate.ts
@@ -10,16 +10,33 @@ import type { SttLogger } from '../stt/index.js';
  */
 
 /** Reject a storage key that doesn't belong to the caller's clinic (no cross-clinic audio reads). */
-export function assertOwnDictationKey(storageKey: string, clinicId: string): void {
+export function assertOwnDictationKey(
+  storageKey: string,
+  clinicId: string,
+): void {
   if (!storageKey.startsWith(`clinics/${clinicId}/dictation/`)) {
-    throw new ForbiddenError('That audio key does not belong to your clinic');
+    throw new ForbiddenError("That audio key does not belong to your clinic");
   }
 }
 
-/** Download → transcribe → delete (best-effort). The audio is transient — never persisted. */
-export async function transcribeAndPurgeDictation(storageKey: string, logger?: SttLogger): Promise<string> {
+/**
+ * Download → transcribe → delete (best-effort). The audio is transient — never persisted.
+ *
+ * `fixture` names the dictation surface for the MOCK provider only (see SttTranscribeOptions):
+ * the capture harness's fake microphone produces audio that parses into nothing, so a
+ * voice-filled intake had no honest route to it. Real providers ignore the hint.
+ */
+export async function transcribeAndPurgeDictation(
+  storageKey: string,
+  logger?: SttLogger,
+  fixture?: string,
+): Promise<string> {
   const audio = await storage.getObject(storageKey);
-  const result = await getSttProvider(logger).transcribe(audio, { language: 'auto', mimeType: 'audio/webm' });
+  const result = await getSttProvider(logger).transcribe(audio, {
+    language: "auto",
+    mimeType: "audio/webm",
+    fixture,
+  });
   await storage.deleteObject(storageKey).catch(() => undefined);
   return result.transcript;
 }
