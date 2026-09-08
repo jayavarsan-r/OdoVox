@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { api } from './api-client';
 import type {
   CreatePatientInput,
@@ -186,7 +181,8 @@ export function useCompletePlan(planId: string, patientId: string) {
 export function useCancelPlan(planId: string, patientId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (reason: string) => api.post<{ id: string; status: string }>(`/plans/${planId}/cancel`, { reason }),
+    mutationFn: (reason: string) =>
+      api.post<{ id: string; status: string }>(`/plans/${planId}/cancel`, { reason }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['plan', planId] });
       qc.invalidateQueries({ queryKey: ['plans', patientId] });
@@ -444,5 +440,39 @@ export function useTodayActivity() {
   return useQuery({
     queryKey: ['today-activity'],
     queryFn: () => api.get<{ items: ActivityItem[] }>('/today/activity'),
+  });
+}
+
+// ---- Clinic roster ----------------------------------------------------------
+export interface ClinicMemberRow {
+  id: string;
+  userId: string;
+  name: string;
+  role: 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN';
+  isAdmin: boolean;
+  status: string;
+}
+
+export interface ClinicRoster {
+  members: ClinicMemberRow[];
+  counts: {
+    doctors: number;
+    receptionists: number;
+    admins: number;
+    /** Requests awaiting approval. A COUNT for every role; the names are admin-only. */
+    pending: number;
+  };
+}
+
+/**
+ * Who works here — the numbers behind frame 70's "2 doctors" and "1 request" chips.
+ *
+ * Both shipped bare because no endpoint could answer them, and a number no query stands
+ * behind is worse than no number.
+ */
+export function useClinicRoster() {
+  return useQuery({
+    queryKey: ['clinic-roster'],
+    queryFn: () => api.get<ClinicRoster>('/clinics/members'),
   });
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useRouter } from "next/navigation";
+import { useRouter } from 'next/navigation';
 import {
   Building2,
   CalendarClock,
@@ -13,8 +13,8 @@ import {
   Pill,
   User,
   Users,
-} from "lucide-react";
-import { AnimatedPage } from "@/components/animated-page";
+} from 'lucide-react';
+import { AnimatedPage } from '@/components/animated-page';
 import {
   BentoTile,
   EditorialHeading,
@@ -22,21 +22,22 @@ import {
   SectionHeader,
   SettingRow,
   StatusDot,
-} from "@/components/ds";
-import { Card } from "@/components/ui/card";
-import { Chip, Mini } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/lib/auth";
-import { canAccess, type Role } from "@/lib/rbac";
-import { useLabCases } from "@/lib/lab-queries";
-import { useInventoryItems } from "@/lib/inventory-queries";
-import { useConversations } from "@/lib/whatsapp-queries";
-import { useWhatsAppSettings } from "@/lib/whatsapp-queries";
-import { useDailyCollection } from "@/lib/billing/api";
-import { useDayOffs } from "@/lib/schedule/api";
-import { useTemplates } from "@/lib/queries";
-import { rupees } from "@/lib/queue/checkout-form";
-import { cn } from "@/lib/utils";
+} from '@/components/ds';
+import { Card } from '@/components/ui/card';
+import { Chip, Mini } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/lib/auth';
+import { canAccess, type Role } from '@/lib/rbac';
+import { useLabCases } from '@/lib/lab-queries';
+import { useInventoryItems } from '@/lib/inventory-queries';
+import { useConversations } from '@/lib/whatsapp-queries';
+import { useWhatsAppSettings } from '@/lib/whatsapp-queries';
+import { useDailyCollection } from '@/lib/billing/api';
+import { useDayOffs } from '@/lib/schedule/api';
+import { useClinicRoster } from '@/lib/queries';
+import { useTemplates } from '@/lib/queries';
+import { rupees } from '@/lib/queue/checkout-form';
+import { cn } from '@/lib/utils';
 
 /**
  * `/more` — the module hub (v9 frame 70).
@@ -59,7 +60,7 @@ function ModuleTile({
   onClick,
 }: {
   icon: React.ReactNode;
-  iconTone: "lav" | "sky" | "warn" | "lime";
+  iconTone: 'lav' | 'sky' | 'warn' | 'lime';
   name: string;
   count?: string;
   marker?: React.ReactNode;
@@ -78,14 +79,8 @@ function ModuleTile({
           </IconCircle>
           {marker}
         </span>
-        <span className="mt-2.5 block text-md font-heavy text-pine">
-          {name}
-        </span>
-        {count ? (
-          <span className="block text-2xs font-semibold text-pine-3">
-            {count}
-          </span>
-        ) : null}
+        <span className="mt-2.5 block text-md font-heavy text-pine">{name}</span>
+        {count ? <span className="block text-2xs font-semibold text-pine-3">{count}</span> : null}
       </BentoTile>
     </button>
   );
@@ -94,36 +89,40 @@ function ModuleTile({
 export default function MorePage() {
   const router = useRouter();
   const { user, clinic, activeMembership } = useAuth();
-  const role = (activeMembership?.role ?? "DOCTOR") as Role;
+  const role = (activeMembership?.role ?? 'DOCTOR') as Role;
   const go = (href: string) => () => router.push(href);
 
   // Both are infinite queries: counts come from the pages already fetched, which is
   // the first page. That is enough for a hub badge and costs no extra request.
   const labCases = useLabCases({});
   const inventory = useInventoryItems({});
-  const conversations = useConversations({ status: "OPEN" });
+  const conversations = useConversations({ status: 'OPEN' });
   const collection = useDailyCollection();
   const whatsapp = useWhatsAppSettings();
   // Frame 70 puts a value on every setup row — the hub's whole point is that it shows
   // state, not just destinations. Two of the four have a source today.
   const dayOffs = useDayOffs();
-  const templates = useTemplates("");
+  const roster = useClinicRoster();
+  const templates = useTemplates('');
 
   const today = new Date().setHours(0, 0, 0, 0);
   const upcomingDayOffs =
-    dayOffs.data?.dayOffs.filter(
-      (d) => new Date(d.endDate ?? d.date).setHours(0, 0, 0, 0) >= today,
-    ).length ?? 0;
+    dayOffs.data?.dayOffs.filter((d) => new Date(d.endDate ?? d.date).setHours(0, 0, 0, 0) >= today)
+      .length ?? 0;
   const templateCount = templates.data?.items.length ?? 0;
+  // `?? 0` deliberately, so a loading or failed roster renders NO chip rather than "0
+  // doctors" — a clinic always has at least one, so zero would only ever be a lie about
+  // the query, never a fact about the clinic.
+  const doctorCount = roster.data?.counts.doctors ?? 0;
+  const pendingCount = roster.data?.counts.pending ?? 0;
 
   const cases = labCases.data?.pages.flatMap((p) => p.items) ?? [];
-  const overdueLab = cases.filter((c) => c.status === "ISSUE_RAISED").length;
+  const overdueLab = cases.filter((c) => c.status === 'ISSUE_RAISED').length;
   const items = inventory.data?.pages.flatMap((p) => p.items) ?? [];
   const lowStock = items.filter((i) => i.isLowStock).length;
   const openThreads = conversations.data?.length ?? 0;
 
-  const loading =
-    labCases.isLoading || inventory.isLoading || conversations.isLoading;
+  const loading = labCases.isLoading || inventory.isLoading || conversations.isLoading;
 
   return (
     <AnimatedPage className="flex flex-1 flex-col pb-28">
@@ -133,7 +132,7 @@ export default function MorePage() {
           trailing={
             <Chip tone="neutral">
               <Building2 className="size-[13px]" />
-              {clinic?.name ?? "Your clinic"}
+              {clinic?.name ?? 'Your clinic'}
             </Chip>
           }
         />
@@ -155,12 +154,8 @@ export default function MorePage() {
               iconTone="lav"
               name="Lab"
               count={cases.length ? `${cases.length} active` : undefined}
-              marker={
-                overdueLab > 0 ? (
-                  <Mini tone="crit">{overdueLab} late</Mini>
-                ) : undefined
-              }
-              onClick={go("/lab")}
+              marker={overdueLab > 0 ? <Mini tone="crit">{overdueLab} late</Mini> : undefined}
+              onClick={go('/lab')}
             />
             <ModuleTile
               icon={<MessageCircle />}
@@ -172,21 +167,17 @@ export default function MorePage() {
                   <StatusDot tone="lime" label={`${openThreads} open`} />
                 ) : undefined
               }
-              onClick={go("/messages")}
+              onClick={go('/messages')}
             />
             <ModuleTile
               icon={<Package />}
               iconTone="warn"
               name="Inventory"
               count={items.length ? `${items.length} items` : undefined}
-              marker={
-                lowStock > 0 ? (
-                  <Mini tone="warn">{lowStock} low</Mini>
-                ) : undefined
-              }
-              onClick={go("/inventory")}
+              marker={lowStock > 0 ? <Mini tone="warn">{lowStock} low</Mini> : undefined}
+              onClick={go('/inventory')}
             />
-            {canAccess("/billing", role) ? (
+            {canAccess('/billing', role) ? (
               <ModuleTile
                 icon={<IndianRupee />}
                 iconTone="lime"
@@ -196,7 +187,7 @@ export default function MorePage() {
                     ? `${rupees(collection.data.totalCollectedPaise)} today`
                     : undefined
                 }
-                onClick={go("/billing")}
+                onClick={go('/billing')}
               />
             ) : null}
           </>
@@ -212,71 +203,73 @@ export default function MorePage() {
           title="WhatsApp"
           value={
             whatsapp.data
-              ? `${rupees(whatsapp.data.spentThisMonthPaise)}${whatsapp.data.budgetPaise ? ` / ${rupees(whatsapp.data.budgetPaise)}` : ""}`
+              ? `${rupees(whatsapp.data.spentThisMonthPaise)}${whatsapp.data.budgetPaise ? ` / ${rupees(whatsapp.data.budgetPaise)}` : ''}`
               : undefined
           }
-          trailing={
-            <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
-          }
-          onClick={go("/clinic/whatsapp")}
+          trailing={<ChevronRight className="size-[15px] shrink-0 text-pine-3" />}
+          onClick={go('/clinic/whatsapp')}
         />
         {/*
-          Frame 70 puts "2 doctors" here and "1 request" on Team & join code. Both need a
-          clinic-members endpoint, which does not exist — /clinics has only create,
-          lookup and join. Task 31 owns that server work; until then the value is omitted
-          rather than faked, and the gap is recorded against frame 70 in findings.json.
+          Frame 70's "2 doctors" and "1 request". Both read GET /clinics/members, which the
+          hub now has; before it existed the values were omitted rather than faked, because
+          a number no query stands behind is worse than no number.
+
+          Still omitted while the query is loading or failed — a chip that flickers "0
+          doctors" and then corrects itself has told the reader something false.
         */}
         <SettingRow
           icon={<CalendarClock />}
           tone="sky"
           title="Availability"
-          trailing={
-            <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
-          }
-          onClick={go("/clinic/availability")}
+          value={doctorCount ? `${doctorCount} doctor${doctorCount > 1 ? 's' : ''}` : undefined}
+          trailing={<ChevronRight className="size-[15px] shrink-0 text-pine-3" />}
+          onClick={go('/clinic/availability')}
         />
         <SettingRow
           icon={<CalendarOff />}
           tone="crit"
           title="Days off"
           value={upcomingDayOffs ? `${upcomingDayOffs} upcoming` : undefined}
-          trailing={
-            <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
-          }
-          onClick={go("/clinic/day-off")}
+          trailing={<ChevronRight className="size-[15px] shrink-0 text-pine-3" />}
+          onClick={go('/clinic/day-off')}
         />
         <SettingRow
           icon={<Pill />}
           tone="lav"
           title="Rx templates"
           value={templateCount ? String(templateCount) : undefined}
-          trailing={
-            <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
-          }
-          onClick={go("/clinic/templates")}
+          trailing={<ChevronRight className="size-[15px] shrink-0 text-pine-3" />}
+          onClick={go('/clinic/templates')}
         />
-        {canAccess("/clinic", role) ? (
+        {canAccess('/clinic', role) ? (
           <SettingRow
             icon={<Users />}
             title="Team & join code"
-            trailing={
-              <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
+            value={
+              // A PILL, not the grey value text every other row uses. Frame 70 draws this
+              // one differently on purpose: "2 upcoming" and "12" are things to know,
+              // whereas a pending request is a person waiting on someone here to act.
+              // The tone carries that distinction; grey text flattens it away.
+              pendingCount ? (
+                <Mini tone="sky">
+                  {pendingCount} request{pendingCount > 1 ? 's' : ''}
+                </Mini>
+              ) : undefined
             }
-            onClick={go("/clinic")}
+            trailing={<ChevronRight className="size-[15px] shrink-0 text-pine-3" />}
+            onClick={go('/clinic')}
           />
         ) : null}
         <SettingRow
           icon={<User />}
           title="Account"
           value={user?.name ?? undefined}
-          trailing={
-            <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
-          }
-          onClick={go("/clinic")}
+          trailing={<ChevronRight className="size-[15px] shrink-0 text-pine-3" />}
+          onClick={go('/clinic')}
         />
       </Card>
 
-      <p className={cn("px-gutter-wide pt-3 text-2xs font-medium text-pine-3")}>
+      <p className={cn('px-gutter-wide pt-3 text-2xs font-medium text-pine-3')}>
         Every module keeps its own route — nothing moved out of reach.
       </p>
     </AnimatedPage>

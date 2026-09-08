@@ -84,7 +84,7 @@
     "typography": "PASS",
     "colors": "PASS",
     "component anatomy": "PASS",
-    "content": "FAIL",
+    "content": "PASS",
     "interaction/state": "PASS",
     "functionality": "PASS",
     "canvas geometry": "PASS"

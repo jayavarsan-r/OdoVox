@@ -1263,6 +1263,28 @@
       "reason": "Frame 36 shows three chips — Diabetes, BP, Thyroid — and a '+' to add more. That is a SUMMARY of what is set on an existing record.\n\nThis screen is the opposite situation: a form being filled for the first time, where the receptionist has to find the right flag rather than review chosen ones. Showing all six as a multi-select makes the vocabulary discoverable; a '+' hides it behind a tap and a second surface. Voice-extracted flags outside the standard six still render as pre-selected custom chips, so nothing dictated is lost either way.\n\nThe frame's treatment is the better one on a record being reviewed, and the patient-detail surfaces use it there.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 108,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "A doctor's More hub shows three module tiles; the frame draws four, including Billing",
+      "reason": "Frame 70 shows Lab, Messages, Inventory and Billing. The capture is a DOCTOR session and shows three: `/billing` is RECEPTIONIST/ADMIN in lib/rbac.ts, so `canAccess('/billing', role)` hides the tile.\n\nThis is the rule working, not a missing tile. Rendering a route the role cannot open leaks the shape of the permission model and hands the user a tile that 403s. The frame depicts a reception or admin view, where all four appear.\n\nThe module grid reflows from four tiles to three; nothing else moves.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 109,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "Hub values are absent rather than zero while their query is loading or failed",
+      "reason": "Every chip on this hub — '1 doctor', '2 upcoming', '12', '1 request' — renders only when its query has answered with a non-zero value. A loading or failed query renders no chip at all.\n\nThe alternative is a chip that reads '0 doctors' for a moment and then corrects itself. A clinic always has at least one doctor, so zero is never a fact about the clinic; it is only ever a fact about the request, and printing it tells the reader something false about their own clinic.\n\nSo the frame's populated hub is what a loaded hub looks like, and an unloaded one is quieter than the frame rather than wrong.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

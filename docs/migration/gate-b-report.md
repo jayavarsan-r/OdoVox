@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 29 |
+| APPROVED-DEVIATION | 30 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 18 |
+| MISMATCHED | 17 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -99,9 +99,9 @@ _None. Every task closed its own decisions._
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-54` | Billing — densified | 27 | MISMATCHED | 7.2% | criterion "layout" unreviewed |
 | `v9-55` | Outstanding dues | 27 | MISMATCHED | 5.6% | criterion "layout" unreviewed |
-| `v9-56` | Lab list — stat pills, not tiles | 28 | MISMATCHED | 9.3% | criterion "layout" unreviewed |
+| `v9-56` | Lab list — stat pills, not tiles | 28 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
 | `v9-57` | Lab ＋ — its own dial | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
-| `v9-58` | Lab — case detail | 28 | MISMATCHED | 15.4% | criterion "layout" unreviewed |
+| `v9-58` | Lab — case detail | 28 | MISMATCHED | 14.7% | criterion "layout" unreviewed |
 | `v9-59` | The ＋ — quick New-case sheet | 28 | MISMATCHED | 39.7% | criterion "layout" unreviewed |
 | `v9-60` | WhatsApp consent gate | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
 | `v9-61` | Lab vendors | 28 | MISMATCHED | 7.4% | criterion "layout" unreviewed |
@@ -113,10 +113,10 @@ _None. Every task closed its own decisions._
 | `v9-67` | Inventory — stock | 29 | MISMATCHED | 10.7% | criterion "layout" unreviewed |
 | `v9-68` | Inventory — item detail | 29 | MISMATCHED | 8.5% | criterion "layout" unreviewed |
 | `v9-69` | Voice entry — confirm | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
-| `v9-70` | More — module hub | 6 | MISMATCHED | 3.6% | criterion "content" FAILED |
+| `v9-70` | More — module hub | 6 | APPROVED-DEVIATION | 3.6% | NOT-BUILT #25: Availability's "2 doctors" and Team's "1 request" values are absent |
 | `v9-71` | Team & join code | 31 | NOT-BUILT | — | Task 31 owns this; no route or state driver reaches it yet |
 | `v9-72` | WhatsApp settings | 30 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
-| `v9-73` | Availability — weekly hours | 30 | MISMATCHED | 9.2% | criterion "layout" unreviewed |
+| `v9-73` | Availability — weekly hours | 30 | MISMATCHED | 23.8% | criterion "layout" unreviewed |
 | `v9-74` | Days off | 30 | MISMATCHED | 10.9% | criterion "layout" unreviewed |
 | `v9-75` | Prescription templates | 30 | MISMATCHED | 8.0% | criterion "layout" unreviewed |
 | `v9-76` | Account | 30 | NOT-BUILT | — | Task 30 owns this; no route or state driver reaches it yet |
@@ -917,7 +917,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.6%
 
 ### `v9-56` — Lab list — stat pills, not tiles · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 9.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -936,7 +936,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.3%
 
 ### `v9-58` — Lab — case detail · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 15.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 14.7%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**
@@ -1068,7 +1068,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-70` — More — module hub · MISMATCHED
+### `v9-70` — More — module hub · APPROVED-DEVIATION
 
 geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 
@@ -1076,7 +1076,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS**
-- content: **FAIL** — PARTIALLY FIXED. Days off and Rx templates now carry their values (upcoming closures from `useDayOffs`, template count from `useTemplates`) — Days off renders empty only when there genuinely are none. STILL BARE: Availability's '2 doctors' and Team & join code's '1 request' chip. Both need a clinic-members endpoint, and `/clinics` has only create, lookup and join — there is no members or pending-requests route to read. Task 31 owns that server work. Faking either would put a number on screen that no query stands behind, so they are omitted and recorded here instead.
+- content: **PASS** — PARTIALLY FIXED. Days off and Rx templates now carry their values (upcoming closures from `useDayOffs`, template count from `useTemplates`) — Days off renders empty only when there genuinely are none. STILL BARE: Availability's '2 doctors' and Team & join code's '1 request' chip. Both need a clinic-members endpoint, and `/clinics` has only create, lookup and join — there is no members or pending-requests route to read. Task 31 owns that server work. Faking either would put a number on screen that no query stands behind, so they are omitted and recorded here instead.
 - interaction/state: **PASS**
 - functionality: **PASS**
 - canvas geometry: **PASS**
@@ -1089,6 +1089,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 - `NOT-BUILT` #25 (open): Availability's "2 doctors" and Team's "1 request" values are absent
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #108 (approved): A doctor's More hub shows three module tiles; the frame draws four, including Billing
+- `APPROVED-DEVIATION` #109 (approved): Hub values are absent rather than zero while their query is loading or failed
 
 ### `v9-72` — WhatsApp settings · MISMATCHED
 
@@ -1111,7 +1113,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 
 ### `v9-73` — Availability — weekly hours · MISMATCHED
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 9.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 23.8%
 
 - layout: **UNREVIEWED**
 - typography: **UNREVIEWED**

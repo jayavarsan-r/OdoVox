@@ -501,7 +501,7 @@
     "frame": "v9-56",
     "name": "Lab list — stat pills, not tiles",
     "status": "MISMATCHED",
-    "changedPct": 9.303264303264305,
+    "changedPct": 9.732888732888732,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -519,7 +519,7 @@
     "frame": "v9-58",
     "name": "Lab — case detail",
     "status": "MISMATCHED",
-    "changedPct": 15.38961038961039,
+    "changedPct": 14.652509652509652,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -628,9 +628,9 @@
   {
     "frame": "v9-70",
     "name": "More — module hub",
-    "status": "MISMATCHED",
-    "changedPct": 3.551421551421551,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 3.5795015795015797,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
@@ -647,7 +647,7 @@
     "frame": "v9-72",
     "name": "WhatsApp settings",
     "status": "MISMATCHED",
-    "changedPct": 9.694629694629695,
+    "changedPct": 9.683397683397683,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
@@ -656,7 +656,7 @@
     "frame": "v9-73",
     "name": "Availability — weekly hours",
     "status": "MISMATCHED",
-    "changedPct": 9.207792207792208,
+    "changedPct": 23.763074763074762,
     "gateB": "MISMATCHED",
     "openMustFix": [],
     "openDecisions": []
