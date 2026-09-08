@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 28 |
+| APPROVED-DEVIATION | 29 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 19 |
+| MISMATCHED | 18 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -32,8 +32,7 @@ gradually reinterpreting its own design.
 
 ### Open MUST-FIX — work, not questions
 
-- **#102** v9-36 — A voiced allergy lands inside 'More details' instead of a prominent chip
-- **#103** v9-36 — CHIEF COMPLAINT is a primary field in the frame and an expandable one in the app
+_None. Every MUST-FIX item is closed._
 
 ### Awaiting your ruling — untouched by design
 
@@ -80,7 +79,7 @@ _None. Every task closed its own decisions._
 | `v9-33` | Patients — search active | 19 | APPROVED-DEVIATION | 6.2% | NOT-BUILT #76: Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist |
 | `v9-34` | Patients — no match | 19 | APPROVED-DEVIATION | 13.0% | — |
 | `v9-35` | New patient — blank | 20 | APPROVED-DEVIATION | 8.1% | — |
-| `v9-36` | New patient — voice intake | 20 | MISMATCHED | 15.3% | MUST-FIX #102: A voiced allergy lands inside 'More details' instead of a prominent chip |
+| `v9-36` | New patient — voice intake | 20 | APPROVED-DEVIATION | 15.5% | — |
 | `v9-37` | Patient — Overview | 22 | APPROVED-DEVIATION | 13.6% | — |
 | `v9-38` | Patient — Cases journey | 22 | APPROVED-DEVIATION | 13.5% | — |
 | `v9-39` | Case — procedure detail | 23 | APPROVED-DEVIATION | 5.6% | NOT-BUILT #83: Sitting rows show no per-sitting fee — Sitting has no cost field |
@@ -645,17 +644,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.1%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-36` — New patient — voice intake · MISMATCHED
+### `v9-36` — New patient — voice intake · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 15.3%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 15.5%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -666,10 +665,12 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 15.3%
 - `MUST-FIX` #59 (fixed): Voice intake claimed "Filled from your voice" over a form it had filled nothing into
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
-- `MUST-FIX` #102 (open): A voiced allergy lands inside 'More details' instead of a prominent chip
-- `MUST-FIX` #103 (open): CHIEF COMPLAINT is a primary field in the frame and an expandable one in the app
+- `MUST-FIX` #102 (fixed): A voiced allergy lands inside 'More details' instead of a prominent chip
+- `MUST-FIX` #103 (fixed): CHIEF COMPLAINT is a primary field in the frame and an expandable one in the app
 - `APPROVED-DEVIATION` #104 (approved): The patient code is generated and shown in the title, not as a short 'P-0413' chip
 - `APPROVED-DEVIATION` #105 (approved): The dictation card carries a full-width CTA where the frame has a mic circle
+- `APPROVED-DEVIATION` #106 (approved): AGE and GENDER keep their own labels where the frame uses one 'AGE & GENDER'
+- `APPROVED-DEVIATION` #107 (approved): FLAGS is a full picker; the frame shows only the flags that are set plus a '+'
 
 ### `v9-37` — Patient — Overview · APPROVED-DEVIATION
 
