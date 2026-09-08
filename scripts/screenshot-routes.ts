@@ -89,7 +89,12 @@ async function resetToIdle(page: Page): Promise<void> {
     let clicked = false;
     for (const name of exits) {
       const exit = page.getByRole("button", { name });
-      if (await exit.first().isVisible().catch(() => false)) {
+      if (
+        await exit
+          .first()
+          .isVisible()
+          .catch(() => false)
+      ) {
         await exit.first().click();
         clicked = true;
         break;
@@ -116,7 +121,12 @@ const startRecording = async (page: Page) => {
   // waiting patient in first, the way a doctor would. Both are real queue controls; no
   // state is injected to make the next shot work.
   const record = page.getByRole("button", { name: /^record$/i });
-  if (!(await record.first().isVisible().catch(() => false))) {
+  if (
+    !(await record
+      .first()
+      .isVisible()
+      .catch(() => false))
+  ) {
     const callIn = page.getByRole("button", { name: /call in/i }).first();
     if (!(await callIn.isVisible().catch(() => false))) {
       throw new Error(
@@ -450,9 +460,13 @@ export const SHOTS: Shot[] = [
       await page.waitForTimeout(1200);
       await page.getByRole("button", { name: /finish/i }).click();
       await page.getByRole("button", { name: /save findings/i }).click();
-      await page.getByRole("button", { name: /^re-record$/i }).waitFor({ timeout: 60_000 });
+      await page
+        .getByRole("button", { name: /^re-record$/i })
+        .waitFor({ timeout: 60_000 });
       await page.getByRole("button", { name: /confirm & save/i }).click();
-      await page.getByRole("button", { name: /save & send to front desk/i }).click();
+      await page
+        .getByRole("button", { name: /save & send to front desk/i })
+        .click();
       await page.getByText(/Saved to /).waitFor({ timeout: 30_000 });
       await page.waitForTimeout(500);
     },
@@ -511,14 +525,19 @@ export const SHOTS: Shot[] = [
     role: "doctor",
     frame: "v9-36",
     prepare: async (page) => {
-      await page.getByRole("button", { name: /speak patient details/i }).first().click();
+      await page
+        .getByRole("button", { name: /speak patient details/i })
+        .first()
+        .click();
       await page.waitForTimeout(1500);
       await page.getByRole("button", { name: /stop/i }).first().click();
       // Wait for the NAME field to actually carry a value, not for the toast. The toast
       // fires either way, and "success message over an empty form" is precisely the state
       // this shot exists to rule out — waiting on the toast would have captured it.
       await page.waitForFunction(
-        () => (document.querySelector("#name") as HTMLInputElement | null)?.value !== "",
+        () =>
+          (document.querySelector("#name") as HTMLInputElement | null)
+            ?.value !== "",
         undefined,
         { timeout: 60_000 },
       );
@@ -553,7 +572,10 @@ export const SHOTS: Shot[] = [
       // Frame 40 IS the selected state: the chart with a tooth open and its status panel
       // below. Tapping a real tooth also proves the interaction survived the restyle —
       // selection, the panel, and the plan link all come from the same click a doctor makes.
-      await page.getByRole("button", { name: /^Tooth 36\b/ }).first().click();
+      await page
+        .getByRole("button", { name: /^Tooth 36\b/ })
+        .first()
+        .click();
       await page.getByText(/Save/).first().waitFor({ timeout: 10_000 });
       await page.waitForTimeout(300);
     },
@@ -581,7 +603,10 @@ export const SHOTS: Shot[] = [
     prepare: async (page) => {
       await openFirstRow(/\/patients\/[^/]+$/)(page);
       await patientTab("Cases")(page);
-      await page.getByRole("button", { name: /open case/i }).first().click();
+      await page
+        .getByRole("button", { name: /open case/i })
+        .first()
+        .click();
       await page.waitForURL(/\/plans\/[^/]+$/, { timeout: 15_000 });
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(400);
@@ -598,7 +623,10 @@ export const SHOTS: Shot[] = [
     frame: "v9-42",
     prepare: async (page) => {
       await openFirstRow(/\/patients\/[^/]+$/)(page);
-      await page.getByRole("button", { name: /more actions/i }).first().click();
+      await page
+        .getByRole("button", { name: /more actions/i })
+        .first()
+        .click();
       await page.getByRole("button", { name: /full history/i }).click();
       await page.waitForURL(/\/history$/, { timeout: 15_000 });
       await page.waitForLoadState("networkidle");
@@ -745,6 +773,202 @@ export const SHOTS: Shot[] = [
     path: "/notifications",
     role: "doctor",
     frame: "v9-80",
+    pending: true,
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PARALLEL BLOCKS — every remaining frame, pre-declared.
+  //
+  // Registered up front so parallel implementers never edit the same region of this
+  // file. Each block flips ONLY its own `pending` flags off and writes its own
+  // `prepare` driver where the frame is a sub-state (a sheet, a filter, an error).
+  // Adding entries here later, from several worktrees at once, is what this avoids.
+  //
+  // See docs/migration/BLOCK-BRIEF.md.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Block G · Home states — frames 14–19
+  {
+    slug: "C2-home-empty",
+    path: "/home",
+    role: "doctor",
+    frame: "v9-14",
+    pending: true,
+  },
+  {
+    slug: "C3-home-late",
+    path: "/home",
+    role: "doctor",
+    frame: "v9-15",
+    pending: true,
+  },
+  {
+    slug: "C4-home-gap",
+    path: "/home",
+    role: "doctor",
+    frame: "v9-16",
+    pending: true,
+  },
+  {
+    slug: "C5-home-endday",
+    path: "/home",
+    role: "doctor",
+    frame: "v9-17",
+    pending: true,
+  },
+  {
+    slug: "C6-home-recap",
+    path: "/home",
+    role: "doctor",
+    frame: "v9-18",
+    pending: true,
+  },
+  {
+    slug: "C8-home-offline",
+    path: "/home",
+    role: "doctor",
+    frame: "v9-19",
+    pending: true,
+  },
+
+  // Block I · Clinical states — frames 22, 27–29, 43–45.
+  // 27/28/29 and 45 need the canned-transcript fixture to be reachable honestly.
+  {
+    slug: "D8-queue-empty",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-22",
+    pending: true,
+  },
+  {
+    slug: "D9-verify-conflict",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-27",
+    pending: true,
+  },
+  {
+    slug: "D10-verify-resolved",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-28",
+    pending: true,
+  },
+  {
+    slug: "D11-verify-seven",
+    path: "/consult",
+    role: "doctor",
+    frame: "v9-29",
+    pending: true,
+  },
+  {
+    slug: "E13-visit-record",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-43",
+    pending: true,
+  },
+  {
+    slug: "E14-rx-sheet",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-44",
+    pending: true,
+  },
+  {
+    slug: "E15-rx-conflict",
+    path: "/patients",
+    role: "doctor",
+    frame: "v9-45",
+    pending: true,
+  },
+
+  // Block A · Schedule — frames 48, 49
+  {
+    slug: "G3-appt-new",
+    path: "/schedule",
+    role: "receptionist",
+    frame: "v9-48",
+    pending: true,
+  },
+  {
+    slug: "G4-schedule-drag",
+    path: "/schedule",
+    role: "receptionist",
+    frame: "v9-49",
+    pending: true,
+  },
+
+  // Block C · Money — frames 51–53
+  {
+    slug: "H2-walkin",
+    path: "/today",
+    role: "receptionist",
+    frame: "v9-51",
+    pending: true,
+  },
+  {
+    slug: "H3-checkout",
+    path: "/today",
+    role: "receptionist",
+    frame: "v9-52",
+    pending: true,
+  },
+  {
+    slug: "H4-paid-toast",
+    path: "/today",
+    role: "receptionist",
+    frame: "v9-53",
+    pending: true,
+  },
+
+  // Block B · Lab — frames 57, 60
+  {
+    slug: "I2-lab-dial",
+    path: "/lab",
+    role: "doctor",
+    frame: "v9-57",
+    pending: true,
+  },
+  {
+    slug: "I5-consent-gate",
+    path: "/lab",
+    role: "doctor",
+    frame: "v9-60",
+    pending: true,
+  },
+
+  // Block D · Messages — frames 63, 64
+  {
+    slug: "J2-thread",
+    path: "/messages",
+    role: "doctor",
+    frame: "v9-63",
+    pending: true,
+  },
+  {
+    slug: "J3-thread-closed",
+    path: "/messages",
+    role: "doctor",
+    frame: "v9-64",
+    pending: true,
+  },
+
+  // Block E · Inventory — frame 69
+  {
+    slug: "K3-voice-entry",
+    path: "/inventory",
+    role: "doctor",
+    frame: "v9-69",
+    pending: true,
+  },
+
+  // Block F · Settings & account — frame 77
+  {
+    slug: "L8-switch-role",
+    path: "/more",
+    role: "doctor",
+    frame: "v9-77",
     pending: true,
   },
 ];

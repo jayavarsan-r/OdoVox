@@ -1,17 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { AnimatePresence, motion } from 'framer-motion';
-import { FileText, Image as ImageIcon, X } from 'lucide-react';
-import type { ConsultationContext } from '@odovox/types';
-import { fetchMediaUrl } from '@/lib/queries';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
+import { FileText, Image as ImageIcon, X } from "lucide-react";
+import type { ConsultationContext } from "@odovox/types";
+import { fetchMediaUrl } from "@/lib/queries";
 
-type Xray = ConsultationContext['xrays'][number];
+type Xray = ConsultationContext["xrays"][number];
 
-function XrayThumb({ xray, onOpen }: { xray: Xray; onOpen: (url: string, isPdf: boolean) => void }) {
-  const { data: url } = useQuery({ queryKey: ['media-url', xray.id], queryFn: () => fetchMediaUrl(xray.id) });
-  const isPdf = xray.mimeType.includes('pdf');
+function XrayThumb({
+  xray,
+  onOpen,
+}: {
+  xray: Xray;
+  onOpen: (url: string, isPdf: boolean) => void;
+}) {
+  const { data: url } = useQuery({
+    queryKey: ["media-url", xray.id],
+    queryFn: () => fetchMediaUrl(xray.id),
+  });
+  const isPdf = xray.mimeType.includes("pdf");
   return (
     <button
       type="button"
@@ -20,7 +29,7 @@ function XrayThumb({ xray, onOpen }: { xray: Xray; onOpen: (url: string, isPdf: 
     >
       {isPdf || !url ? (
         <span className="flex size-full flex-col items-center justify-center gap-1 text-xs text-text-muted">
-          <FileText className="size-6" /> {isPdf ? 'PDF' : '…'}
+          <FileText className="size-6" /> {isPdf ? "PDF" : "…"}
         </span>
       ) : (
         <img src={url} alt="x-ray" className="size-full object-cover" />
@@ -40,7 +49,13 @@ export function XrayStrip({ xrays }: { xrays: Xray[] }) {
       </p>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {xrays.map((x) => (
-          <XrayThumb key={x.id} xray={x} onOpen={(url, isPdf) => (isPdf ? window.open(url, '_blank') : setViewerUrl(url))} />
+          <XrayThumb
+            key={x.id}
+            xray={x}
+            onOpen={(url, isPdf) =>
+              isPdf ? window.open(url, "_blank") : setViewerUrl(url)
+            }
+          />
         ))}
       </div>
       <AnimatePresence>
@@ -52,9 +67,19 @@ export function XrayStrip({ xrays }: { xrays: Xray[] }) {
             onClick={() => setViewerUrl(null)}
             className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/90 p-4"
           >
+            {/*
+              Closes on its own click, not by letting the event bubble to the backdrop.
+              It looked fine either way, but a dismiss control that depends on its parent
+              breaks the moment anything between them calls stopPropagation — which the
+              <img> below already does for its own clicks.
+            */}
             <button
               type="button"
               aria-label="Close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewerUrl(null);
+              }}
               className="absolute right-4 top-4 rounded-pill bg-paper/20 p-2 text-paper"
             >
               <X className="size-5" />
@@ -63,7 +88,7 @@ export function XrayStrip({ xrays }: { xrays: Xray[] }) {
               src={viewerUrl}
               alt="x-ray"
               className="max-h-full max-w-full object-contain"
-              style={{ touchAction: 'pinch-zoom' }}
+              style={{ touchAction: "pinch-zoom" }}
               onClick={(e) => e.stopPropagation()}
             />
           </motion.div>

@@ -76,10 +76,25 @@ Owner-ruled, binding, and not re-litigable by inference from a frame:
 The shorthand for rules 1 and 2: **RECEPTION QUEUE ≠ CLINICAL RECORD.**
 
 Governance for decisions, not just data: technical implementation choices are yours to
-make. Product, clinical, privacy/RBAC and workflow decisions, removing existing
-functionality, and any place two legitimate product behaviours exist are NOT — implement no
-irreversible change, classify the frame BLOCKED, explain the alternatives, recommend one,
-and wait for the owner's ruling.
+make. Clinical and privacy/RBAC decisions, anything touching PHI, removing existing
+functionality, and clinical hard-block policy are NOT — implement no irreversible change,
+classify the frame BLOCKED, explain the alternatives, recommend one, and wait for the
+owner's ruling.
+
+**Standing authority (owner ruling, 2026-09-07 — deviation #94):** "Decide non-clinical,
+log it." Layout, copy, workflow and information-architecture decisions are yours to make
+during the v9→v10 migration rather than stalling it. Record each in `deviations.json` as an
+`APPROVED-DEVIATION` carrying its reasoning; the owner reviews the list at the end and may
+reverse any of it. This does not reach clinical, privacy/RBAC or PHI decisions, and it does
+not re-litigate product rules 1–8 above.
+
+Rulings of 2026-09-07, binding:
+
+- **#91** — Share Rx PDF is **not** locked by an unresolved allergy conflict. Consistent
+  with #53: the warning is advisory, the dentist decides, the override is audited.
+- **#52 / #90** — `findings` and `procedureNarrative` are **not** added to
+  ClinicalExtraction, and the clinical prompt is not changed, inside this UI migration.
+  Render the sections that have data; never generate prose to fill the rest (rule 7).
 
 ## The v9 → v10 UI migration (active work)
 
@@ -101,6 +116,20 @@ Every difference lands in exactly one class in `deviations.json`:
 **No task closes with an open decision of its own.** Raise and resolve them
 inside the task that surfaced them; carrying thirty forward leaves a pile nobody
 can reconstruct.
+
+### Gate C — the app actually works
+
+Owner direction, 2026-09-07 (deviation #95): the deliverable is a working app, not 81
+matching photographs. On top of Gate A (nothing lost) and Gate B (matches the design),
+every frame must pass **Gate C** before it closes:
+
+- the route is **reachable** by real navigation from the app's own chrome;
+- every control on it is **wired** to a real endpoint or a real client action;
+- the flow it belongs to **completes end to end** against the live API on seeded data;
+- there are **no dead buttons, placeholder screens or TODO surfaces**.
+
+A screen that photographs correctly and does nothing is not complete. `pnpm gate:c` runs
+the reachability and dead-control audit; the flow journeys live in the Playwright E2E spec.
 
 ## Working here
 
