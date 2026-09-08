@@ -1197,6 +1197,48 @@
       "reason": "Found while driving frame 28's capture. MedicineRow wrapped its whole body in a <button> whenever it had an onClick, so the conflict's 'Remove' chip and the resolved row's 'Undo' were buttons nested inside a button. React logged it on every render ('In HTML, %s cannot be a descendant of <%s>').\n\nIt was not only invalid. A button's accessible name is the concatenation of its contents, so the row announced itself as 'Amoxicillin 500mg TID 5 days Allergy conflict: patient lists Penicillin … Remove'. A screen-reader user could not distinguish the row from the action inside it — and the capture driver could not either: getByRole('button', { name: /remove/i }) matched the ROW and clicked that instead, which is how it surfaced.\n\nThe row is now a div with a stretched hit-area button behind content that ignores pointer events; the real actions opt back in above it. Pixel-identical, correctly nested, and the row carries an explicit name of its own.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 102,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "A voiced allergy lands inside 'More details' instead of a prominent chip",
+      "reason": "Frame 36 puts the allergy in the flags row as a red 'Allergy: Penicillin' chip, beside Diabetes/BP/Thyroid — visible without scrolling or expanding anything.\n\nThe implementation captures it correctly: extractPatientIntake parses 'allergic to penicillin', the form writes it to the ALLERGIES field, and setMoreOpen(true) auto-expands the section so it is not silently hidden. But that section sits below the fold, so the most safety-critical fact the intake captured is the least visible thing on the screen, while six medical-flag chips the patient does NOT have occupy the prominent row.\n\nThis is a MUST-FIX rather than a deviation because the frame and product rule 2 agree: doctor-facing clinical surfaces must surface allergies prominently, and /patients/new is doctor-only. Implementing the frame here IS implementing the rule; no product decision is needed.\n\nFix: render voiced allergies as crit-toned chips in the FLAGS row, keeping the free-text ALLERGIES field in More details as the editable source of truth. Owned by Task 20.",
+      "status": "open"
+    },
+    {
+      "id": 103,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "CHIEF COMPLAINT is a primary field in the frame and an expandable one in the app",
+      "reason": "Frame 36 shows CHIEF COMPLAINT as a first-class field between AGE & GENDER and MEDICAL FLAGS, filled and wearing the lime voice spine ('Pain on chewing, lower left'). The implementation puts it inside 'More details' alongside address and blood group.\n\nThe chief complaint is why the patient is here. It is the field the doctor reads first and the one the dictation is most likely to fill; grouping it with 'referred by' misreads its weight. Same root as #102 — the form's primary/secondary split does not match the frame's, and the frame's is right.\n\nOwned by Task 20, which owns frames 35 and 36.",
+      "status": "open"
+    },
+    {
+      "id": 104,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "The patient code is generated and shown in the title, not as a short 'P-0413' chip",
+      "reason": "The frame shows a tidy 'P-0413' chip top-right and repeats it in the CTA ('Create patient · P-0413'). The app generates codes with a collision-resistant scheme and shows the real one — 'PT-PDFUHW' in this capture — in the header.\n\nThe frame's format implies a per-clinic sequential counter. That is a schema and concurrency decision (two receptionists creating patients at once must not both get P-0413), not a visual one, and the existing generator already solves it. Showing a prettier code than the record actually carries would mean the chip and the database disagree.\n\nRecorded rather than matched. If sequential per-clinic codes are wanted, that is its own task with its own uniqueness story.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 105,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "The dictation card carries a full-width CTA where the frame has a mic circle",
+      "reason": "The frame's 'Say the details' card ends in a compact lime mic circle. The implementation renders a full-width 'Speak patient details' pill beneath the example line.\n\nA bare mic circle reads as decoration next to an example sentence in quotes; in testing the labelled control is what makes it obvious the app is waiting to be spoken to, which is the whole premise of the product. The card is taller as a result and pushes the form down by roughly one field.\n\nKept deliberately. Decided under #94 as an interface decision, and reversible if the owner prefers the frame's restraint.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

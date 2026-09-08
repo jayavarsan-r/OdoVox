@@ -321,9 +321,12 @@
     "frame": "v9-36",
     "name": "New patient — voice intake",
     "status": "MISMATCHED",
-    "changedPct": 14.053703053703053,
+    "changedPct": 15.321867321867321,
     "gateB": "MISMATCHED",
-    "openMustFix": [],
+    "openMustFix": [
+      "#102: A voiced allergy lands inside 'More details' instead of a prominent chip",
+      "#103: CHIEF COMPLAINT is a primary field in the frame and an expandable one in the app"
+    ],
     "openDecisions": []
   },
   {
