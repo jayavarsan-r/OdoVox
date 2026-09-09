@@ -673,9 +673,9 @@
   {
     "frame": "v9-75",
     "name": "Prescription templates",
-    "status": "MISMATCHED",
-    "changedPct": 7.954018954018954,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 7.724113724113724,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

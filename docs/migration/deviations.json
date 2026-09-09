@@ -1364,6 +1364,28 @@
       "reason": "Two content differences on the spend section.\n\nThe numbers are seed data: no conversations have been billed, so the total is ₹0 and the six-month chart is empty. The chart now states that in words rather than drawing bars — and it renders a fixed six-month axis regardless, because plotting only the months that exist gave a first-month clinic ONE bar stretched across the full width, a single data point drawn as though it were a trend (lastSixMonths, 4 tests).\n\nThe frame's footnote — 'At the cap, sends pause and a banner appears on Today' — is NOT reproduced. A budget cap and a warning threshold exist, but whether reaching the cap actually halts sending and raises a banner on Today is not something this screen can assert from what is implemented, and copy describing a safety behaviour that may not happen is worse than no copy on a screen about spending real money. It should return once that path is verified end to end.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 117,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-75"
+      ],
+      "summary": "Archive moved from a per-row icon into the template editor",
+      "reason": "The list carried a pencil and an archive icon beside every template. Frame 75 has neither — a name, its chips and a chevron — because this screen is a PICKER before it is a manager: the question is 'which bundle', and four templates used to fill the whole screen.\n\nRebuilt to the frame, tapping a row opens the editor, which is what the chevron implies. Archive follows it there rather than being removed: it sits below Save as a quiet text action. Archiving is rare and feels destructive, and an icon permanently beside every name invited a mis-tap on the screen people use most often to just choose one.\n\nGate A holds — nothing was removed, it moved one tap deeper, behind the same permission check (`canManage && mine`) the icons had.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 118,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-75"
+      ],
+      "summary": "Chips read the clinic's own tags where the frame shows a curated set",
+      "reason": "The frame's rows carry '3 meds' plus a category ('RCT', 'Pedo · wt-based') and an age band ('Adult'). The implementation shows the medicine count plus the template's first two actual tags — 'antibiotic', 'post-op', 'periodontal'.\n\nTags are free text the clinic writes, so there is no category or age-band field to render, and inventing one would mean classifying a dentist's own templates on their behalf. Two tags, because a third pushed the row to wrap and the frame's whole point here is a list that scans in one pass.\n\nThe footnote is also shortened: the frame cites the prescription sheet by frame number ('the prescription sheet (23)'), which is spec shorthand, not something to show a user.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

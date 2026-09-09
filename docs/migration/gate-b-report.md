@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 33 |
+| APPROVED-DEVIATION | 34 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 14 |
+| MISMATCHED | 13 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -118,7 +118,7 @@ _None. Every task closed its own decisions._
 | `v9-72` | WhatsApp settings | 30 | APPROVED-DEVIATION | 8.6% | — |
 | `v9-73` | Availability — weekly hours | 30 | APPROVED-DEVIATION | 6.8% | — |
 | `v9-74` | Days off | 30 | APPROVED-DEVIATION | 10.3% | — |
-| `v9-75` | Prescription templates | 30 | MISMATCHED | 8.0% | criterion "layout" unreviewed |
+| `v9-75` | Prescription templates | 30 | APPROVED-DEVIATION | 7.7% | — |
 | `v9-76` | Account | 30 | NOT-BUILT | — | Task 30 owns this; no route or state driver reaches it yet |
 | `v9-77` | Switch role — confirm | 30 | NOT-BUILT | — | Task 30 owns this; no route or state driver reaches it yet |
 | `v9-78` | The orb — tap records, hold speaks | — | CROSS-CUTTING | — | — |
@@ -1158,17 +1158,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.3%
 - `APPROVED-DEVIATION` #112 (approved): The booking-conflict note says what the app does, which is less than the frame promises
 - `APPROVED-DEVIATION` #113 (approved): The scope selector names the doctors instead of offering a generic 'A doctor'
 
-### `v9-75` — Prescription templates · MISMATCHED
+### `v9-75` — Prescription templates · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.0%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 7.7%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1176,3 +1176,5 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.0%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #117 (approved): Archive moved from a per-row icon into the template editor
+- `APPROVED-DEVIATION` #118 (approved): Chips read the clinic's own tags where the frame shows a curated set
