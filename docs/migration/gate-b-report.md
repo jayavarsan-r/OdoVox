@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 30 |
+| APPROVED-DEVIATION | 32 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 17 |
+| MISMATCHED | 15 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -116,8 +116,8 @@ _None. Every task closed its own decisions._
 | `v9-70` | More — module hub | 6 | APPROVED-DEVIATION | 3.6% | NOT-BUILT #25: Availability's "2 doctors" and Team's "1 request" values are absent |
 | `v9-71` | Team & join code | 31 | NOT-BUILT | — | Task 31 owns this; no route or state driver reaches it yet |
 | `v9-72` | WhatsApp settings | 30 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
-| `v9-73` | Availability — weekly hours | 30 | MISMATCHED | 23.8% | criterion "layout" unreviewed |
-| `v9-74` | Days off | 30 | MISMATCHED | 10.9% | criterion "layout" unreviewed |
+| `v9-73` | Availability — weekly hours | 30 | APPROVED-DEVIATION | 6.8% | — |
+| `v9-74` | Days off | 30 | APPROVED-DEVIATION | 10.3% | — |
 | `v9-75` | Prescription templates | 30 | MISMATCHED | 8.0% | criterion "layout" unreviewed |
 | `v9-76` | Account | 30 | NOT-BUILT | — | Task 30 owns this; no route or state driver reaches it yet |
 | `v9-77` | Switch role — confirm | 30 | NOT-BUILT | — | Task 30 owns this; no route or state driver reaches it yet |
@@ -832,6 +832,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `MUST-FIX` #110 (fixed): DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct
 
 ### `v9-47` — Schedule — reception multi-doctor · MISMATCHED
 
@@ -851,6 +852,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `MUST-FIX` #110 (fixed): DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct
 
 ### `v9-50` — Reception Today · APPROVED-DEVIATION
 
@@ -1111,17 +1113,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-73` — Availability — weekly hours · MISMATCHED
+### `v9-73` — Availability — weekly hours · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 23.8%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 6.8%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1129,18 +1131,20 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 23.8%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `MUST-FIX` #110 (fixed): DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct
+- `APPROVED-DEVIATION` #111 (approved): The doctor switcher appears only when there is more than one doctor
 
-### `v9-74` — Days off · MISMATCHED
+### `v9-74` — Days off · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 10.9%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 10.3%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1148,6 +1152,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.9%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #112 (approved): The booking-conflict note says what the app does, which is less than the frame promises
+- `APPROVED-DEVIATION` #113 (approved): The scope selector names the doctors instead of offering a generic 'A doctor'
 
 ### `v9-75` — Prescription templates · MISMATCHED
 

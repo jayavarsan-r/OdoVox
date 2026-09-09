@@ -655,18 +655,18 @@
   {
     "frame": "v9-73",
     "name": "Availability — weekly hours",
-    "status": "MISMATCHED",
-    "changedPct": 23.763074763074762,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.786591786591786,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-74",
     "name": "Days off",
-    "status": "MISMATCHED",
-    "changedPct": 10.916461916461916,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 10.297297297297298,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

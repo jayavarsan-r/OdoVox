@@ -1285,6 +1285,52 @@
       "reason": "Every chip on this hub — '1 doctor', '2 upcoming', '12', '1 request' — renders only when its query has answered with a non-zero value. A loading or failed query renders no chip at all.\n\nThe alternative is a chip that reads '0 doctors' for a moment and then corrects itself. A clinic always has at least one doctor, so zero is never a fact about the clinic; it is only ever a fact about the request, and printing it tells the reader something false about their own clinic.\n\nSo the frame's populated hub is what a loaded hub looks like, and an unloaded one is quieter than the frame rather than wrong.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 110,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-73",
+        "v9-46",
+        "v9-47"
+      ],
+      "summary": "DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct",
+      "reason": "`@@unique([doctorId, dayOfWeek, startTime, effectiveFrom])` looks like it prevents duplicate windows. It does not. `effectiveFrom` is nullable and means \"always\"; every row in the dev database has it null. Postgres treats NULLs as DISTINCT in a unique index, so two identical always-rows are not duplicates and the constraint has never applied to a single row.\n\nTwo consequences, one already seen:\n\n1. The seed used createMany({ skipDuplicates: true }) and believed itself idempotent. skipDuplicates only skips what the index calls a duplicate, so every run appended six more windows. The dev clinic reached 27 identical windows per weekday and the availability screen rendered as an unreadable wall of chips — which is how this was found.\n2. The APPLICATION has the same hole: POST /doctors/:id/availability calls create() with no guard, so a receptionist who taps Add twice gets two identical windows, and the booking engine then reads a doctor as doubly available.\n\nThe seed is fixed by upserting on a deterministic id (verified: two consecutive runs leave six rows). That works around it for seeded data only. The constraint itself still needs correcting so the application cannot create duplicates either.\n\nPostgres is 16, so the index can express this directly:\n\n  DELETE FROM \"DoctorAvailability\" a USING \"DoctorAvailability\" b\n   WHERE a.\"doctorId\" = b.\"doctorId\" AND a.\"dayOfWeek\" = b.\"dayOfWeek\"\n     AND a.\"startTime\" = b.\"startTime\"\n     AND a.\"effectiveFrom\" IS NOT DISTINCT FROM b.\"effectiveFrom\"\n     AND a.ctid > b.ctid;\n  DROP INDEX \"DoctorAvailability_doctorId_dayOfWeek_startTime_effectiveFrom_key\";\n  CREATE UNIQUE INDEX \"DoctorAvailability_doctorId_dayOfWeek_startTime_effectiveFrom_key\"\n    ON \"DoctorAvailability\" (\"doctorId\", \"dayOfWeek\", \"startTime\", \"effectiveFrom\") NULLS NOT DISTINCT;\n\nPrisma cannot express NULLS NOT DISTINCT in schema.prisma, so this wants a hand-written migration plus a note on the model, and it deserves its own task rather than riding along inside a UI migration. Worth auditing the other nullable columns that appear in @@unique lists for the same flaw.",
+      "status": "fixed",
+      "resolution": "Fixed 2026-09-09 by migration 20260909090000_availability_unique_nulls_not_distinct: existing duplicates collapsed, then the unique index rebuilt with NULLS NOT DISTINCT so two identical always-rows finally count as duplicates. Verified against the live database — an INSERT of an existing (doctorId, dayOfWeek, startTime, null) row is now rejected. POST /availability/doctor/:id answers the violation with 409 AVAILABILITY_DUPLICATE rather than a 500, and four tests cover it, including that a second window at a DIFFERENT time on the same day is still allowed — the frame's own morning/afternoon split depends on that. schema.prisma carries a warning that regenerating the index from schema alone silently drops the NULLS NOT DISTINCT clause."
+    },
+    {
+      "id": 111,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-73"
+      ],
+      "summary": "The doctor switcher appears only when there is more than one doctor",
+      "reason": "Frame 73 shows a two-tab switcher, Dr. Priya / Dr. Arjun. The seeded clinic has one dentist, so the implementation renders her name as a heading instead: a lone selected tab is a control that cannot be operated, and it invites the reader to look for the other one.\n\nThe switcher is built and renders as the frame draws it as soon as a clinic has a second doctor.\n\nThe hours themselves also differ from the frame — one 09:00–18:00 window per weekday against the frame's split 09:30–13:00 / 14:00–20:30 and its short Saturday. That is seed data, not design: the row renders however many windows a day has.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 112,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-74"
+      ],
+      "summary": "The booking-conflict note says what the app does, which is less than the frame promises",
+      "reason": "Frame 74's note reads: 'A date with existing bookings can't be blocked — Odovox shows the count and offers to move them first.'\n\nThe first half is true and enforced: POST /day-off rejects a date carrying appointments with DAY_OFF_HAS_APPOINTMENTS and the count, which the page surfaces as 'N appointments already booked — move them first'. The second half is not: there is no affordance that moves them. Offering one would need a bulk-reschedule flow that does not exist.\n\nSo the note says 'Odovox names the count so those appointments get moved first'. Copy that promises a button the screen does not have is worse than copy that is shorter than the frame's, particularly on a screen whose whole job is to stop someone closing a day out from under a booked patient.\n\nIf the bulk-reschedule flow is built, this copy should return to the frame's wording.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 113,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-74"
+      ],
+      "summary": "The scope selector names the doctors instead of offering a generic 'A doctor'",
+      "reason": "The implementation previously offered 'Whole clinic | A doctor', where choosing the second revealed a dropdown to then pick the person — a category step in front of a choice that is already just a short list of names.\n\nIt now lists 'Whole clinic' plus one tab per doctor, which is what frame 74 draws (Whole clinic / Dr. Priya / Dr. Arjun) and one decision rather than two. The row scrolls horizontally for a clinic with several dentists.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
