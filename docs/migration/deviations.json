@@ -1331,6 +1331,39 @@
       "reason": "The implementation previously offered 'Whole clinic | A doctor', where choosing the second revealed a dropdown to then pick the person — a category step in front of a choice that is already just a short list of names.\n\nIt now lists 'Whole clinic' plus one tab per doctor, which is what frame 74 draws (Whole clinic / Dr. Priya / Dr. Arjun) and one decision rather than two. The row scrolls horizontally for a clinic with several dentists.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 114,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-72"
+      ],
+      "summary": "The switches name intents; the API's Meta template keys are grouped behind them",
+      "reason": "Frame 72's 'Automatic messages' has four switches with human names. The implementation had six rows carrying raw template keys — `appointment_reminder_1h`, `outstanding_balance_reminder` — which are Meta's identifiers, not decisions a dentist makes. Deciding whether to chase patients for money should not require knowing the chase is called `outstanding_balance_reminder`, or that 'remind them about the appointment' is two approved templates that both have to be on.\n\nGrouping is by key prefix (lib/whatsapp/template-groups.ts, 14 tests) so a newly approved template lands in the right group without a code change. A group is ON when any member is on, and one tap sets them all — which is what a single switch above several templates already appeared to promise.\n\nOne difference from the frame's set: it shows 'Review requests' and this clinic has no such approved template, while it does have `prescription_ready`, which the frame lacks. The groups follow the templates that exist. Anything unrecognised keeps its own row rather than vanishing — a message going to patients that nobody can see on this screen is the failure worth avoiding.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 115,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-72"
+      ],
+      "summary": "PRIVACY: the business number is masked and the provider name is gone",
+      "reason": "The card printed the full WhatsApp Business number and a 'Provider: mock' line. Frame 72 masks the number ('+91 98··· ··00') and shows no provider, and it is right on both.\n\nThe card's question is 'are we connected', not 'what is the number'. This screen is readable by any clinic role and is routinely on display when someone is being shown around, and the number identifies the clinic's messaging account. It now reads 'Business · +91 80····0000'.\n\nThe provider is a deployment detail that tells a dentist nothing and actively misleads when it reads 'mock' — which looks like a fault on a screen whose whole job is to say the integration is healthy.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 116,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-72"
+      ],
+      "summary": "Monthly spend shows ₹0 against the frame's ₹620 of ₹1,000, and the cap footnote is omitted",
+      "reason": "Two content differences on the spend section.\n\nThe numbers are seed data: no conversations have been billed, so the total is ₹0 and the six-month chart is empty. The chart now states that in words rather than drawing bars — and it renders a fixed six-month axis regardless, because plotting only the months that exist gave a first-month clinic ONE bar stretched across the full width, a single data point drawn as though it were a trend (lastSixMonths, 4 tests).\n\nThe frame's footnote — 'At the cap, sends pause and a banner appears on Today' — is NOT reproduced. A budget cap and a warning threshold exist, but whether reaching the cap actually halts sending and raises a banner on Today is not something this screen can assert from what is implemented, and copy describing a safety behaviour that may not happen is worse than no copy on a screen about spending real money. It should return once that path is verified end to end.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

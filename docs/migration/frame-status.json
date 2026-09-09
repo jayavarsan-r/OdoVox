@@ -646,9 +646,9 @@
   {
     "frame": "v9-72",
     "name": "WhatsApp settings",
-    "status": "MISMATCHED",
-    "changedPct": 9.683397683397683,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 8.645489645489645,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

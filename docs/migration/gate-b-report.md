@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 32 |
+| APPROVED-DEVIATION | 33 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 15 |
+| MISMATCHED | 14 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -115,7 +115,7 @@ _None. Every task closed its own decisions._
 | `v9-69` | Voice entry — confirm | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
 | `v9-70` | More — module hub | 6 | APPROVED-DEVIATION | 3.6% | NOT-BUILT #25: Availability's "2 doctors" and Team's "1 request" values are absent |
 | `v9-71` | Team & join code | 31 | NOT-BUILT | — | Task 31 owns this; no route or state driver reaches it yet |
-| `v9-72` | WhatsApp settings | 30 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
+| `v9-72` | WhatsApp settings | 30 | APPROVED-DEVIATION | 8.6% | — |
 | `v9-73` | Availability — weekly hours | 30 | APPROVED-DEVIATION | 6.8% | — |
 | `v9-74` | Days off | 30 | APPROVED-DEVIATION | 10.3% | — |
 | `v9-75` | Prescription templates | 30 | MISMATCHED | 8.0% | criterion "layout" unreviewed |
@@ -1094,17 +1094,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 3.6%
 - `APPROVED-DEVIATION` #108 (approved): A doctor's More hub shows three module tiles; the frame draws four, including Billing
 - `APPROVED-DEVIATION` #109 (approved): Hub values are absent rather than zero while their query is loading or failed
 
-### `v9-72` — WhatsApp settings · MISMATCHED
+### `v9-72` — WhatsApp settings · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.6%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1112,6 +1112,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #114 (approved): The switches name intents; the API's Meta template keys are grouped behind them
+- `APPROVED-DEVIATION` #115 (approved): PRIVACY: the business number is masked and the provider name is gone
+- `APPROVED-DEVIATION` #116 (approved): Monthly spend shows ₹0 against the frame's ₹620 of ₹1,000, and the cap footnote is omitted
 
 ### `v9-73` — Availability — weekly hours · APPROVED-DEVIATION
 
