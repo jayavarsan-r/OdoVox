@@ -1,0 +1,776 @@
+[
+  {
+    "id": "v9-01",
+    "number": "01",
+    "name": "Splash",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "file": "v9-01.html",
+    "notes": "Silent token refresh → routes to Flow / role / welcome. No spinner — Odo + a 4px progress hairline."
+  },
+  {
+    "id": "v9-02",
+    "number": "02",
+    "name": "Welcome",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "file": "v9-02.html",
+    "notes": "3 swipeable value dots; CTA skips them. Odo happy is the brand's front door."
+  },
+  {
+    "id": "v9-03",
+    "number": "03",
+    "name": "Phone",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "file": "v9-03.html",
+    "notes": "+91 locked, live 5-5 grouping, number pad pre-summoned."
+  },
+  {
+    "id": "v9-04",
+    "number": "04",
+    "name": "OTP — auto-read",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "file": "v9-04.html",
+    "notes": "Autofill usually completes this screen by itself. Wrong code = shake + clear + .error haptic."
+  },
+  {
+    "id": "v9-05",
+    "number": "05",
+    "name": "OTP — wrong code",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "file": "v9-05.html",
+    "notes": "Boxes flash red + shake (.error haptic), clear after 400ms, cursor returns to box 1. Resend unlocks immediately on a failed attempt."
+  },
+  {
+    "id": "v9-06",
+    "number": "06",
+    "name": "Returning user — instant unlock",
+    "section": "A · Entry",
+    "source": "odovox-v9-master.html",
+    "file": "v9-06.html",
+    "notes": "Functions: biometric fires on open — success lands on Flow in <1 s, no splash replay. Fail ×2 → PIN pad. \"Use PIN\" → PIN pad. Session holds 12 h per device; role remembered."
+  },
+  {
+    "id": "v9-07",
+    "number": "07",
+    "name": "Role",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "file": "v9-07.html",
+    "notes": "Doctor → create-or-join. Receptionist → join code (07)."
+  },
+  {
+    "id": "v9-08",
+    "number": "08",
+    "name": "Create clinic — conversational",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "file": "v9-08.html",
+    "notes": "Name → clinic → city. Done. Hours/chairs/lunch ship as honest defaults; the encrypted professional-details form moved to Account."
+  },
+  {
+    "id": "v9-09",
+    "number": "09",
+    "name": "Join by code + preview",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "file": "v9-09.html",
+    "notes": "Code lookup previews the clinic before requesting — no blind joins."
+  },
+  {
+    "id": "v9-10",
+    "number": "10",
+    "name": "Pending approval",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "file": "v9-10.html",
+    "notes": "Polls quietly; Odo thinking, not a spinner. Push notification completes the loop."
+  },
+  {
+    "id": "v9-11",
+    "number": "11",
+    "name": "Done — Odo celebrates",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "file": "v9-11.html",
+    "notes": "Join code surfaced immediately — reception onboarding starts from the doctor's share."
+  },
+  {
+    "id": "v9-12",
+    "number": "12",
+    "name": "First day — setup checklist",
+    "section": "B · Clinic setup & first day",
+    "source": "odovox-v9-master.html",
+    "file": "v9-12.html",
+    "notes": "Functions: Add → voice intake · Set → Availability · Invite → Team page · share glyph → system share with the join code. Checklist collapses to a pill after 3/3 and never returns. First recorded consultation triggers the confetti beat once."
+  },
+  {
+    "id": "v9-13",
+    "number": "13",
+    "name": "Home — calm, glanceable, habit-forming",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-13.html",
+    "notes": "The habit hook is the day river — 8 segments, one per appointment: lime = done, dark = in the chair now, hollow = ahead. One glance = where am I in my day; filling it is the daily loop. Stat pills are gone (their numbers live in the caption line). Every tap: river/caption → Schedule · name (has chevron) → patient record · red allergy text → medical flags · CTA/orb → Recording · Lab tile → Lab (red count = overdue) · Schedule tile → day view · Day-off bar → block sheet · ＋ → speed dial · queue card → patient · \"View all\" → Follow-ups · message row → thread."
+  },
+  {
+    "id": "v9-14",
+    "number": "14",
+    "name": "Flow — chair free (same anatomy)",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-14.html",
+    "notes": "Identical skeleton to 03 — chip, ring (sky = day progress), next patient where the name goes, one CTA, one caption line (\"3 done · 5 to go\" beats an empty screen). \"Good gap for\" promoted above the carousel: the gap is the point of this state."
+  },
+  {
+    "id": "v9-15",
+    "number": "15",
+    "name": "Home — quiet morning, same bones",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-15.html",
+    "notes": "Same skeleton on a quiet day — the bento never moves, its paragraph lines just change (\"Draft to approve\", \"8 today · lunch 13:00\"). Muscle memory over novelty."
+  },
+  {
+    "id": "v9-16",
+    "number": "16",
+    "name": "Flow — day done",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-16.html",
+    "notes": "The fourth Flow state — earned celebration (Odo cheering is allowed: it's a completion). Tomorrow's first slot ends the day looking forward."
+  },
+  {
+    "id": "v9-17",
+    "number": "17",
+    "name": "Flow — offline",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-17.html",
+    "notes": "Concerned Odo lives only in this banner. Core loop never blocks; queued items badge with a clock until sync."
+  },
+  {
+    "id": "v9-18",
+    "number": "18",
+    "name": "Home ＋ — speed dial open",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-18.html",
+    "notes": "Header ＋ (or reception's ＋ orb) springs the dial above the orb spot — everything lands under the thumb. Pills stagger bottom-up, orb becomes ✕, scrim or ✕ closes. Each pill opens its existing sheet: intake 17, walk-in 28, appointment 26, Rx 23 (with patient picker), lab case v5-08. Day off stays in the header — it's a state, not a creation."
+  },
+  {
+    "id": "v9-19",
+    "number": "19",
+    "name": "Day off — quick sheet",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-19.html",
+    "notes": "Header calendar-✕ opens this. CTA stays locked until conflicting bookings are moved (View → schedule with the three highlighted)."
+  },
+  {
+    "id": "v9-20",
+    "number": "20",
+    "name": "Week in review — the Monday habit",
+    "section": "C · Home · Flow & habit",
+    "source": "odovox-v9-master.html",
+    "file": "v9-20.html",
+    "notes": "Lands once, Monday 8:00, via notification — the retention beat. Numbers animate up 400 ms, bars stagger 50 ms, streak Odos pop in last. Taps: collected tile → Billing week view · busiest bar → that day's schedule · streak card → nothing (it's a trophy) · Catch up → Follow-ups · Start Monday → Flow."
+  },
+  {
+    "id": "v9-21",
+    "number": "21",
+    "name": "Consult — live queue",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-21.html",
+    "notes": "Orb ring-highlight = this tab's action. Swipe right on a waiting row = Call in; conflicts resolve with toast + refresh. Empty queue = sleeping Odo."
+  },
+  {
+    "id": "v9-22",
+    "number": "22",
+    "name": "Consult — empty",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-22.html",
+    "notes": "Sleeping Odo owns the empty queue; two exits, both useful. \"Quiet\" chip replaces \"Live\"."
+  },
+  {
+    "id": "v9-23",
+    "number": "23",
+    "name": "Recording",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-23.html",
+    "notes": "Nav hidden; back guarded; call interruption auto-pauses and preserves."
+  },
+  {
+    "id": "v9-24",
+    "number": "24",
+    "name": "Recording — paused (call)",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-24.html",
+    "notes": "Rings freeze grey, orb shows ⏸, Resume becomes the big lime target. Same screen for manual pause, minus the call banner."
+  },
+  {
+    "id": "v9-25",
+    "number": "25",
+    "name": "Processing — one state + bar",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-25.html",
+    "notes": "Stage chips deleted — three visible steps made 15 seconds feel like three waits. Now: Odo + Processing + a moving bar and an honest time expectation. Bar animates left→right on loop; done = Odo cheering beat → Review."
+  },
+  {
+    "id": "v9-26",
+    "number": "26",
+    "name": "Processing — failed",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-26.html",
+    "notes": "Failure never loses audio. \"Review later\" parks it as a draft on the patient with a lav badge; retries run silently in background too."
+  },
+  {
+    "id": "v9-27",
+    "number": "27",
+    "name": "Verification — conflict, clinical red",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-27.html",
+    "notes": "The flag is on the drug, not in a banner — a Persian-red rail + red drug name + one factual line (what the allergy is, when recorded), the way a chart annotation reads. No pink washes, no AI voice. Findings/procedure left the bento: a paper block — hairline rule, 16.5 px/1.7, canvas background — reads like a clinical note. Taps: patient name → record · next-sitting tile → that appointment · Swap → resolves in place · red line → full allergy history · 21 mm · verify → cursor lands on the number · pen → free edit · Confirm locked until the rail clears."
+  },
+  {
+    "id": "v9-28",
+    "number": "28",
+    "name": "Verification — resolved inline",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-28.html",
+    "notes": "Swap resolves in place: the rail slides out, the row re-renders as Azithromycin with a one-line green fact + Undo — no celebration banner, the page just becomes correct. Confirm goes lime the same frame (120 ms). Header \"✓ checked\" is the only trace the guardrail ran."
+  },
+  {
+    "id": "v9-29",
+    "number": "29",
+    "name": "Verification — seven medicines",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-29.html",
+    "notes": "The 7-medicine answer: medicines were never a bento tile's job — they're a full-width list that grows row by row, one line each, dose chips right-aligned. 7, 10, 12 — same anatomy, no squeezing. Row tap expands dose dots + duration; long-press reorders; swipe left removes. The clean-day and conflict layouts (previous frames) are this same card at n=2."
+  },
+  {
+    "id": "v9-30",
+    "number": "30",
+    "name": "Verification — clean day, readable prose",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-30.html",
+    "notes": "No flags → no red anywhere: a slim live strip says checks ran and passed (silent AI, one line), Confirm is lime from the start. Prose bumped to 16px / 1.66 — chair-side readable — and that size is now the rule for record text everywhere (15, 22, v5-01 inherit it)."
+  },
+  {
+    "id": "v9-31",
+    "number": "31",
+    "name": "Confirmed — saved",
+    "section": "D · Consult pipeline",
+    "source": "odovox-v9-master.html",
+    "file": "v9-31.html",
+    "notes": "The 1.2s success beat, then auto-advance. Chips confirm the three side effects (Rx, bill, booking) happened without asking."
+  },
+  {
+    "id": "v9-32",
+    "number": "32",
+    "name": "Patients — glyph rows",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-32.html",
+    "notes": "Header ＋ = new patient. Swipe ← Call/WhatsApp · long-press = quick menu. Search orb expands with mic inside."
+  },
+  {
+    "id": "v9-33",
+    "number": "33",
+    "name": "Patients — search active",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-33.html",
+    "notes": "Header morphs into the field; matches highlight; recents as chips. Keyboard sits below (omitted here)."
+  },
+  {
+    "id": "v9-34",
+    "number": "34",
+    "name": "Patients — no match",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-34.html",
+    "notes": "Dead ends convert: the query pre-fills the intake name field. Sleeping Odo keeps it light."
+  },
+  {
+    "id": "v9-35",
+    "number": "35",
+    "name": "New patient — blank",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-35.html",
+    "notes": "Blank state sells the voice path first; typing stays one tap away. CTA unlocks on name+phone; flags are toggle chips, not a form maze."
+  },
+  {
+    "id": "v9-36",
+    "number": "36",
+    "name": "New patient — voice intake",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-36.html",
+    "notes": "4 visible fields; lime spine = voice-filled, fades on touch (the form is the review). Create enables with name + phone."
+  },
+  {
+    "id": "v9-37",
+    "number": "37",
+    "name": "Patient — Overview",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-37.html",
+    "notes": "⋯ menu = Record a visit · Statement PDF · Delete (confirm). History lives behind \"Last visit\" tile."
+  },
+  {
+    "id": "v9-38",
+    "number": "38",
+    "name": "Patient — Cases journey",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-38.html",
+    "notes": "Odo listening at the live checkpoint (dictation running). Plan detail opens on tap: full sitting log, cancel-with-reason, case-sheet PDF."
+  },
+  {
+    "id": "v9-39",
+    "number": "39",
+    "name": "Case — procedure detail",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-39.html",
+    "notes": "This is where every \"RCT 36\" text lands — from home, history, verification, schedule. One procedure, whole story: money bar, sittings (each row → its visit record), the lab case and Rx it spawned. Taps: patient card → patient record · NEXT tile → the appointment · S-rows → visit records · LB-112 → lab detail · Rx → prescription sheet. Nothing on this page is dead."
+  },
+  {
+    "id": "v9-40",
+    "number": "40",
+    "name": "Tooth map — FDI odontogram",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-40.html",
+    "notes": "Tap tooth → status panel below (no navigation jump). Media folds in here per-tooth: selected tooth shows its x-rays under the panel."
+  },
+  {
+    "id": "v9-41",
+    "number": "41",
+    "name": "Patient — Billing tab",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-41.html",
+    "notes": "Tap a bill → bill sheet (items + payments). Collect opens the checkout sheet; Remind sends the WhatsApp template."
+  },
+  {
+    "id": "v9-42",
+    "number": "42",
+    "name": "Patient history — Odo timeline",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-42.html",
+    "notes": "History is a spine of Odo moods: happy tooth = completed treatment, calm = routine visit, red node = permanent medical fact (rides the timeline forever, styled like the verification rail). On open the spine draws downward 350 ms, cards slide in staggered 45 ms, nodes pop last. Each card is a mini-bento: procedure, tooth, fee, doctor. Taps: card → visit record · procedure name → case detail · fee chip → billing tab · Filter → by tooth / treatment / doctor."
+  },
+  {
+    "id": "v9-43",
+    "number": "43",
+    "name": "Visit record — read-only sheet",
+    "section": "E · Patients & cases",
+    "source": "odovox-v9-master.html",
+    "file": "v9-43.html",
+    "notes": "Any visit row (22, 34) opens this. Read-only by design; Amend appends a stamped note below the original — medico-legally clean."
+  },
+  {
+    "id": "v9-44",
+    "number": "44",
+    "name": "Prescription sheet — dose dots",
+    "section": "F · Prescriptions",
+    "source": "odovox-v9-master.html",
+    "file": "v9-44.html",
+    "notes": "Each medicine is its own card: Rx glyph, name at 16px, and the ●○● dose dots you can read across the room — the dot legend sits above the CTA once. One lime CTA (\"Save & share\" — the actual job), template save demoted to text. Conflicting adds still fire the red tile from frame 01."
+  },
+  {
+    "id": "v9-45",
+    "number": "45",
+    "name": "Prescription — conflict caught",
+    "section": "F · Prescriptions",
+    "source": "odovox-v9-master.html",
+    "file": "v9-45.html",
+    "notes": "Same guardrail as verification, inside manual Rx: the offending card gets the red outline + inline fix; Share stays locked until swapped or removed."
+  },
+  {
+    "id": "v9-46",
+    "number": "46",
+    "name": "Schedule — doctor day",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "file": "v9-46.html",
+    "notes": "Gaps and lunch stay visible; state bars only (procedure = text). Tap slot → sheet 26. Long-press block = drag to reschedule + undo. Day-off = full shaded band."
+  },
+  {
+    "id": "v9-47",
+    "number": "47",
+    "name": "Schedule — reception multi-doctor",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "file": "v9-47.html",
+    "notes": "Shared now-line across columns; per-doctor day-off shading; tapping a free slot pre-fills that doctor + time in sheet 26."
+  },
+  {
+    "id": "v9-48",
+    "number": "48",
+    "name": "New appointment sheet",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "file": "v9-48.html",
+    "notes": "Voice dictates the whole thing (\"book Lakshmi Tuesday 11:45 crown\"). Free-slot chips come from real availability — no invalid times offered."
+  },
+  {
+    "id": "v9-49",
+    "number": "49",
+    "name": "Schedule — drag to reschedule",
+    "section": "G · Schedule",
+    "source": "odovox-v9-master.html",
+    "file": "v9-49.html",
+    "notes": "Long-press lifts (haptic, tilt, big shadow), free slots glow dashed lime, blocked time is hatched and rejects the drop. Release → confirm bar; \"notify\" fires the WhatsApp reschedule template."
+  },
+  {
+    "id": "v9-50",
+    "number": "50",
+    "name": "Reception Today",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "file": "v9-50.html",
+    "notes": "Bento money pair; \"Rec\" chip = do-not-disturb. Long-press queue row = queue sheet. Activity feed + next appointments below fold."
+  },
+  {
+    "id": "v9-51",
+    "number": "51",
+    "name": "Walk-in sheet",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "file": "v9-51.html",
+    "notes": "Search-first (most walk-ins are returning). Reached from reception ＋ orb; long-press orb = voice walk-in / new patient / payment."
+  },
+  {
+    "id": "v9-52",
+    "number": "52",
+    "name": "Checkout sheet",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "file": "v9-52.html",
+    "notes": "Payable = biggest number on screen. Confirm → .success haptic → undo toast; a discount row appears for permitted roles."
+  },
+  {
+    "id": "v9-53",
+    "number": "53",
+    "name": "Payment received — toast",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "file": "v9-53.html",
+    "notes": "Checkout success = toast, not a page: 6-second Undo window, receipt fires automatically, the day's numbers tick up live behind it."
+  },
+  {
+    "id": "v9-54",
+    "number": "54",
+    "name": "Billing — densified",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "file": "v9-54.html",
+    "notes": "Dead space converted to information: hero now holds the number, an hourly strip, and cash/UPI as inline pills — three cards became one. Below: doctor split, a live payment feed (refunds in red), dues banner. The screen ends where the content ends."
+  },
+  {
+    "id": "v9-55",
+    "number": "55",
+    "name": "Outstanding dues",
+    "section": "H · Reception & money",
+    "source": "odovox-v9-master.html",
+    "file": "v9-55.html",
+    "notes": "Remind = consented WhatsApp template; tap row → patient Billing tab → Collect."
+  },
+  {
+    "id": "v9-56",
+    "number": "56",
+    "name": "Lab list — stat pills, not tiles",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "file": "v9-56.html",
+    "notes": "New system rule: a lone number never gets a bento tile — it gets a 46px stat pill (number + label, tinted by state). Frees ~90px of screen and reads faster. Applied everywhere counts appear: Lab, Outstanding header, patient stat strip. Tiles are reserved for content with structure (money + breakdown, warnings, dates)."
+  },
+  {
+    "id": "v9-57",
+    "number": "57",
+    "name": "Lab ＋ — its own dial",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "file": "v9-57.html",
+    "notes": "The Lab answer: Lab is the one list screen with several creations, so its ＋ gets a dial too — New case is the lime pill (the 90% action, opens the v5-08 sheet), Message a lab and Add vendor below. Every other list keeps a direct ＋: Patients → intake, Messages → compose, Inventory → new item, Templates → new template. One press, never two, for single-purpose screens."
+  },
+  {
+    "id": "v9-58",
+    "number": "58",
+    "name": "Lab — case detail",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "file": "v9-58.html",
+    "notes": "Same journey grammar as sittings. First send hits the consent gate sheet; vendor phone masked till Reveal; edit locks past Sent."
+  },
+  {
+    "id": "v9-59",
+    "number": "59",
+    "name": "The ＋ — quick New-case sheet",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "file": "v9-59.html",
+    "notes": "Answering \"what does ＋ do\": on every list screen the header ＋ creates that screen's object — here it opens this quick sheet (was a full page; a sheet keeps you in context). Mic dictates the whole case in one line. Same pattern: Patients ＋ → new patient, Messages ＋ → compose, Inventory ＋ → new item, Templates ＋ → new template."
+  },
+  {
+    "id": "v9-60",
+    "number": "60",
+    "name": "WhatsApp consent gate",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "file": "v9-60.html",
+    "notes": "DPDP hygiene, once per contact: preview exactly what leaves the clinic, record consent, then never ask again. Toggle off = CTA locks."
+  },
+  {
+    "id": "v9-61",
+    "number": "61",
+    "name": "Lab vendors",
+    "section": "I · Lab",
+    "source": "odovox-v9-master.html",
+    "file": "v9-61.html",
+    "notes": "Per-vendor sheet keeps consent logging, numbers, language, and the automation kill switch; analytics as bento."
+  },
+  {
+    "id": "v9-62",
+    "number": "62",
+    "name": "Patient inbox",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "file": "v9-62.html",
+    "notes": "Category dot + unread lime dot — no label spam. Swipe ← Resolve; ＋ = compose/template sheet."
+  },
+  {
+    "id": "v9-63",
+    "number": "63",
+    "name": "Conversation thread",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "file": "v9-63.html",
+    "notes": "Familiar chat; window countdown pill; \"Book Thu 18:15\" chip appears when a time is agreed — one tap into the appointment sheet (silent intelligence). Window closed → composer swaps to template picker."
+  },
+  {
+    "id": "v9-64",
+    "number": "64",
+    "name": "Thread — window closed",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "file": "v9-64.html",
+    "notes": "The composer swaps itself for the template rail when the 24h window lapses — the platform rule explained in one line, never a mystery send-failure."
+  },
+  {
+    "id": "v9-65",
+    "number": "65",
+    "name": "Lab inbox — quiet verdicts",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "file": "v9-65.html",
+    "notes": "Parser verdicts as three quiet states: ✓ Applied (undoable) / Suggested (one-tap apply) / Link (manual). Zero \"AI\" labels."
+  },
+  {
+    "id": "v9-66",
+    "number": "66",
+    "name": "Follow-ups — call list",
+    "section": "J · Messages & follow-ups",
+    "source": "odovox-v9-master.html",
+    "file": "v9-66.html",
+    "notes": "The destination of every \"review call due\" row on home. Red rail = overdue (same rail language as conflicts — red always means \"act\"). Taps: name/row → patient record · Call → dialer, then logs the call on the record · ✓ → done, row slides out with 6 s undo · Book → appointment sheet pre-filled."
+  },
+  {
+    "id": "v9-67",
+    "number": "67",
+    "name": "Inventory — stock",
+    "section": "K · Inventory",
+    "source": "odovox-v9-master.html",
+    "file": "v9-67.html",
+    "notes": "Voice chips = the three dictations (Count is admin-gated). Swipe ← +Purchase/−Consume; ＋ = new item; Categories manages groups."
+  },
+  {
+    "id": "v9-68",
+    "number": "68",
+    "name": "Inventory — item detail",
+    "section": "K · Inventory",
+    "source": "odovox-v9-master.html",
+    "file": "v9-68.html",
+    "notes": "⟲ Adjust = admin-only, reason required. Movement ledger signed and dated, linked to procedures."
+  },
+  {
+    "id": "v9-69",
+    "number": "69",
+    "name": "Voice entry — confirm",
+    "section": "K · Inventory",
+    "source": "odovox-v9-master.html",
+    "file": "v9-69.html",
+    "notes": "Voice never writes stock silently: parse → show → confirm. Wrong line? Tap it, fix inline, the rest survives."
+  },
+  {
+    "id": "v9-70",
+    "number": "70",
+    "name": "More — module hub",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-70.html",
+    "notes": "Modules with live counts up top, settings below. Attention states (late lab, low stock, join request) surface here so More is never a dead end."
+  },
+  {
+    "id": "v9-71",
+    "number": "71",
+    "name": "Team & join code",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-71.html",
+    "notes": "Approve fires the push that completes screen 08. ⋯ = change role · remove (admin-only, confirm). Approve/reject rows animate out."
+  },
+  {
+    "id": "v9-72",
+    "number": "72",
+    "name": "WhatsApp settings",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-72.html",
+    "notes": "Template rows open preview + edit; toggles are per-category consent-aware. Budget bar + 6-month bars = the whole cost story in one card."
+  },
+  {
+    "id": "v9-73",
+    "number": "73",
+    "name": "Availability — weekly hours",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-73.html",
+    "notes": "Tap a time chip to edit its range; ＋ adds a block; lunch is the gap between blocks. Admin edits any doctor; doctors edit themselves."
+  },
+  {
+    "id": "v9-74",
+    "number": "74",
+    "name": "Days off",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-74.html",
+    "notes": "Clinic days show as shaded bands on 24–25; doctor days shade only that column."
+  },
+  {
+    "id": "v9-75",
+    "number": "75",
+    "name": "Prescription templates",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-75.html",
+    "notes": "Tap → template editor sheet (meds, doses, tags, delete with confirm)."
+  },
+  {
+    "id": "v9-76",
+    "number": "76",
+    "name": "Account",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-76.html",
+    "notes": "Switch role re-roots the nav instantly (Flow↔Today, mic↔＋). Professional details = the encrypted form moved out of onboarding."
+  },
+  {
+    "id": "v9-77",
+    "number": "77",
+    "name": "Switch role — confirm",
+    "section": "L · Management",
+    "source": "odovox-v9-master.html",
+    "file": "v9-77.html",
+    "notes": "Role switch (from Account, 70) re-roots the nav and swaps the orb — the sheet states exactly what changes and what doesn't. Remembered per device."
+  },
+  {
+    "id": "v9-78",
+    "number": "78",
+    "name": "The orb — tap records, hold speaks",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "file": "v9-78.html",
+    "notes": "What the mic orb is: the fastest path to the app's core act — dictating. Tap = context action: patient in chair → start/continue recording (13); on Consult → record; anywhere else → jump to Consult. Hold = this menu, one thumb, no navigation: consultation, patient, booking, lab case, or \"find Anand Kumar\". First item always names who it will record — no accidental recordings."
+  },
+  {
+    "id": "v9-79",
+    "number": "79",
+    "name": "Toasts — the three voices",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "file": "v9-79.html",
+    "notes": "Every toast in the app is one of these three: success (auto-dismiss, Undo where reversible), problem (stays until Retry/dismiss, never blocks the screen), offline (persistent, calm). Bottom-anchored above the nav, one at a time, newest wins."
+  },
+  {
+    "id": "v9-80",
+    "number": "80",
+    "name": "Notifications — every row lands",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "file": "v9-80.html",
+    "notes": "Two tap zones per row, always: the bold name opens the patient record; the row body opens the object (payment → billing entry, LB-113 → lab case, reply → thread, overdue → follow-ups). Unread = lime dot. Payment + lab pings also badge the tab icons; badges clear on visit."
+  },
+  {
+    "id": "v9-81",
+    "number": "81",
+    "name": "The tap contract",
+    "section": "M · System & the contract",
+    "source": "odovox-v9-master.html",
+    "file": "v9-81.html",
+    "notes": "The rule every screen obeys — shown on one patient page: ① name is the page title (not a link — the one exception) ② allergy chip → medical flags editor ③ phone chip → dialer / long-press WhatsApp ④ case card → procedure detail ⑤ balance → billing tab, Collect → checkout ⑥ visit row → record. QA test: tap literally everything; anything inert without a stated reason is a bug."
+  },
+  {
+    "id": "v10-01",
+    "number": "01",
+    "name": "Listening — live transcript",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "file": "v10-01.html",
+    "notes": "Entry: hold the orb 350 ms from any screen (the old menu items live in \"What can I say\", 04). Words land in the transcript as spoken; entities Odo already recognises get a soft lime lift. Ends by: a 1.2 s pause, tapping Done, or saying \"seri\" / \"that's it\". ✕ or drag-down cancels — nothing was written. Sound arcs animate with actual amplitude; reduced-motion shows a static level bar."
+  },
+  {
+    "id": "v10-02",
+    "number": "02",
+    "name": "Parsed — confirm to create",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "file": "v10-02.html",
+    "notes": "The parse-confirm contract: intent chip + what was heard + structured fields. Odo asks one follow-up, only for missing-critical (phone) — age and the rest stay optional dashes. Taps: any field row → inline edit (keyboard or field mic) · \"no match · new\" → duplicate check results if any · Re-say → back to listening keeping the draft · Create → writes + toast · saying the phone number fills it live and flips the CTA to \"Create · 98…\"."
+  },
+  {
+    "id": "v10-03",
+    "number": "03",
+    "name": "Done — and still listening",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "file": "v10-03.html",
+    "notes": "Success is a beat, not a dead end: chips carry the created patient into the next act, and the mic stays warm for chained commands — \"add him as walk-in, then book review for Karthik Friday\" queues two more parses. Undo lives 6 s. \"Done for now\" or drag-down closes; the toast (v9 · 79) confirms on the way out."
+  },
+  {
+    "id": "v10-04",
+    "number": "04",
+    "name": "Correction — misheard, fixed in place",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "file": "v10-04.html",
+    "notes": "Low-confidence tokens get the dotted warn underline — never silently guessed. Three repair paths, all in place: tap a candidate chip, re-say it (voice correction re-parses just that field), or tap to type. Spell-it captures letter by letter. Create stays locked only while a flagged field is unresolved; everything already-parsed survives the fix."
+  },
+  {
+    "id": "v10-05",
+    "number": "05",
+    "name": "What can I say — the grammar",
+    "section": "Talk to Odo",
+    "source": "odovox-v10-talk.html",
+    "file": "v10-05.html",
+    "notes": "Shown on first hold, then behind the ? in the listening header. Each row is tappable — it starts listening pre-biased to that intent. The grammar is intent + entities in any order, any language mix; dates like \"next Thursday evening\" and teeth like \"lower right six / 46\" both resolve. Consultation recording deliberately stays out — that's the orb's tap, protected from misfires."
+  }
+]

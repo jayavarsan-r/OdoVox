@@ -1,36 +1,37 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2 } from 'lucide-react';
-import { ClinicJoinInput } from '@odovox/types';
-import type { ClinicMemberResponse } from '@odovox/types';
-import { MobileShell } from '@/components/mobile-shell';
-import { BackHeader } from '@/components/onboarding/back-header';
-import { EditorialHeading, HeroCard } from '@/components/ds';
-import { MascotMoment } from '@/components/illustrations';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { FormField } from '@/components/forms/FormField';
-import { ChipMultiSelect } from '@/components/forms/ChipMultiSelect';
-import { api } from '@/lib/api-client';
-import { landingRoute, type Role } from '@/lib/rbac';
-import { useToast } from '@/lib/toast';
-import { useAuth } from '@/lib/auth';
-import { useOnboarding } from '@/lib/onboarding-store';
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ClinicJoinInput } from "@odovox/types";
+import type { ClinicMemberResponse } from "@odovox/types";
+import { MobileShell } from "@/components/mobile-shell";
+import { Card } from "@/components/ui/card";
+import { Mini } from "@/components/ui/badge";
+import { InitialsAvatar } from "@/components/ui/avatar";
+import { IconCircle } from "@/components/ds";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/forms/FormField";
+import { ChipMultiSelect } from "@/components/forms/ChipMultiSelect";
+import { api } from "@/lib/api-client";
+import { landingRoute, type Role } from "@/lib/rbac";
+import { useToast } from "@/lib/toast";
+import { useAuth } from "@/lib/auth";
+import { useOnboarding } from "@/lib/onboarding-store";
 
 const SPECIALIZATIONS = [
-  'General',
-  'Endodontics',
-  'Orthodontics',
-  'Prosthodontics',
-  'Periodontics',
-  'Oral Surgery',
-  'Pediatric Dentistry',
-  'Oral Pathology',
-  'Public Health',
+  "General",
+  "Endodontics",
+  "Orthodontics",
+  "Prosthodontics",
+  "Periodontics",
+  "Oral Surgery",
+  "Pediatric Dentistry",
+  "Oral Pathology",
+  "Public Health",
 ].map((s) => ({ label: s, value: s }));
 
 type FormValues = ClinicJoinInput;
@@ -55,10 +56,10 @@ export default function ClinicJoinPage() {
   const joinedRef = useRef(false);
 
   useEffect(() => {
-    if (!role && !joinedRef.current) router.replace('/role');
+    if (!role && !joinedRef.current) router.replace("/role");
   }, [role, router]);
 
-  const isDoctor = role === 'DOCTOR';
+  const isDoctor = role === "DOCTOR";
 
   const {
     register,
@@ -68,13 +69,13 @@ export default function ClinicJoinPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(ClinicJoinInput),
-    mode: 'onTouched',
+    mode: "onTouched",
     defaultValues: {
-      joinCode: '',
-      name: '',
-      role: role ?? 'RECEPTIONIST',
-      qualification: '',
-      registrationNumber: '',
+      joinCode: "",
+      name: "",
+      role: role ?? "RECEPTIONIST",
+      qualification: "",
+      registrationNumber: "",
       specialization: [],
     },
   });
@@ -101,7 +102,7 @@ export default function ClinicJoinPage() {
         clinic: { id: string; name: string; city: string; state: string };
         membership: ClinicMemberResponse;
         accessToken: string;
-      }>('/clinics/join', values);
+      }>("/clinics/join", values);
       joinedRef.current = true;
       // Adopt the clinic-scoped token first: the pre-join token carries no clinicId claim, so
       // every clinic-scoped request (the entire app) would 403 until the next refresh.
@@ -123,52 +124,93 @@ export default function ClinicJoinPage() {
 
   return (
     <MobileShell className="bg-paper">
-      <BackHeader title="Join a clinic" />
-      <div className="flex flex-1 flex-col px-5 pt-2">
-        <EditorialHeading
-          title="Join a clinic"
-          subtitle="Ask your clinic admin for the join code."
-          trailing={<MascotMoment pose="thinking" size="sm" animation="float" />}
-        />
+      {/* Frame 09 opens on a bare white `.icirc` chevron — no title beside it — and has
+          no mascot. Both were additions. (MUST-FIX #28) */}
+      <div className="flex px-gutter-onboarding pt-0.5">
+        <IconCircle size="md" aria-label="Back" onClick={() => router.back()}>
+          <ChevronLeft />
+        </IconCircle>
+      </div>
+      <div className="flex flex-1 flex-col px-gutter-onboarding pt-2">
+        <div className="mt-6">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
+            Got a join code?
+          </h1>
+          <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+            Ask your doctor to share it from Team &amp; join code.
+          </p>
+        </div>
 
         {lookup ? (
           <div className="mt-8 space-y-4">
-            <HeroCard
-              variant="light"
-              size="lg"
-              glow="lime"
-              icon={<Building2 />}
-              title={lookup.name}
-              subtitle={`${lookup.city}, ${lookup.state}`}
-            />
+            <Card className="flex items-center gap-[13px] p-[15px]">
+              <InitialsAvatar name={lookup.name} ring="lime" size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-row font-heavy text-pine">
+                  {lookup.name}
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  <Mini tone="neutral">{lookup.city}</Mini>
+                  <Mini tone="neutral">{lookup.state}</Mini>
+                </div>
+              </div>
+            </Card>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setLookup(null)} disabled={joining}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setLookup(null)}
+                disabled={joining}
+              >
                 Back
               </Button>
-              <Button className="flex-1" onClick={confirmJoin} loading={joining}>
+              <Button
+                className="flex-1"
+                onClick={confirmJoin}
+                loading={joining}
+              >
                 Confirm
               </Button>
             </div>
           </div>
         ) : (
           <form onSubmit={findClinic} className="mt-8 space-y-4">
-            <FormField label="Your name" htmlFor="name" required error={errors.name?.message}>
-              <Input id="name" placeholder="Ravi Kumar" {...register('name')} />
+            <FormField
+              label="Your name"
+              htmlFor="name"
+              required
+              error={errors.name?.message}
+            >
+              <Input id="name" placeholder="Ravi Kumar" {...register("name")} />
             </FormField>
-            <FormField label="Join code" htmlFor="joinCode" required error={errors.joinCode?.message}>
+            <FormField
+              label="Join code"
+              htmlFor="joinCode"
+              required
+              error={errors.joinCode?.message}
+            >
               <Input
                 id="joinCode"
                 placeholder="SMILE7"
                 maxLength={12}
                 className="uppercase tracking-widest"
-                {...register('joinCode')}
+                {...register("joinCode")}
               />
             </FormField>
 
             {isDoctor ? (
               <>
-                <FormField label="Qualification" htmlFor="qualification" required error={errors.qualification?.message}>
-                  <Input id="qualification" placeholder="BDS, MDS" {...register('qualification')} />
+                <FormField
+                  label="Qualification"
+                  htmlFor="qualification"
+                  required
+                  error={errors.qualification?.message}
+                >
+                  <Input
+                    id="qualification"
+                    placeholder="BDS, MDS"
+                    {...register("qualification")}
+                  />
                 </FormField>
                 <FormField
                   label="Registration number"
@@ -177,7 +219,11 @@ export default function ClinicJoinPage() {
                   error={errors.registrationNumber?.message}
                   hint="Encrypted and stored securely."
                 >
-                  <Input id="registrationNumber" placeholder="KA-DENT-12345" {...register('registrationNumber')} />
+                  <Input
+                    id="registrationNumber"
+                    placeholder="KA-DENT-12345"
+                    {...register("registrationNumber")}
+                  />
                 </FormField>
                 <FormField label="Specialization" hint="Optional.">
                   <Controller
@@ -195,7 +241,12 @@ export default function ClinicJoinPage() {
               </>
             ) : null}
 
-            <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              loading={isSubmitting}
+            >
               Find clinic
             </Button>
           </form>

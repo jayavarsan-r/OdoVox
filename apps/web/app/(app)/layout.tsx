@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MobileShell } from '@/components/mobile-shell';
-import { BottomTabs } from '@/components/app-shell/bottom-tabs';
+import { NavDock } from '@/components/ds/nav-dock';
 import { Spinner } from '@/components/ui/spinner';
 import { api, ApiError } from '@/lib/api-client';
 import { useAuth, type SessionClinic, type SessionUser } from '@/lib/auth';
@@ -17,7 +17,17 @@ interface MeResponse {
   clinic: SessionClinic | null;
 }
 
-const TOP_LEVEL = ['/home', '/today', '/patients', '/schedule', '/lab', '/clinic', '/billing'];
+const TOP_LEVEL = [
+  '/home',
+  '/today',
+  '/patients',
+  '/schedule',
+  '/more',
+  // Still top-level: they lost their TAB slot to /more, not their nav chrome.
+  '/lab',
+  '/clinic',
+  '/billing',
+];
 
 /**
  * Authenticated shell: bootstraps the session from the refresh cookie, enforces RBAC, and
@@ -84,7 +94,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <MobileShell className="bg-paper">
       <main className={showTabs ? 'flex flex-1 flex-col pb-28' : 'flex flex-1 flex-col'}>{children}</main>
-      {showTabs ? <BottomTabs role={role} /> : null}
+      {showTabs ? <NavDock role={role} /> : null}
     </MobileShell>
   );
 }

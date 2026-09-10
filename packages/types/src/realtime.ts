@@ -25,6 +25,29 @@ export const QueuePatientZ = z.object({
 });
 export type QueuePatient = z.infer<typeof QueuePatientZ>;
 
+/**
+ * The MINIMUM clinical context frame 13's hero needs, and nothing beyond it.
+ *
+ * The queue is read by receptionists, so this deliberately stops short of a patient
+ * record: no notes, no history, no encrypted free text. It carries only what the hero
+ * line and its ring render — "RCT 36 · obturation today" plus 2/3 — and the allergy
+ * already travels on `patient.medicalFlags`.
+ *
+ * `sittingNote` is the sitting's own label, NOT `Sitting.notesEnc`: that field is
+ * encrypted PHI and has no business on a queue payload the front desk can see.
+ */
+export const QueueActivePlanZ = z.object({
+  /** Procedure name — "RCT". */
+  procedure: z.string(),
+  /** FDI tooth numbers this procedure covers — "36". Empty for full-mouth work. */
+  teeth: z.array(z.number().int()).default([]),
+  /** Which sitting THIS visit is, 1-based. */
+  sitting: z.number().int(),
+  /** How many the procedure needs in total. */
+  totalSittings: z.number().int(),
+});
+export type QueueActivePlan = z.infer<typeof QueueActivePlanZ>;
+
 export const VisitWithPatientZ = z.object({
   id: z.string(),
   clinicId: z.string(),
@@ -45,6 +68,11 @@ export const VisitWithPatientZ = z.object({
   consultationStatus: ConsultationStatus.nullable(),
   /** Whether a doctor is recording into this visit's consultation right now (ephemeral). */
   recording: z.boolean().default(false),
+  /**
+   * The procedure this visit advances, when it is part of a treatment plan. NULL for a
+   * one-off visit or a walk-in — which is most of them, so every consumer must handle it.
+   */
+  activePlan: QueueActivePlanZ.nullable().default(null),
   billTotalPaise: z.number().int().nullable(),
   billDuePaise: z.number().int().nullable(),
   checkedInAt: z.coerce.date().nullable(),

@@ -1,0 +1,1447 @@
+{
+  "$schema-note": "Every difference between a v9 frame and the implementation lands in exactly one class. Gate B reads this file and enforces the rules below — the classification is not advisory prose.",
+  "classes": {
+    "MUST-FIX": "Clearly violates v9 with no functionality or accessibility reason. Implement the v9 design exactly. BLOCKS its frame until closed. No approval needed to fix — fixing toward v9 is the mandate.",
+    "APPROVED-DEVIATION": "Existing functionality or accessibility requires something different from v9. DO NOT MODIFY until the owner explicitly approves. Blocks its frame while status is pending.",
+    "PRODUCT-DECISION": "The v9 HTML specifies a different workflow or different copy, and choosing between them is the owner's call, not an engineering one. DO NOT MODIFY until the owner explicitly approves. Blocks its frame while status is pending.",
+    "NOT-BUILT": "The surface or its server support does not exist yet. Leave untouched until its assigned migration task runs. Does not block a frame for a defect it cannot have."
+  },
+  "deviations": [
+    {
+      "id": 1,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "*"
+      ],
+      "summary": "Geist Sans/Mono retained instead of the spec's system font stack",
+      "reason": "The system stack renders as SF Pro on iOS and Roboto on Android — two different products. Sizes, weights and tracking follow the spec exactly.",
+      "status": "approved",
+      "measuredCost": "Geist runs ~5% wider per glyph at 800. Measured on frame 07 at the spec's own values (27px/800/-0.02em, 22px gutters, 326px available): Geist 336px vs the system stack 320px. So the .ob-q question WRAPS TO TWO LINES where frames 07 and 08 set it on one.",
+      "openQuestion": "See deviation 19 — the wrap is tracked separately so it can be ruled on without reopening the font choice."
+    },
+    {
+      "id": 2,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "*"
+      ],
+      "summary": "design-system.md §12.1 reversed: ambient wash allowed app-wide, mascot allowed on working screens",
+      "reason": "The v9 spec reverses two Phase-2.6 rules. Its own mascot law bans Odo only from money and safety surfaces.",
+      "status": "approved"
+    },
+    {
+      "id": 3,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "5 tabs → 4 tabs + /more hub",
+      "reason": "The v9 nav is 4 tabs plus the orb in every frame. No route removed.",
+      "status": "approved"
+    },
+    {
+      "id": 4,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-06"
+      ],
+      "summary": "WebAuthn descoped pre-launch; frame 06 out of scope",
+      "reason": "Browser inconsistency and support burden outweigh the MVP security delta.",
+      "status": "approved"
+    },
+    {
+      "id": 5,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
+      "summary": "Patient tab renamed \"Tooth Map\" → \"Teeth\"",
+      "reason": "Matches the spec's .ptabs row.",
+      "status": "approved",
+      "note": "APPROVED BUT NOT YET IMPLEMENTED — app/(app)/patients/[id]/page.tsx still reads 'Tooth Map'. Task 22 owns the change."
+    },
+    {
+      "id": 6,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-08"
+      ],
+      "summary": "Clinic creation kept as 3 steps; the frame shows a single screen",
+      "reason": "The single screen drops hours and profile capture. Feature parity outranks fidelity.",
+      "status": "fixed",
+      "openQuestion": "AMBIGUOUS AS WRITTEN. The frame's model is one QUESTION at a time (\"What's your clinic called?\" → \"Next · City\"), while our step 1 holds six fields. \"Keep 3 steps\" does not settle whether step 1 should be one question or six fields — those are different claims.",
+      "ruling": "KEEP the 3-step workflow, but redesign each step to the v9 one-question-at-a-time pattern with a destination-labelled CTA. Do NOT collapse the required data collection. Step 1 must not remain a dense six-field form.",
+      "fixedIn": "Step 1 now asks ONE QUESTION AT A TIME — five screens on one route: name -> contact -> address -> city+state -> pincode+GST, each with the `.field` hero input and a CTA naming its destination. All three steps and all seven fields survive; only the pacing changed. The question list lives in lib/ds/wizard with a test asserting every key of stepBasicsSchema appears exactly once, so re-pacing can never silently drop a field. Back walks the questions before leaving the step, so one tap no longer discards four answers. 8.7% -> 5.1%."
+    },
+    {
+      "id": 7,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "No summoned numeric keypad on /phone",
+      "reason": "The page has always used the native keyboard; building a pad adds a surface rather than migrating one.",
+      "status": "fixed",
+      "ruling": "KEEP the keypad. Implement v9 visually and behaviourally, preserving phone validation and rate-limit logic.",
+      "fixedIn": "Built as `NumericKeypad` from the spec's `.keypad`/`.key` CSS: 48px keys, radius 12, white, 0 3px 10px shadow, 19px/600 digits over 8.5px/700 letter rows, ghost bottom corners. Real <button>s, so it is keyboard-reachable and screen-reader announced, and the native keyboard still works underneath. It only produces digits — IndianPhone.safeParse still gates the CTA and rate-limit handling is untouched."
+    },
+    {
+      "id": 8,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "/more shows 3 module tiles for a doctor, not 4",
+      "reason": "canAccess('/billing','DOCTOR') is false. Rendering it would leak a permission — an access-control requirement, not a style choice.",
+      "status": "approved",
+      "ruling": "APPROVED — 3 tiles. RBAC determines available actions; no inaccessible fourth tile for symmetry."
+    },
+    {
+      "id": 9,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-59"
+      ],
+      "summary": "/lab/new kept as a page; the frame shows a sheet",
+      "reason": "Feature parity.",
+      "status": "deferred-to-task-28",
+      "ruling": "USE the sheet presentation for lab creation. Preserve every existing field, validation rule, API call and workflow. Presentation only."
+    },
+    {
+      "id": 10,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
+      "summary": "Patient detail keeps 5 tabs (Media has no frame)",
+      "reason": "Feature parity — Media must not disappear.",
+      "status": "approved",
+      "ruling": "APPROVED — keep 5 tabs including Media."
+    },
+    {
+      "id": 11,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-07"
+      ],
+      "summary": "Mascot rendered on /role; frame 07 has none",
+      "reason": "Introduced without cause during migration and never flagged.",
+      "status": "reverted",
+      "revertedIn": "Gate B remediation"
+    },
+    {
+      "id": 12,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-07"
+      ],
+      "summary": "/role used tap→navigate; frame 07 is select→sticky CTA \"Continue as doctor\"",
+      "reason": "A different interaction model, shipped unflagged.",
+      "status": "reverted",
+      "revertedIn": "Gate B remediation"
+    },
+    {
+      "id": 13,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-04",
+        "v9-05"
+      ],
+      "summary": "Phone number masked to \"+91 ••••• 0001\"; frame 04 shows it in full",
+      "reason": "Shoulder-surfing protection on a screen a patient may see. A workflow/privacy choice, not styling.",
+      "status": "approved",
+      "ruling": "APPROVED — keep masking. Recorded as a deviation FROM v9, not a match to it: frame 04 shows the number in full (\"Sent to +91 98401 23456 · Edit\") and v9 specifies no masking anywhere. The intent in both the table (\"KEEP masking\") and the prose (\"do not expose the complete phone number\") is unambiguous, so the mask stays and the departure is on the record."
+    },
+    {
+      "id": 14,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-04",
+        "v9-05"
+      ],
+      "summary": "An explicit \"Verify\" button; frames 04/05 auto-submit on the sixth digit",
+      "reason": "Accessibility: SMS autofill does not always fire, and a screen-reader or keyboard user needs an explicit submit target. Auto-submit alone leaves no way to retry a corrected code.",
+      "status": "approved",
+      "ruling": "APPROVED — keep the Verify button. Functional UI is not removed to reduce a pixel percentage."
+    },
+    {
+      "id": 15,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-05"
+      ],
+      "summary": "A wrong code clears the six boxes; frame 05 keeps the digits inside crit outlines",
+      "reason": "No functionality or accessibility reason to clear. The frame keeps the digits precisely so the user can see and fix the typo; clearing forces a full re-entry.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation — MUST-FIX pass"
+    },
+    {
+      "id": 16,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-02"
+      ],
+      "summary": "/welcome carousel has 4 slides with different copy, a Skip link and language chips; frame 02 is slide 1 of 3 with none of those",
+      "reason": "The frame's slide-1 copy ('Speak. Odovox writes the record.') is the product's opening promise. Which pitch opens the app is a product call.",
+      "status": "fixed",
+      "ruling": "MATCH v9. Frame 02 has THREE dots, NO Skip link and NO language chips, and its note reads \"3 swipeable value dots; CTA skips them\" — so the Skip behaviour IS the CTA, which goes straight to /phone. Implement: v9 slide-1 copy, 3 slides, no separate Skip link, no chips, CTA always \"Continue with phone\".",
+      "fixedIn": "3 slides with frame 02's slide-1 copy verbatim, no Skip link (the CTA carries that job, per the frame's own note \"CTA skips them\"), no language chips, 3 dots. Layout re-anchored to the frame's top-down flow — 56px above Odo, 18px to the question, dots 20px under the body, CTA at the floor — replacing a vertically centred group that sat ~70px low. 10.0% -> 2.8%."
+    },
+    {
+      "id": 17,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-09"
+      ],
+      "summary": "/clinic-join is a two-field form + explicit \"Find clinic\"; frame 09 is one hero code field with a live check and a clinic preview",
+      "reason": "Two things at once: the joiner's name is feature parity (the request records who is asking), and the lookup model differs (explicit press vs validate-as-you-type).",
+      "status": "approved",
+      "ruling": "APPROVED — keep the two-field lookup. Recreate the v9 visual treatment around the existing reliable workflow."
+    },
+    {
+      "id": 18,
+      "class": "MUST-FIX",
+      "frames": [
+        "*"
+      ],
+      "summary": "The Odo mascot artwork was not the spec's #odo-body symbol",
+      "reason": "The spec draws an outline tooth with lime blush ovals; the app drew a filled grey tooth with no blush. Systemic.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation"
+    },
+    {
+      "id": 19,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-07",
+        "v9-08"
+      ],
+      "summary": "The .ob-q question wraps to two lines where frames 07 and 08 set it on one",
+      "reason": "A measured consequence of approved deviation 1, not an independent defect — the app matches the spec's values exactly. Closing it means altering one of the spec's own numbers.",
+      "status": "fixed",
+      "openQuestion": "(a) accept the wrap, (b) drop the question to ~25.5px, or (c) tighten question tracking to about -0.0355em.",
+      "ruling": "MATCH the v9 wrap. Verify in order: font family, weight, container width, size, line height; use letter-spacing only if needed.",
+      "fixedIn": "Applied in the ruling's own order. Items 2-5 already matched the spec exactly (800 weight, 326px container, 27px, 1.15 leading), and item 1 is approved deviation 1, so letter-spacing was the only remaining lever: new --tracking-question token at -0.036em, scoped to the .ob-q heading alone. The rest of the app keeps the spec's -0.02em. Verified in the browser: \"How will you use Odovox?\" now renders on ONE line at 326px."
+    },
+    {
+      "id": 20,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "A lime focus ring on the .field; the frame's focused field has none",
+      "reason": "Accessibility. Removing focus indication to win pixels is a real regression for keyboard users.",
+      "status": "approved",
+      "ruling": "APPROVED — keep the focus ring. Make it restrained and consistent with the v9 system."
+    },
+    {
+      "id": 21,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "A \"By continuing you agree to our terms.\" line; frame 03 has none",
+      "reason": "Legal copy, not styling. Whether it may be removed is not an engineering call.",
+      "status": "approved",
+      "ruling": "KEEP the terms/legal copy. Style it with v9 typography and spacing.",
+      "fixedIn": "Restyled to the v9 system: 12px/600 on --pine-3, directly under the keypad."
+    },
+    {
+      "id": 22,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-03"
+      ],
+      "summary": "No .mic-a affordance on /phone",
+      "reason": "useDictation presigns an upload and calls an AUTHENTICATED transcription endpoint; /phone is pre-login by definition. Needs an unauthenticated dictation route that does not exist. A mic that does nothing is worse than no mic.",
+      "status": "open"
+    },
+    {
+      "id": 23,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-05"
+      ],
+      "summary": "A \"Wrong code. N attempts left.\" toast on top of the frame's inline message",
+      "reason": "The frame reports the failure once, inline. The toast reports it twice — but it also carries the remaining-attempts count, which is information the frame does not show and which warns of lockout. Dropping it loses that warning.",
+      "status": "approved",
+      "ruling": "KEEP the attempts-left toast. Restyle to the v9 visual language."
+    },
+    {
+      "id": 24,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-05"
+      ],
+      "summary": "WITHDRAWN — false finding. Resend already unlocks immediately on a wrong code.",
+      "reason": "The verify catch already calls setSecondsLeft(0), so \"Resend code\" renders at once, exactly as frame 05 specifies. The first review read \"Resend in 1:00\" off a capture taken BEFORE the error state was reached — the A5 prepare step was silently failing, so the screenshot was of the clean OTP screen. Fixing the prepare step invalidated the finding.",
+      "status": "withdrawn"
+    },
+    {
+      "id": 25,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "Availability's \"2 doctors\" and Team's \"1 request\" values are absent",
+      "reason": "Both need a clinic-members endpoint. /clinics has only create, lookup and join — there is no members or pending-requests route to read. Task 31 owns that server work.",
+      "status": "open"
+    },
+    {
+      "id": 26,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-04",
+        "v9-05"
+      ],
+      "summary": "A dotted texture sits behind the resend area; frames 04/05 have none",
+      "reason": "Pure decoration with no functional or accessibility role.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation — MUST-FIX pass"
+    },
+    {
+      "id": 27,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-08"
+      ],
+      "summary": "Step 1 is missing frame 08's .ob-dots, verified-identity chip and defaults card, and its CTA reads \"Continue →\" not \"Next · City\"",
+      "reason": "All four are v9 elements the app simply does not render. Independent of deviation 6 — keeping three steps says nothing about dropping the frame's furniture from step 1.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation — MUST-FIX pass"
+    },
+    {
+      "id": 28,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-09"
+      ],
+      "summary": "The back control carries a \"Join a clinic\" text label and a stray Odo sits top-right",
+      "reason": "Frame 09 uses a bare white IconCircle and has no mascot. Both are additions, not workflow.",
+      "status": "fixed",
+      "fixedIn": "Gate B remediation — MUST-FIX pass"
+    },
+    {
+      "id": 29,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "A voice search field on /home; frame 13 has none",
+      "reason": "Existing functionality. /patients carries its own search (frame 33), so this may be duplication — but it is not deleted without a ruling. Kept and restyled into the v9 language under a labelled section.",
+      "status": "dropped",
+      "ruling": "DROP — no voice search on Home; Patients owns patient search."
+    },
+    {
+      "id": 30,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The VoiceCommandHero on /home; frame 13 has none",
+      "reason": "Existing functionality. In v9 the dock's orb is the voice surface, so this is likely duplication — but removing a working voice entry point is a product call.",
+      "status": "dropped",
+      "ruling": "DROP — no VoiceCommandHero; the dock orb remains the single global voice affordance."
+    },
+    {
+      "id": 31,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "Five quick tiles where frame 13 has three (Lab, Schedule, Block time)",
+      "reason": "New patient and Inventory are the two extra. Both are reachable from /more and the speed dial, so the frame may be right that they do not belong on Flow — but dropping them changes the doctor's daily reach.",
+      "status": "dropped",
+      "ruling": "DROP — do not duplicate the two quick actions already available through More/speed dial."
+    },
+    {
+      "id": 32,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "A 'Recent' section on /home; frame 13 has none",
+      "reason": "Existing functionality, and the only place recent visits surface outside a patient record.",
+      "status": "approved",
+      "ruling": "KEEP — Recent section remains on Home."
+    },
+    {
+      "id": 33,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The hero ring shows a placeholder dot, not the sitting count (frame 13: 2/3)",
+      "reason": "The queue visit carries no treatment-plan context, so sitting n/N is not available on /home. Needs the active plan joined onto the in-chair visit — server work Task 22 (patient plans) or a /home aggregate would own.",
+      "status": "fixed",
+      "ruling": "Option (a) — extend the existing queue snapshot with ONLY the minimum clinical context. No second /home/in-chair source of truth; both /home and /consult consume the same authoritative snapshot.",
+      "fixedIn": "`VisitWithPatient` gains ONE nullable field, `activePlan` {procedure, teeth, sitting, totalSittings}. The allergy needed nothing — `patient.medicalFlags` was already on the payload and simply was not being read.\n\nServer: one narrow include on the existing VISIT_QUEUE_INCLUDE — sittingNumber plus four procedure scalars, take:1. `Sitting.notesEnc` is deliberately NOT selected: it is encrypted PHI and the queue is read by receptionists. A soft-deleted procedure yields null rather than a half-populated line.\n\nHero: the ring now shows the SITTING count (2/3) with a \"SITTING\" caption, falling back to the day when there is no plan. The line reads \"RCT 36 · sitting 2 of 3\" via `heroClinicalLine`, with the allergy rendered as a SEPARATE crit span so line-clamping can never truncate it away — the one part of the hero that must survive at any width.\n\nNo endpoint, route, RBAC rule or state transition changed. v9-13 6.6% -> 6.4%."
+    },
+    {
+      "id": 34,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The hero subtitle reads queue context, not the frame's clinical line",
+      "reason": "Frame 13 reads 'RCT 36 · obturation today · penicillin allergy' — procedure, today's step, and the allergy in crit. Ours reads 'Now treating X · N waiting'. The clinical line needs the plan and allergy joined onto the in-chair visit; same missing join as #33.",
+      "status": "fixed",
+      "ruling": "Option (a) — extend the existing queue snapshot with ONLY the minimum clinical context. No second /home/in-chair source of truth; both /home and /consult consume the same authoritative snapshot.",
+      "fixedIn": "`VisitWithPatient` gains ONE nullable field, `activePlan` {procedure, teeth, sitting, totalSittings}. The allergy needed nothing — `patient.medicalFlags` was already on the payload and simply was not being read.\n\nServer: one narrow include on the existing VISIT_QUEUE_INCLUDE — sittingNumber plus four procedure scalars, take:1. `Sitting.notesEnc` is deliberately NOT selected: it is encrypted PHI and the queue is read by receptionists. A soft-deleted procedure yields null rather than a half-populated line.\n\nHero: the ring now shows the SITTING count (2/3) with a \"SITTING\" caption, falling back to the day when there is no plan. The line reads \"RCT 36 · sitting 2 of 3\" via `heroClinicalLine`, with the allergy rendered as a SEPARATE crit span so line-clamping can never truncate it away — the one part of the hero that must survive at any width.\n\nNo endpoint, route, RBAC rule or state transition changed. v9-13 6.6% -> 6.4%."
+    },
+    {
+      "id": 35,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-21",
+        "v9-22"
+      ],
+      "summary": "A back chevron in the /consult header; frame 21 has none",
+      "reason": "/consult is not one of the four dock tabs — it is reached from Flow's 'Continue consultation'. Removing back would strand anyone who arrived that way. Navigation, not decoration.",
+      "status": "approved",
+      "ruling": "KEEP — back chevron remains on Consult because Consult is not a dock destination."
+    },
+    {
+      "id": 36,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21",
+        "v9-22"
+      ],
+      "summary": "A ProfileButton in the /consult header; frame 21 has none",
+      "reason": "Account is reachable from /more, so this may be duplication — but it is existing functionality and not deleted without a ruling.",
+      "status": "approved",
+      "ruling": "APPROVED — keep the profile icon on /consult."
+    },
+    {
+      "id": 37,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-21"
+      ],
+      "summary": "The in-chair card shows an elapsed timer; frame 21 does not",
+      "reason": "How long the patient has been in the chair is real clinical information and was already on this screen. The frame omits it, so keeping it is a departure — but dropping it loses a signal a doctor uses.",
+      "status": "approved",
+      "ruling": "KEEP — elapsed consultation timer remains."
+    },
+    {
+      "id": 38,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-32"
+      ],
+      "summary": "No \"₹ Due\" filter chip; frame 32 has one",
+      "reason": "There is no outstanding-balance filter on the API — PatientFilter is all/in_chair/due_today/lab_pending/recent. A chip that silently returned the unfiltered list would be worse than its absence, so it is not rendered. Needs a server filter.",
+      "status": "deferred-to-task-34",
+      "ruling": "Becomes a real feature, not a visual fake. Task 34 adds a `balanceDue` filter to the patients list — server, types and chip — because reception needs to list who owes money, not because a frame draws a chip. Built with the billing work, not for the screenshot."
+    },
+    {
+      "id": 39,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-32"
+      ],
+      "summary": "Two filter chips the frame does not show — Lab and Recent",
+      "reason": "Both are existing filters with server support. The frame shows four chips; we show five (six once ₹ Due exists). Trimming is a product call, not a styling one.",
+      "status": "approved",
+      "ruling": "KEEP — Lab and Recent filters remain because they correspond to real server-supported filters."
+    },
+    {
+      "id": 40,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-32"
+      ],
+      "summary": "An \"All patients · N\" section header above the list; frame 32 goes straight to the card",
+      "reason": "The count is useful and was on the old screen. The frame omits it.",
+      "status": "dropped",
+      "ruling": "DROP — remove the redundant \"All patients · N\" header."
+    },
+    {
+      "id": 41,
+      "class": "PRODUCT-DECISION",
+      "frames": [
+        "v9-13",
+        "v9-50",
+        "v9-78"
+      ],
+      "summary": "Free-form voice intent routing has no surface in the app since ruling #30 removed VoiceCommandHero",
+      "reason": "VERIFIED, not assumed. `routeVoiceCommand` (lib/voice/intent-router.ts) had exactly one caller — VoiceCommandHero — and that component now has none. The orb is a voice affordance in NAME (mic icon, hold menu) but not in behaviour: nav-dock.tsx:59 is `onTap={() => router.push(action.href)}` and voice-menu.tsx:87 is `router.push(row.href)`. Neither captures speech. So \"say what you want, get routed\" is gone from the running app while intent-router.test.ts keeps passing and makes it look healthy.\n\nRuling #30's stated rationale was 'the dock orb remains the single global voice affordance'. That premise is true of the icon and false of the behaviour, so the ruling was likely made without this being visible.",
+      "status": "fixed",
+      "reopens": "Task 13",
+      "foundBy": "peer session during a cross-session coordination check",
+      "options": [
+        "(a) Wire dictation into the orb tap, or add a sixth 'Say something else…' row to the frame-78 menu — keeps ruling #30 and loses nothing.",
+        "(b) Accept the loss: delete VoiceCommandHero, intent-router.ts and its tests as dead code. Honest, but ends free-form voice.",
+        "(c) Keep it recorded as an open decision, which by this file's own `rule` reopens Task 13 until it is resolved."
+      ],
+      "doNot": "Do NOT resolve this by deleting the router without a ruling — that converts an open question into a silent capability loss.",
+      "alsoAffects": "/today (frame 50) has the same shape. Frame 50's header carries ONLY an avatar — no ＋ — so the frame relies on the dock orb for actions. Our floating FabMenu therefore duplicates the orb and overlaps 'Recent activity'. On /home and /patients the fix was to move the dial onto a header ＋ the frame actually draws; frame 50 draws none, so /today cannot be fixed the same way. Resolving #41 by wiring the orb to the speed dial fixes BOTH the missing voice routing and this overlap. Folded in here rather than opened as a separate decision — it is one question, not two.",
+      "ruling": "APPROVED — wire the dock orb as the single global floating action/voice affordance, preserving BOTH voice command routing and speed-dial actions. /today must not render a duplicate FAB. Do not remove voice functionality to simplify the UI.",
+      "fixedIn": "The orb hold-menu gains a sixth row, \"Say something else…\", which CAPTURES SPEECH rather than navigating (href: null) and hands the transcript to routeVoiceCommand. That restores the exact capability ruling #30 removed — an unclear command still lands in patient search with the transcript rather than a dead end. `routeVoiceCommand` has a live caller again.\n\nReception keeps everything /today's FAB carried: \"Add walk-in\" and \"Take a payment\" are now role-gated rows in the same menu (RECEPTIONIST and ADMIN — on a small clinic's single device the admin IS the front desk). Walk-in routes to /today?walkin=1, which opens the existing sheet on arrival; new patient, book and lab case were already menu rows.\n\n/today no longer renders a FabMenu. v9-50 7.0% -> 6.1%.\n\nOne existing test asserted the menu held EXACTLY five rows. Rather than delete it, it now asserts frame 78's five intents are present and in order — the guarantee it existed for — so it still fails if one is dropped or reordered.\n\nAlso caught by building rather than typechecking: /today now reads useSearchParams, which Next requires inside a Suspense boundary. `pnpm build` failed where typecheck passed. Boundary added; bundle unchanged at 103 kB."
+    },
+    {
+      "id": 42,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-26"
+      ],
+      "summary": "Frame 26's second action, \"Keep audio · review later\", does not exist",
+      "reason": "Frame 26 offers 'Keep audio · review later' beneath 'Try again'. That implies a deferred-review queue: audio parked on the device, surfaced later as work outstanding. No such queue exists, and inventing one inside a UI task would be a product feature built without a spec. The screen ships 'Record again instead' in that slot, which is the existing capability and must not be removed (FAILED retains the blob, so re-record is a real alternative to retrying the upload). Both actions honour the frame's own note, 'Failure never loses audio'.",
+      "status": "open",
+      "openQuestion": "Should the deferred-review queue be built? It needs its own surface (where does parked audio appear?), a retention rule, and a story for audio that never gets reviewed. Recommend scheduling it with the consult-queue work rather than folding it into Task 16."
+    },
+    {
+      "id": 43,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-25"
+      ],
+      "summary": "The transcript was shown under the processing bar; the dentist must not see the pipeline",
+      "reason": "Frame 25's mock is mid-upload, so it has no transcript to show — it does not decide against one. Our TRANSCRIBED state HAS the doctor's own words back, and it is the first proof the audio survived. Rendered quietly under the bar rather than dropped.",
+      "status": "fixed",
+      "ruling": "DROP the transcript from the processing state. The dentist-facing model is RECORD → Processing → AI Review. No uploading, transcription, extracting, provider names, SSE or internal stage vocabulary reaches the UI. One polished loading state: Odo, a concise message, an elegant progress treatment, nothing else.",
+      "fixedIn": "Removed from `ProgressStrip`. The transcript is still carried by the TRANSCRIBED state and still reaches the extraction and review workflow — only the dentist-facing processing UI stops rendering it."
+    },
+    {
+      "id": 44,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-23",
+        "v9-24",
+        "v9-25",
+        "v9-26"
+      ],
+      "summary": "Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven",
+      "reason": "These are states inside a live consultation, not routes. Capturing them needs a shot that creates a real consultation, grants the microphone and drives the store through its actual transitions. The harness now launches Chromium with a fake capture device and grants the microphone permission — half the driver — but the remaining half (seeding an in-chair patient and starting a consultation per run) is real work and mutates data. NOT faked: no production state was invented to produce a screenshot, which is why these four frames report NOT-CAPTURED rather than a number.",
+      "status": "partially-fixed",
+      "fixedIn": "The driver works and is real: Chromium launches with a fake capture device, the shot taps Record (starting an actual consultation), taps the mic, and the consult store walks its own machine. D2-recording and D3-paused capture RECORDING and PAUSED with no injected state.\n\nD4-processing and D5-failed still fail: the click after 'Finish' times out, so STOPPED is not being reached the way the driver expects. Not diagnosed yet. NOT worked around by faking the state."
+    },
+    {
+      "id": 45,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-23",
+        "v9-24"
+      ],
+      "summary": "The recording screen is restyled but not recomposed to frame 23",
+      "reason": "Visual inspection of the side-by-side, not the percentage. Frame 23 is: a patient strip at the top (avatar, name, age/sitting Minis, allergy in crit) with the REC chip opposite; a LARGE timer; a central lime mic orb with concentric rings; the complaint as a chip beneath it; and two CIRCULAR buttons with labels below (Pause, and a dark Finish with a check). Ours keeps the old composition — a five-bar waveform, a small mono timer, and two pill buttons — with v9 tokens applied to it.\n\nThe controls and states are right; the composition is not. 8.5% and 7.1% are mostly this.",
+      "status": "fixed",
+      "ruling": " OWNER (verbatim): \"#45 remains CLOSED: the recording screen must use the V9 structural composition: patient strip + large timer + central recording orb/rings + complaint context + low circular controls.\"",
+      "fixedIn": "apps/web/components/voice/recorder.tsx recomposed to frame 23's measured geometry (56px zero-padded tabular timer, 180px ring stack at insets 0/21/42 around a 92px lime orb, complaint chip beneath, two 62px labelled IconCircles pinned low); the patient strip moved onto apps/web/app/(app)/consult/[id]/page.tsx and now spans frames 23-26. PAUSED recolours the rings and swaps the primary rather than relayouting, per frame 24. The old waveform composition and the Waveform component are gone."
+    },
+    {
+      "id": 46,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-23",
+        "v9-24",
+        "v9-25",
+        "v9-26"
+      ],
+      "summary": "A rejected consultation made its visit permanently un-recordable — the root cause of #44",
+      "reason": "POST /consultations returns the EXISTING consultation for a visit whatever its status (consultations.ts findUnique on visitId). Once a doctor taps Re-record — which posts /consultations/:id/reject and sets status REJECTED — and then leaves the screen or the app reloads, tapping Record for that patient in the queue re-enters the same REJECTED consultation. deriveStateFromView returns {kind:'REJECTED'} and the consult page router.replace's back to /consult. The doctor taps Record, is bounced to the queue, and the visit can never be recorded again — silently, with no error. Reproduced against the live stack: D2/D3/D4/D5 capture now dead-ends on the queue screen.",
+      "status": "fixed",
+      "ruling": "APPROVED AS MUST-FIX (owner, verbatim): \"A REJECTED consultation represents a rejected recording/processing attempt, NOT a permanently unusable visit. POST /consultations for a visit that already has a REJECTED consultation must reuse that existing consultation and reset it to PENDING_REVIEW so the doctor can record again... The rejection itself MUST remain durable in AuditLog via CONSULTATION_REJECTED. Do NOT drop the unique Consultation.visitId constraint. Do NOT create a second consultation record for the same visit as part of this fix. Do NOT remove or weaken the audit trail.\"",
+      "fixedIn": "apps/api/src/routes/consultations.ts — POST /consultations resets a REJECTED consultation in place: status PENDING_REVIEW, and every field that is the rejected ATTEMPT's own output cleared (structuredData, rejectedById, rejectedReason, rawTranscriptEnc, audioUrl, audioStorageKey, audioDurationMs, languageCode, provider, sttLatencyMs, extractionLatencyMs, safetyWarnings). The schema was inspected per the ruling: those are precisely the transient/derived columns of one recording. Patient, Visit, ConsultationEdit and AuditLog are untouched, the unique visitId constraint stands, and no second row is created. A CONSULTATION_REOPENED audit row records the reset. Regression: apps/api/test/consultation-reject-then-rerecord.test.ts covers all eight required proofs. Clearing the transcript and audio key is the safety half — without it the next take would inherit the abandoned recording's dictation."
+    },
+    {
+      "id": 48,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-23",
+        "v9-24"
+      ],
+      "summary": "The recording strip shows age but not the sitting number (\"36 · S2\")",
+      "reason": "Frame 23's identity Mini reads '36 · S2' — age and which sitting of the active plan this is. ConsultationContext (packages/types/src/visit.ts) carries no plan or sitting; adding it means a join on the consultation-context endpoint. The queue snapshot already gained `activePlan` for the /home hero, so the shape exists, but widening a second endpoint is API work outside a recording-UI task and the Task 16 brief forbids changing API contracts absent a blocking bug. Age renders correctly; the sitting is simply absent, not wrong.",
+      "status": "open",
+      "openQuestion": "Add `activePlan` to ConsultationContext so the recording strip can show the sitting? Recommend folding it into the task that owns the patient-context card rather than Task 16."
+    },
+    {
+      "id": 49,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-24"
+      ],
+      "summary": "Auto-pause on interruption — frame 24's \"Paused automatically for a phone call\"",
+      "reason": "Frame 24's banner reads 'Paused automatically for a phone call · audio safe on this phone'. Nothing in the recorder listens for an interruption — no visibilitychange handler, no MediaRecorder pause on an audio-session interrupt — so every pause today is one the doctor pressed. The banner ships in the frame's amber treatment and position with honest copy ('Paused · audio safe on this phone') rather than claiming a phone call that did not happen. Fabricating the cause on a clinical screen is worse than saying less.",
+      "status": "open",
+      "openQuestion": "Build auto-pause on interruption? It is a real robustness win — an incoming call currently keeps the recorder running and captures the call instead of the consultation — but it needs its own investigation of iOS/Android audio-session behaviour in a PWA. Recommend a task of its own; the banner copy becomes frame 24's verbatim once it exists."
+    },
+    {
+      "id": 50,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29",
+        "v9-30",
+        "v9-31"
+      ],
+      "summary": "Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule",
+      "reason": "Task 17 required (a) zero pixel change, (b) a split into six named files including `summary-bento.tsx` and `record-prose.tsx`, and (c) five regression tests passing untouched. All three cannot hold. (b) names post-Task-18 anatomy — the bento's TOOTH/FEES/NEXT-SITTING are currently three of seven sequential rows, so creating those files means reordering the DOM, violating (a). And (c) is impossible with any split at all: the tests grep the source TEXT of verification-card.tsx, so moving code breaks them without changing behaviour. Resolved in favour of the zero-pixel rule, which is the task's actual purpose.",
+      "status": "approved",
+      "ruling": "Self-resolved under the standing rule that a task closes no open decision of its own, and that the plan is fixed in the same change when it contradicts itself. The plan file now carries both corrections inline.",
+      "fixedIn": "Split follows today's seams: field-row · identity-header · record-fields · medicine-list · lab-case-block · safety-banner · actions. Test source-loading widened to the directory via test/regression/verification-sources.ts with assertions byte-identical, except two that described JSX shapes the split turned into a prop and into data (both keep their intent). That widening also CLOSED a hole: identity-from-patient-only would otherwise have kept passing while guarding one file out of seven. Proof of zero pixel change is a byte-identical PNG hash for D6-verify before and after (fc0de187146092729350deb98d098cfc), not a diff percentage. Logic that had leaked into JSX moved to lib/consult/card-view.ts with 9 new tests — including that a mistyped tooth number is dropped rather than coerced."
+    },
+    {
+      "id": 51,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28"
+      ],
+      "summary": "Frame 27's \"Swap → Azithro 500\" — no drug-substitution knowledge base exists",
+      "reason": "The frame resolves an allergy conflict by swapping to a NAMED alternative antibiotic, and frame 28 shows the result ('swapped for Amoxicillin · allergy-safe'). Nothing in the app knows that azithromycin is the penicillin-safe substitute: SafetyWarning carries code, message, field and detail — no alternative — and there is no substitution table anywhere in the API. Hardcoding one inside a UI task would be inventing prescribing advice, which is the single thing this product must never do. The conflict rail ships with the frame's full anatomy (red rail, red drug name, one factual line, inline action) and the action is 'Remove', which is the resolution the safety model actually recognises (isResolved: the flagged medicine is no longer prescribed). It says Remove rather than Swap so the doctor is never told the app chose a replacement drug.",
+      "status": "approved",
+      "openQuestion": "Build drug substitution? It needs a clinical data source, an owner for its correctness, and a decision about liability — the app would be suggesting a specific prescription. Recommend a dedicated task with clinical sign-off, not a migration task.",
+      "reclassified": "2026-09-07 - was NOT-BUILT/open, which read as work still to come. It is not: product rule 6 ('AI must not invent medication substitutions') forbids the swap permanently, and no drug-substitution knowledge base is planned. The card resolves a conflict by REMOVING the drug -- the resolution the safety model actually recognises -- and the button says 'Remove' rather than implying the app chose a replacement. Reclassified so the ledger states a settled decision instead of a pending task."
+    },
+    {
+      "id": 52,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29",
+        "v9-30"
+      ],
+      "summary": "The FINDINGS and PROCEDURE prose sections have no extraction fields behind them",
+      "reason": "Frames 27-30 set the record as three narrative sections — FINDINGS, PROCEDURE, INSTRUCTIONS. ClinicalExtraction has exactly one free-text field, `notes`, which is where dictated patient advice lands and maps cleanly to INSTRUCTIONS. There is no findings field and no procedure narrative; producing them means new schema fields plus new Gemini prompt work, i.e. changing clinical extraction from inside a restyle. PaperBlock ships and renders the sections that have data; sections without data are omitted rather than filled with generated prose.",
+      "status": "approved",
+      "openQuestion": "Add `findings` and `procedureNarrative` to ClinicalExtraction and the clinical prompt? It is the difference between a structured summary and a record a dentist would actually keep. Recommend scheduling with extraction work, where the prompt and its tests live.",
+      "ownerRuling": "2026-09-07 - OWNER RULING, verbatim: 'Build the fixture, defer the fields.' `findings` and `procedureNarrative` are NOT added to ClinicalExtraction and the clinical prompt is NOT changed as part of this UI migration - changing what the AI extracts has its own blast radius and needs its own clinical review. PaperBlock and the visit record render the sections that HAVE data and omit the sections that do not; they never generate prose to fill them (product rule 7). These frames are recorded rather than force-matched."
+    },
+    {
+      "id": 53,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27"
+      ],
+      "summary": "Confirm stays available over an allergy conflict; the dentist decides and the override is audited",
+      "reason": "Frame 27 shows 'Confirm & save' disabled while the allergy conflict is unresolved, and the task brief repeats it. That is a CLINICAL POLICY change, not a visual one. Today allergy_conflict is an advisory warning, not a blocking error: the API's own prompt says 'Do NOT remove the prescription — flag it; the doctor decides', and confirming over a live warning is a supported, audited path (confirmedWithWarning -> CONSULTATION_CONFIRMED_WITH_WARNING). Disabling Confirm would remove a doctor's documented authority to prescribe against a flag they have judged — for example a recorded 'rash' that they know to be tolerable. Implemented as today: Confirm is gated by BLOCKING errors only, and the conflict is drawn loudly on the drug.",
+      "status": "approved",
+      "openQuestion": "Should an unresolved allergy conflict HARD-BLOCK confirm, overriding the doctor? Recommend no — keep the override with its audit trail, since the alternative is a clinician unable to file a record they believe is correct. If yes, the API's warning/blocking classification must change too, so the two layers do not disagree.",
+      "ruling": "OWNER RULING: 'KEEP Confirm & Save available during an allergy conflict. Do NOT hard-block confirmation. The current behavior is: OdoVox detects/receives an allergy conflict; OdoVox clearly warns the dentist; dentist reviews the conflict; dentist may remove/change the prescription; dentist may explicitly override the warning if clinically appropriate; the override is recorded in the audit trail. Do NOT invent automatic drug substitutions. Do NOT allow Gemini/LLM output to determine whether an allergy conflict is an absolute contraindication. Any future hard-block policy must come from an explicit clinical safety policy/knowledge layer, not visual matching of the V9 frame.'",
+      "fixedIn": "No code change — the ruling confirms the behaviour already shipped, and records WHY it is correct rather than incidental. Confirm is gated by BLOCKING errors only; an allergy conflict is advisory, drawn loudly on the drug itself (red rail, red name, one factual line). Overriding it commits through the existing confirmedWithWarning path and lands in AuditLog as CONSULTATION_CONFIRMED_WITH_WARNING. Frame 27's greyed-out CTA is therefore an APPROVED DEVIATION: matching it would remove a clinician's documented authority on the strength of a visual, which the ruling forbids. Related: #51 stays NOT-BUILT — no automatic substitution is invented, and the conflict action removes the drug rather than choosing a replacement."
+    },
+    {
+      "id": 54,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-30"
+      ],
+      "summary": "Frame 30 packs medicines into a half-width tile beside NEXT; one composition ships for all four states",
+      "reason": "Frames 27/28/29 give medicines a full-width card, one row per drug. Frame 30 — a single medicine — instead shrinks it to a half-width tile next to a NEXT · CEMENTATION tile. Shipping both means the medicines section changes shape based on how many drugs were prescribed, so the same information lands somewhere different each consultation and a doctor cannot build a habit of where to look. Frame 29's requirement (seven medicines with the same anatomy as two) is explicitly about that consistency. The full-width card ships for all four states; the NEXT tile keeps its place in the bento above.",
+      "status": "approved",
+      "ruling": "Self-resolved under the standing rule that no task closes with an open decision of its own. Frame 29's own stated requirement decides it: anatomy must not change with list length."
+    },
+    {
+      "id": 55,
+      "class": "NOT-CAPTURED",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29"
+      ],
+      "summary": "The conflict, resolved and seven-medicine states need clinical data no seeded recording produces",
+      "reason": "All three are built and will render — the conflict rail, the resolved note with Undo and the seven-row list are implemented — but reaching them through the real application means a recording that actually dictates an allergy-conflicting drug (27/28) or seven medicines (29). The mock extractor produces neither from the harness's fake audio. Capturing them honestly needs seed data purpose-built for it: a patient with a recorded penicillin allergy plus a canned transcript that prescribes amoxicillin. That is a harness/seed task, not a UI one, and faking the state to get a screenshot is explicitly forbidden.",
+      "status": "resolved",
+      "openQuestion": "Add a seeded 'conflict demo' patient + canned transcript so 27/28/29 can be captured and regression-tested? Recommend yes — these are the states where the card earns its keep, and they are currently the least verified.",
+      "resolution": "Resolved by the canned-transcript fixture: the mock STT/extractor gains deterministic canned transcripts (an allergy-conflicting prescription, a seven-medicine prescription, and a filled intake). This is harness work with no product surface, decided under the agent's technical authority. The states are then reached through the real application exactly as a user would - nothing is faked into place for a screenshot."
+    },
+    {
+      "id": 56,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-35"
+      ],
+      "summary": "The disabled-CTA line names what is actually missing instead of frame 35's static copy",
+      "reason": "Frame 35 reads 'Name + phone unlock the button · everything else can wait'. CreatePatientInput requires name, phone, age AND gender, so a button enabled on name + phone would let the receptionist tap Create and collect a validation error instead of a patient — the precise failure Global Constraint 1 ('a disabled CTA always says why') exists to prevent. The line is computed from the fields still empty ('Name, phone, age and gender still needed') and shrinks as the form fills in, turning into 'Everything else can wait' once the API would accept it. That honours the constraint's intent more exactly than its own example copy does.",
+      "status": "approved",
+      "ruling": "Self-resolved under the standing rule that no task closes with an open decision of its own. Global Constraint 1 decides it: the frame's static line would be false for this API.",
+      "fixedIn": "apps/web/lib/patients/new-patient-form.ts with 7 tests, incl. age 0 (infants are patients)."
+    },
+    {
+      "id": 57,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-35",
+        "v9-36"
+      ],
+      "summary": "Optional fields move behind a 'More details' disclosure rather than being dropped",
+      "reason": "Frame 35 shows only NAME, AGE, PHONE and FLAGS; frame 36 adds a collapsed 'More details' row. The form also carries blood group, address, chief complaint and allergies, none of which appear in either frame and none of which may be removed. They live inside the disclosure — every field the form ever had is still reachable. Two behaviours keep it from hiding anything that matters: the disclosure opens automatically when voice intake fills a field inside it, so dictated allergies are never filed away unreviewed; and GENDER stays on the main surface because the API requires it.",
+      "status": "approved",
+      "ruling": "Self-resolved: a disclosure is not a deletion, and nothing required is inside it."
+    },
+    {
+      "id": 58,
+      "class": "NOT-CAPTURED",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio",
+      "reason": "Frame 36 is the form AFTER dictation, every voice-filled field wearing its lime spine. The spine, the touch-to-clear behaviour and the auto-opening 'More details' are all built. But capturing it means a real intake extraction, and Chromium's fake capture device produces audio the mock extractor parses into zero fields - verified by a shot that waited on the NAME input and timed out at 60s. Capturing it honestly needs a canned intake transcript in the mock provider, which is harness work; faking the form state is forbidden.",
+      "status": "resolved",
+      "openQuestion": "Add a canned intake transcript to the mock STT/extractor so voice-intake states can be captured and regression-tested? Same underlying gap as #55 - recommend one task for both.",
+      "resolution": "Resolved by the canned-transcript fixture: the mock STT/extractor gains deterministic canned transcripts (an allergy-conflicting prescription, a seven-medicine prescription, and a filled intake). This is harness work with no product surface, decided under the agent's technical authority. The states are then reached through the real application exactly as a user would - nothing is faked into place for a screenshot."
+    },
+    {
+      "id": 59,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "Voice intake claimed \"Filled from your voice\" over a form it had filled nothing into",
+      "reason": "onIntake fired the success toast unconditionally. When the extractor understood nothing - a noisy room, a phone held wrong, a sentence it could not parse - the receptionist was told it worked, over a completely empty form, and sent to a Create button that would reject them. Found by READING the frame-36 capture: the toast was on screen above blank fields.",
+      "status": "fixed",
+      "fixedIn": "apps/web/app/(app)/patients/new/page.tsx - an extraction that sets no field now says \"Couldn't catch that - try again, or type the details in.\" and returns early."
+    },
+    {
+      "id": 60,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
+      "summary": "Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts",
+      "reason": "Task 21 asks for shared query hooks to move to lib/patients/queries.ts. They are already centralised — usePatient, useTeeth, usePlans, useMedia and the rest all live in lib/queries.ts, which is a cohesive module imported by several screens beyond patient detail. Pulling only the patient-shaped ones out would split that module along a line nothing else respects and churn every other importer for no behavioural gain. The task's actual goal — page.tsx stops being 958 lines of tabs and sheets — is met by the component split.",
+      "status": "approved",
+      "ruling": "Self-resolved: the hooks are already in one place; the plan's path is not an improvement on it."
+    },
+    {
+      "id": 61,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-32",
+        "v9-33"
+      ],
+      "summary": "Reception's patient rows carried a medical flag; ruled out — reception queue is not a clinical record",
+      "reason": "Reopened at the owner's instruction. I had closed this as an APPROVED-DEVIATION on my own judgement, which was not mine to make.\n\nWHAT THE V9 FRAME SHOWS (frames 32/33): each row is avatar, name, then a glyph strip of TOOTH NUMBER, SITTING PROGRESS DOTS (filled/current/remaining) and DUES in crit — plus a trailing status dot. It reads as a treatment-progress list.\n\nWHAT THE IMPLEMENTATION SHOWS: avatar, name, then AGE, CHIEF COMPLAINT, the first MEDICAL FLAG in crit (DIABETES, HYPERTENSION) and DUES in crit — plus the trailing status dot. It reads as a patient-identity list. The avatar ring and dot now carry live queue state (#62).\n\nLOST BY MATCHING THE FRAME: the medical flag, which is the only place a receptionist opening a record sees a condition before they act, and the frame has nowhere to put it. Age also goes — the everyday disambiguator between two patients with the same name.\n\nGAINED BY MATCHING THE FRAME: which tooth is being treated and how far through the plan the patient is, without opening the record. For a clinic scanning for 'who is mid-RCT' that is the more useful list.\n\nWHICH KIND OF DECISION: primarily WORKFLOW — who is scanning this list and what for. It has a CLINICAL edge, because dropping the medical flag removes safety information from a receptionist-visible surface. It is not a visual decision; both versions are the same component with different facts in it. It also carries a technical cost: tooth + sitting dots require joining every row to its active plan, the widening deferred in #48.",
+      "status": "fixed",
+      "ruling": "OWNER RULING: 'I am choosing the receptionist/queue workflow over exposing clinical information on the queue card. The receptionist-facing patient/queue card should NOT display medical flags or allergies. #69 established the clinical/privacy boundary. Medical flags are clinically relevant to the dentist, not a general receptionist queue surface. The doctor-facing /consult surface already exposes the relevant allergy information. Do not expose medical conditions simply because they happen to exist in the payload. KEEP: patient identity, operational queue information, dues/billing information, complaint if it is already part of the approved workflow. PREFER tooth / treatment sitting / treatment progress IF the required structured data already exists or is introduced by an already-planned task. DO NOT create speculative clinical data. RECEPTION QUEUE ≠ CLINICAL RECORD.'",
+      "openQuestion": "Which list is this? Options: (a) keep as-is — identity + safety, no extra query; (b) match the frame — treatment progress, losing the medical flag and needing the plan join; (c) both, dropping age to make room, still needing the join. I recommend (c) if the join is acceptable, since it keeps the safety flag and gains the clinical progress, but this is your ruling and I am not resolving it.",
+      "fixedIn": "The medical-flag chip is removed from the /patients row. What remains is what reception works with: identity (name, age), the live queue state on the avatar ring and trailing dot, the complaint, and dues in crit. The doctor still sees allergies where they act on them — prominently on the in-chair card behind DOCTOR/ADMIN (#69). The privacy regression test now treats /patients as a reception surface, so a future edit cannot quietly put flags back."
+    },
+    {
+      "id": 62,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-32",
+        "v9-33"
+      ],
+      "summary": "The avatar ring and status dot read a column nothing maintains, so neither had ever rendered",
+      "reason": "ringFor() read Patient.status, which no code path sets to IN_CHAIR or LAB_PENDING — calling a patient in creates an IN_CHAIR Visit and leaves the patient row alone. Every row rendered ringless. The same column broke the Treating filter (where.status = 'IN_CHAIR' matched nothing, so the chip always returned an empty list).",
+      "status": "fixed",
+      "fixedIn": "PatientListItem.liveState, derived server-side from the open visit and unfinished lab cases via an existence-only include (take: 1, scalar select, no PHI); in-chair outranks lab-pending. apps/api/test/patient-list-live-state.test.ts covers it, including cross-clinic isolation on the filter."
+    },
+    {
+      "id": 63,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-33",
+        "v9-34"
+      ],
+      "summary": "Search was missing its recents and the line explaining what it matches",
+      "reason": "Frame 33 shows previous queries as chips and a line reading 'Search matches name, phone, and patient ID. Say a name into the mic instead of typing.' Neither existed. The helper line is the only place a receptionist holding a phone number learns that phone search works. Frame 34's sleeping Odo was also absent.",
+      "status": "fixed",
+      "fixedIn": "apps/web/lib/patients/recent-searches.ts (localStorage, newest-first, case-insensitive dedupe, capped at 6, never sent to the server — it would otherwise become a log of who a clinic looked up) with 6 tests; chips, helper line and the sleeping mascot on the search screen."
+    },
+    {
+      "id": 64,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The day river counted cancelled appointments and put the chair marker on the wrong patient",
+      "reason": "Frame 13's river is the habit hook — one segment per appointment, lime done, dark in the chair. It was fed `appointments.length` raw, so cancellations and no-shows drew as work still ahead: a doctor with three call-offs saw a day that was fuller than it was. And the chair marker was placed at index `done`, assuming the patient in the chair is always the next one after the finished ones — a walk-in seen between booked slots put the dark segment on somebody else. The caption also mixed sources, taking 'to go' from the live queue rather than the day, and omitted the frame's takings clause entirely.",
+      "status": "fixed",
+      "fixedIn": "apps/web/lib/queue/day-river-view.ts — dayShape() filters CANCELLED/NO_SHOW and locates the chair by patientId against the FILTERED list; dayCaption() builds the frame's line and drops clauses that would read as bad news rather than no news ('0 seen · 0 to go · ₹0 in' at 9am describes a disaster; it is just early). 11 tests."
+    },
+    {
+      "id": 65,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The seed created no appointments at all, so Home, Up next and Schedule were empty in every demo",
+      "reason": "Nothing in the seed made an Appointment. The day river therefore rendered null (it returns null at zero segments), 'Up next' was always empty and the Schedule screen had nothing in it — in every demo and every screenshot, regardless of what else was going on. Frame 13's central element could not be captured because the data to draw it did not exist.",
+      "status": "fixed",
+      "fixedIn": "packages/db/prisma/seed.ts seeds a believable mid-morning — two seen, one in the chair, three ahead — rebuilt each run rather than upserted so yesterday's demo does not pile up behind today's. SEED_TODAY=YYYY-MM-DD hangs them on a chosen date; the default is today."
+    },
+    {
+      "id": 66,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-13"
+      ],
+      "summary": "The captured river is shorter than frame 13's, because the harness pins the clock to a past date",
+      "reason": "The screenshot harness pins the browser clock to 2026-07-13T09:41 so every capture is deterministic — that is where both panels' 'MON · 13 JUL 9:41' comes from. The SERVER runs on real time, so appointments seeded onto that date are weeks overdue as far as the API is concerned and the NO_SHOW sweep correctly retires the future ones. The capture therefore shows the two completed plus the patient in the chair, and the caption's 'to go' and '₹ in' clauses have nothing to say. That is the app behaving correctly on a past-dated fixture, not a defect: on the real today the seeded day renders in full (verified — 2 COMPLETED, 1 CHECKED_IN, 3 SCHEDULED survive).",
+      "status": "approved",
+      "ruling": "Self-resolved. Closing it properly means either moving the pinned date forward on every capture run or freezing server time too; both are harness changes with their own risks, and neither belongs in a frame task."
+    },
+    {
+      "id": 67,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "fixed",
+      "summary": "The in-chair card rendered a false \"0:00\" when the clock and the record disagreed",
+      "reason": "useElapsed clamped a negative elapsed time to zero, so any client/server skew — or the screenshot harness's pinned clock — printed '0:00', asserting the patient sat down this instant. On the card a doctor uses to judge who has been waiting longest, a confident wrong number is worse than none.",
+      "fixedIn": "apps/web/components/queue/queue-cards.tsx — a negative elapsed renders no chip at all."
+    },
+    {
+      "id": 68,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "approved",
+      "summary": "The Consult header keeps a back control that frame 21 does not draw",
+      "reason": "/consult is NOT one of the four dock tabs — a doctor arrives here from Flow's 'Continue consultation'. Removing the back control to match the frame would strand them on a screen with no way out. Navigation, not product: the frame simply does not depict the entry path.",
+      "ruling": "Self-resolved as a technical/navigation matter under the standing rule."
+    },
+    {
+      "id": 69,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "fixed",
+      "summary": "CLINICAL: frame 21 shows an allergy chip on the in-chair card; the app shows none",
+      "reason": "Frame 21's card carries a crit 'Allergy' chip beside age and sitting. The data is already on the client — QueuePatientZ.medicalFlags — so this is a rendering decision, not an API one. I have NOT implemented it, because /consult is not in the RBAC RESTRICTED list: it is a shared route a receptionist can reach by URL even though it is not in their tab bar. Rendering medical flags there would newly expose allergy information to reception. That is a clinical-exposure decision, and it is yours.",
+      "openQuestion": "Render medicalFlags on the in-chair card? Recommend YES for the safety value — the doctor about to record is exactly who should see a penicillin allergy — but paired with adding /consult to RESTRICTED as DOCTOR/ADMIN, so the chip cannot surface to reception. That second half is an RBAC change and needs your sign-off too.",
+      "ruling": "OWNER RULING (verbatim intent): KEEP the allergy indicator on the in-chair card. Do NOT expose medical flags to receptionists through /consult. Change /consult RBAC so it is explicitly DOCTOR/ADMIN only. The allergy indicator should be concise and high-signal, e.g. 'Penicillin allergy', not a dump of medical history. Do not invent new medical data. Use the existing medicalFlags data.",
+      "fixedIn": "rbac.ts restricts /consult to DOCTOR/ADMIN (it was a SHARED route reachable by URL). lib/queue/medical-flags.ts turns stored flags into concise labels — allergies first and named, capped at two with a counted overflow so a long history cannot become the dump the ruling forbids. Rendered on the in-chair card only, from QueuePatientZ.medicalFlags; the encrypted allergies column never travels to the queue. test/regression/consult-clinical-privacy.test.ts proves all five required properties: DOCTOR and ADMIN can reach /consult, RECEPTIONIST cannot (including deep links), rendering uses medicalFlags, and no receptionist surface reads a patient's flags."
+    },
+    {
+      "id": 70,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-21",
+        "v9-50"
+      ],
+      "status": "approved",
+      "summary": "Frames say \"CHAIR 1\"; the app says \"Room 1\" because that is what the model calls it",
+      "reason": "Both frames label the operatory 'CHAIR 1'. The schema models Rooms and the seed names them 'Room 1', which the UI renders verbatim. Dentists say chair; the data says room. Changing it is either a copy transform at the edge or a rename in the seed and model.",
+      "openQuestion": "Rename to Chair in the seed/model, transform at the edge, or keep Room?",
+      "ruling": "OWNER RULING (verbatim intent): Do NOT invent or change the underlying data model merely to reproduce the frame. Preserve the existing authoritative room/chair data. If the current domain model says Room 1, display Room 1 accurately. Adapt the visual presentation to the frame without creating false operational semantics.",
+      "fixedIn": "Room names render verbatim from the data on both screens, including the new free-room footer ('ROOM 2 — FREE'). The frame's CHAIR presentation is matched in treatment — eyebrow caps, pine-3, inline state — while the noun stays the model's. A test asserts freeRooms() returns the data's name rather than a renamed one."
+    },
+    {
+      "id": 71,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-21"
+      ],
+      "status": "fixed",
+      "summary": "Waiting rows show complaint + token where frame 21 shows appointment time + minutes waited",
+      "reason": "Frame 21's waiting rows read '11:00 · 12 min' — when they were due and how long they have actually been waiting. The app shows the chief complaint and the token number. Both are triage information and neither is wrong; they answer different questions. 'How long has this person been waiting' is the one a doctor running late asks, and the app cannot currently answer it on this screen.",
+      "openQuestion": "Switch to time + waited-minutes, or show both, or keep complaint + token?",
+      "ruling": "OWNER RULING (verbatim intent): Do not choose between useful information merely to match pixels. The waiting row should communicate patient, token/queue position, and waiting time. Complaint may be included if it fits without overcrowding; otherwise expose it in the row/detail interaction. Do not remove existing operational information merely for pixel similarity.",
+      "fixedIn": "The waiting row now carries all three: patient, #token, and time waited from checkedInAt. The complaint stays alongside them. The label is coarse by design — minutes, then hours, 'just now' under a minute — because a seconds counter beside a patient's name reads as a stopwatch on them, and a negative elapsed (clock skew) renders nothing rather than a confident wrong number."
+    },
+    {
+      "id": 72,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "fixed",
+      "summary": "The PENDING tile showed a patient COUNT in a tile styled as money",
+      "reason": "COLLECTED rendered rupees and PENDING rendered checkout.length, in two identical tiles side by side. 'COLLECTED ₹0 · PENDING 1' reads as one rupee outstanding, and the person reading it is balancing a drawer. Frame 50 shows money in both.",
+      "fixedIn": "pendingCheckoutPaise() sums billDuePaise across the checkout queue; visits with no bill raised contribute nothing rather than a guessed zero, and an overpaid bill cannot subtract from what others owe. 4 tests. The count still appears on the Checkout section header, where it means people rather than rupees."
+    },
+    {
+      "id": 73,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "fixed",
+      "summary": "Checkout rows offer a \"Take payment\" action where frame 50 shows the amount as a chip",
+      "reason": "Frame 50's checkout rows are '₹800 →' — the amount, tappable. The app shows a 'Take payment' button and puts the amount inside it only on some surfaces. The app's version is more actionable; the frame's shows the receptionist the money at a glance, which is what they are scanning for. This is a workflow choice, not a styling one.",
+      "openQuestion": "Amount-as-chip per the frame, or keep the explicit Take payment action?",
+      "ruling": "OWNER RULING (verbatim intent): Keep the amount AND provide the checkout action. Amount answers 'how much?', action answers 'what do I do?'. Do not make them mutually exclusive.",
+      "fixedIn": "Reception checkout rows show the amount and the Take payment action, stacked rather than side by side — side by side they truncated the patient's name to 'Akhile…', and the name is the thing being identified. The doctor's view on /consult keeps the amount alone; they have no payment to take."
+    },
+    {
+      "id": 74,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "fixed",
+      "summary": "Two additions frame 50 does not have: a Recent activity feed and a free-chair footer that is missing",
+      "reason": "The app adds a 'Recent activity' section ('Asha called Arjun in · just now') that the frame does not draw. Conversely the frame's Clinic-now card ends with 'DR. ARJUN · CHAIR 2 — FREE, NEXT 11:15' — which chairs are free and when they fill — and the app has no equivalent. Neither is a defect; both change what a receptionist is told.",
+      "openQuestion": "Keep Recent activity? Add the free-chair line? The second looks the more valuable of the two for a receptionist deciding where to put a walk-in.",
+      "ruling": "OWNER RULING (verbatim intent): Remove Recent Activity from this screen if it is not part of the approved frame and there is no strong workflow reason for it to remain here. Do not preserve old UI simply because it already exists. Implement the missing free-chair footer if its information represents real operational state.",
+      "fixedIn": "Recent activity removed from /today, along with its now-unused feed subscription. The free-room footer is built from the rooms already in the queue snapshot: OFFLINE rooms are excluded because sending a walk-in to a chair that is out of service is worse than saying nothing. The frame's 'NEXT 11:15' half needs per-room appointment times this screen does not fetch, so it is omitted rather than guessed — recorded below as the remaining gap."
+    },
+    {
+      "id": 75,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-50"
+      ],
+      "status": "open",
+      "summary": "The free-room footer says which rooms are free but not when they next fill",
+      "reason": "Frame 50 reads 'CHAIR 2 — FREE, NEXT 11:15'. The free half is implemented from real snapshot state (#74). The 'NEXT' half needs the next appointment per room, which /today does not fetch — it has the queue snapshot and daily stats, not the schedule. Guessing it would put a time in front of reception that nobody booked.",
+      "openQuestion": "Fetch today's schedule on /today to complete the footer? It is one query already used by /home. Recommend yes, but it is added data on a reception screen and therefore your call."
+    },
+    {
+      "id": 76,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-32",
+        "v9-33"
+      ],
+      "status": "open",
+      "summary": "Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist",
+      "reason": "Frames 32/33 show tooth number and sitting-progress dots on each row. The owner ruled these PREFERRED over the removed medical flag, but only if the structured data already exists or an already-planned task introduces it — and explicitly: do not fake it, do not hardcode it, record the backend dependency, defer it to the appropriate patient-plan task.\n\nIt does not exist. PatientListItem carries no plan or sitting data, and producing it means joining every row to its ACTIVE TreatmentPlan and current Sitting — the same widening deferred in #48 for the consultation context. On a paginated list that is a per-row clinical lookup on a reception endpoint, which also needs a privacy read: sitting progress is treatment information, and #61 has just drawn that line.\n\nRecorded and deferred. The rows ship with identity, queue state, complaint and dues.",
+      "openQuestion": "Which task owns this? It pairs naturally with #48 (activePlan on ConsultationContext) as one piece of work that decides how plan/sitting data reaches list surfaces, including whether a reception surface should carry it at all under the #61 boundary."
+    },
+    {
+      "id": 77,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-41"
+      ],
+      "status": "open",
+      "summary": "Frame 41's \"Remind\" needs a payment-reminder WhatsApp template that does not exist",
+      "reason": "Frame 41 pairs 'Collect ₹3,000' with a 'Remind' action. The clinic has four seeded WhatsApp templates — appointment_reminder_24h, appointment_reminder_1h, prescription_ready, lab_case_ready — and none is about money. WhatsApp business templates must be approved by Meta before they can send, so adding a payment reminder is a compliance step with a real approval cycle, not a UI detail. Wiring the button to a non-existent key would produce a control that fails at send time. Omitted and recorded, per the ruling's instruction to omit rather than fabricate. Collect ships and works.",
+      "openQuestion": "Add a payment-reminder template? It needs the copy drafted and submitted for approval, and a decision about whether payment chasing over WhatsApp is something the product does at all."
+    },
+    {
+      "id": 78,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-41"
+      ],
+      "status": "approved",
+      "summary": "The billing headline drops gross 'Billed' for the frame's OUTSTANDING / PAID pair",
+      "reason": "The tab showed three figures — Billed, Paid, Due. Frame 41 shows two: OUTSTANDING in crit and PAID · ALL TIME. Gross billed is the one figure that changes no decision a receptionist is making at that moment, and it remains on every bill row below, so nothing is lost.",
+      "ruling": "Self-resolved as presentation: no figure is removed from the screen, only from the headline."
+    },
+    {
+      "id": 79,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-41"
+      ],
+      "status": "fixed",
+      "summary": "The billing tab fetched bills twice, from two different endpoints",
+      "reason": "Rows came from useBills() and the summary from /patients/:id/billing. Two requests, two snapshots: a payment landing between them left a row and the total above it disagreeing. The ruling forbids a second billing source of truth, and this was one.",
+      "fixedIn": "Rows and summary both come from /patients/:id/billing, which now carries the derived description and payment context. One request, one snapshot."
+    },
+    {
+      "id": 80,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-37",
+        "v9-38",
+        "v9-40",
+        "v9-41"
+      ],
+      "status": "approved",
+      "summary": "The full identity block stays on every tab; v9 shows a compact header on 38/40/41",
+      "reason": "Frame 37 gives the patient a large centred identity block. Frames 38, 40 and 41 replace it with a compact strip — small avatar, name, one action — to buy vertical space for the tab's own content. The implementation keeps the full block throughout.\n\nIt is a real difference and it costs roughly 150px on three tabs. It is recorded rather than built because the compact header carries a DIFFERENT action per tab (+ Plan on Cases, PDF on Billing, nothing on Teeth), which is four header variants and a per-tab action contract — more than a restyle, and it interacts with the Task 23 case-detail screen that owns some of those actions. Nothing is lost meanwhile: the identity, the flags and the three stats stay visible on every tab, which is more context than the frames give, not less.",
+      "ruling": "Self-resolved as layout: no information or action is removed, only repeated."
+    },
+    {
+      "id": 81,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-38"
+      ],
+      "status": "fixed",
+      "summary": "Frame 38's \"Schedule remaining\" — the capability EXISTS; the Cases card does not reach it",
+      "reason": "CORRECTION. This was recorded as NOT-BUILT on the claim that nothing books a plan's outstanding sittings in one action. That claim was wrong, and I did not check hard enough before writing it: POST /appointments/recurring exists, useCreateRecurring() calls it, and the case-detail page already renders a full 'Schedule remaining sittings' control — interval choice (weekly / fortnightly / monthly), a dated preview of every sitting it will create, and a SERIES_UNSCHEDULED error path for slots it cannot place.\n\nSo the real gap is navigational, not functional: frame 38's card has no route to a control that is one screen away. Task 23 builds that case-detail screen to the frame and performs its link audit, which is the right place to close this.",
+      "openQuestion": null,
+      "fixedIn": "Link audit (Global Constraint 10): every site rendering a plan or procedure name now navigates to case detail — the Overview active-case card, the Teeth tab's tooth panel, the Cases tab's past and secondary plans, the journey's 'Open case', and the PRIMARY active plan's heading, which was the one that did not and is why the control looked missing. 'Schedule remaining sittings' lives on that screen with its interval choice and dated preview; the heading is how frame 38 reaches it. Titles use caseTitle() so the words match the screen they open."
+    },
+    {
+      "id": 82,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-38"
+      ],
+      "status": "approved",
+      "summary": "Journey steps are titled by procedure; v9 titles them by clinical step name",
+      "reason": "Frame 38 reads 'Sitting 1 · Access opening', 'Sitting 2 · Cleaning & shaping' — the clinical step each sitting performs. A Sitting has a number and encrypted notes; it has no step-name field, and inventing one per sitting number would be the app asserting a clinical protocol it has no source for (RCT step 2 is not universally 'cleaning & shaping'). Steps are titled by the procedure instead, and the doctor's own note carries the detail where it exists — '28 Jun · extirpation, dressing', which is the same information from an authoritative source.",
+      "ruling": "Self-resolved: naming clinical steps from a number would be inventing clinical truth."
+    },
+    {
+      "id": 83,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "open",
+      "summary": "Sitting rows show no per-sitting fee — Sitting has no cost field",
+      "reason": "Frame 39's sitting rows read '28 Jun · ₹2,500' — what that individual visit cost. A Sitting carries a number, a visit link, encrypted notes and a completion time; it has no money on it, and bills attach to visits and procedures rather than to sittings. Splitting a procedure's bill evenly across its sittings would invent a per-visit price nobody charged. The row shows its date; the money lives on the FEES tile as a plan total, which IS derived from real bill items.",
+      "openQuestion": "Should a sitting carry its own charge? It would need a product decision about whether clinics price per sitting or per procedure — they do both — before any schema change."
+    },
+    {
+      "id": 84,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "fixed",
+      "summary": "The case screen was titled \"Treatment Plan\" rather than naming the case",
+      "reason": "Every other surface refers to this case as 'RCT · Tooth 36'. Landing on a screen headed 'Treatment Plan' makes a doctor check they opened the right one. The header now carries the case's own name, with the sitting chip beside it.",
+      "fixedIn": "caseTitle() builds it from the plan name plus its teeth, appending the tooth only when the name does not already carry it — the same duplication that produced 'RCT · Tooth 36 · Tooth 36' on the Overview card."
+    },
+    {
+      "id": 85,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "approved",
+      "summary": "FEES and NEXT read empty in the capture because the fixture has no billed or booked work",
+      "reason": "FEES shows ₹0 / 9,000 because no bill item in the seed points at this plan's procedure — the derivation is correct and tested (7 tests), there is simply nothing paid to report. NEXT reads 'Not booked' for the pinned-clock reason already recorded as #66: the harness freezes the browser at 2026-07-13 while the server runs on real time, so an appointment seeded onto that date is in the past as far as the API is concerned. Both are fixture conditions, not defects.",
+      "ruling": "Self-resolved as a test-fixture matter, consistent with #66."
+    },
+    {
+      "id": 86,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-42"
+      ],
+      "status": "approved",
+      "summary": "History is a route reached from the overflow menu, not a sixth tab",
+      "reason": "The plan allows either, provided no existing tab is removed, and none is. Five tabs already crowd a 370px row — the labels had to lose their padding when 'Overview' truncated — so a sixth would truncate them again. History lives at /patients/[id]/history, reached from the record's overflow menu.",
+      "ruling": "Self-resolved: the plan delegates the choice explicitly."
+    },
+    {
+      "id": 87,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-42"
+      ],
+      "status": "open",
+      "summary": "A recorded allergy has no date — frame 42 shows one ('2019')",
+      "reason": "Frame 42 dates the permanent medical fact: 'Penicillin allergy recorded — 2019'. The patient record stores allergies as encrypted free text with no timestamp and no author, so there is no year to show. The entry carries a null date and is pinned under 'ON RECORD' at the end of the timeline rather than being given a fabricated one — a wrong date on a clinical fact is worse than no date, because it invites reasoning about when the patient developed it.",
+      "openQuestion": "Should allergies become dated, authored records rather than a free-text column? That is a clinical data-model decision — it would let the timeline show when and by whom — and it needs your ruling before any schema change."
+    },
+    {
+      "id": 88,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-42"
+      ],
+      "status": "fixed",
+      "summary": "The seed recorded the same allergy in one place and not the other",
+      "reason": "Akhilesh carried medicalFlags ['PENICILLIN_ALLERGY'] but no allergiesEnc. The in-chair card reads flags and the history reads the encrypted field, so the demo asserted the patient was allergic on one screen and silent about it on another. Both now carry it.",
+      "fixedIn": "packages/db/prisma/seed.ts sets medicalFlags and allergiesEnc together."
+    },
+    {
+      "id": 89,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-39"
+      ],
+      "status": "fixed",
+      "summary": "Re-running the seed failed on the lab case's unique caseNumber",
+      "reason": "The new lab-case fixture cleaned up by treatmentPlanId, but the plan is recreated with a fresh id on every run, so the delete never matched the previous run's case and the second seed died on (clinicId, caseNumber). `pnpm db:seed` is the documented way back to a known demo; it has to survive being run twice.",
+      "fixedIn": "Deletes by caseNumber. Verified by running the seed twice in a row."
+    },
+    {
+      "id": 90,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-43"
+      ],
+      "status": "approved",
+      "summary": "The visit-record sheet needs FINDINGS and PROCEDURE prose that is not extracted",
+      "reason": "Frame 43 is a read-only record of one visit, and its body is two narrative sections — FINDINGS ('Deep caries distal 36, tenderness on percussion...') and PROCEDURE ('Access opening under LA, four canals located...'). ClinicalExtraction has one free-text field, `notes`, which is where dictated patient advice lands; there is no findings field and no procedure narrative. The rest of the sheet is buildable — audioDurationMs exists, bills and prescriptions are joinable, and Amend has its append-only ConsultationEdit path — but a visit record whose two clinical sections are empty is not the record the frame describes, and generating that prose is exactly what product rule 7 forbids.\n\nSitting rows on frame 39 therefore do not offer to open it: they render without a chevron rather than as buttons that lead somewhere disappointing.",
+      "openQuestion": "Same dependency as #52 — add `findings` and `procedureNarrative` to ClinicalExtraction and the clinical prompt. Recommend scheduling both with extraction work, where the prompt and its tests live, rather than inside a UI task.",
+      "ownerRuling": "2026-09-07 - OWNER RULING, verbatim: 'Build the fixture, defer the fields.' `findings` and `procedureNarrative` are NOT added to ClinicalExtraction and the clinical prompt is NOT changed as part of this UI migration - changing what the AI extracts has its own blast radius and needs its own clinical review. PaperBlock and the visit record render the sections that HAVE data and omit the sections that do not; they never generate prose to fill them (product rule 7). These frames are recorded rather than force-matched."
+    },
+    {
+      "id": 91,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-45"
+      ],
+      "status": "approved",
+      "summary": "CLINICAL: frame 45 LOCKS 'Share Rx PDF' while an allergy conflict is unresolved",
+      "reason": "Frame 45 greys the share button and captions it 'Locked while a conflict is unresolved'. That is a clinical hard block, and product rules 4 and 8 reserve those for you: the dentist is the final clinical decision maker, and a hard-block policy must come from an explicit clinical decision rather than from matching a frame.\n\nYou already ruled the equivalent question on the verification card (#53): Confirm stays available over an allergy conflict, the dentist may override, and the override is audited. The consistent answer here is that Share stays available.\n\nBut it is NOT obviously the same act, which is why I am not deciding it. Confirming a record files what happened. Sharing a prescription PDF hands the patient a document telling them to take a drug the record says they react to — the artefact leaves the clinic and outlives the conversation. A hard block is more defensible here than on Confirm.\n\nNOT IMPLEMENTED. Share remains available and the conflict is drawn loudly on the drug itself.",
+      "openQuestion": "Three options. (a) Consistent with #53: Share stays available, conflict shown loudly, override audited. (b) Hard block per the frame. (c) Middle: Share stays available but requires an explicit acknowledgement that is recorded, the way confirmedWithWarning already works. I recommend (c) — it keeps the dentist deciding while making the decision auditable on a document that leaves the building. Either (b) or (c) is a clinical-policy decision and needs your ruling.",
+      "ownerRuling": "2026-09-07 - OWNER RULING, verbatim: 'Share stays available, log it.' Share Rx PDF is NOT locked by an unresolved allergy conflict. This is consistent with ruling #53 on the verification card: an allergy warning is advisory, the dentist is the final clinical decision maker, and the override is audited. Sharing over an unresolved conflict is recorded as a share-with-warning audit event. Frame 45's greyed button and its 'Locked while a conflict is unresolved' caption are therefore NOT implemented; the conflict rail still renders prominently above the share control.",
+      "resolution": "Share control stays enabled. The conflict rail renders above it. Taking Share while a conflict is open emits an audited share-with-warning event, mirroring CONSULTATION_CONFIRMED_WITH_WARNING."
+    },
+    {
+      "id": 92,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-45"
+      ],
+      "status": "open",
+      "summary": "Frame 45's 'Swap' chip is an automatic drug substitution — forbidden by rule 6",
+      "reason": "The conflict row in frame 45 offers a pine 'Swap' chip beside 'Remove'. Swapping means naming a replacement drug, which product rule 6 forbids outright ('AI must not invent medication substitutions') and which #51 already records as having no knowledge base behind it. The row ships with 'Remove', which is the action the safety model actually recognises as resolving the conflict, and it says Remove so the doctor is never told the app chose a replacement.",
+      "openQuestion": "Same dependency as #51 — a substitution knowledge base with clinical sign-off."
+    },
+    {
+      "id": 93,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-44",
+        "v9-45"
+      ],
+      "status": "approved",
+      "summary": "Conflicts are shown only where the SERVER flagged them, never computed on the client",
+      "reason": "Frame 45 marks the offending medicine. The implementation renders exactly the warnings the safety layer returned, keyed to the drug they name. It does NOT match medicine names against the patient's allergies itself: doing so would mean asserting that amoxicillin is a penicillin — clinical class knowledge the app does not have (#51) — and product rule 7 forbids converting that uncertainty into clinical truth. A medicine typed by hand therefore carries no flag unless the server flagged it, which is honest about what the app actually knows.",
+      "ruling": "Self-resolved: rules 6 and 7 already decide it; nothing new is being chosen."
+    },
+    {
+      "id": 94,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "*"
+      ],
+      "summary": "GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log",
+      "reason": "2026-09-07 - OWNER RULING, verbatim: 'Decide non-clinical, log it.' Layout, copy, workflow and information-architecture decisions are the agent's to make during this migration rather than stalling it. Each such decision is recorded here as an APPROVED-DEVIATION carrying its reasoning, and the owner receives one review list at the end which they may reverse in whole or in part.\n\nUNCHANGED AND STILL BLOCKING: clinical decisions, privacy/RBAC decisions, anything touching PHI, removal of existing functionality, and clinical hard-block policy. Those classify the frame BLOCKED and wait for the owner, exactly as before. Product rules 1-8 in CLAUDE.md are not re-litigable under this authority.",
+      "status": "approved",
+      "ownerRuling": "Decide non-clinical, log it. Clinical, privacy/RBAC and PHI still block and wait."
+    },
+    {
+      "id": 95,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "*"
+      ],
+      "summary": "GATE C: a frame does not close until its screen actually works",
+      "reason": "2026-09-07 - OWNER DIRECTION, verbatim: 'in the end i want complete end to end working app.' Visual fidelity is necessary but not sufficient. On top of Gate A (nothing lost) and Gate B (matches the design), every frame must pass Gate C: the route is reachable through real navigation; every control on it is wired to a real endpoint or a real client action; the flow it belongs to can be completed end to end against the live API with seeded data; and there are no dead buttons, placeholder screens or TODO surfaces. A screen that photographs correctly but does nothing is NOT complete.",
+      "status": "approved"
+    },
+    {
+      "id": 96,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27"
+      ],
+      "summary": "The conflict line states the allergy and the class; it cannot state when it was recorded or the reaction",
+      "reason": "Frame 27's line reads 'Penicillin allergy — recorded 2019, reaction: rash'. The record stores an allergy as encrypted free text (Patient.allergiesEnc) plus a medicalFlags enum. There is no recorded-on date and no reaction field, so two thirds of that line has nothing behind it. Inventing them is exactly what product rule 7 forbids — turning uncertain information into clinical truth on screen.\n\nSo the line says what is actually known and why it matters: 'Allergy conflict: patient lists Penicillin. Amoxicillin is a penicillin. Verify before prescribing.' It is longer than the frame's and wraps to three lines rather than two. That cost is accepted: the frame's compactness comes from data the clinic never captured.\n\nIf the allergy model later gains a recorded-at and a reaction, this line should shorten to the frame's shape.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 97,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-28"
+      ],
+      "summary": "The resolved warning lands in the SAFETY banner, not inline on a swapped row",
+      "reason": "Frame 28 shows the resolution on the row itself: 'Azithromycin 500 — swapped for Amoxicillin · allergy-safe [Undo]'. That shape depends on deviation #51 — a swap the app deliberately does not perform, because product rule 6 forbids the AI inventing a medication substitution.\n\nResolving by REMOVAL leaves no row for the resolved warning to sit on. Dropping it there would break the card's stated invariant that a resolved warning re-renders with a check and is never silently removed — 'I dealt with that' must not look like 'nothing was ever raised'. So partitionSafety() routes it to the standalone SAFETY block, struck through with a check.\n\nThe consequence visible in the capture: medicine count reads 'Medicines · 1' where the frame reads 2, because the conflicting drug is gone rather than replaced.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 98,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28"
+      ],
+      "summary": "NEXT SITTING shows the date; the frame also shows a time and the procedure",
+      "reason": "The frame reads 'Thu 16 Jul · 10:00 · obturation'. What the extraction produces is a follow-up INTERVAL ('review next week') — afterDays — not a booked slot. There is no time because nothing has been scheduled yet, and no procedure name because the next sitting's procedure is not dictated.\n\nPrinting a plausible 10:00 would be a fabricated appointment a receptionist could act on. The tile shows the date it can derive and stays a link to the real booking flow, where a time is chosen against actual availability.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 99,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29"
+      ],
+      "summary": "The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw",
+      "reason": "Two additions the frames do not show, both retained under the Gate A rule that functionality is never removed for pixel fidelity:\n\n1. '+ Add medicine' — the doctor must be able to add a drug the dictation missed. Without it the only route is re-recording the whole consultation.\n2. The TOOTH tile carries the procedure ('RCT') beneath the number. The frame's tile shows the number alone; the tooth and what was done to it are read together everywhere else in this app.\n\nBoth are additive and neither displaces frame content.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 100,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28"
+      ],
+      "summary": "The prose region is empty, leaving vertical space the frames fill with FINDINGS and PROCEDURE",
+      "reason": "A visible consequence of ruling #52/#90 rather than a separate decision, recorded because it is what a reviewer sees first in the side-by-side: with no findings or procedure narrative extracted, the band between the medicine list and the CTA is blank, where the frames carry two paragraphs.\n\nThe sections are omitted rather than filled — PaperBlock renders what has data and never generates prose (product rule 7). The layout is not re-tuned to close the gap, because the gap is honest: it shows the record is thinner than the design assumed, and it will fill in on its own if the extraction fields are added later.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 101,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-27",
+        "v9-28",
+        "v9-29"
+      ],
+      "summary": "GATE C FIX: the medicine row was a <button> containing the Remove and Undo buttons",
+      "reason": "Found while driving frame 28's capture. MedicineRow wrapped its whole body in a <button> whenever it had an onClick, so the conflict's 'Remove' chip and the resolved row's 'Undo' were buttons nested inside a button. React logged it on every render ('In HTML, %s cannot be a descendant of <%s>').\n\nIt was not only invalid. A button's accessible name is the concatenation of its contents, so the row announced itself as 'Amoxicillin 500mg TID 5 days Allergy conflict: patient lists Penicillin … Remove'. A screen-reader user could not distinguish the row from the action inside it — and the capture driver could not either: getByRole('button', { name: /remove/i }) matched the ROW and clicked that instead, which is how it surfaced.\n\nThe row is now a div with a stretched hit-area button behind content that ignores pointer events; the real actions opt back in above it. Pixel-identical, correctly nested, and the row carries an explicit name of its own.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 102,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "A voiced allergy lands inside 'More details' instead of a prominent chip",
+      "reason": "Frame 36 puts the allergy in the flags row as a red 'Allergy: Penicillin' chip, beside Diabetes/BP/Thyroid — visible without scrolling or expanding anything.\n\nThe implementation captures it correctly: extractPatientIntake parses 'allergic to penicillin', the form writes it to the ALLERGIES field, and setMoreOpen(true) auto-expands the section so it is not silently hidden. But that section sits below the fold, so the most safety-critical fact the intake captured is the least visible thing on the screen, while six medical-flag chips the patient does NOT have occupy the prominent row.\n\nThis is a MUST-FIX rather than a deviation because the frame and product rule 2 agree: doctor-facing clinical surfaces must surface allergies prominently, and /patients/new is doctor-only. Implementing the frame here IS implementing the rule; no product decision is needed.\n\nFix: render voiced allergies as crit-toned chips in the FLAGS row, keeping the free-text ALLERGIES field in More details as the editable source of truth. Owned by Task 20.",
+      "status": "fixed",
+      "resolution": "Fixed 2026-09-08: voiced allergies render as crit chips in the form body, above FLAGS. The free-text ALLERGIES field under More details stays the editable source of truth; the chip is a readout, so the two cannot drift."
+    },
+    {
+      "id": 103,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "CHIEF COMPLAINT is a primary field in the frame and an expandable one in the app",
+      "reason": "Frame 36 shows CHIEF COMPLAINT as a first-class field between AGE & GENDER and MEDICAL FLAGS, filled and wearing the lime voice spine ('Pain on chewing, lower left'). The implementation puts it inside 'More details' alongside address and blood group.\n\nThe chief complaint is why the patient is here. It is the field the doctor reads first and the one the dictation is most likely to fill; grouping it with 'referred by' misreads its weight. Same root as #102 — the form's primary/secondary split does not match the frame's, and the frame's is right.\n\nOwned by Task 20, which owns frames 35 and 36.",
+      "status": "fixed",
+      "resolution": "Fixed 2026-09-08: CHIEF COMPLAINT is a primary field between AGE/GENDER and the flags, as the frame has it."
+    },
+    {
+      "id": 104,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "The patient code is generated and shown in the title, not as a short 'P-0413' chip",
+      "reason": "The frame shows a tidy 'P-0413' chip top-right and repeats it in the CTA ('Create patient · P-0413'). The app generates codes with a collision-resistant scheme and shows the real one — 'PT-PDFUHW' in this capture — in the header.\n\nThe frame's format implies a per-clinic sequential counter. That is a schema and concurrency decision (two receptionists creating patients at once must not both get P-0413), not a visual one, and the existing generator already solves it. Showing a prettier code than the record actually carries would mean the chip and the database disagree.\n\nRecorded rather than matched. If sequential per-clinic codes are wanted, that is its own task with its own uniqueness story.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 105,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "The dictation card carries a full-width CTA where the frame has a mic circle",
+      "reason": "The frame's 'Say the details' card ends in a compact lime mic circle. The implementation renders a full-width 'Speak patient details' pill beneath the example line.\n\nA bare mic circle reads as decoration next to an example sentence in quotes; in testing the labelled control is what makes it obvious the app is waiting to be spoken to, which is the whole premise of the product. The card is taller as a result and pushes the form down by roughly one field.\n\nKept deliberately. Decided under #94 as an interface decision, and reversible if the owner prefers the frame's restraint.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 106,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "AGE and GENDER keep their own labels where the frame uses one 'AGE & GENDER'",
+      "reason": "The frame labels the shared row once, 'AGE & GENDER'. The implementation keeps a label per field on the same row.\n\nThey are two separate inputs with separate validation and separate error slots — age can be invalid while gender is fine, and an error under a joint label cannot say which half it belongs to. The row grouping, which is what the frame is really doing, is matched.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 107,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-36"
+      ],
+      "summary": "FLAGS is a full picker; the frame shows only the flags that are set plus a '+'",
+      "reason": "Frame 36 shows three chips — Diabetes, BP, Thyroid — and a '+' to add more. That is a SUMMARY of what is set on an existing record.\n\nThis screen is the opposite situation: a form being filled for the first time, where the receptionist has to find the right flag rather than review chosen ones. Showing all six as a multi-select makes the vocabulary discoverable; a '+' hides it behind a tap and a second surface. Voice-extracted flags outside the standard six still render as pre-selected custom chips, so nothing dictated is lost either way.\n\nThe frame's treatment is the better one on a record being reviewed, and the patient-detail surfaces use it there.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 108,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "A doctor's More hub shows three module tiles; the frame draws four, including Billing",
+      "reason": "Frame 70 shows Lab, Messages, Inventory and Billing. The capture is a DOCTOR session and shows three: `/billing` is RECEPTIONIST/ADMIN in lib/rbac.ts, so `canAccess('/billing', role)` hides the tile.\n\nThis is the rule working, not a missing tile. Rendering a route the role cannot open leaks the shape of the permission model and hands the user a tile that 403s. The frame depicts a reception or admin view, where all four appear.\n\nThe module grid reflows from four tiles to three; nothing else moves.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 109,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-70"
+      ],
+      "summary": "Hub values are absent rather than zero while their query is loading or failed",
+      "reason": "Every chip on this hub — '1 doctor', '2 upcoming', '12', '1 request' — renders only when its query has answered with a non-zero value. A loading or failed query renders no chip at all.\n\nThe alternative is a chip that reads '0 doctors' for a moment and then corrects itself. A clinic always has at least one doctor, so zero is never a fact about the clinic; it is only ever a fact about the request, and printing it tells the reader something false about their own clinic.\n\nSo the frame's populated hub is what a loaded hub looks like, and an unloaded one is quieter than the frame rather than wrong.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 110,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-73",
+        "v9-46",
+        "v9-47"
+      ],
+      "summary": "DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct",
+      "reason": "`@@unique([doctorId, dayOfWeek, startTime, effectiveFrom])` looks like it prevents duplicate windows. It does not. `effectiveFrom` is nullable and means \"always\"; every row in the dev database has it null. Postgres treats NULLs as DISTINCT in a unique index, so two identical always-rows are not duplicates and the constraint has never applied to a single row.\n\nTwo consequences, one already seen:\n\n1. The seed used createMany({ skipDuplicates: true }) and believed itself idempotent. skipDuplicates only skips what the index calls a duplicate, so every run appended six more windows. The dev clinic reached 27 identical windows per weekday and the availability screen rendered as an unreadable wall of chips — which is how this was found.\n2. The APPLICATION has the same hole: POST /doctors/:id/availability calls create() with no guard, so a receptionist who taps Add twice gets two identical windows, and the booking engine then reads a doctor as doubly available.\n\nThe seed is fixed by upserting on a deterministic id (verified: two consecutive runs leave six rows). That works around it for seeded data only. The constraint itself still needs correcting so the application cannot create duplicates either.\n\nPostgres is 16, so the index can express this directly:\n\n  DELETE FROM \"DoctorAvailability\" a USING \"DoctorAvailability\" b\n   WHERE a.\"doctorId\" = b.\"doctorId\" AND a.\"dayOfWeek\" = b.\"dayOfWeek\"\n     AND a.\"startTime\" = b.\"startTime\"\n     AND a.\"effectiveFrom\" IS NOT DISTINCT FROM b.\"effectiveFrom\"\n     AND a.ctid > b.ctid;\n  DROP INDEX \"DoctorAvailability_doctorId_dayOfWeek_startTime_effectiveFrom_key\";\n  CREATE UNIQUE INDEX \"DoctorAvailability_doctorId_dayOfWeek_startTime_effectiveFrom_key\"\n    ON \"DoctorAvailability\" (\"doctorId\", \"dayOfWeek\", \"startTime\", \"effectiveFrom\") NULLS NOT DISTINCT;\n\nPrisma cannot express NULLS NOT DISTINCT in schema.prisma, so this wants a hand-written migration plus a note on the model, and it deserves its own task rather than riding along inside a UI migration. Worth auditing the other nullable columns that appear in @@unique lists for the same flaw.",
+      "status": "fixed",
+      "resolution": "Fixed 2026-09-09 by migration 20260909090000_availability_unique_nulls_not_distinct: existing duplicates collapsed, then the unique index rebuilt with NULLS NOT DISTINCT so two identical always-rows finally count as duplicates. Verified against the live database — an INSERT of an existing (doctorId, dayOfWeek, startTime, null) row is now rejected. POST /availability/doctor/:id answers the violation with 409 AVAILABILITY_DUPLICATE rather than a 500, and four tests cover it, including that a second window at a DIFFERENT time on the same day is still allowed — the frame's own morning/afternoon split depends on that. schema.prisma carries a warning that regenerating the index from schema alone silently drops the NULLS NOT DISTINCT clause."
+    },
+    {
+      "id": 111,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-73"
+      ],
+      "summary": "The doctor switcher appears only when there is more than one doctor",
+      "reason": "Frame 73 shows a two-tab switcher, Dr. Priya / Dr. Arjun. The seeded clinic has one dentist, so the implementation renders her name as a heading instead: a lone selected tab is a control that cannot be operated, and it invites the reader to look for the other one.\n\nThe switcher is built and renders as the frame draws it as soon as a clinic has a second doctor.\n\nThe hours themselves also differ from the frame — one 09:00–18:00 window per weekday against the frame's split 09:30–13:00 / 14:00–20:30 and its short Saturday. That is seed data, not design: the row renders however many windows a day has.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 112,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-74"
+      ],
+      "summary": "The booking-conflict note says what the app does, which is less than the frame promises",
+      "reason": "Frame 74's note reads: 'A date with existing bookings can't be blocked — Odovox shows the count and offers to move them first.'\n\nThe first half is true and enforced: POST /day-off rejects a date carrying appointments with DAY_OFF_HAS_APPOINTMENTS and the count, which the page surfaces as 'N appointments already booked — move them first'. The second half is not: there is no affordance that moves them. Offering one would need a bulk-reschedule flow that does not exist.\n\nSo the note says 'Odovox names the count so those appointments get moved first'. Copy that promises a button the screen does not have is worse than copy that is shorter than the frame's, particularly on a screen whose whole job is to stop someone closing a day out from under a booked patient.\n\nIf the bulk-reschedule flow is built, this copy should return to the frame's wording.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 113,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-74"
+      ],
+      "summary": "The scope selector names the doctors instead of offering a generic 'A doctor'",
+      "reason": "The implementation previously offered 'Whole clinic | A doctor', where choosing the second revealed a dropdown to then pick the person — a category step in front of a choice that is already just a short list of names.\n\nIt now lists 'Whole clinic' plus one tab per doctor, which is what frame 74 draws (Whole clinic / Dr. Priya / Dr. Arjun) and one decision rather than two. The row scrolls horizontally for a clinic with several dentists.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 114,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-72"
+      ],
+      "summary": "The switches name intents; the API's Meta template keys are grouped behind them",
+      "reason": "Frame 72's 'Automatic messages' has four switches with human names. The implementation had six rows carrying raw template keys — `appointment_reminder_1h`, `outstanding_balance_reminder` — which are Meta's identifiers, not decisions a dentist makes. Deciding whether to chase patients for money should not require knowing the chase is called `outstanding_balance_reminder`, or that 'remind them about the appointment' is two approved templates that both have to be on.\n\nGrouping is by key prefix (lib/whatsapp/template-groups.ts, 14 tests) so a newly approved template lands in the right group without a code change. A group is ON when any member is on, and one tap sets them all — which is what a single switch above several templates already appeared to promise.\n\nOne difference from the frame's set: it shows 'Review requests' and this clinic has no such approved template, while it does have `prescription_ready`, which the frame lacks. The groups follow the templates that exist. Anything unrecognised keeps its own row rather than vanishing — a message going to patients that nobody can see on this screen is the failure worth avoiding.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 115,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-72"
+      ],
+      "summary": "PRIVACY: the business number is masked and the provider name is gone",
+      "reason": "The card printed the full WhatsApp Business number and a 'Provider: mock' line. Frame 72 masks the number ('+91 98··· ··00') and shows no provider, and it is right on both.\n\nThe card's question is 'are we connected', not 'what is the number'. This screen is readable by any clinic role and is routinely on display when someone is being shown around, and the number identifies the clinic's messaging account. It now reads 'Business · +91 80····0000'.\n\nThe provider is a deployment detail that tells a dentist nothing and actively misleads when it reads 'mock' — which looks like a fault on a screen whose whole job is to say the integration is healthy.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 116,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-72"
+      ],
+      "summary": "Monthly spend shows ₹0 against the frame's ₹620 of ₹1,000, and the cap footnote is omitted",
+      "reason": "Two content differences on the spend section.\n\nThe numbers are seed data: no conversations have been billed, so the total is ₹0 and the six-month chart is empty. The chart now states that in words rather than drawing bars — and it renders a fixed six-month axis regardless, because plotting only the months that exist gave a first-month clinic ONE bar stretched across the full width, a single data point drawn as though it were a trend (lastSixMonths, 4 tests).\n\nThe frame's footnote — 'At the cap, sends pause and a banner appears on Today' — is NOT reproduced. A budget cap and a warning threshold exist, but whether reaching the cap actually halts sending and raises a banner on Today is not something this screen can assert from what is implemented, and copy describing a safety behaviour that may not happen is worse than no copy on a screen about spending real money. It should return once that path is verified end to end.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 117,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-75"
+      ],
+      "summary": "Archive moved from a per-row icon into the template editor",
+      "reason": "The list carried a pencil and an archive icon beside every template. Frame 75 has neither — a name, its chips and a chevron — because this screen is a PICKER before it is a manager: the question is 'which bundle', and four templates used to fill the whole screen.\n\nRebuilt to the frame, tapping a row opens the editor, which is what the chevron implies. Archive follows it there rather than being removed: it sits below Save as a quiet text action. Archiving is rare and feels destructive, and an icon permanently beside every name invited a mis-tap on the screen people use most often to just choose one.\n\nGate A holds — nothing was removed, it moved one tap deeper, behind the same permission check (`canManage && mine`) the icons had.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 118,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-75"
+      ],
+      "summary": "Chips read the clinic's own tags where the frame shows a curated set",
+      "reason": "The frame's rows carry '3 meds' plus a category ('RCT', 'Pedo · wt-based') and an age band ('Adult'). The implementation shows the medicine count plus the template's first two actual tags — 'antibiotic', 'post-op', 'periodontal'.\n\nTags are free text the clinic writes, so there is no category or age-band field to render, and inventing one would mean classifying a dentist's own templates on their behalf. Two tags, because a third pushed the row to wrap and the frame's whole point here is a list that scans in one pass.\n\nThe footnote is also shortened: the frame cites the prescription sheet by frame number ('the prescription sheet (23)'), which is spec shorthand, not something to show a user.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 119,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-67"
+      ],
+      "summary": "Add stays a floating FAB where the frame puts a + in the header",
+      "reason": "Frame 67 draws a lime + at the top right. The implementation keeps the FabMenu at the bottom right, which is this app's convention everywhere else — and frame 57 draws the lab's + as its own bottom dial, so the frames are not consistent with each other on this point either.\n\nMoving it on this one screen would make inventory the odd surface. The cost is that the FAB floats over the last visible row until you scroll, which the frame's placement avoids; that is the trade being made deliberately rather than by omission.\n\nWhat DID change is what the + holds. The three voice actions were its first three entries — two taps from the screen — while New item and New category sat below them. On a product whose thesis is that the dentist speaks instead of typing, that is backwards. The voice actions are now chips under the title, as the frame has them, and the FAB keeps the typed paths.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 120,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-67"
+      ],
+      "summary": "'Reorder all' has no supplier-ordering concept behind it",
+      "reason": "The frame puts 'Reorder all' beside the Low stock heading. There is nothing for it to do: `reorderLevel` is a THRESHOLD that marks an item low, and the only related endpoint is POST /inventory/items/:id/purchase, which RECORDS stock arriving. Nothing in the schema represents a purchase order, a supplier, or an outbound request.\n\nSo the control is omitted rather than wired to something that resembles it. Gate C forbids a button that does nothing, and 'Reorder all' silently recording a purchase that never happened would be worse than absent — it would inflate stock counts for items the clinic has not received.\n\nBuilding it means deciding what reordering IS for this product: an internal shopping list, a WhatsApp message to a supplier, or a tracked purchase order. That is a product decision, and it belongs to whoever owns supplier workflow rather than to a visual migration.",
+      "status": "open"
+    },
+    {
+      "id": 121,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-67"
+      ],
+      "summary": "Rows keep their stock-tone spine and the screen keeps search and category filters",
+      "reason": "The frame's item rows sit flat inside one card. The implementation's rows are separate cards carrying a coloured left spine — crit when below the reorder level, warn when expiring, sage otherwise — so the state of the stock is legible without reading the number. The frame conveys the same thing with a peach badge on low-stock rows only; the spine also covers expiry, which the frame shows as a separate crit chip.\n\nThe screen also keeps a search field and category filter chips the frame does not draw. A seeded clinic has 7 items and the frame's has 64; at 64 the list is not scannable without them, and removing working filters for pixel fidelity is exactly what Gate A forbids.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 122,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-68"
+      ],
+      "summary": "The second tile falls back to the category when an item has no price, vendor or expiry",
+      "reason": "Frame 68's right-hand tile reads '₹ / STRIP · VENDOR · ₹42 · MedPlus · Exp Mar 2027'. That is an item with a purchase history. A composite resin nobody has recorded a purchase for has none of those three facts, and rendering the tile with '—' in it restates the emptiness in a bigger font than the old list did.\n\nSo the tile shows whichever of price, vendor and expiry exist, and when none do it shows the category instead — a fact every item has, and the one the row above it was already carrying. The tile is never empty and never lies.\n\nThe replaced DETAILS list rendered five key/value rows regardless, most of them '—' on a real item, which made an ordinary item look unrecorded rather than uncomplicated.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 123,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-68"
+      ],
+      "summary": "SKU and batch survive the removed DETAILS list as one conditional line",
+      "reason": "Frame 68 shows neither. The DETAILS list this replaced showed both, so dropping the list wholesale would have taken them with it — for an item that actually HAS a SKU that is losing a fact, not tidying one away, and Gate A does not allow it.\n\nThey now render as a single quiet line under the tiles, and only when present. Absent on the seeded items, which is why the capture does not show it.",
+      "status": "approved",
+      "decidedUnder": 94
+    }
+  ],
+  "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
+  "rule": "EVERY COMPLETED TASK LEAVES ZERO OPEN PRODUCT-DECISION ITEMS FOR THAT TASK. Open decisions are raised and resolved within the task that surfaced them. They are never carried forward: a pile of 20-30 unresolved deviations at the end is a pile nobody can remember the reason for."
+}

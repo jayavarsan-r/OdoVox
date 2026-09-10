@@ -16,13 +16,28 @@ const page = readFileSync(join(webRoot, 'app', '(app)', 'consult', '[id]', 'page
 const card = readFileSync(join(webRoot, 'components', 'consult', 'patient-context-card.tsx'), 'utf8');
 
 describe('consult context card — no duplicate name', () => {
-  it('page header shows a static "Consultation" title, not the patient name', () => {
-    expect(page).not.toMatch(/context\?\.patient\.name/);
+  it('the generic header is a static title, never the patient name', () => {
     expect(page).toMatch(/>Consultation</);
   });
 
   it('the card is the single place rendering the patient name', () => {
     expect(card).toMatch(/patient\.name/);
+  });
+
+  it('exactly one identity surface is mounted per consult state', () => {
+    // The original rule was "the name renders once", enforced by banning the identifier
+    // from the page. That stopped working once the page legitimately grew two more
+    // identity surfaces — frames 23-26's recording strip, and the name PASSED (not
+    // rendered) to frame 27's verification header. Banning the identifier would now
+    // forbid correct code, so the rule is enforced where it actually lives: the three
+    // surfaces' conditions must be mutually exclusive.
+    //
+    //   idle / ready        → PatientContextCard
+    //   recording…failed    → the page's own patient strip
+    //   verify              → the verification card's header, and nothing else
+    expect(page).toMatch(/const showsPatientStrip = recording \|\| isPipeline \|\| failed;/);
+    expect(page).toMatch(/\{context && isRecorder && !recording \?/);
+    expect(page).not.toMatch(/isVerify[\s\S]{0,80}<PatientContextCard/);
   });
 });
 

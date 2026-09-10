@@ -5,19 +5,19 @@
  * Unit-tested under node. See docs/design-system.md §6 + Phase 2.5 §4.6.
  */
 
-import { ClinicCreateInput } from '@odovox/types';
+import { ClinicCreateInput } from "@odovox/types";
 import type {
   ClinicCreateInput as ClinicCreateInputType,
   DoctorProfileInput,
-} from '@odovox/types';
+} from "@odovox/types";
 
 export const WIZARD_STEPS = [
-  { id: 'basics', label: 'Clinic' },
-  { id: 'hours', label: 'Hours' },
-  { id: 'profile', label: 'Profile' },
+  { id: "basics", label: "Clinic" },
+  { id: "hours", label: "Hours" },
+  { id: "profile", label: "Profile" },
 ] as const;
 
-export type WizardStepId = (typeof WIZARD_STEPS)[number]['id'];
+export type WizardStepId = (typeof WIZARD_STEPS)[number]["id"];
 
 /** Step 1 — clinic basics. */
 export const stepBasicsSchema = ClinicCreateInput.pick({
@@ -49,9 +49,67 @@ export const stepProfileSchema = ClinicCreateInput.pick({
 });
 
 // Inferred value types without importing `zod` directly (not resolvable in the web app).
-export type StepBasicsValues = (typeof stepBasicsSchema)['_output'];
-export type StepHoursValues = (typeof stepHoursSchema)['_output'];
-export type StepProfileValues = (typeof stepProfileSchema)['_output'];
+export type StepBasicsValues = (typeof stepBasicsSchema)["_output"];
+export type StepHoursValues = (typeof stepHoursSchema)["_output"];
+export type StepProfileValues = (typeof stepProfileSchema)["_output"];
+
+/**
+ * Step 1, asked ONE QUESTION AT A TIME — frame 08's model.
+ *
+ * The frame collapses clinic creation to a single conversational screen and labels its
+ * CTA with the next question ("Next · City"). We keep all three steps and every field
+ * (Global Constraint 1), so the frame's PACING is reproduced inside step 1 instead: each
+ * entry below is one screen, and the CTA names where it goes.
+ *
+ * `fields` is the contract. The test asserts every key of `stepBasicsSchema` appears here
+ * exactly once, so a question cannot be added, split or reordered in a way that silently
+ * drops a field the API requires.
+ */
+export const BASICS_QUESTIONS = [
+  {
+    id: "name",
+    fields: ["name"],
+    question: "What's your clinic called?",
+    hint: "Appears on prescriptions and WhatsApp messages.",
+    next: "Contact",
+  },
+  {
+    id: "contact",
+    fields: ["contactPhone"],
+    question: "What's the clinic's number?",
+    hint: "Patients see this on prescriptions and reminders.",
+    next: "Address",
+  },
+  {
+    id: "address",
+    fields: ["addressLine"],
+    question: "Where is the clinic?",
+    hint: "Street and area — this prints on every prescription.",
+    next: "City",
+  },
+  {
+    id: "city",
+    fields: ["city", "state"],
+    question: "Which city?",
+    hint: "Used for your clinic address and local defaults.",
+    next: "Pincode",
+  },
+  {
+    id: "pincode",
+    fields: ["pincode", "gstNumber"],
+    question: "What's the pincode?",
+    hint: "GST is optional — add it if you invoice businesses.",
+    next: "Hours",
+  },
+] as const;
+
+export type BasicsQuestion = (typeof BASICS_QUESTIONS)[number];
+export type BasicsField = BasicsQuestion["fields"][number];
+
+/** The CTA label for a question: the frame never says a bare "Continue". */
+export function basicsCtaLabel(index: number): string {
+  return `Next · ${BASICS_QUESTIONS[index]!.next}`;
+}
 
 const STEP_SCHEMA = {
   basics: stepBasicsSchema,
@@ -60,9 +118,9 @@ const STEP_SCHEMA = {
 } as const;
 
 const STEP_ROUTE: Record<WizardStepId, string> = {
-  basics: '/clinic-create/step-1-basics',
-  hours: '/clinic-create/step-2-hours',
-  profile: '/clinic-create/step-3-profile',
+  basics: "/clinic-create/step-1-basics",
+  hours: "/clinic-create/step-2-hours",
+  profile: "/clinic-create/step-3-profile",
 };
 
 export function stepRoute(step: WizardStepId): string {

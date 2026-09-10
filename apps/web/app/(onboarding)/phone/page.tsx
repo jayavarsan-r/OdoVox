@@ -1,25 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { IndianPhone } from '@odovox/types';
-import { MobileShell } from '@/components/mobile-shell';
-import { AnimatedPage } from '@/components/animated-page';
-import { ToothMark, Wordmark } from '@/components/ui/logo';
-import { DecorativeFooter } from '@/components/ds';
-import { MascotMoment } from '@/components/illustrations';
-import { Button } from '@/components/ui/button';
-import { PhoneInput } from '@/components/forms/PhoneInput';
-import { FormField } from '@/components/forms/FormField';
-import { api } from '@/lib/api-client';
-import { useToast } from '@/lib/toast';
-import { useOnboarding } from '@/lib/onboarding-store';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { IndianPhone } from "@odovox/types";
+import { MobileShell } from "@/components/mobile-shell";
+import { AnimatedPage } from "@/components/animated-page";
+import { IconCircle } from "@/components/ds";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PhoneInput } from "@/components/forms/PhoneInput";
+import { NumericKeypad } from "@/components/forms/NumericKeypad";
+import { api } from "@/lib/api-client";
+import { useToast } from "@/lib/toast";
+import { useOnboarding } from "@/lib/onboarding-store";
 
 export default function PhonePage() {
   const router = useRouter();
   const toast = useToast();
   const setPhone = useOnboarding((s) => s.setPhone);
-  const [digits, setDigits] = useState('');
+  const [digits, setDigits] = useState("");
   const [loading, setLoading] = useState(false);
 
   const valid = IndianPhone.safeParse(digits).success;
@@ -28,9 +27,13 @@ export default function PhonePage() {
     if (!valid || loading) return;
     setLoading(true);
     try {
-      await api.post('/auth/otp/request', { phone: digits }, { skipAuth: true });
+      await api.post(
+        "/auth/otp/request",
+        { phone: digits },
+        { skipAuth: true },
+      );
       setPhone(digits);
-      router.push('/otp');
+      router.push("/otp");
     } catch (err) {
       toast.apiError(err);
     } finally {
@@ -38,51 +41,84 @@ export default function PhonePage() {
     }
   };
 
+  /**
+   * Frame 03. The `.ob` onboarding layout: back chevron, a 27px question, the 56px
+   * `.field` with the +91 prefix, then the CTA. All auth logic, validation and
+   * rate-limit handling are untouched — presentation only.
+   *
+   * The keypad is built (MUST-FIX #7). It only produces digits; `IndianPhone.safeParse`
+   * still gates the CTA and the rate-limit handling is where it always was.
+   *
+   * ONE THING THE FRAME HAS THAT THIS PAGE DOES NOT: the `.mic-a` affordance.
+   * `useDictation` presigns an upload and calls an AUTHENTICATED transcription endpoint,
+   * and this screen is pre-login by definition. Wiring it needs an unauthenticated
+   * dictation route that does not exist — so the mic would be a button that does nothing,
+   * which is worse than its absence. `PhoneInput` carries the `onDictate` prop ready for
+   * frames where the user IS signed in.
+   */
   return (
-    <MobileShell className="bg-paper px-7">
-      <AnimatedPage className="flex flex-1 flex-col">
-        {/* Centered logo with glow + Odo peeking to the right */}
-        <div className="flex flex-col items-center pt-20">
-          <div className="relative flex size-16 items-center justify-center">
-            <span className="absolute inset-0 rounded-pill bg-lime-soft blur-xl" aria-hidden />
-            <span className="relative flex size-14 items-center justify-center rounded-pill bg-ink text-lime">
-              <ToothMark className="size-8" />
-            </span>
-            <div className="absolute -right-12 -top-2 rotate-[8deg]">
-              <MascotMoment pose="smile" size="sm" animation="float" />
-            </div>
-          </div>
-          <Wordmark className="mt-3 text-[28px]" />
+    <MobileShell className="bg-paper">
+      <AnimatedPage className="flex flex-1 flex-col px-gutter-onboarding">
+        <div className="flex pt-0.5">
+          <IconCircle size="md" aria-label="Back" onClick={() => router.back()}>
+            <ChevronLeft />
+          </IconCircle>
         </div>
 
-        <div className="mt-12 flex flex-1 flex-col">
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome to Odovox</h1>
-          <p className="mt-1.5 text-base text-muted-foreground">
-            Enter your mobile number to sign in or create an account.
+        <div className="mt-6">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
+            What&apos;s your number?
+          </h1>
+          <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+            We&apos;ll send a 6-digit code. No passwords, ever.
           </p>
+        </div>
 
-          <form
-            className="mt-8 space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void submit();
-            }}
+        <form
+          className="mt-5 flex flex-1 flex-col"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          {/* No visible label: frame 03 goes question -> field. The input carries its
+              own aria-label, so the accessible name survives the label's removal. */}
+          <PhoneInput
+            id="phone"
+            value={digits}
+            onChange={setDigits}
+            invalid={false}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            block
+            className="mt-4"
+            disabled={!valid}
+            loading={loading}
           >
-            <FormField label="Mobile number" htmlFor="phone">
-              <PhoneInput id="phone" value={digits} onChange={setDigits} autoFocus invalid={false} />
-            </FormField>
-            <Button type="submit" size="lg" className="w-full" disabled={!valid} loading={loading}>
-              Continue
-            </Button>
-          </form>
+            Send code
+          </Button>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            By continuing you agree to our{' '}
+          {/* Frame 03's summoned keypad. (MUST-FIX #7.) It only produces digits — every
+              validation rule and the rate-limit handling stay exactly where they were,
+              and the native keyboard is still available to anyone who prefers it. */}
+          <NumericKeypad
+            className="mt-auto"
+            onDigit={(d) => setDigits((v) => (v + d).slice(0, 10))}
+            onBackspace={() => setDigits((v) => v.slice(0, -1))}
+          />
+
+          {/* APPROVED-DEVIATION #21: the frame has no terms line, but legal copy is not
+              removed for fidelity. Styled in the v9 system — 12px/600 on --pine-3. */}
+          <p className="pb-3 text-center text-xs font-semibold text-pine-3">
+            By continuing you agree to our{" "}
             <span className="underline underline-offset-2">terms</span>.
           </p>
-        </div>
+        </form>
       </AnimatedPage>
-      <DecorativeFooter variant="waveform" className="pb-6" />
+      {/* The decorative waveform footer is gone: frame 03 has no such element, and it
+          occupied the third of the canvas the frame gives to the keypad. */}
     </MobileShell>
   );
 }

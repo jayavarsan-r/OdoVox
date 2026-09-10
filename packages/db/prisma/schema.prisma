@@ -910,7 +910,13 @@ model DoctorAvailability {
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   doctor User   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
-  @@unique([doctorId, dayOfWeek, startTime, effectiveFrom]) // prevent dup entries
+  // The index behind this is NULLS NOT DISTINCT — see migration
+  // 20260909090000_availability_unique_nulls_not_distinct. Prisma cannot express that here,
+  // and without it this constraint does nothing: `effectiveFrom` is null for "always"
+  // availability, and Postgres otherwise treats those nulls as distinct, so duplicate
+  // windows were never duplicates to the index. Do not regenerate this index from schema
+  // alone — it will silently revert to NULLS DISTINCT.
+  @@unique([doctorId, dayOfWeek, startTime, effectiveFrom])
   @@index([clinicId, doctorId, dayOfWeek])
 }
 

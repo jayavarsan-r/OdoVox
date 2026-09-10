@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import { ClinicalExtraction } from '@odovox/types';
+import { verificationSource } from './verification-sources';
 
 /**
  * Phase 9.6 Issue 5: the "{name} · {age} · token" identity block must come from the patient DB
@@ -11,7 +12,7 @@ import { ClinicalExtraction } from '@odovox/types';
  */
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const card = readFileSync(join(webRoot, 'components', 'voice', 'verification-card.tsx'), 'utf8');
+const card = verificationSource();
 const contextCard = readFileSync(join(webRoot, 'components', 'consult', 'patient-context-card.tsx'), 'utf8');
 
 describe('verification card — identity renders from the patient record only', () => {

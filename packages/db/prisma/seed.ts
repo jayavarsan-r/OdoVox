@@ -96,7 +96,9 @@ async function main() {
   });
 
   await prisma.clinicMember.upsert({
-    where: { clinicId_userId: { clinicId: clinic.id, userId: receptionist.id } },
+    where: {
+      clinicId_userId: { clinicId: clinic.id, userId: receptionist.id },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
@@ -106,28 +108,100 @@ async function main() {
     },
   });
 
-  // --- Doctor availability (Phase 6) — Mon-Sat 09:00-18:00, Sunday off. Idempotent re-seed. ---
-  await prisma.doctorAvailability.createMany({
-    data: [1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
-      clinicId: clinic.id,
-      doctorId: doctor.id,
-      dayOfWeek,
-      startTime: '09:00',
-      endTime: '18:00',
-    })),
-    skipDuplicates: true,
-  });
+  // --- Doctor availability (Phase 6) — Mon-Sat 09:00-18:00, Sunday off. -----
+  //
+  // Upsert on a deterministic id, NOT createMany({ skipDuplicates: true }).
+  //
+  // `skipDuplicates` only skips rows Postgres considers duplicates, and the model's
+  // `@@unique([doctorId, dayOfWeek, startTime, effectiveFrom])` never fires for these:
+  // `effectiveFrom` is null for "always" availability, and Postgres treats NULLs as
+  // DISTINCT, so two identical always-rows are not duplicates to the index. The claim of
+  // idempotence was therefore wrong, silently — every seed run appended six more rows.
+  // The dev clinic had reached 27 windows per weekday, which rendered the availability
+  // screen as an unreadable wall of identical chips.
+  //
+  // Deterministic ids make the re-seed genuinely idempotent regardless of the index. The
+  // underlying constraint still needs fixing so the APPLICATION cannot create duplicates
+  // either — recorded as a MUST-FIX with the migration SQL.
+  for (const dayOfWeek of [1, 2, 3, 4, 5, 6]) {
+    await prisma.doctorAvailability.upsert({
+      where: { id: `seed-avail-${clinic.id}-${doctor.id}-${dayOfWeek}` },
+      update: { startTime: '09:00', endTime: '18:00' },
+      create: {
+        id: `seed-avail-${clinic.id}-${doctor.id}-${dayOfWeek}`,
+        clinicId: clinic.id,
+        doctorId: doctor.id,
+        dayOfWeek,
+        startTime: '09:00',
+        endTime: '18:00',
+      },
+    });
+  }
+
+  // --- Days off — one clinic-wide closure and one doctor's leave ------------
+  //
+  // Frame 74's "Upcoming" list needs both scopes to be judged: a clinic closure and a single
+  // doctor's leave render differently (different icon, different chip), and an empty list
+  // shows neither. Dated relative to the seed run so they never fall into the past and
+  // quietly vanish from a list that only shows what is ahead.
+  const inDays = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  const seededDayOffs: {
+    suffix: string;
+    date: Date;
+    scope: 'CLINIC' | 'DOCTOR';
+    doctorId: string | null;
+    reason: string;
+  }[] = [
+    {
+      suffix: 'closure',
+      date: inDays(21),
+      scope: 'CLINIC',
+      doctorId: null,
+      reason: 'Independence Day',
+    },
+    { suffix: 'leave', date: inDays(9), scope: 'DOCTOR', doctorId: doctor.id, reason: 'Personal' },
+  ];
+  for (const d of seededDayOffs) {
+    await prisma.dayOff.upsert({
+      where: { id: `seed-dayoff-${clinic.id}-${d.suffix}` },
+      update: { date: d.date, reason: d.reason },
+      create: {
+        id: `seed-dayoff-${clinic.id}-${d.suffix}`,
+        clinicId: clinic.id,
+        date: d.date,
+        scope: d.scope,
+        doctorId: d.doctorId,
+        reason: d.reason,
+        createdById: doctor.id,
+      },
+    });
+  }
 
   // --- Rooms (stable ids so a re-seed is idempotent + referenceable below) --
   const room1 = await prisma.room.upsert({
     where: { id: `seed-room-${clinic.id}-1` },
     update: {},
-    create: { id: `seed-room-${clinic.id}-1`, clinicId: clinic.id, name: 'Room 1', number: '1' },
+    create: {
+      id: `seed-room-${clinic.id}-1`,
+      clinicId: clinic.id,
+      name: 'Room 1',
+      number: '1',
+    },
   });
   await prisma.room.upsert({
     where: { id: `seed-room-${clinic.id}-2` },
     update: {},
-    create: { id: `seed-room-${clinic.id}-2`, clinicId: clinic.id, name: 'Room 2', number: '2' },
+    create: {
+      id: `seed-room-${clinic.id}-2`,
+      clinicId: clinic.id,
+      name: 'Room 2',
+      number: '2',
+    },
   });
 
   // --- Patients (with encrypted PHI) --------------------------------------
@@ -168,11 +242,32 @@ async function main() {
       allergies: 'None known',
       medicalFlags: ['DIABETES'],
     },
+    {
+      // The long-prescription demo. The mock STT has a seeded recording keyed to this
+      // patientCode that dictates seven medicines, so the prescription list can be built
+      // against and reviewed at a realistic length — reached by recording a consultation for
+      // them, exactly as any other. No allergy: the length is the only thing being exercised.
+      patientCode: 'PT-0005',
+      name: 'Suresh Iyer',
+      phone: '9845012345',
+      age: 52,
+      gender: 'MALE' as const,
+      bloodGroup: 'AB+',
+      address: 'Jayanagar, Bengaluru',
+      medicalHistory: 'Acid reflux.',
+      allergies: 'None known',
+      medicalFlags: [],
+    },
   ];
 
   for (const p of patientSeed) {
     await prisma.patient.upsert({
-      where: { clinicId_patientCode: { clinicId: clinic.id, patientCode: p.patientCode } },
+      where: {
+        clinicId_patientCode: {
+          clinicId: clinic.id,
+          patientCode: p.patientCode,
+        },
+      },
       update: {},
       create: {
         clinicId: clinic.id,
@@ -216,7 +311,9 @@ async function main() {
     },
   });
 
-  const labCaseCount = await prisma.labCase.count({ where: { clinicId: clinic.id } });
+  const labCaseCount = await prisma.labCase.count({
+    where: { clinicId: clinic.id },
+  });
   if (labCaseCount === 0) {
     const now = Date.now();
     // 1) DRAFT — impression just taken, not sent.
@@ -289,8 +386,18 @@ async function main() {
   // --- Inventory categories + items + movements (Phase 7) ------------------
   const catDefs = [
     { key: 'consumables', name: 'Consumables', iconName: 'box', sortOrder: 0 },
-    { key: 'anaesthetics', name: 'Anaesthetics', iconName: 'syringe', sortOrder: 1 },
-    { key: 'instruments', name: 'Instruments', iconName: 'wrench', sortOrder: 2 },
+    {
+      key: 'anaesthetics',
+      name: 'Anaesthetics',
+      iconName: 'syringe',
+      sortOrder: 1,
+    },
+    {
+      key: 'instruments',
+      name: 'Instruments',
+      iconName: 'wrench',
+      sortOrder: 2,
+    },
     { key: 'xray', name: 'X-ray', iconName: 'scan', sortOrder: 3 },
   ];
   const catByKey: Record<string, string> = {};
@@ -312,14 +419,71 @@ async function main() {
 
   const EXP_2026 = new Date('2026-12-31T00:00:00.000Z');
   const itemDefs = [
-    { key: 'ligno', name: 'Lignocaine 2% carpule', cat: 'anaesthetics', unit: 'carpule', stock: 20, reorder: 10, expiry: EXP_2026 },
-    { key: 'gloves', name: 'Latex gloves L', cat: 'consumables', unit: 'piece', stock: 200, reorder: 100 },
-    { key: 'composite', name: 'Composite resin A2', cat: 'consumables', unit: 'piece', stock: 2, reorder: 5 }, // LOW STOCK demo
-    { key: 'needles', name: 'Disposable needles 30G', cat: 'consumables', unit: 'piece', stock: 50, reorder: 30 },
-    { key: 'suction', name: 'Suction tips', cat: 'consumables', unit: 'piece', stock: 300, reorder: 100 },
-    { key: 'burs', name: 'Dental burs assorted', cat: 'instruments', unit: 'piece', stock: 25, reorder: 10 },
-    { key: 'probe', name: 'Periodontal probe', cat: 'instruments', unit: 'piece', stock: 5, reorder: 3 },
-    { key: 'films', name: 'X-ray films size 2', cat: 'xray', unit: 'piece', stock: 100, reorder: 50 },
+    {
+      key: 'ligno',
+      name: 'Lignocaine 2% carpule',
+      cat: 'anaesthetics',
+      unit: 'carpule',
+      stock: 20,
+      reorder: 10,
+      expiry: EXP_2026,
+    },
+    {
+      key: 'gloves',
+      name: 'Latex gloves L',
+      cat: 'consumables',
+      unit: 'piece',
+      stock: 200,
+      reorder: 100,
+    },
+    {
+      key: 'composite',
+      name: 'Composite resin A2',
+      cat: 'consumables',
+      unit: 'piece',
+      stock: 2,
+      reorder: 5,
+    }, // LOW STOCK demo
+    {
+      key: 'needles',
+      name: 'Disposable needles 30G',
+      cat: 'consumables',
+      unit: 'piece',
+      stock: 50,
+      reorder: 30,
+    },
+    {
+      key: 'suction',
+      name: 'Suction tips',
+      cat: 'consumables',
+      unit: 'piece',
+      stock: 300,
+      reorder: 100,
+    },
+    {
+      key: 'burs',
+      name: 'Dental burs assorted',
+      cat: 'instruments',
+      unit: 'piece',
+      stock: 25,
+      reorder: 10,
+    },
+    {
+      key: 'probe',
+      name: 'Periodontal probe',
+      cat: 'instruments',
+      unit: 'piece',
+      stock: 5,
+      reorder: 3,
+    },
+    {
+      key: 'films',
+      name: 'X-ray films size 2',
+      cat: 'xray',
+      unit: 'piece',
+      stock: 100,
+      reorder: 50,
+    },
   ];
   const itemByKey: Record<string, string> = {};
   for (const it of itemDefs) {
@@ -341,16 +505,61 @@ async function main() {
     itemByKey[it.key] = row.id;
   }
 
-  const movementCount = await prisma.inventoryMovement.count({ where: { clinicId: clinic.id } });
+  const movementCount = await prisma.inventoryMovement.count({
+    where: { clinicId: clinic.id },
+  });
   if (movementCount === 0) {
     const now = Date.now();
     await prisma.inventoryMovement.createMany({
       data: [
-        { clinicId: clinic.id, itemId: itemByKey['ligno']!, kind: 'PURCHASE', quantity: 30, pricePerUnitPaise: 1200, totalPricePaise: 36000, batchNumber: 'LIG-2026-01', byUserId: doctor.id, createdAt: new Date(now - 28 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['gloves']!, kind: 'PURCHASE', quantity: 300, pricePerUnitPaise: 800, totalPricePaise: 240000, byUserId: receptionist.id, createdAt: new Date(now - 21 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['ligno']!, kind: 'CONSUMPTION', quantity: -10, procedureName: 'RCT', byUserId: doctor.id, createdAt: new Date(now - 14 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['gloves']!, kind: 'CONSUMPTION', quantity: -100, procedureName: 'General', byUserId: doctor.id, createdAt: new Date(now - 7 * DAY_MS) },
-        { clinicId: clinic.id, itemId: itemByKey['composite']!, kind: 'CONSUMPTION', quantity: -8, procedureName: 'Restorations', byUserId: doctor.id, createdAt: new Date(now - 3 * DAY_MS) },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey['ligno']!,
+          kind: 'PURCHASE',
+          quantity: 30,
+          pricePerUnitPaise: 1200,
+          totalPricePaise: 36000,
+          batchNumber: 'LIG-2026-01',
+          byUserId: doctor.id,
+          createdAt: new Date(now - 28 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey['gloves']!,
+          kind: 'PURCHASE',
+          quantity: 300,
+          pricePerUnitPaise: 800,
+          totalPricePaise: 240000,
+          byUserId: receptionist.id,
+          createdAt: new Date(now - 21 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey['ligno']!,
+          kind: 'CONSUMPTION',
+          quantity: -10,
+          procedureName: 'RCT',
+          byUserId: doctor.id,
+          createdAt: new Date(now - 14 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey['gloves']!,
+          kind: 'CONSUMPTION',
+          quantity: -100,
+          procedureName: 'General',
+          byUserId: doctor.id,
+          createdAt: new Date(now - 7 * DAY_MS),
+        },
+        {
+          clinicId: clinic.id,
+          itemId: itemByKey['composite']!,
+          kind: 'CONSUMPTION',
+          quantity: -8,
+          procedureName: 'Restorations',
+          byUserId: doctor.id,
+          createdAt: new Date(now - 3 * DAY_MS),
+        },
       ],
     });
   }
@@ -359,8 +568,19 @@ async function main() {
   // Akhilesh Guhan is the voice-demo patient (the RCT-on-26 narrative). We seed two
   // consultations so a fresh DB shows both a confirmed record and a pending verification card.
   const akhilesh = await prisma.patient.upsert({
-    where: { clinicId_patientCode: { clinicId: clinic.id, patientCode: 'PT-0004' } },
-    update: {},
+    where: {
+      clinicId_patientCode: { clinicId: clinic.id, patientCode: 'PT-0004' },
+    },
+    // The in-chair demo patient carries an allergy, because frame 21's whole clinical
+    // point is the indicator on the card of the person about to be prescribed for. With
+    // an empty flag list the safety affordance is invisible in every demo and capture.
+    // Both halves of the same clinical fact: the FLAG drives the in-chair card's chip,
+    // the encrypted ALLERGIES field drives the history's permanent red node. Seeding only
+    // one left the demo saying a patient was allergic on one screen and not on another.
+    update: {
+      medicalFlags: ['PENICILLIN_ALLERGY'],
+      allergiesEnc: encryptField('Penicillin'),
+    },
     create: {
       clinicId: clinic.id,
       patientCode: 'PT-0004',
@@ -370,7 +590,8 @@ async function main() {
       gender: 'MALE',
       bloodGroup: 'O+',
       addressEnc: encryptField('Jayanagar, Bengaluru'),
-      medicalFlags: [],
+      medicalFlags: ['PENICILLIN_ALLERGY'],
+      allergiesEnc: encryptField('Penicillin'),
       chiefComplaint: 'Ongoing root canal, upper left',
       status: 'ACTIVE',
       createdById: doctor.id,
@@ -636,7 +857,13 @@ async function main() {
         sittingTotal: 4,
         status: 'COMPLETED',
         prescriptions: [
-          { name: 'Amoxicillin', dosage: '500mg', frequency: 'TID', durationDays: 5, instructions: null },
+          {
+            name: 'Amoxicillin',
+            dosage: '500mg',
+            frequency: 'TID',
+            durationDays: 5,
+            instructions: null,
+          },
         ],
         followUp: { afterDays: 7, procedureHint: null },
         toothStatusUpdates: [{ tooth: 26, status: 'RCT', note: null }],
@@ -659,7 +886,18 @@ async function main() {
   //     Visit is IN_CHAIR in Room 1 — the live "now treating" patient on /consult.
   const pendingVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-pending` },
-    update: {},
+    // Restore the demo state, don't just leave whatever the last session left behind.
+    // `update: {}` made re-seeding a no-op for these visits, so the queue drifted with use
+    // (a consultation confirmed to CHECKOUT stayed there) while the seed still PRINTED
+    // "Queue: 1 WAITING · 1 IN_CHAIR · 1 CHECKOUT". `pnpm db:seed` is the documented way
+    // to get back to a known demo, so it has to actually do that.
+    update: {
+      status: 'IN_CHAIR',
+      roomId: room1.id,
+      calledInAt: new Date(Date.now() - 5 * 60 * 1000),
+      startedAt: new Date(),
+      endedAt: null,
+    },
     create: {
       id: `seed-visit-${clinic.id}-pending`,
       clinicId: clinic.id,
@@ -678,7 +916,17 @@ async function main() {
 
   await prisma.consultation.upsert({
     where: { id: `seed-consult-${clinic.id}-pending` },
-    update: {},
+    // Same reason as the visit above: this one gets CONFIRMED or REJECTED by anyone who
+    // demos or screenshots the review flow, and a CONFIRMED consultation can never be
+    // reopened (correctly — you do not un-file a clinical record). Re-seeding puts the
+    // demo back to a consultation waiting for review.
+    update: {
+      status: 'PENDING_REVIEW',
+      confirmedAt: null,
+      confirmedById: null,
+      rejectedById: null,
+      rejectedReason: null,
+    },
     create: {
       id: `seed-consult-${clinic.id}-pending`,
       visitId: pendingVisit.id,
@@ -692,7 +940,13 @@ async function main() {
         sittingTotal: 1,
         status: 'COMPLETED',
         prescriptions: [
-          { name: 'Ibuprofen', dosage: '400mg', frequency: 'BD', durationDays: 3, instructions: 'after food' },
+          {
+            name: 'Ibuprofen',
+            dosage: '400mg',
+            frequency: 'BD',
+            durationDays: 3,
+            instructions: 'after food',
+          },
         ],
         followUp: { afterDays: 14, procedureHint: 'Review' },
         toothStatusUpdates: [{ tooth: 46, status: 'FILLED', note: null }],
@@ -715,7 +969,14 @@ async function main() {
   });
   const waitingVisit = await prisma.visit.upsert({
     where: { id: `seed-visit-${clinic.id}-waiting` },
-    update: {},
+    update: {
+      status: 'WAITING',
+      roomId: null,
+      checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
+      calledInAt: null,
+      startedAt: null,
+      endedAt: null,
+    },
     create: {
       id: `seed-visit-${clinic.id}-waiting`,
       clinicId: clinic.id,
@@ -729,8 +990,43 @@ async function main() {
     },
   });
 
+  // (4) WAITING — Suresh Iyer, the long-prescription demo.
+  //
+  // He exists so frame 29 (seven medicines) can be reached the way every other state is:
+  // call him in from the queue, record, and let the pipeline run. The mock STT has a
+  // recording keyed to his patientCode that dictates seven medicines; without him in the
+  // queue there is no honest route to a prescription list of that length, and the frame
+  // stays unreachable — which is exactly the hole deviation #55 described.
+  const suresh = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: 'PT-0005' },
+  });
+  await prisma.visit.upsert({
+    where: { id: `seed-visit-${clinic.id}-waiting-2` },
+    update: {
+      status: 'WAITING',
+      roomId: null,
+      checkedInAt: new Date(Date.now() - 4 * 60 * 1000),
+      calledInAt: null,
+      startedAt: null,
+      endedAt: null,
+    },
+    create: {
+      id: `seed-visit-${clinic.id}-waiting-2`,
+      clinicId: clinic.id,
+      patientId: suresh.id,
+      doctorId: doctor.id,
+      assignedDoctorId: doctor.id,
+      status: 'WAITING',
+      tokenNumber: 4,
+      checkedInAt: new Date(Date.now() - 4 * 60 * 1000),
+      chiefComplaint: 'Pain, lower left',
+    },
+  });
+
   // --- Queue events (so a fresh DB shows a populated activity feed) ---------
-  const queueEventCount = await prisma.queueEvent.count({ where: { clinicId: clinic.id } });
+  const queueEventCount = await prisma.queueEvent.count({
+    where: { clinicId: clinic.id },
+  });
   if (queueEventCount === 0) {
     await prisma.queueEvent.createMany({
       data: [
@@ -830,7 +1126,12 @@ async function main() {
 
   for (const t of WHATSAPP_TEMPLATES) {
     await prisma.whatsAppTemplate.upsert({
-      where: { clinicId_templateKey: { clinicId: clinic.id, templateKey: t.templateKey } },
+      where: {
+        clinicId_templateKey: {
+          clinicId: clinic.id,
+          templateKey: t.templateKey,
+        },
+      },
       update: { approvalStatus: 'APPROVED', isEnabled: true },
       create: {
         clinicId: clinic.id,
@@ -846,7 +1147,9 @@ async function main() {
   }
 
   // Opt every demo patient in so smoke tests can send without a manual consent step.
-  const allPatients = await prisma.patient.findMany({ where: { clinicId: clinic.id } });
+  const allPatients = await prisma.patient.findMany({
+    where: { clinicId: clinic.id },
+  });
   for (const p of allPatients) {
     await prisma.patientWhatsAppConsent.upsert({
       where: { clinicId_patientId: { clinicId: clinic.id, patientId: p.id } },
@@ -867,7 +1170,12 @@ async function main() {
     where: { clinicId: clinic.id, templateKey: 'appointment_reminder_24h' },
   });
   await prisma.whatsAppMessage.upsert({
-    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-out-sent' } },
+    where: {
+      clinicId_idempotencyKey: {
+        clinicId: clinic.id,
+        idempotencyKey: 'seed:wa-out-sent',
+      },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
@@ -887,7 +1195,12 @@ async function main() {
     },
   });
   await prisma.whatsAppMessage.upsert({
-    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-out-delivered' } },
+    where: {
+      clinicId_idempotencyKey: {
+        clinicId: clinic.id,
+        idempotencyKey: 'seed:wa-out-delivered',
+      },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
@@ -911,7 +1224,9 @@ async function main() {
   // 1 sample inbound message → creates an OPEN conversation with an unread count for the inbox.
   const inboundAt = new Date(now - 15 * 60 * 1000);
   const convo = await prisma.patientConversation.upsert({
-    where: { clinicId_patientId: { clinicId: clinic.id, patientId: akhilesh.id } },
+    where: {
+      clinicId_patientId: { clinicId: clinic.id, patientId: akhilesh.id },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
@@ -926,7 +1241,12 @@ async function main() {
     },
   });
   await prisma.whatsAppMessage.upsert({
-    where: { clinicId_idempotencyKey: { clinicId: clinic.id, idempotencyKey: 'seed:wa-in-1' } },
+    where: {
+      clinicId_idempotencyKey: {
+        clinicId: clinic.id,
+        idempotencyKey: 'seed:wa-in-1',
+      },
+    },
     update: {},
     create: {
       clinicId: clinic.id,
@@ -941,15 +1261,210 @@ async function main() {
     },
   });
 
+  // --- Today's appointments -------------------------------------------------
+  //
+  // Nothing seeded appointments before this, so /home's day river (frame 13's habit hook),
+  // "Up next", and the whole Schedule screen were empty in every demo and every capture —
+  // the doctor's home screen showed an empty day no matter what else was going on.
+  //
+  // A believable mid-morning: two seen, Akhilesh in the chair, three ahead. Times are
+  // anchored to TODAY in clinic-local terms so the day always looks current, and the
+  // whole set is deleted and rebuilt rather than upserted, because yesterday's demo
+  // appointments must not pile up behind today's.
+  const meera = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: 'PT-0001' },
+  });
+  const fatima = await prisma.patient.findFirstOrThrow({
+    where: { clinicId: clinic.id, patientCode: 'PT-0003' },
+  });
+
+  // Which day to hang them on. Defaults to today, so a human opening the demo sees their
+  // own day. The screenshot harness pins the browser clock to a fixed date for
+  // determinism, so a capture run seeds with SEED_TODAY set to that same date — otherwise
+  // the app asks for a day the seed never filled and Home renders an empty schedule.
+  const dayStart = process.env.SEED_TODAY
+    ? new Date(`${process.env.SEED_TODAY}T00:00:00`)
+    : new Date();
+  if (Number.isNaN(dayStart.getTime())) {
+    throw new Error(`SEED_TODAY must be an ISO date (YYYY-MM-DD), got "${process.env.SEED_TODAY}"`);
+  }
+  dayStart.setHours(0, 0, 0, 0);
+  const at = (h: number, m: number) => new Date(dayStart.getTime() + (h * 60 + m) * 60_000);
+
+  await prisma.appointment.deleteMany({
+    where: { clinicId: clinic.id, seriesId: 'seed-today' },
+  });
+  const todaysAppointments = [
+    {
+      patient: meera,
+      hour: 9,
+      min: 0,
+      status: 'COMPLETED' as const,
+      hint: 'Scaling',
+    },
+    {
+      patient: fatima,
+      hour: 9,
+      min: 45,
+      status: 'COMPLETED' as const,
+      hint: 'Filling review',
+    },
+    {
+      patient: akhilesh,
+      hour: 10,
+      min: 30,
+      status: 'CHECKED_IN' as const,
+      hint: 'RCT sitting 2',
+    },
+    {
+      patient: arjun,
+      hour: 11,
+      min: 15,
+      status: 'SCHEDULED' as const,
+      hint: 'Routine cleaning',
+    },
+    {
+      patient: meera,
+      hour: 12,
+      min: 0,
+      status: 'SCHEDULED' as const,
+      hint: 'Crown fitting',
+    },
+    {
+      patient: fatima,
+      hour: 12,
+      min: 45,
+      status: 'SCHEDULED' as const,
+      hint: 'Follow-up',
+    },
+  ];
+  for (const [i, a] of todaysAppointments.entries()) {
+    await prisma.appointment.create({
+      data: {
+        clinicId: clinic.id,
+        patientId: a.patient.id,
+        doctorId: doctor.id,
+        roomId: room1.id,
+        startsAt: at(a.hour, a.min),
+        endsAt: at(a.hour, a.min + 30),
+        durationMinutes: 30,
+        status: a.status,
+        procedureHint: a.hint,
+        seriesId: 'seed-today',
+        seriesIndex: i + 1,
+        seriesTotal: todaysAppointments.length,
+        createdById: doctor.id,
+      },
+    });
+  }
+
+  // --- An ACTIVE multi-sitting plan --------------------------------------------
+  //
+  // Plans are otherwise created only by the confirm transaction, which produces sitting
+  // COUNTS but no per-sitting rows for work that has not happened yet. Frame 38's journey
+  // needs the shape a real course of treatment has: one sitting done, one under way, one
+  // still ahead. Seeded explicitly so the Cases tab has something deterministic to draw.
+  await prisma.treatmentPlan.deleteMany({
+    where: { patientId: akhilesh.id, name: 'RCT · Tooth 36' },
+  });
+  const rctPlan = await prisma.treatmentPlan.create({
+    data: {
+      patientId: akhilesh.id,
+      name: 'RCT · Tooth 36',
+      description: 'Root canal therapy, lower left first molar',
+      status: 'ACTIVE',
+      estimatedCostPaise: 900_000,
+      createdById: doctor.id,
+    },
+  });
+  const rctProcedure = await prisma.procedure.create({
+    data: {
+      planId: rctPlan.id,
+      name: 'RCT',
+      toothNumbers: [36],
+      totalSittings: 3,
+      completedSittings: 1,
+      status: 'IN_PROGRESS',
+    },
+  });
+  await prisma.sitting.createMany({
+    data: [
+      {
+        procedureId: rctProcedure.id,
+        sittingNumber: 1,
+        completedAt: new Date(dayStart.getTime() - 15 * 864e5),
+        notesEnc: encryptField('extirpation, dressing'),
+      },
+      // Under way: linked to the visit the patient is in right now.
+      {
+        procedureId: rctProcedure.id,
+        sittingNumber: 2,
+        visitId: pendingVisit.id,
+      },
+      // Ahead: booked but not attended, so it carries no date of its own.
+      { procedureId: rctProcedure.id, sittingNumber: 3 },
+    ],
+  });
+
+  // Tie the demo day to the plan so frame 39's NEXT tile and the Cases journey have a
+  // booked sitting to point at. The appointments are created above without a plan, because
+  // the plan does not exist yet at that point; this links the one that is genuinely this
+  // plan's next sitting.
+  const nextRctAppt = await prisma.appointment.findFirst({
+    where: { clinicId: clinic.id, patientId: akhilesh.id, status: 'SCHEDULED' },
+    orderBy: { startsAt: 'asc' },
+  });
+  if (nextRctAppt) {
+    await prisma.appointment.update({
+      where: { id: nextRctAppt.id },
+      data: {
+        treatmentPlanId: rctPlan.id,
+        sittingNumber: 2,
+        procedureHint: 'obturation · final',
+      },
+    });
+  }
+
+  // And a lab case raised from this plan, so frame 39's "Linked" section has both halves.
+  // Delete by caseNumber, not by plan: the plan is recreated with a fresh id on every
+  // run, so a plan-scoped delete never matched the previous run's case and the unique
+  // (clinicId, caseNumber) constraint failed the whole seed on the second run.
+  await prisma.labCase.deleteMany({
+    where: { clinicId: clinic.id, caseNumber: 'LB-112' },
+  });
+  await prisma.labCase.create({
+    data: {
+      clinicId: clinic.id,
+      patientId: akhilesh.id,
+      doctorId: doctor.id,
+      caseNumber: 'LB-112',
+      type: 'CROWN',
+      teeth: [36],
+      material: 'Zirconia',
+      status: 'SENT',
+      treatmentPlanId: rctPlan.id,
+      createdById: doctor.id,
+    },
+  });
+
   console.warn('✅ Seed complete:');
   console.warn(`   Clinic: ${clinic.name} (joinCode ${clinic.joinCode})`);
-  console.warn(`   Queue: 1 WAITING (Arjun) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`);
+  console.warn(
+    `   Queue: 2 WAITING (Arjun, Suresh) · 1 IN_CHAIR (Akhilesh, Room 1) · 1 CHECKOUT (Akhilesh, ₹3,500)`,
+  );
+  console.warn(
+    `   ${dayStart.toDateString()}: ${todaysAppointments.length} appointments — 2 seen, 1 in the chair, 3 ahead`,
+  );
   console.warn(`   Doctor: ${doctor.name} | Receptionist: ${receptionist.name}`);
   console.warn(
     `   Patients: ${patientSeed.length + 1} | Lab: 1 vendor + 3 cases (DRAFT/SENT/READY) | Inventory: 4 categories, 8 items (1 low-stock), 5 movements`,
   );
-  console.warn('   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan');
-  console.warn(`   Prescription templates: ${STARTER_TEMPLATES.length} starters (RCT pack, Post-extraction, …)`);
+  console.warn(
+    '   Consultations: 1 CONFIRMED (RCT 26) + 1 PENDING_REVIEW (filling 46) on Akhilesh Guhan',
+  );
+  console.warn(
+    `   Prescription templates: ${STARTER_TEMPLATES.length} starters (RCT pack, Post-extraction, …)`,
+  );
 }
 
 main()

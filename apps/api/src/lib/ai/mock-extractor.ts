@@ -54,17 +54,38 @@ const MEDICINES: ReadonlyArray<{ canonical: string; pattern: RegExp }> = [
 ];
 
 const ORDINALS: Record<string, number> = {
-  first: 1, second: 2, third: 3, fourth: 4, fifth: 5,
-  sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10,
+  first: 1,
+  second: 2,
+  third: 3,
+  fourth: 4,
+  fifth: 5,
+  sixth: 6,
+  seventh: 7,
+  eighth: 8,
+  ninth: 9,
+  tenth: 10,
 };
 
 const TEENS: Record<string, number> = {
-  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
-  fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
+  eleven: 11,
+  twelve: 12,
+  thirteen: 13,
+  fourteen: 14,
+  fifteen: 15,
+  sixteen: 16,
+  seventeen: 17,
+  eighteen: 18,
 };
 const TENS: Record<string, number> = { twenty: 20, thirty: 30, forty: 40 };
 const ONES: Record<string, number> = {
-  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8,
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
 };
 
 const MEDICAL_FLAGS: ReadonlyArray<readonly [RegExp, string]> = [
@@ -92,7 +113,10 @@ function spokenToothToDigits(text: string): string {
   );
   // Tanglish separated digits (Phase 9.6 Issue 8): dentists dictate "3 6 la" for tooth 36 —
   // join quadrant-digit pairs the way the real prompt instructs Gemini to.
-  out = out.replace(/\b([1-4])\s+([1-8])\b(?!\s*(?:days?|sittings?|sessions?|weeks?|months?))/g, '$1$2');
+  out = out.replace(
+    /\b([1-4])\s+([1-8])\b(?!\s*(?:days?|sittings?|sessions?|weeks?|months?))/g,
+    '$1$2',
+  );
   return out;
 }
 
@@ -148,7 +172,8 @@ function parseSitting(transcript: string): { current: number | null; total: numb
 
 function parseStatus(transcript: string): 'IN_PROGRESS' | 'COMPLETED' | 'ABORTED' | null {
   // Tanglish (Phase 9.6 Issue 8): "panniaachu"/"pannitaachu" = done today.
-  if (/\b(completed|complete|finished|done|panniaachu|pannitaachu|pannitachu)\b/i.test(transcript)) return 'COMPLETED';
+  if (/\b(completed|complete|finished|done|panniaachu|pannitaachu|pannitachu)\b/i.test(transcript))
+    return 'COMPLETED';
   if (/\b(aborted|stopped|abandoned|cancelled)\b/i.test(transcript)) return 'ABORTED';
   if (/\b(in[-\s]?progress|ongoing|continuing)\b/i.test(transcript)) return 'IN_PROGRESS';
   return null;
@@ -202,15 +227,29 @@ function parseMedicines(transcript: string): ExtractedPrescription[] {
 }
 
 const MONTHS: Record<string, number> = {
-  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
-  july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+  january: 0,
+  february: 1,
+  march: 2,
+  april: 3,
+  may: 4,
+  june: 5,
+  july: 6,
+  august: 7,
+  september: 8,
+  october: 9,
+  november: 10,
+  december: 11,
 };
 
 /** "7th July" / "July 7" → days from now until the next such date (min 1). */
 function absoluteDateToAfterDays(window: string, now = new Date()): number | null {
   const m =
-    window.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/i) ??
-    window.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?\b/i);
+    window.match(
+      /\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/i,
+    ) ??
+    window.match(
+      /\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?\b/i,
+    );
   if (!m) return null;
   const [a, b] = [m[1]!, m[2]!];
   const day = Number(/^\d/.test(a) ? a : b);
@@ -220,7 +259,9 @@ function absoluteDateToAfterDays(window: string, now = new Date()): number | nul
   return Math.max(1, Math.round((target.getTime() - now.getTime()) / 86_400_000));
 }
 
-function parseFollowUp(transcript: string): { afterDays: number | null; procedureHint: string | null } | null {
+function parseFollowUp(
+  transcript: string,
+): { afterDays: number | null; procedureHint: string | null } | null {
   // "next sitting … vechikalam" (Tanglish: will schedule) counts as a follow-up cue (Issue 8).
   const triggerIdx = transcript.search(
     /\b(review|follow[-\s]?up|recall|come back|next visit|revisit|next sitting|vechikalam|vaikalam)\b/i,
@@ -230,7 +271,8 @@ function parseFollowUp(transcript: string): { afterDays: number | null; procedur
 
   let afterDays: number | null = null;
   const inWeeks = window.match(/\b(?:in|after)\s+(\d+)\s+weeks?\b/i);
-  const inDays = window.match(/\b(?:in|after)\s+(\d+)\s+days?\b/i) ?? window.match(/\b(\d+)\s+days?\b/i);
+  const inDays =
+    window.match(/\b(?:in|after)\s+(\d+)\s+days?\b/i) ?? window.match(/\b(\d+)\s+days?\b/i);
   if (/\bnext week\b|\b(?:in|after)\s+a\s+week\b|\ba week\b/i.test(window)) afterDays = 7;
   else if (inWeeks) afterDays = Number(inWeeks[1]) * 7;
   else if (inDays) afterDays = Number(inDays[1]);
@@ -254,7 +296,10 @@ function parseIntakeAllergies(transcript: string): string[] {
   const listMatch = transcript.match(/\ballerg(?:ic|y|ies)\s+(?:to\s+)?([^.,;]+)/i);
   if (listMatch) {
     for (const item of listMatch[1]!.split(/\s+and\s+|\s*,\s*/i)) {
-      const cleaned = item.trim().replace(/\ballerg(?:ic|y|ies)\b/gi, '').trim();
+      const cleaned = item
+        .trim()
+        .replace(/\ballerg(?:ic|y|ies)\b/gi, '')
+        .trim();
       if (cleaned && cleaned.length <= 40) out.add(cap(cleaned));
     }
   }
@@ -276,7 +321,8 @@ function detectContinuesPlan(
   activePlans: ActivePlanContext[],
 ): ActivePlanContext | null {
   if (!procedure || activePlans.length === 0) return null;
-  if (/\b(starting|started|start a|new plan|fresh plan|first sitting)\b/i.test(transcript)) return null;
+  if (/\b(starting|started|start a|new plan|fresh plan|first sitting)\b/i.test(transcript))
+    return null;
   const norm = procedure.toLowerCase();
   for (const plan of activePlans) {
     if ((plan.procedureName ?? '').toLowerCase() !== norm) continue;
@@ -342,7 +388,11 @@ function parseLabCaseSuggestion(
   const dueInDays = days
     ? Number.parseInt(days, 10)
     : weeks
-      ? (weeks === 'two' ? 14 : weeks === 'three' ? 21 : 7)
+      ? weeks === 'two'
+        ? 14
+        : weeks === 'three'
+          ? 21
+          : 7
       : null;
   return { type, teeth, dueInDays };
 }
@@ -423,8 +473,9 @@ export class MockExtractor implements IClinicalExtractor {
     const nameMatch = transcript.match(
       /\b(?:patient|mr\.?|mrs\.?|ms\.?|name is|named)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/,
     );
-    const ageMatch = transcript.match(/\b(\d{1,3})\s*(?:years?|yrs?|year[-\s]old|y\/o)\b/i)
-      ?? transcript.match(/\bage\s+(\d{1,3})\b/i);
+    const ageMatch =
+      transcript.match(/\b(\d{1,3})\s*(?:years?|yrs?|year[-\s]old|y\/o)\b/i) ??
+      transcript.match(/\bage\s+(\d{1,3})\b/i);
     const phoneMatch = transcript.match(/\b([6-9]\d{9})\b/);
     const complaintMatch = transcript.match(
       /\b(?:complains? of|complaint of|c\/o|presents with|pain (?:in|of))\s+([^.]+)/i,
@@ -439,7 +490,10 @@ export class MockExtractor implements IClinicalExtractor {
       phone: phoneMatch ? phoneMatch[1] : null,
       age: ageMatch ? Number(ageMatch[1]) : null,
       gender,
-      chiefComplaint: complaintMatch ? complaintMatch[0]!.trim() : null,
+      // Group 1, not the whole match: the field is LABELLED "chief complaint", so storing
+      // "Complains of pain in the lower right back tooth" repeats the label inside the
+      // value and overflows the input. What belongs in it is the complaint itself.
+      chiefComplaint: complaintMatch ? complaintMatch[1]!.trim() : null,
       medicalFlags: parseMedicalFlags(transcript),
       allergies: parseIntakeAllergies(transcript),
       clarifications: [],
