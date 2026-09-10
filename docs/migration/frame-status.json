@@ -601,18 +601,18 @@
   {
     "frame": "v9-67",
     "name": "Inventory — stock",
-    "status": "MISMATCHED",
-    "changedPct": 10.654264654264654,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 10.241488241488241,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-68",
     "name": "Inventory — item detail",
-    "status": "MISMATCHED",
-    "changedPct": 8.541944541944542,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 8.427167427167428,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

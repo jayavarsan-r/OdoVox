@@ -1386,6 +1386,60 @@
       "reason": "The frame's rows carry '3 meds' plus a category ('RCT', 'Pedo · wt-based') and an age band ('Adult'). The implementation shows the medicine count plus the template's first two actual tags — 'antibiotic', 'post-op', 'periodontal'.\n\nTags are free text the clinic writes, so there is no category or age-band field to render, and inventing one would mean classifying a dentist's own templates on their behalf. Two tags, because a third pushed the row to wrap and the frame's whole point here is a list that scans in one pass.\n\nThe footnote is also shortened: the frame cites the prescription sheet by frame number ('the prescription sheet (23)'), which is spec shorthand, not something to show a user.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 119,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-67"
+      ],
+      "summary": "Add stays a floating FAB where the frame puts a + in the header",
+      "reason": "Frame 67 draws a lime + at the top right. The implementation keeps the FabMenu at the bottom right, which is this app's convention everywhere else — and frame 57 draws the lab's + as its own bottom dial, so the frames are not consistent with each other on this point either.\n\nMoving it on this one screen would make inventory the odd surface. The cost is that the FAB floats over the last visible row until you scroll, which the frame's placement avoids; that is the trade being made deliberately rather than by omission.\n\nWhat DID change is what the + holds. The three voice actions were its first three entries — two taps from the screen — while New item and New category sat below them. On a product whose thesis is that the dentist speaks instead of typing, that is backwards. The voice actions are now chips under the title, as the frame has them, and the FAB keeps the typed paths.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 120,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-67"
+      ],
+      "summary": "'Reorder all' has no supplier-ordering concept behind it",
+      "reason": "The frame puts 'Reorder all' beside the Low stock heading. There is nothing for it to do: `reorderLevel` is a THRESHOLD that marks an item low, and the only related endpoint is POST /inventory/items/:id/purchase, which RECORDS stock arriving. Nothing in the schema represents a purchase order, a supplier, or an outbound request.\n\nSo the control is omitted rather than wired to something that resembles it. Gate C forbids a button that does nothing, and 'Reorder all' silently recording a purchase that never happened would be worse than absent — it would inflate stock counts for items the clinic has not received.\n\nBuilding it means deciding what reordering IS for this product: an internal shopping list, a WhatsApp message to a supplier, or a tracked purchase order. That is a product decision, and it belongs to whoever owns supplier workflow rather than to a visual migration.",
+      "status": "open"
+    },
+    {
+      "id": 121,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-67"
+      ],
+      "summary": "Rows keep their stock-tone spine and the screen keeps search and category filters",
+      "reason": "The frame's item rows sit flat inside one card. The implementation's rows are separate cards carrying a coloured left spine — crit when below the reorder level, warn when expiring, sage otherwise — so the state of the stock is legible without reading the number. The frame conveys the same thing with a peach badge on low-stock rows only; the spine also covers expiry, which the frame shows as a separate crit chip.\n\nThe screen also keeps a search field and category filter chips the frame does not draw. A seeded clinic has 7 items and the frame's has 64; at 64 the list is not scannable without them, and removing working filters for pixel fidelity is exactly what Gate A forbids.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 122,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-68"
+      ],
+      "summary": "The second tile falls back to the category when an item has no price, vendor or expiry",
+      "reason": "Frame 68's right-hand tile reads '₹ / STRIP · VENDOR · ₹42 · MedPlus · Exp Mar 2027'. That is an item with a purchase history. A composite resin nobody has recorded a purchase for has none of those three facts, and rendering the tile with '—' in it restates the emptiness in a bigger font than the old list did.\n\nSo the tile shows whichever of price, vendor and expiry exist, and when none do it shows the category instead — a fact every item has, and the one the row above it was already carrying. The tile is never empty and never lies.\n\nThe replaced DETAILS list rendered five key/value rows regardless, most of them '—' on a real item, which made an ordinary item look unrecorded rather than uncomplicated.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 123,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-68"
+      ],
+      "summary": "SKU and batch survive the removed DETAILS list as one conditional line",
+      "reason": "Frame 68 shows neither. The DETAILS list this replaced showed both, so dropping the list wholesale would have taken them with it — for an item that actually HAS a SKU that is losing a fact, not tidying one away, and Gate A does not allow it.\n\nThey now render as a single quiet line under the tiles, and only when present. Absent on the seeded items, which is why the capture does not show it.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

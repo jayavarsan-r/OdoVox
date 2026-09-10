@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Boxes, ChevronRight, ClipboardCheck, FolderPlus, Mic, PackagePlus } from 'lucide-react';
+import { Boxes, ChevronLeft, ChevronRight, FolderPlus, Mic, PackagePlus } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
 import { EditorialHeading, EmptyState, FabMenu } from '@/components/ds';
@@ -67,7 +67,46 @@ export default function InventoryPage() {
 
   return (
     <AnimatedPage className="flex flex-1 flex-col gap-4 px-5 pt-6 pb-28">
-      <EditorialHeading title="Inventory" trailing={<ProfileButton />} />
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={() => router.push('/more')}
+          className="flex size-9 shrink-0 items-center justify-center rounded-pill hover:bg-muted"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+        <EditorialHeading className="flex-1" title="Inventory" trailing={<ProfileButton />} />
+      </div>
+
+      {/*
+        Frame 67 puts the three voice actions RIGHT HERE, under the title, as chips.
+
+        They already existed — they were the first three entries of the FAB menu, two taps
+        down. On a product whose whole thesis is that the dentist speaks instead of typing,
+        burying "log a purchase by voice" behind a + is backwards: the typed paths (New item,
+        New category) were the ones on top.
+
+        So the voice actions come out to the surface and the FAB keeps the typed ones. Same
+        sheets, same endpoints — this only changes what is reachable in one tap.
+      */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
+        {[
+          { id: 'purchase' as const, label: 'Purchase' },
+          { id: 'consume' as const, label: 'Usage' },
+          ...(isAdmin ? [{ id: 'adjust' as const, label: 'Count' }] : []),
+        ].map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVoiceSheet(v.id)}
+            className="flex shrink-0 items-center gap-1.5 rounded-pill bg-[rgba(31,42,35,0.05)] px-[13px] py-2 text-xs font-heavy text-pine active:bg-[rgba(31,42,35,0.09)]"
+          >
+            <Mic className="size-[13px]" />
+            {v.label}
+          </button>
+        ))}
+      </div>
 
       <input
         type="search"
@@ -121,7 +160,19 @@ export default function InventoryPage() {
             </div>
           ) : null}
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-subtle">All items · {rest.length}</p>
+            <p className="flex items-baseline justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-text-subtle">
+                All items · {rest.length}
+              </span>
+              {/* The frame's right-aligned "Categories". A real route, not a label. */}
+              <button
+                type="button"
+                onClick={() => router.push('/inventory/categories')}
+                className="text-xs font-semibold text-text-subtle underline"
+              >
+                Categories
+              </button>
+            </p>
             {rest.map((i) => (
               <ItemCard key={i.id} item={i} onClick={() => router.push(`/inventory/${i.id}`)} />
             ))}
@@ -131,11 +182,8 @@ export default function InventoryPage() {
 
       <FabMenu
         items={[
-          { id: 'voice-purchase', label: 'Voice log purchase', tone: 'lime', icon: <Mic />, onClick: () => setVoiceSheet('purchase') },
-          { id: 'voice-consume', label: 'Voice log usage', tone: 'lime', icon: <Mic />, onClick: () => setVoiceSheet('consume') },
-          ...(isAdmin
-            ? [{ id: 'voice-adjust', label: 'Voice stock count', tone: 'peach' as const, icon: <ClipboardCheck />, onClick: () => setVoiceSheet('adjust') }]
-            : []),
+          // The voice actions moved to chips under the header (frame 67); the FAB keeps the
+          // typed paths, which are the ones you reach for when dictation is not the answer.
           { id: 'new-item', label: 'New item', tone: 'sage', icon: <PackagePlus />, onClick: () => router.push('/inventory/new') },
           { id: 'new-category', label: 'New category', tone: 'sky', icon: <FolderPlus />, onClick: () => router.push('/inventory/categories') },
         ]}

@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 34 |
+| APPROVED-DEVIATION | 36 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 13 |
+| MISMATCHED | 11 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -110,8 +110,8 @@ _None. Every task closed its own decisions._
 | `v9-64` | Thread — window closed | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
 | `v9-65` | Lab inbox — quiet verdicts | 29 | MISMATCHED | 7.7% | criterion "layout" unreviewed |
 | `v9-66` | Follow-ups — call list | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
-| `v9-67` | Inventory — stock | 29 | MISMATCHED | 10.7% | criterion "layout" unreviewed |
-| `v9-68` | Inventory — item detail | 29 | MISMATCHED | 8.5% | criterion "layout" unreviewed |
+| `v9-67` | Inventory — stock | 29 | APPROVED-DEVIATION | 10.2% | NOT-BUILT #120: 'Reorder all' has no supplier-ordering concept behind it |
+| `v9-68` | Inventory — item detail | 29 | APPROVED-DEVIATION | 8.4% | — |
 | `v9-69` | Voice entry — confirm | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
 | `v9-70` | More — module hub | 6 | APPROVED-DEVIATION | 3.6% | NOT-BUILT #25: Availability's "2 doctors" and Team's "1 request" values are absent |
 | `v9-71` | Team & join code | 31 | NOT-BUILT | — | Task 31 owns this; no route or state driver reaches it yet |
@@ -1032,17 +1032,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.7%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-67` — Inventory — stock · MISMATCHED
+### `v9-67` — Inventory — stock · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 10.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 10.2%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1050,18 +1050,21 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 10.7%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #119 (approved): Add stays a floating FAB where the frame puts a + in the header
+- `NOT-BUILT` #120 (open): 'Reorder all' has no supplier-ordering concept behind it
+- `APPROVED-DEVIATION` #121 (approved): Rows keep their stock-tone spine and the screen keeps search and category filters
 
-### `v9-68` — Inventory — item detail · MISMATCHED
+### `v9-68` — Inventory — item detail · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1069,6 +1072,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 8.5%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #122 (approved): The second tile falls back to the category when an item has no price, vendor or expiry
+- `APPROVED-DEVIATION` #123 (approved): SKU and batch survive the removed DETAILS list as one conditional line
 
 ### `v9-70` — More — module hub · APPROVED-DEVIATION
 
