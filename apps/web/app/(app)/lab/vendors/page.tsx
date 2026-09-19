@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, MessageCircle, Plus, Store } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Store } from 'lucide-react';
 import type { LabVendorResponse } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { EmptyState } from '@/components/ds';
+import { Mini } from '@/components/ui/badge';
 import { useToast } from '@/lib/toast';
 import {
   useCreateLabVendor,
@@ -20,31 +21,114 @@ import { useLabVendorAnalytics } from '@/lib/lab-inbox-queries';
 import { cn } from '@/lib/utils';
 
 /** §2.14 — the sales-asset numbers: clinics can see which labs deliver on time. */
+/**
+ * Frame 61's 90-day performance: four tiles, not a list of seven rows.
+ *
+ * The numbers already existed behind GET /lab/vendors/:id/analytics — they were rendered as
+ * a key/value table inside a vendor's sheet, so comparing two labs meant opening one,
+ * remembering it, and opening the other.
+ *
+ * Four tiles rather than seven rows because these are the four a clinic actually chooses a
+ * lab on: how long, how fast they answer, how much work and how much of it went wrong, and
+ * what the messaging costs. On-time rate and turnaround average move up to the vendor's own
+ * row as chips, which is where the frame puts them too — they are identity, not analysis.
+ */
+function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+      <p className="text-2xs font-heavy tracking-[0.06em] text-pine-3">{label}</p>
+      <p className="mt-1 text-[19px] font-black leading-none tabular-nums text-pine">
+        {value}
+        {sub ? <span className="ml-1 text-xs font-bold text-pine-3">{sub}</span> : null}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The two chips beside a vendor's name: on-time rate and average turnaround.
+ *
+ * Falls back to the CONFIGURED target when a lab has no completed history — "7d target" is a
+ * fact about the arrangement, where "—d avg" would just be a blank pretending to be data.
+ */
+function VendorRowStats({
+  vendorId,
+  fallbackTarget,
+}: {
+  vendorId: string;
+  fallbackTarget: number;
+}) {
+  const { data: a } = useLabVendorAnalytics(vendorId);
+  if (!a || a.volume90 === 0) return <Mini tone="neutral">{fallbackTarget}d target</Mini>;
+  return (
+    <>
+      {a.onTimeRate !== null ? (
+        <Mini tone={a.onTimeRate >= 0.8 ? 'neutral' : 'warn'}>
+          On-time {Math.round(a.onTimeRate * 100)}%
+        </Mini>
+      ) : null}
+      <Mini tone="neutral">
+        {a.turnaroundDaysAvg !== null ? `${a.turnaroundDaysAvg}d avg` : `${fallbackTarget}d target`}
+      </Mini>
+    </>
+  );
+}
+
 function VendorPerformance({ vendorId }: { vendorId: string }) {
   const { data: a } = useLabVendorAnalytics(vendorId);
   if (!a) return null;
-  if (a.volume90 === 0) return <p className="text-xs text-text-muted">No cases in the last 90 days yet.</p>;
-  const rows: Array<[string, string]> = [
-    ['Turnaround', a.turnaroundDaysAvg !== null ? `${a.turnaroundDaysAvg} days avg (target ${a.targetTurnaroundDays})` : '—'],
-    ['On-time delivery', a.onTimeRate !== null ? `${Math.round(a.onTimeRate * 100)}%` : '—'],
-    ['Response time', a.medianReplyHours !== null ? `${a.medianReplyHours}h median` : '—'],
-    ['Volume', `${a.volume90} cases (90d) · ${a.volume30} (30d)`],
-    ['Issues raised', `${a.issuesRaised}${a.issueRate !== null ? ` (${Math.round(a.issueRate * 100)}%)` : ''}`],
-    ['Overdue now', String(a.overdueOpenCount)],
-    ['WhatsApp cost', `₹${(a.monthCostPaise / 100).toFixed(0)} this month · ₹${(a.costPerCasePaise / 100).toFixed(2)}/case`],
-  ];
+  if (a.volume90 === 0) {
+    return (
+      <p className="rounded-2xl bg-white p-4 text-xs font-semibold text-pine-3 shadow-elev-1">
+        No cases sent to this lab in the last 90 days.
+      </p>
+    );
+  }
   return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-      {rows.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="text-text-subtle">{label}</dt>
-          <dd className={cn('text-right font-mono text-xs tabular-nums text-ink', label === 'WhatsApp cost' && a.costPerCasePaise > 200 && 'text-danger')}>
-            {value}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Tile
+          label="TURNAROUND"
+          value={a.turnaroundDaysAvg !== null ? `${a.turnaroundDaysAvg}d` : '—'}
+          sub={`/ ${a.targetTurnaroundDays}d target`}
+        />
+        <Tile
+          label="MEDIAN REPLY"
+          // Hours below one read better as minutes — "0.3h" is a number you have to convert
+          // in your head before it means anything.
+          value={
+            a.medianReplyHours === null
+              ? '—'
+              : a.medianReplyHours < 1
+                ? `${Math.round(a.medianReplyHours * 60)} min`
+                : `${a.medianReplyHours}h`
+          }
+        />
+        <Tile
+          label="VOLUME · ISSUES"
+          value={`${a.volume90} · ${a.issuesRaised}`}
+        />
+        <Tile
+          label="WA COST / CASE"
+          value={`₹${(a.costPerCasePaise / 100).toFixed(2)}`}
+        />
+      </div>
+      {/* Overdue is the one number here that is a thing to DO rather than a thing to know,
+          so it only appears when there is something to do about it. */}
+      {a.overdueOpenCount > 0 ? (
+        <p className="px-1 text-xs font-heavy text-crit">
+          {a.overdueOpenCount} case{a.overdueOpenCount > 1 ? 's' : ''} overdue with this lab
+          right now
+        </p>
+      ) : null}
+    </>
   );
+}
+
+/** "Sri Balaji Dental Lab" -> "SB". Two marks are easier to pick out than a line of text. */
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return (words[0]?.[0] ?? '?').concat(words[1]?.[0] ?? '').toUpperCase();
 }
 
 const inputCls = 'w-full rounded-lg border border-border bg-paper-warm px-3 py-2 text-sm outline-none focus:border-border-strong';
@@ -231,45 +315,65 @@ export default function LabVendorsPage() {
         <button type="button" onClick={() => router.back()} aria-label="Back" className="flex size-9 items-center justify-center rounded-pill hover:bg-muted">
           <ChevronLeft className="size-5" />
         </button>
-        <h1 className="text-lg font-semibold">Lab vendors</h1>
+        <h1 className="flex-1 text-lg font-semibold">Vendors</h1>
+        {/* The frame's lime + circle. It replaces an "Add vendor" button that sat BELOW the
+            list, so on a clinic with a dozen labs you scrolled past all of them to add one. */}
+        <button
+          type="button"
+          aria-label="Add vendor"
+          onClick={() => setOpen(true)}
+          className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-lime text-pine shadow-cta"
+        >
+          <Plus className="size-[18px]" />
+        </button>
       </div>
 
       {vendors.data?.items.length === 0 ? (
         <EmptyState variant="inline" icon={<Store className="size-5" />} title="No vendors yet" body="Add the labs you send cases to." />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="rounded-2xl bg-white shadow-elev-1">
           {vendors.data?.items.map((v) => (
             <button
               key={v.id}
               type="button"
               onClick={() => setSelected(v)}
-              className="rounded-lg border border-border bg-surface p-3 text-left shadow-elev-1 transition-shadow active:shadow-elev-2"
+              className="flex w-full items-center gap-3 px-[15px] py-3 text-left [&:not(:last-child)]:border-b [&:not(:last-child)]:border-hair"
             >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">{v.name}</p>
-                <WaChip v={v} />
-              </div>
-              <p className="text-xs text-text-subtle">
-                {v.contactPersonName ? `${v.contactPersonName} · ` : ''}
-                {v.defaultTurnaroundDays}-day turnaround
-              </p>
-              {v.specialties.length > 0 ? (
-                <div className="mt-1.5 flex flex-wrap gap-1">
-                  {v.specialties.map((s) => (
-                    <span key={s} className="rounded-pill bg-paper-warm px-2 py-0.5 text-[10px] text-text-subtle">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
+              {/* Initials, as the frame has them. A lab is a place you picture, and three
+                  rows of identical text is harder to pick from than three marks. */}
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-pill border border-hair-2 text-xs font-heavy text-pine-3">
+                {initials(v.name)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14.5px] font-heavy text-pine">{v.name}</span>
+                <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <WaChip v={v} />
+                  {/* On-time and turnaround sit on the row, as the frame has them: they are
+                      how you tell one lab from another, not analysis you go looking for. */}
+                  <VendorRowStats vendorId={v.id} fallbackTarget={v.defaultTurnaroundDays} />
+                </span>
+              </span>
+              <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
             </button>
           ))}
         </div>
       )}
 
-      <Button className="self-start" onClick={() => setOpen(true)}>
-        <Plus className="size-4" /> Add vendor
-      </Button>
+      {/*
+        Frame 61's "90-day performance". The numbers already existed behind
+        GET /lab/vendors/:id/analytics and were only reachable by opening a vendor's sheet —
+        so comparing two labs meant opening one, remembering it, and opening the other.
+
+        Shown for the first vendor by default, which is the one the panel names.
+      */}
+      {vendors.data?.items.length ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="px-1 text-[13.5px] font-heavy text-pine">
+            90-day performance · {(selected ?? vendors.data.items[0]!).name}
+          </h2>
+          <VendorPerformance vendorId={(selected ?? vendors.data.items[0]!).id} />
+        </section>
+      ) : null}
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title="New lab vendor">
         <div className="flex flex-col gap-3 p-5">

@@ -40,7 +40,6 @@ import {
   toLabVendorResponse,
 } from '../lib/lab/serialize.js';
 import { labBucketWhere } from '../lib/lab/buckets.js';
-import { vendorPerformance } from '../lib/lab/vendor-performance.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -168,36 +167,6 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     const vendor = await loadVendorOr404(req.clinicId!, id);
     await fastify.audit('LAB_VENDOR_CONTACT_REVEALED', 'LabVendor', id);
     return ok(toLabVendorResponse(vendor, true));
-  });
-
-  /**
-   * GET /lab/vendors/:id/performance — frame 61's "90-day performance" panel.
-   *
-   * NOT audited the way the detail route is: this returns aggregates about the vendor's
-   * work, no decrypted phone or address, so there is no PII reveal to record.
-   *
-   * The window is 90 days from now, matching the panel's own heading. Cases are counted by
-   * when they were SENT — a case sent four months ago and returned yesterday belongs to the
-   * quarter the clinic committed to it, not to this one.
-   */
-  fastify.get('/lab/vendors/:id/performance', anyRole, async (req) => {
-    const { id } = req.params as { id: string };
-    const clinicId = req.clinicId!;
-    await loadVendorOr404(clinicId, id);
-
-    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-    const [cases, messages] = await Promise.all([
-      prisma.labCase.findMany({
-        where: { clinicId, vendorId: id, sentAt: { gte: since } },
-        select: { status: true, sentAt: true, returnedAt: true, expectedReturnAt: true },
-      }),
-      prisma.labMessage.findMany({
-        where: { clinicId, labVendorId: id, createdAt: { gte: since } },
-        select: { direction: true, createdAt: true, costPaise: true },
-      }),
-    ]);
-
-    return ok(vendorPerformance(cases, messages));
   });
 
   fastify.patch('/lab/vendors/:id', doctorAdmin, async (req) => {

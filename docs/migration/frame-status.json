@@ -547,9 +547,9 @@
   {
     "frame": "v9-61",
     "name": "Lab vendors",
-    "status": "MISMATCHED",
-    "changedPct": 7.3959283959283955,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.961389961389962,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

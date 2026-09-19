@@ -1473,6 +1473,39 @@
       "reason": "The frame has four status chips (All / Sent / Production / Ready) and no search. The implementation keeps its five (adding Delivered) and the search field, and the two filter systems clear each other so they can never disagree about what is on screen.\n\nSearch is how you find LC-SM0003CC when a vendor phones about it, which is the actual reason anyone opens this screen mid-day. Removing a working control for pixel fidelity is what Gate A forbids.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 127,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-61"
+      ],
+      "summary": "The performance panel carries an overdue callout the frame does not have",
+      "reason": "Frame 61's panel is four tiles: turnaround, median reply, volume/issues, WhatsApp cost per case. The implementation renders those four and adds one line beneath — 'N cases overdue with this lab right now' — only when N is above zero.\n\nEvery tile above it is a thing to KNOW; that line is a thing to DO. A clinic reading a lab's scorecard and discovering two of its own cases are late with that lab right now should not have to go back to the case list to find out. It is hidden entirely at zero, so it never becomes furniture.\n\nThe analytics endpoint already returned `overdueOpenCount`; nothing new is computed for it.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 128,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-61"
+      ],
+      "summary": "Median reply renders in minutes below the hour, and the panel shows the selected vendor",
+      "reason": "The analytics return `medianReplyHours`. Below one hour that reads as '0.3h', a number the reader has to convert before it means anything, so it renders as '18 min'. Frame 61's own tile says '38 min'.\n\nThe frame names one lab in the heading ('90-day performance · Sri Balaji') without showing how it was chosen. The implementation shows the first vendor by default and follows the selection when a row is tapped, so the heading always names what is beneath it.\n\nA lab with no cases in the window gets a sentence saying so rather than four tiles of dashes.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 129,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-61"
+      ],
+      "summary": "A vendor with no completed history shows its configured target instead of an average",
+      "reason": "The frame's rows carry 'On-time 86%' and '4.1d avg' — a lab with a track record. A lab with NO cases in the 90-day window has neither, and rendering '—d avg' is a blank pretending to be data.\n\nSo a lab with no history falls back to '7d target': a fact about the arrangement the clinic actually made, which is the useful thing to know before the first case comes back.\n\nA lab that HAS history shows its real numbers even when they are bad — the seeded lab reads 'On-time 0%' in warn against an 8d average on a 7d target, because all three of its returned cases were late. That is not an empty state to hide; it is the number the screen exists to show, and softening it would make the panel useless for the one decision it supports.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

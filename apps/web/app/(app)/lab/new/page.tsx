@@ -46,6 +46,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+/**
+ * The two due presets the frame offers beside the date picker. Computed at render, not at
+ * module load, so a tab left open overnight does not offer yesterday.
+ */
+const DUE_PRESETS: { label: string; iso: () => string }[] = [
+  {
+    label: 'This Friday',
+    iso: () => {
+      const d = new Date();
+      // 5 = Friday. Always the NEXT one, so on a Friday it means a week today rather than
+      // a deadline that has already passed.
+      d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7));
+      return d.toISOString().slice(0, 10);
+    },
+  },
+  {
+    label: '+1 week',
+    iso: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return d.toISOString().slice(0, 10);
+    },
+  },
+];
+
 const inputCls = 'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-border-strong';
 
 export default function NewLabCasePage() {
@@ -76,7 +101,23 @@ export default function NewLabCasePage() {
     [teethRaw],
   );
 
-  const { valid, errors } = validateNewCase({ patientId, vendorId, type, teeth });
+  const { valid, errors: allErrors } = validateNewCase({ patientId, vendorId, type, teeth });
+
+  /**
+   * Required-field errors appear only after someone has TRIED to save.
+   *
+   * The form rendered all four the moment it opened — "Select a patient", "Select a vendor",
+   * "Pick a case type", "Select at least one tooth" — in red, on an untouched screen. That
+   * tells a receptionist they have done something wrong before they have done anything, and
+   * it trains them to ignore red, which is the colour this app uses for allergy conflicts.
+   *
+   * The Save buttons stay enabled either way: pressing one is how you find out what is
+   * missing, and a disabled button that will not say why is worse than an error that waits
+   * its turn.
+   */
+  const [tried, setTried] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+  const errors = tried ? allErrors : ({} as typeof allErrors);
 
   const patientList = patients.data?.pages.flatMap((p) => p.items) ?? [];
 
@@ -104,6 +145,8 @@ export default function NewLabCasePage() {
   // Create the DRAFT, then optionally send it (the send needs the created id, so it runs inline).
   async function save(send: boolean) {
     if (!valid || !patientId || !vendorId || !type) {
+      // Now they have tried, so now the fields may say what is missing.
+      setTried(true);
       toast.error('Fill the required fields');
       return;
     }
@@ -115,6 +158,7 @@ export default function NewLabCasePage() {
       material: material || undefined,
       shade: shade || undefined,
       description: description || undefined,
+      expectedReturnAt: dueDate ? new Date(dueDate) : undefined,
       costPaise: costRupees ? Math.round(Number(costRupees) * 100) : undefined,
       patientChargePaise: chargeRupees ? Math.round(Number(chargeRupees) * 100) : undefined,
     };
@@ -180,18 +224,56 @@ export default function NewLabCasePage() {
         {errors.patientId ? <span className="text-xs text-danger">{errors.patientId}</span> : null}
       </Field>
 
-      <Field label="Vendor">
-        <select className={inputCls} value={vendorId ?? ''} onChange={(e) => setVendorId(e.target.value || undefined)}>
-          <option value="">Select a vendor</option>
-          {vendors.data?.items.map((v) => (
-            <option key={v.id} value={v.id}>
+      {/*
+        Frame 59: vendor as CHIPS, recent first — not a native <select>.
+
+        A clinic sends to two or three labs. A dropdown makes picking one a two-tap
+        interaction with a system UI in between, and hides the fact that there are only two
+        choices. Chips show the whole decision at once.
+
+        The first four are shown; a clinic with more gets the rest behind "All", which is the
+        dropdown doing the job a dropdown is actually good at.
+      */}
+      <Field label="Vendor · recent first">
+        <span className="flex flex-wrap gap-2">
+          {(vendors.data?.items ?? []).slice(0, 4).map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => setVendorId(vendorId === v.id ? undefined : v.id)}
+              className={cn(
+                'rounded-pill px-[13px] py-2 text-xs font-heavy transition-colors',
+                vendorId === v.id
+                  ? 'bg-pine text-white'
+                  : 'bg-[rgba(31,42,35,0.05)] text-pine',
+              )}
+            >
               {v.name}
-            </option>
+            </button>
           ))}
-        </select>
-        <button type="button" className="self-start text-xs text-info" onClick={() => router.push('/lab/vendors')}>
-          + New vendor
-        </button>
+          {(vendors.data?.items.length ?? 0) > 4 ? (
+            <select
+              aria-label="All vendors"
+              className="rounded-pill bg-[rgba(31,42,35,0.05)] px-3 py-2 text-xs font-heavy text-pine"
+              value={vendorId ?? ''}
+              onChange={(e) => setVendorId(e.target.value || undefined)}
+            >
+              <option value="">All ▾</option>
+              {vendors.data?.items.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+          <button
+            type="button"
+            className="rounded-pill border border-dashed border-hair-2 px-[13px] py-2 text-xs font-heavy text-pine-3"
+            onClick={() => router.push('/lab/vendors')}
+          >
+            + New
+          </button>
+        </span>
         {errors.vendorId ? <span className="text-xs text-danger">{errors.vendorId}</span> : null}
       </Field>
 
@@ -217,6 +299,41 @@ export default function NewLabCasePage() {
       <Field label="Teeth (FDI, comma-separated)">
         <input className={inputCls} placeholder="e.g. 26, 27" value={teethRaw} onChange={(e) => setTeethRaw(e.target.value)} />
         {errors.teeth ? <span className="text-xs text-danger">{errors.teeth}</span> : null}
+      </Field>
+
+      {/*
+        Frame 59's DUE row. The API has always accepted `expectedReturnAt`; this form never
+        offered it, so every case silently inherited the vendor's default turnaround and a
+        rush job had no way to say so.
+
+        Left blank it still inherits the default, which is the right thing to happen when
+        nobody has an opinion — the chips are for when somebody does.
+      */}
+      <Field label="Due">
+        <span className="flex flex-wrap items-center gap-2">
+          {DUE_PRESETS.map((d) => (
+            <button
+              key={d.label}
+              type="button"
+              onClick={() => setDueDate(dueDate === d.iso() ? '' : d.iso())}
+              className={cn(
+                'rounded-pill px-[13px] py-2 text-xs font-heavy transition-colors',
+                dueDate === d.iso()
+                  ? 'bg-pine text-white'
+                  : 'bg-[rgba(31,42,35,0.05)] text-pine',
+              )}
+            >
+              {d.label}
+            </button>
+          ))}
+          <input
+            type="date"
+            aria-label="Pick a due date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="rounded-pill bg-[rgba(31,42,35,0.05)] px-3 py-2 text-xs font-heavy text-pine"
+          />
+        </span>
       </Field>
 
       <Field label="Material">

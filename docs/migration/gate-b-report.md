@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 37 |
+| APPROVED-DEVIATION | 38 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 10 |
+| MISMATCHED | 9 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -104,7 +104,7 @@ _None. Every task closed its own decisions._
 | `v9-58` | Lab — case detail | 28 | MISMATCHED | 14.7% | criterion "layout" unreviewed |
 | `v9-59` | The ＋ — quick New-case sheet | 28 | MISMATCHED | 39.7% | criterion "layout" unreviewed |
 | `v9-60` | WhatsApp consent gate | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
-| `v9-61` | Lab vendors | 28 | MISMATCHED | 7.4% | criterion "layout" unreviewed |
+| `v9-61` | Lab vendors | 28 | APPROVED-DEVIATION | 7.0% | — |
 | `v9-62` | Patient inbox | 29 | MISMATCHED | 10.1% | criterion "layout" unreviewed |
 | `v9-63` | Conversation thread | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
 | `v9-64` | Thread — window closed | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
@@ -978,17 +978,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 39.7%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-61` — Lab vendors · MISMATCHED
+### `v9-61` — Lab vendors · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 7.0%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -996,6 +996,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.4%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #127 (approved): The performance panel carries an overdue callout the frame does not have
+- `APPROVED-DEVIATION` #128 (approved): Median reply renders in minutes below the hour, and the panel shows the selected vendor
+- `APPROVED-DEVIATION` #129 (approved): A vendor with no completed history shows its configured target instead of an average
 
 ### `v9-62` — Patient inbox · MISMATCHED
 
