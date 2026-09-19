@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 40 |
+| APPROVED-DEVIATION | 41 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 7 |
+| MISMATCHED | 6 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -89,7 +89,7 @@ _None. Every task closed its own decisions._
 | `v9-43` | Visit record — read-only sheet | 23 | NOT-BUILT | — | Task 23 owns this; no route or state driver reaches it yet |
 | `v9-44` | Prescription sheet — dose dots | 24 | NOT-BUILT | — | Task 24 owns this; no route or state driver reaches it yet |
 | `v9-45` | Prescription — conflict caught | 24 | NOT-BUILT | — | Task 24 owns this; no route or state driver reaches it yet |
-| `v9-46` | Schedule — doctor day | 25 | MISMATCHED | 6.4% | criterion "layout" unreviewed |
+| `v9-46` | Schedule — doctor day | 25 | APPROVED-DEVIATION | 8.4% | NOT-BUILT #130: ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned |
 | `v9-47` | Schedule — reception multi-doctor | 25 | MISMATCHED | 5.0% | criterion "layout" unreviewed |
 | `v9-48` | New appointment sheet | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
 | `v9-49` | Schedule — drag to reschedule | 25 | NOT-BUILT | — | Task 25 owns this; no route or state driver reaches it yet |
@@ -814,17 +814,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 2.9%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-46` — Schedule — doctor day · MISMATCHED
+### `v9-46` — Schedule — doctor day · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.4%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -834,6 +834,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 - `MUST-FIX` #110 (fixed): DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct
 - `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
+- `NOT-BUILT` #135 (open): The Day / Week / Mo switch is absent — no frame describes Week or Month
+- `APPROVED-DEVIATION` #136 (approved): No-shows now appear on the grid; cancelled and rescheduled slots still do not
+- `APPROVED-DEVIATION` #137 (approved): Cards are white with a tone spine, lead with the patient, and the now-line is lime
 
 ### `v9-47` — Schedule — reception multi-doctor · MISMATCHED
 

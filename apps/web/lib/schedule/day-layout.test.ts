@@ -90,3 +90,45 @@ describe('buildDayLayout', () => {
     expect(layout.blocks).toHaveLength(0);
   });
 });
+
+describe('what the day grid shows', () => {
+  const hours = {
+    open: '09:00',
+    close: '18:00',
+    lunchStart: null,
+    lunchEnd: null,
+    weeklyOffDays: [],
+    timezone: 'Asia/Kolkata',
+  };
+  const appt = (status: string) => ({
+    id: status,
+    patientName: 'P',
+    startsAt: '2026-07-13T04:00:00.000Z',
+    endsAt: '2026-07-13T04:30:00.000Z',
+    durationMinutes: 30,
+    status,
+    procedureHint: null,
+    seriesIndex: null,
+    seriesTotal: null,
+    sittingNumber: null,
+    roomName: null,
+  }) as never;
+
+  it('shows a no-show — the grid must not claim that slot was empty', () => {
+    const l = buildDayLayout({
+      dateISO: '2026-07-13',
+      clinicHours: hours,
+      appointments: [appt('NO_SHOW')],
+    });
+    expect(l.blocks).toHaveLength(1);
+  });
+
+  it('hides a cancelled or rescheduled slot, which really is free again', () => {
+    const l = buildDayLayout({
+      dateISO: '2026-07-13',
+      clinicHours: hours,
+      appointments: [appt('CANCELLED'), appt('RESCHEDULED')],
+    });
+    expect(l.blocks).toHaveLength(0);
+  });
+});

@@ -42,3 +42,33 @@ export function appointmentSubtitle(a: Pick<ScheduleAppointment, 'procedureHint'
   else if (a.sittingNumber) bits.push(`Sitting ${a.sittingNumber}`);
   return bits.join(' · ');
 }
+
+export interface ApptChip {
+  label: string;
+  tone: 'live' | 'sky' | 'neutral' | 'crit';
+}
+
+/**
+ * Frame 46's right-hand status chip on a schedule row.
+ *
+ * SCHEDULED gets nothing. A day of booked appointments is the normal case, and a "Scheduled"
+ * chip on every row is a column of the same word — it tells the reader only that the list is
+ * a list. The chips exist to mark the rows that have MOVED: someone is in the chair, someone
+ * is waiting, someone did not come.
+ */
+export function appointmentChip(status: string): ApptChip | null {
+  switch (status) {
+    case 'COMPLETED':
+      return { label: '✓', tone: 'live' };
+    case 'CHECKED_IN':
+      return { label: 'Waiting', tone: 'sky' };
+    case 'CANCELLED':
+      return { label: 'Cancelled', tone: 'neutral' };
+    case 'NO_SHOW':
+      return { label: 'No-show', tone: 'crit' };
+    case 'RESCHEDULED':
+      return { label: 'Moved', tone: 'neutral' };
+    default:
+      return null;
+  }
+}

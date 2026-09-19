@@ -1564,6 +1564,38 @@
       "reason": "The form rendered four errors the moment it opened — 'Select a patient', 'Select a vendor', 'Pick a case type', 'Select at least one tooth' — in red, on a screen nobody had touched. That tells a receptionist they have done something wrong before they have done anything, and it trains them to ignore red, which is the colour this app uses for allergy conflicts.\n\nErrors now appear after someone presses a save button. The buttons stay ENABLED rather than disabled-until-valid: pressing one is how you find out what is missing, and a disabled button that will not say why is worse than an error that waits its turn.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 135,
+      "class": "NOT-BUILT",
+      "frames": [
+        "v9-46"
+      ],
+      "summary": "The Day / Week / Mo switch is absent — no frame describes Week or Month",
+      "reason": "Frame 46 puts a three-way segmented control at the top right. The schedule has only a day view (single-doctor and multi-doctor), and the API's list endpoint does accept `view=week`.\n\nThe control is not added, because adding it means inventing two screens. Nothing in the v9 set draws a week or a month: not the density, not what a row becomes when seven days share the width, not what a month cell shows when a day holds nine appointments. Shipping a control that opens onto a guess is worse than shipping the day view the frames actually specify — and a segmented control with two dead options is precisely the dead control Gate C exists to catch.\n\nWhat Week and Month look like is a design question for the owner.",
+      "status": "open"
+    },
+    {
+      "id": 136,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-46"
+      ],
+      "summary": "No-shows now appear on the grid; cancelled and rescheduled slots still do not",
+      "reason": "The day grid filtered NO_SHOW out entirely, so a slot somebody was booked into and did not attend rendered as empty space. That is the app telling a receptionist nothing happened at 11:15 when in fact somebody failed to turn up — and chasing that is their job.\n\nNo-shows now render with the only crit chip on the screen. CANCELLED and RESCHEDULED remain hidden: those slots genuinely are free again, and a rescheduled appointment exists as its own row on the day it moved to.\n\n(The three no-shows in the capture are an artefact of seeding a past date — the app's own cron marks overdue SCHEDULED rows — not of the design.)",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 137,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-46"
+      ],
+      "summary": "Cards are white with a tone spine, lead with the patient, and the now-line is lime",
+      "reason": "Three changes, each with a reason beyond matching the frame.\n\nThe cards were a TINTED FILL, and the tint was translucent — so the hour gridline behind showed straight through the subtitle and every row read as struck through. In this app struck-through text means cancelled, so an ordinary day looked like a day of cancellations. White cards with a 3px tone spine, as the frame draws them, fix the bleed and keep the procedure colour.\n\nThe PATIENT now leads. The row used to open with the time — which is the one fact the card's position on the grid has already told you — spending the strongest position on nothing.\n\nThe now-line was RED. Red in this product means a problem: a cancelled case, an allergy conflict, a no-show. \"It is currently 10:34\" is not a problem. It is lime, with a dot, as frame 46 has it.\n\nThe grid also went from 1.2px to 1.6px per minute, because 36px is shorter than two lines of text and a 30-minute card was clipping the line that says what the patient is coming in for.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

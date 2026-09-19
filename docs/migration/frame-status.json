@@ -410,9 +410,9 @@
   {
     "frame": "v9-46",
     "name": "Schedule — doctor day",
-    "status": "MISMATCHED",
-    "changedPct": 6.3562653562653555,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 8.445419445419446,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
