@@ -28,10 +28,23 @@ export async function reportRoutes(fastify: FastifyInstance): Promise<void> {
     const start = localDateTimeToUtc(date, '00:00', tz);
     const end = new Date(start.getTime() + DAY_MS);
 
-    const payments = await prisma.payment.findMany({
-      where: { clinicId, status: 'SUCCEEDED', receivedAt: { gte: start, lt: end } },
-      include: { bill: { select: { doctorIdSnapshot: true } } },
+    // TOTALS count money the clinic kept, so they stay SUCCEEDED-only. The FEED below shows
+    // what happened, which includes the refunds — a day where ₹300 went back out is not the
+    // same day as one where it did not, and a list that silently omits them invites a
+    // receptionist to reconcile a drawer against a number that does not explain itself.
+    const dayPayments = await prisma.payment.findMany({
+      where: {
+        clinicId,
+        status: { in: ['SUCCEEDED', 'REFUNDED', 'PARTIAL_REFUND'] },
+        receivedAt: { gte: start, lt: end },
+      },
+      include: {
+        bill: { select: { doctorIdSnapshot: true } },
+        patient: { select: { name: true } },
+      },
+      orderBy: { receivedAt: 'desc' },
     });
+    const payments = dayPayments.filter((p) => p.status === 'SUCCEEDED');
     const byMethod: Partial<Record<PaymentMethod, number>> = {};
     const byDoctorMap = new Map<string, number>();
     let totalCollectedPaise = 0;
@@ -55,6 +68,18 @@ export async function reportRoutes(fastify: FastifyInstance): Promise<void> {
 
     return ok({
       date,
+      // The day's feed, newest first — frame 54's "Latest". Capped at 20: this is a glance at
+      // what just happened, not a ledger, and the full list lives behind the bills screen.
+      recent: dayPayments.slice(0, 20).map((p) => ({
+        id: p.id,
+        patientName: p.patient?.name ?? 'Unknown',
+        receivedAt: p.receivedAt ?? p.createdAt,
+        method: p.method,
+        amountPaise: p.amountPaise,
+        // A refund is money leaving. The row renders it signed, so the sign has to be a fact
+        // the server states rather than something the client infers from a status string.
+        isRefund: p.status !== 'SUCCEEDED',
+      })),
       totalCollectedPaise,
       byMethod,
       byDoctor,

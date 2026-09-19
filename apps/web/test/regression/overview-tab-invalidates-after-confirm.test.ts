@@ -12,7 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const page = readFileSync(join(webRoot, 'app', '(app)', 'consult', '[id]', 'page.tsx'), 'utf8');
 
-describe('consult confirm — patient queries invalidate before the redirect', () => {
+describe('consult confirm — patient queries invalidate on CONFIRMED', () => {
   it('invalidates patient, plans, procedures, visits and teeth for the patient', () => {
     for (const key of ['patient', 'plans', 'completed-procedures', 'visits', 'teeth']) {
       expect(page, `missing invalidation of ['${key}', patientId]`).toContain(`['${key}', patientId]`);
@@ -23,10 +23,21 @@ describe('consult confirm — patient queries invalidate before the redirect', (
     expect(page).toMatch(/invalidateQueries\(\{ queryKey: \['queue'\] \}\)/);
   });
 
-  it('invalidation happens on CONFIRMED, before the router.replace back to the patient', () => {
-    const confirmedBlock = page.slice(page.indexOf("state.kind === 'CONFIRMED'"), page.indexOf("state.kind === 'REJECTED'"));
+  it('invalidation happens on CONFIRMED, not on the way out of the screen', () => {
+    // Originally this asserted invalidation ran BEFORE a router.replace, because the
+    // screen auto-redirected to the patient record 1.8s after saving. Frame 31 gives that
+    // screen two real actions, so the auto-redirect is gone (a screen that vanishes
+    // mid-reach is worse than no buttons) — and with it the ordering this checked.
+    //
+    // The Issue 13 guarantee is unchanged and is what is asserted now: the caches are
+    // invalidated the moment the record commits, so wherever the doctor goes next —
+    // "Call next", "Back to Flow", or the patient record by hand — nothing serves the
+    // pre-confirm "0 of 4 sittings" from the 30s staleTime.
+    const confirmedBlock = page.slice(
+      page.indexOf("state.kind === 'CONFIRMED'"),
+      page.indexOf("state.kind === 'REJECTED'"),
+    );
     expect(confirmedBlock).toContain('invalidateQueries');
-    expect(confirmedBlock).toContain('router.replace');
-    expect(confirmedBlock.indexOf('invalidateQueries')).toBeLessThan(confirmedBlock.indexOf('router.replace'));
+    expect(confirmedBlock).not.toContain('setTimeout');
   });
 });

@@ -20,9 +20,12 @@ describe('consult context view', () => {
     expect(hasComplaint(ctx({ chiefComplaint: '' }))).toBe(false);
   });
 
-  it('summarises name + complaint for the recording strip, clipping long text', () => {
-    expect(recordingStripText(ctx())).toBe('Akhilesh · "Tooth pain on upper left, sensitive to cold"');
-    expect(recordingStripText(ctx({ chiefComplaint: null }))).toBe('Akhilesh');
+  it('renders the complaint for the recording chip, clipping long text', () => {
+    // Frame 23's chip: no patient name (it is in the strip above), "C/O" as the label.
+    expect(recordingStripText(ctx())).toBe('C/O Tooth pain on upper left, sensitive to cold');
+    // Nothing to say without a complaint — the caller drops the chip rather than
+    // rendering a pill that only repeats the name already on screen.
+    expect(recordingStripText(ctx({ chiefComplaint: null }))).toBe('');
     const long = recordingStripText(ctx({ chiefComplaint: 'a'.repeat(120) }), 30);
     expect(long.length).toBeLessThan(45);
     expect(long).toContain('…');

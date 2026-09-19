@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
  * See design-system.md §6 + §12.1.
  */
 const heroCard = cva(
-  'relative block w-full overflow-hidden rounded-xl text-left transition-all duration-base ease-spring-soft',
+  'relative block w-full overflow-hidden rounded-xl text-left transition-[transform,box-shadow] duration-base ease-spring-soft',
   {
     variants: {
       variant: {

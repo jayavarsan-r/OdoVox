@@ -53,7 +53,8 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
   // Shared plumbing (lib/voice/dictation.ts) — same clinic scoping + transient-audio guarantee
   // as the domain-hosted dictate endpoints (appointments, lab).
   const assertOwnKey = assertOwnDictationKey;
-  const transcribeAndPurge = (storageKey: string) => transcribeAndPurgeDictation(storageKey, fastify.log);
+  const transcribeAndPurge = (storageKey: string, fixture?: string) =>
+    transcribeAndPurgeDictation(storageKey, fastify.log, fixture);
 
   // Shared presign for all dictation surfaces.
   fastify.post('/dictate/presign', anyClinical, async (req) => {
@@ -78,7 +79,8 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/patients/intake/dictate', doctorOnly, async (req) => {
     const { storageKey } = parse(IntakeInput, req.body);
     assertOwnKey(storageKey, req.clinicId!);
-    const transcript = await transcribeAndPurge(storageKey);
+    // 'intake' selects the seeded demo intake recording under the mock provider only.
+    const transcript = await transcribeAndPurge(storageKey, "intake");
     const intake = await getExtractor(fastify.log).extractPatientIntake(transcript);
     await fastify.audit('DICTATE_INTAKE', 'Dictation', null);
     return ok({ intake, transcript });
@@ -90,7 +92,8 @@ export async function dictateRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/queue/walkin/dictate', anyClinical, async (req) => {
     const { storageKey } = parse(IntakeInput, req.body);
     assertOwnKey(storageKey, req.clinicId!);
-    const transcript = await transcribeAndPurge(storageKey);
+    // 'intake' selects the seeded demo intake recording under the mock provider only.
+    const transcript = await transcribeAndPurge(storageKey, "intake");
     const intake = await getExtractor(fastify.log).extractPatientIntake(transcript);
     await fastify.audit('DICTATE_WALKIN', 'Dictation', null);
     return ok({ intake, transcript });

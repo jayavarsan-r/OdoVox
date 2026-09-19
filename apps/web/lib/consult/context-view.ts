@@ -15,13 +15,20 @@ export function hasComplaint(ctx: ConsultationContext): boolean {
   return !!ctx.visit.chiefComplaint?.trim();
 }
 
-/** A single-line summary for the compact recording strip: "Akhilesh · "Tooth pain upper left"". */
+/**
+ * The recording chip's line: "C/O pain on chewing · lower left".
+ *
+ * It used to lead with the patient's first name, which frame 23 drops — the name is in
+ * the strip directly above, and repeating it costs the chip a third of its width on a
+ * 370px screen. "C/O" is what a dentist writes in the notes, so it reads as the label it
+ * is. With no complaint on file the chip has nothing to say and the caller renders
+ * nothing rather than a chip containing only a name.
+ */
 export function recordingStripText(ctx: ConsultationContext, max = 60): string {
-  const first = ctx.patient.name.split(/\s+/)[0] ?? ctx.patient.name;
-  if (!hasComplaint(ctx)) return first;
+  if (!hasComplaint(ctx)) return '';
   const complaint = ctx.visit.chiefComplaint!.trim();
   const clipped = complaint.length > max ? `${complaint.slice(0, max - 1).trimEnd()}…` : complaint;
-  return `${first} · "${clipped}"`;
+  return `C/O ${clipped}`;
 }
 
 /** Gender to a compact label. */

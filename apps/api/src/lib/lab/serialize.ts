@@ -41,6 +41,7 @@ export function toLabCaseSummary(row: LabCaseSummaryRow): LabCaseSummary {
     status: row.status,
     expectedReturnAt: row.expectedReturnAt,
     createdAt: row.createdAt,
+    treatmentPlanId: row.treatmentPlanId,
   };
 }
 

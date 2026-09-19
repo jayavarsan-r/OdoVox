@@ -35,7 +35,18 @@ function hourLabel(hour: number): string {
   return `${h12} ${hour < 12 || hour === 24 ? 'AM' : 'PM'}`;
 }
 
-const VISIBLE = new Set(['SCHEDULED', 'CHECKED_IN', 'COMPLETED']);
+/**
+ * What appears on the day grid.
+ *
+ * NO_SHOW is INCLUDED. It was not, and hiding it makes the grid claim a slot was empty when
+ * somebody was booked into it and did not come — which is precisely the row a receptionist
+ * needs to see, because chasing it is their job. It renders with the only crit chip on the
+ * screen.
+ *
+ * CANCELLED and RESCHEDULED stay hidden: those slots really are free again, and the
+ * rescheduled appointment exists as its own row on whatever day it moved to.
+ */
+const VISIBLE = new Set(['SCHEDULED', 'CHECKED_IN', 'COMPLETED', 'NO_SHOW']);
 
 /**
  * Compute the doctor day-view layout for one clinic-local date. Pure: positions are minutes from

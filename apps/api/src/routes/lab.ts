@@ -39,6 +39,7 @@ import {
   toLabCaseSummary,
   toLabVendorResponse,
 } from '../lib/lab/serialize.js';
+import { labBucketWhere } from '../lib/lab/buckets.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -214,6 +215,9 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     if (q.status) where.status = q.status;
     if (q.vendorId) where.vendorId = q.vendorId;
     if (q.patientId) where.patientId = q.patientId;
+    // The stat pills filter through the SAME definitions that count them (lib/lab/buckets.ts),
+    // so tapping "1 OVERDUE" cannot return a different number of rows than the pill promised.
+    if (q.bucket) Object.assign(where, labBucketWhere(q.bucket));
     if (q.search) {
       where.OR = [
         { caseNumber: { contains: q.search, mode: 'insensitive' } },
@@ -230,6 +234,24 @@ export async function labRoutes(fastify: FastifyInstance): Promise<void> {
     const hasMore = rows.length > q.limit;
     const items = rows.slice(0, q.limit).map(toLabCaseSummary);
     return ok({ items, nextCursor: hasMore ? items[items.length - 1]!.id : null });
+  });
+
+  /**
+   * GET /lab/cases/stats — the three counts frame 56 puts above the list.
+   *
+   * Counted, not derived from the page the client happens to be holding: the list is
+   * paginated, so counting what has loaded would report "6 ACTIVE" purely because six rows
+   * fit on the screen. These are three COUNT queries against the whole clinic.
+   */
+  fastify.get('/lab/cases/stats', anyRole, async (req) => {
+    const clinicId = req.clinicId!;
+    const now = new Date();
+    const [active, overdue, ready] = await Promise.all(
+      (['active', 'overdue', 'ready'] as const).map((bucket) =>
+        prisma.labCase.count({ where: { clinicId, ...labBucketWhere(bucket, now) } }),
+      ),
+    );
+    return ok({ active, overdue, ready });
   });
 
   fastify.post('/lab/cases', doctorAdmin, async (req, reply) => {

@@ -13,6 +13,7 @@ import {
   type Conflict,
   type ScheduleAppointment,
 } from '@odovox/types';
+import { Prisma } from '@odovox/db';
 import { AppError, ForbiddenError, NotFoundError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
 import { requireRole } from '../lib/rbac.js';
@@ -59,7 +60,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
   const { prisma } = fastify;
-  const anyRole = { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')] };
+  const anyRole = {
+    preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')],
+  };
   const staffOnly = { preHandler: [fastify.authenticate, requireRole('RECEPTIONIST', 'ADMIN')] };
 
   // ── Loaders ───────────────────────────────────────────────────────────────────────────────
@@ -124,10 +127,21 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
         clinicId,
         deletedAt: null,
         status: { in: ['SCHEDULED', 'CHECKED_IN'] },
-        startsAt: { gte: new Date(startsAt.getTime() - DAY_MS), lte: new Date(endsAt.getTime() + DAY_MS) },
+        startsAt: {
+          gte: new Date(startsAt.getTime() - DAY_MS),
+          lte: new Date(endsAt.getTime() + DAY_MS),
+        },
         ...(doctorId ? { doctorId } : {}),
       },
-      select: { id: true, doctorId: true, roomId: true, patientId: true, startsAt: true, endsAt: true, status: true },
+      select: {
+        id: true,
+        doctorId: true,
+        roomId: true,
+        patientId: true,
+        startsAt: true,
+        endsAt: true,
+        status: true,
+      },
     });
     return rows;
   }
@@ -135,7 +149,14 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
   // ── Conflict gate ───────────────────────────────────────────────────────────────────────────
   async function runConflicts(
     clinicId: string,
-    appt: { doctorId: string; roomId?: string | null; patientId?: string; startsAt: Date; endsAt: Date; excludeAppointmentId?: string },
+    appt: {
+      doctorId: string;
+      roomId?: string | null;
+      patientId?: string;
+      startsAt: Date;
+      endsAt: Date;
+      excludeAppointmentId?: string;
+    },
   ): Promise<Conflict[]> {
     const [clinicHours, availability, dayOffs, existing] = await Promise.all([
       clinicHoursOf(clinicId),
@@ -156,7 +177,9 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
   /** Throw 409 CONFLICTS when any HARD conflict, or any SOFT conflict not acknowledged, is present. */
   function gateConflicts(conflicts: Conflict[], acknowledged: string[] = []): void {
     const hard = conflicts.filter((c) => c.kind === 'HARD');
-    const unackedSoft = conflicts.filter((c) => c.kind === 'SOFT' && !acknowledged.includes(c.code));
+    const unackedSoft = conflicts.filter(
+      (c) => c.kind === 'SOFT' && !acknowledged.includes(c.code),
+    );
     if (hard.length > 0 || unackedSoft.length > 0) {
       throw new AppError('Scheduling conflicts', 409, 'CONFLICTS', {
         conflicts: [...hard, ...unackedSoft],
@@ -165,13 +188,25 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
   }
 
   /** First room with no occupying overlap in [startsAt,endsAt], or null. */
-  async function pickRoom(clinicId: string, startsAt: Date, endsAt: Date, excludeId?: string): Promise<string | null> {
-    const rooms = await prisma.room.findMany({ where: { clinicId, deletedAt: null, status: { not: 'OFFLINE' } }, select: { id: true } });
+  async function pickRoom(
+    clinicId: string,
+    startsAt: Date,
+    endsAt: Date,
+    excludeId?: string,
+  ): Promise<string | null> {
+    const rooms = await prisma.room.findMany({
+      where: { clinicId, deletedAt: null, status: { not: 'OFFLINE' } },
+      select: { id: true },
+    });
     if (rooms.length === 0) return null;
     const busy = await occupyingAround(clinicId, startsAt, endsAt);
     for (const r of rooms) {
       const clash = busy.some(
-        (b) => b.roomId === r.id && b.id !== excludeId && b.startsAt.getTime() < endsAt.getTime() && b.endsAt.getTime() > startsAt.getTime(),
+        (b) =>
+          b.roomId === r.id &&
+          b.id !== excludeId &&
+          b.startsAt.getTime() < endsAt.getTime() &&
+          b.endsAt.getTime() > startsAt.getTime(),
       );
       if (!clash) return r.id;
     }
@@ -205,8 +240,15 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
   }
 
   /** Re-load with joins and broadcast a schedule event after commit. */
-  async function broadcastAppt(clinicId: string, id: string, type: ScheduleEvent): Promise<ScheduleAppointment> {
-    const full = await prisma.appointment.findFirstOrThrow({ where: { id, clinicId }, include: APPOINTMENT_INCLUDE });
+  async function broadcastAppt(
+    clinicId: string,
+    id: string,
+    type: ScheduleEvent,
+  ): Promise<ScheduleAppointment> {
+    const full = await prisma.appointment.findFirstOrThrow({
+      where: { id, clinicId },
+      include: APPOINTMENT_INCLUDE,
+    });
     const payload = serializeAppointment(full);
     broadcastToClinic(clinicId, { type, payload } as never);
     return payload;
@@ -229,7 +271,8 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     if (q.doctorId === 'me') {
       doctorFilter = req.user!.id;
     } else if (q.doctorId === 'all') {
-      if (req.role === 'DOCTOR') throw new ForbiddenError('Doctors can only view their own schedule');
+      if (req.role === 'DOCTOR')
+        throw new ForbiddenError('Doctors can only view their own schedule');
       doctorFilter = undefined; // all doctors
     } else {
       if (req.role === 'DOCTOR' && q.doctorId !== req.user!.id) {
@@ -253,7 +296,9 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     });
 
     const [availabilityRows, dayOffRows] = await Promise.all([
-      prisma.doctorAvailability.findMany({ where: { clinicId, ...(doctorFilter ? { doctorId: doctorFilter } : {}) } }),
+      prisma.doctorAvailability.findMany({
+        where: { clinicId, ...(doctorFilter ? { doctorId: doctorFilter } : {}) },
+      }),
       prisma.dayOff.findMany({ where: { clinicId, date: { lt: end } } }),
     ]);
 
@@ -274,7 +319,14 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
         doctorId: r.doctorId,
         reason: r.reason,
       })),
-      clinicHours: { open: hours.open, close: hours.close, lunchStart: hours.lunchStart, lunchEnd: hours.lunchEnd, weeklyOffDays: hours.weeklyOffDays, timezone: tz },
+      clinicHours: {
+        open: hours.open,
+        close: hours.close,
+        lunchStart: hours.lunchStart,
+        lunchEnd: hours.lunchEnd,
+        weeklyOffDays: hours.weeklyOffDays,
+        timezone: tz,
+      },
     });
   });
 
@@ -283,7 +335,13 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     const { patientId } = req.params as { patientId: string };
     const clinicId = req.clinicId!;
     const rows = await prisma.appointment.findMany({
-      where: { clinicId, patientId, deletedAt: null, status: 'SCHEDULED', startsAt: { gte: new Date() } },
+      where: {
+        clinicId,
+        patientId,
+        deletedAt: null,
+        status: 'SCHEDULED',
+        startsAt: { gte: new Date() },
+      },
       include: APPOINTMENT_INCLUDE,
       orderBy: { startsAt: 'asc' },
       take: 20,
@@ -301,7 +359,12 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
       dayOffsOf(clinicId, q.doctorId),
     ]);
     const dayStart = localDateTimeToUtc(q.date, '00:00', clinicHours.timezone);
-    const existing = await occupyingAround(clinicId, dayStart, new Date(dayStart.getTime() + DAY_MS), q.doctorId);
+    const existing = await occupyingAround(
+      clinicId,
+      dayStart,
+      new Date(dayStart.getTime() + DAY_MS),
+      q.doctorId,
+    );
     const slots = getAvailableSlots({
       dateISO: q.date,
       doctorId: q.doctorId,
@@ -352,7 +415,12 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
         },
       });
       await tx.appointmentReminder.createMany({
-        data: reminderDrafts({ clinicId, appointmentId: appt.id, patientId: body.patientId, startsAt }),
+        data: reminderDrafts({
+          clinicId,
+          appointmentId: appt.id,
+          patientId: body.patientId,
+          startsAt,
+        }),
       });
       return appt;
     });
@@ -399,28 +467,44 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     // preferred; the raw transcript is the fallback (the mock never emits a phrase).
     const hours = await clinicHoursOf(clinicId);
     const parsed =
-      (extraction.dateTimePhrase ? parseNaturalDate(extraction.dateTimePhrase, hours.timezone) : null) ??
-      parseNaturalDate(transcript, hours.timezone);
+      (extraction.dateTimePhrase
+        ? parseNaturalDate(extraction.dateTimePhrase, hours.timezone)
+        : null) ?? parseNaturalDate(transcript, hours.timezone);
 
     // Candidate patients by spoken name (top 3; the card renders a picker when ambiguous).
     const patientMatches = extraction.patientName
       ? (
           await prisma.patient.findMany({
-            where: { clinicId, deletedAt: null, name: { contains: extraction.patientName.split(/\s+/)[0]!, mode: 'insensitive' } },
+            where: {
+              clinicId,
+              deletedAt: null,
+              name: { contains: extraction.patientName.split(/\s+/)[0]!, mode: 'insensitive' },
+            },
             select: { id: true, name: true, phone: true, age: true },
             take: 3,
           })
-        ).sort((a, b) => Number(b.name.toLowerCase().startsWith(extraction.patientName!.toLowerCase())) - Number(a.name.toLowerCase().startsWith(extraction.patientName!.toLowerCase())))
+        ).sort(
+          (a, b) =>
+            Number(b.name.toLowerCase().startsWith(extraction.patientName!.toLowerCase())) -
+            Number(a.name.toLowerCase().startsWith(extraction.patientName!.toLowerCase())),
+        )
       : [];
 
     const spokenDoctor = extraction.doctorName?.replace(/^dr\.?\s*/i, '').toLowerCase() ?? null;
     const doctorMatches = spokenDoctor
       ? doctors
-          .filter((d) => d.user.name.toLowerCase().replace(/^dr\.?\s*/, '').includes(spokenDoctor))
+          .filter((d) =>
+            d.user.name
+              .toLowerCase()
+              .replace(/^dr\.?\s*/, '')
+              .includes(spokenDoctor),
+          )
           .map((d) => ({ id: d.user.id, name: d.user.name }))
       : [];
     // A doctor dictating without naming one books into their own book.
-    const resolvedDoctor = doctorMatches[0] ?? (req.role === 'DOCTOR' && !spokenDoctor ? { id: req.user!.id, name: '' } : null);
+    const resolvedDoctor =
+      doctorMatches[0] ??
+      (req.role === 'DOCTOR' && !spokenDoctor ? { id: req.user!.id, name: '' } : null);
 
     const durationMinutes = extraction.durationMinutes ?? 30;
     let conflicts = null;
@@ -508,7 +592,12 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
         data: { status: 'CANCELLED' },
       });
       await tx.appointmentReminder.createMany({
-        data: reminderDrafts({ clinicId, appointmentId: id, patientId: existing.patientId, startsAt }),
+        data: reminderDrafts({
+          clinicId,
+          appointmentId: id,
+          patientId: existing.patientId,
+          startsAt,
+        }),
       });
     });
 
@@ -543,7 +632,9 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
         data: { status: 'CANCELLED' },
       });
     });
-    await fastify.audit('APPOINTMENT_CANCELLED', 'Appointment', id, { reason: body.reason ?? null });
+    await fastify.audit('APPOINTMENT_CANCELLED', 'Appointment', id, {
+      reason: body.reason ?? null,
+    });
     const payload = await broadcastAppt(clinicId, id, 'schedule.appointment.cancelled');
     return ok({ appointment: payload });
   });
@@ -554,11 +645,22 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     const clinicId = req.clinicId!;
     const existing = await loadApptOr404(clinicId, id);
     if (existing.status !== 'SCHEDULED') {
-      throw new AppError('Only scheduled appointments can be marked no-show', 422, 'INVALID_STATUS', { status: existing.status });
+      throw new AppError(
+        'Only scheduled appointments can be marked no-show',
+        422,
+        'INVALID_STATUS',
+        { status: existing.status },
+      );
     }
     await prisma.$transaction(async (tx) => {
-      await tx.appointment.update({ where: { id }, data: { status: 'NO_SHOW', noShowAt: new Date() } });
-      await tx.appointmentReminder.updateMany({ where: { appointmentId: id, status: 'PENDING' }, data: { status: 'CANCELLED' } });
+      await tx.appointment.update({
+        where: { id },
+        data: { status: 'NO_SHOW', noShowAt: new Date() },
+      });
+      await tx.appointmentReminder.updateMany({
+        where: { appointmentId: id, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
     });
     await fastify.audit('APPOINTMENT_NO_SHOW', 'Appointment', id, {});
     const payload = await broadcastAppt(clinicId, id, 'schedule.appointment.no_show');
@@ -575,7 +677,12 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
       clinicHoursOf(clinicId),
       availabilityOf(clinicId, body.doctorId),
       dayOffsOf(clinicId, body.doctorId),
-      occupyingAround(clinicId, body.firstStartsAt, new Date(body.firstStartsAt.getTime() + 370 * DAY_MS), body.doctorId),
+      occupyingAround(
+        clinicId,
+        body.firstStartsAt,
+        new Date(body.firstStartsAt.getTime() + 370 * DAY_MS),
+        body.doctorId,
+      ),
     ]);
 
     const { plan, unscheduled } = generateRecurringSeries({
@@ -623,7 +730,12 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
           },
         });
         await tx.appointmentReminder.createMany({
-          data: reminderDrafts({ clinicId, appointmentId: appt.id, patientId: body.patientId, startsAt: draft.startsAt }),
+          data: reminderDrafts({
+            clinicId,
+            appointmentId: appt.id,
+            patientId: body.patientId,
+            startsAt: draft.startsAt,
+          }),
         });
         out.push(appt.id);
       }
@@ -638,7 +750,8 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     });
     // One bulk broadcast per appointment (documented choice: simplest for the calendar to place each).
     const payloads: ScheduleAppointment[] = [];
-    for (const id of ids) payloads.push(await broadcastAppt(clinicId, id, 'schedule.appointment.created'));
+    for (const id of ids)
+      payloads.push(await broadcastAppt(clinicId, id, 'schedule.appointment.created'));
 
     reply.status(201);
     return ok({ seriesId, appointments: payloads });
@@ -670,11 +783,22 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     await prisma.$transaction(async (tx) => {
       await tx.appointment.updateMany({
         where: { id: { in: ids } },
-        data: { status: 'CANCELLED', cancelledAt: new Date(), cancelledById: req.user!.id, cancellationReason: body.reason ?? 'Series cancelled' },
+        data: {
+          status: 'CANCELLED',
+          cancelledAt: new Date(),
+          cancelledById: req.user!.id,
+          cancellationReason: body.reason ?? 'Series cancelled',
+        },
       });
-      await tx.appointmentReminder.updateMany({ where: { appointmentId: { in: ids }, status: 'PENDING' }, data: { status: 'CANCELLED' } });
+      await tx.appointmentReminder.updateMany({
+        where: { appointmentId: { in: ids }, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
     });
-    await fastify.audit('APPOINTMENT_SERIES_CANCELLED', 'Appointment', seriesId, { scope: body.scope, count: ids.length });
+    await fastify.audit('APPOINTMENT_SERIES_CANCELLED', 'Appointment', seriesId, {
+      scope: body.scope,
+      count: ids.length,
+    });
     for (const id of ids) await broadcastAppt(clinicId, id, 'schedule.appointment.cancelled');
     return ok({ cancelled: ids.length });
   });
@@ -693,72 +817,116 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
   async function assertCanEditAvailability(req: FastifyRequest, doctorId: string): Promise<void> {
     if (await callerIsAdmin(req)) return;
     if (req.role === 'DOCTOR' && doctorId === req.user!.id) return;
-    throw new ForbiddenError('Only an admin (any doctor) or the doctor themselves can set availability');
+    throw new ForbiddenError(
+      'Only an admin (any doctor) or the doctor themselves can set availability',
+    );
   }
 
-  fastify.post('/availability/doctor/:doctorId', { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] }, async (req, reply) => {
-    const { doctorId } = req.params as { doctorId: string };
-    await assertCanEditAvailability(req, doctorId);
-    const body = parse(CreateDoctorAvailabilityInput, req.body);
-    const clinicId = req.clinicId!;
+  fastify.post(
+    '/availability/doctor/:doctorId',
+    { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] },
+    async (req, reply) => {
+      const { doctorId } = req.params as { doctorId: string };
+      await assertCanEditAvailability(req, doctorId);
+      const body = parse(CreateDoctorAvailabilityInput, req.body);
+      const clinicId = req.clinicId!;
 
-    const row = await prisma.doctorAvailability.create({
-      data: {
-        clinicId,
+      // The unique index now genuinely rejects a repeat window (it did not until migration
+      // 20260909090000 — nullable effectiveFrom made every "always" row distinct). Answer
+      // that with a 409 the receptionist can read, not a 500: tapping Add twice is an
+      // ordinary slip, and the window they wanted already exists either way.
+      const row = await prisma.doctorAvailability
+        .create({
+          data: {
+            clinicId,
+            doctorId,
+            dayOfWeek: body.dayOfWeek,
+            startTime: body.startTime,
+            endTime: body.endTime,
+            effectiveFrom: body.effectiveFrom ?? null,
+            effectiveTo: body.effectiveTo ?? null,
+          },
+        })
+        .catch((err: unknown) => {
+          if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+            throw new AppError(
+              'That window is already set for this day',
+              409,
+              'AVAILABILITY_DUPLICATE',
+            );
+          }
+          throw err;
+        });
+      await fastify.audit('DOCTOR_AVAILABILITY_CREATED', 'DoctorAvailability', row.id, {
         doctorId,
         dayOfWeek: body.dayOfWeek,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        effectiveFrom: body.effectiveFrom ?? null,
-        effectiveTo: body.effectiveTo ?? null,
-      },
-    });
-    await fastify.audit('DOCTOR_AVAILABILITY_CREATED', 'DoctorAvailability', row.id, { doctorId, dayOfWeek: body.dayOfWeek });
-    reply.status(201);
-    return ok({ availability: row });
-  });
+      });
+      reply.status(201);
+      return ok({ availability: row });
+    },
+  );
 
-  fastify.patch('/availability/:availabilityId', { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] }, async (req) => {
-    const { availabilityId } = req.params as { availabilityId: string };
-    const body = parse(UpdateDoctorAvailabilityInput, req.body);
-    const clinicId = req.clinicId!;
-    const existing = await prisma.doctorAvailability.findFirst({ where: { id: availabilityId, clinicId } });
-    if (!existing) throw new NotFoundError('Availability not found');
-    await assertCanEditAvailability(req, existing.doctorId);
+  fastify.patch(
+    '/availability/:availabilityId',
+    { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] },
+    async (req) => {
+      const { availabilityId } = req.params as { availabilityId: string };
+      const body = parse(UpdateDoctorAvailabilityInput, req.body);
+      const clinicId = req.clinicId!;
+      const existing = await prisma.doctorAvailability.findFirst({
+        where: { id: availabilityId, clinicId },
+      });
+      if (!existing) throw new NotFoundError('Availability not found');
+      await assertCanEditAvailability(req, existing.doctorId);
 
-    const row = await prisma.doctorAvailability.update({
-      where: { id: availabilityId },
-      data: {
-        ...(body.startTime !== undefined ? { startTime: body.startTime } : {}),
-        ...(body.endTime !== undefined ? { endTime: body.endTime } : {}),
-        ...(body.effectiveFrom !== undefined ? { effectiveFrom: body.effectiveFrom } : {}),
-        ...(body.effectiveTo !== undefined ? { effectiveTo: body.effectiveTo } : {}),
-      },
-    });
+      const row = await prisma.doctorAvailability.update({
+        where: { id: availabilityId },
+        data: {
+          ...(body.startTime !== undefined ? { startTime: body.startTime } : {}),
+          ...(body.endTime !== undefined ? { endTime: body.endTime } : {}),
+          ...(body.effectiveFrom !== undefined ? { effectiveFrom: body.effectiveFrom } : {}),
+          ...(body.effectiveTo !== undefined ? { effectiveTo: body.effectiveTo } : {}),
+        },
+      });
 
-    // Surface (don't block) appointments that now fall outside the doctor's window — admin decides.
-    const future = await prisma.appointment.findMany({
-      where: { clinicId, doctorId: existing.doctorId, status: 'SCHEDULED', startsAt: { gte: new Date() } },
-      select: { id: true, startsAt: true, endsAt: true },
-    });
-    await fastify.audit('DOCTOR_AVAILABILITY_UPDATED', 'DoctorAvailability', availabilityId, {});
-    return ok({ availability: row, affectedAppointmentCount: future.length });
-  });
+      // Surface (don't block) appointments that now fall outside the doctor's window — admin decides.
+      const future = await prisma.appointment.findMany({
+        where: {
+          clinicId,
+          doctorId: existing.doctorId,
+          status: 'SCHEDULED',
+          startsAt: { gte: new Date() },
+        },
+        select: { id: true, startsAt: true, endsAt: true },
+      });
+      await fastify.audit('DOCTOR_AVAILABILITY_UPDATED', 'DoctorAvailability', availabilityId, {});
+      return ok({ availability: row, affectedAppointmentCount: future.length });
+    },
+  );
 
-  fastify.delete('/availability/:availabilityId', { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] }, async (req) => {
-    const { availabilityId } = req.params as { availabilityId: string };
-    const clinicId = req.clinicId!;
-    const existing = await prisma.doctorAvailability.findFirst({ where: { id: availabilityId, clinicId } });
-    if (!existing) throw new NotFoundError('Availability not found');
-    await assertCanEditAvailability(req, existing.doctorId);
-    await prisma.doctorAvailability.delete({ where: { id: availabilityId } });
-    await fastify.audit('DOCTOR_AVAILABILITY_DELETED', 'DoctorAvailability', availabilityId, {});
-    return ok({ deleted: true });
-  });
+  fastify.delete(
+    '/availability/:availabilityId',
+    { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'ADMIN')] },
+    async (req) => {
+      const { availabilityId } = req.params as { availabilityId: string };
+      const clinicId = req.clinicId!;
+      const existing = await prisma.doctorAvailability.findFirst({
+        where: { id: availabilityId, clinicId },
+      });
+      if (!existing) throw new NotFoundError('Availability not found');
+      await assertCanEditAvailability(req, existing.doctorId);
+      await prisma.doctorAvailability.delete({ where: { id: availabilityId } });
+      await fastify.audit('DOCTOR_AVAILABILITY_DELETED', 'DoctorAvailability', availabilityId, {});
+      return ok({ deleted: true });
+    },
+  );
 
   // ── Day-off CRUD ──────────────────────────────────────────────────────────────────────────────
   fastify.get('/day-off', anyRole, async (req) => {
-    const rows = await prisma.dayOff.findMany({ where: { clinicId: req.clinicId! }, orderBy: { date: 'asc' } });
+    const rows = await prisma.dayOff.findMany({
+      where: { clinicId: req.clinicId! },
+      orderBy: { date: 'asc' },
+    });
     return ok({ dayOffs: rows });
   });
 
@@ -767,9 +935,12 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
     const clinicId = req.clinicId!;
     // RBAC: CLINIC scope → ADMIN only; DOCTOR scope → that doctor (self) or ADMIN.
     if (body.scope === 'CLINIC') {
-      if (!(await callerIsAdmin(req))) throw new ForbiddenError('Only an admin can block clinic days');
+      if (!(await callerIsAdmin(req)))
+        throw new ForbiddenError('Only an admin can block clinic days');
     } else {
-      if (!((await callerIsAdmin(req)) || (req.role === 'DOCTOR' && body.doctorId === req.user!.id))) {
+      if (
+        !((await callerIsAdmin(req)) || (req.role === 'DOCTOR' && body.doctorId === req.user!.id))
+      ) {
         throw new ForbiddenError('Only an admin or the doctor themselves can block a doctor day');
       }
     }
@@ -788,9 +959,14 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
       include: APPOINTMENT_INCLUDE,
     });
     if (clash.length > 0) {
-      throw new AppError('Appointments exist in the blocked range', 409, 'DAY_OFF_HAS_APPOINTMENTS', {
-        appointments: clash.map(serializeAppointment),
-      });
+      throw new AppError(
+        'Appointments exist in the blocked range',
+        409,
+        'DAY_OFF_HAS_APPOINTMENTS',
+        {
+          appointments: clash.map(serializeAppointment),
+        },
+      );
     }
 
     const row = await prisma.dayOff.create({
@@ -804,7 +980,10 @@ export async function scheduleRoutes(fastify: FastifyInstance): Promise<void> {
         createdById: req.user!.id,
       },
     });
-    await fastify.audit('DAY_OFF_CREATED', 'DayOff', row.id, { scope: body.scope, date: start.toISOString() });
+    await fastify.audit('DAY_OFF_CREATED', 'DayOff', row.id, {
+      scope: body.scope,
+      date: start.toISOString(),
+    });
     reply.status(201);
     return ok({ dayOff: row });
   });

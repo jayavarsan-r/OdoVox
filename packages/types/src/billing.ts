@@ -279,6 +279,20 @@ export type PaymentSummary = z.infer<typeof PaymentSummaryZ>;
 
 export const DailyCollectionResponse = z.object({
   date: z.string(),
+  /** The day's payment feed, newest first (frame 54's "Latest"). Includes refunds. */
+  recent: z
+    .array(
+      z.object({
+        id: z.string(),
+        patientName: z.string(),
+        receivedAt: z.coerce.date(),
+        method: PaymentMethod,
+        amountPaise: PaiseAmount,
+        /** True when this row is money leaving — the client renders the sign from this. */
+        isRefund: z.boolean(),
+      }),
+    )
+    .default([]),
   totalCollectedPaise: PaiseAmount,
   byMethod: z.record(PaymentMethod, PaiseAmount),
   byDoctor: z.array(z.object({ doctorId: z.string(), name: z.string(), totalPaise: PaiseAmount })),

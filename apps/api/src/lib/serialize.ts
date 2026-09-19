@@ -50,8 +50,17 @@ export function toClinicResponse(c: Clinic): ClinicResponse {
 }
 
 /** List row — never decrypts PHI. */
-export function toPatientListItem(p: Patient): PatientListItem {
+/**
+ * `liveState` is passed in rather than read off the patient: it comes from the patient's
+ * open visit / lab cases, which the list query includes. `Patient.status` cannot serve
+ * this — nothing writes IN_CHAIR or LAB_PENDING to it, so the ring it fed was always off.
+ */
+export function toPatientListItem(
+  p: Patient,
+  liveState: PatientListItem['liveState'] = null,
+): PatientListItem {
   return {
+    liveState,
     id: p.id,
     patientCode: p.patientCode,
     name: p.name,
@@ -67,7 +76,19 @@ export function toPatientListItem(p: Patient): PatientListItem {
 }
 
 /** Full detail — decrypts PHI fields for an authorized read. */
-export function toPatientResponse(p: Patient): PatientResponse {
+/**
+ * `clinical` decides whether the patient's medical detail leaves the server at all.
+ *
+ * Owner ruling B1/B4: a receptionist may open a patient record — they need it for billing,
+ * scheduling and contact — but must not receive medical flags, allergies or history. The
+ * ruling is explicit that this happens at the data boundary, "not by hiding the UI with
+ * CSS", so the fields are withheld here rather than filtered in React. A response the
+ * client never receives cannot leak through a devtools panel, a cached payload or the next
+ * component that happens to read the object.
+ *
+ * It defaults to FALSE. A new caller that forgets to think about role gets the safe answer.
+ */
+export function toPatientResponse(p: Patient, clinical = false): PatientResponse {
   return {
     id: p.id,
     clinicId: p.clinicId,
@@ -78,10 +99,11 @@ export function toPatientResponse(p: Patient): PatientResponse {
     gender: p.gender,
     bloodGroup: (p.bloodGroup as PatientResponse['bloodGroup']) ?? null,
     address: safeDecrypt(p.addressEnc),
-    medicalHistory: safeDecrypt(p.medicalHistoryEnc),
-    allergies: safeDecrypt(p.allergiesEnc),
+    // Clinical PHI — decrypted only for the roles entitled to read it.
+    medicalHistory: clinical ? safeDecrypt(p.medicalHistoryEnc) : null,
+    allergies: clinical ? safeDecrypt(p.allergiesEnc) : null,
     chiefComplaint: p.chiefComplaint ?? null,
-    medicalFlags: p.medicalFlags,
+    medicalFlags: clinical ? p.medicalFlags : [],
     status: p.status,
     outstandingPaise: p.outstandingPaise,
     lastVisitAt: p.lastVisitAt ?? null,

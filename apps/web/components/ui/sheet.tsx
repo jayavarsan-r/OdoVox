@@ -24,12 +24,12 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-surface p-6 shadow-hero transition-transform ease-out',
+  'fixed z-50 gap-4 bg-sheet p-6 shadow-sheetShadow transition-transform ease-out',
   {
     variants: {
       side: {
         top: 'inset-x-0 top-0 border-b rounded-b-lg',
-        bottom: 'inset-x-0 bottom-0 border-t rounded-t-lg',
+        bottom: 'inset-x-0 bottom-0 rounded-t-3xl',
         left: 'inset-y-0 left-0 h-full w-3/4 max-w-sm border-r',
         right: 'inset-y-0 right-0 h-full w-3/4 max-w-sm border-l',
       },

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
 import type { ScheduleAppointment } from '@odovox/types';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
@@ -41,13 +40,15 @@ export default function SchedulePage() {
 
   const searchParams = useSearchParams();
   const dateParam = searchParams.get('date');
+  // The dock's + routes here with ?new=1 rather than rendering a second floating button.
+  const openNewParam = searchParams.get('new') === '1';
   // Home voice command "book…" lands here with ?dictate=1 (+ the spoken command in ?q=).
   const voiceParam = searchParams.get('dictate') === '1';
   const voiceText = searchParams.get('q') ?? undefined;
   const [focusISO, setFocusISO] = useState(() =>
     dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : localDateISO(new Date(), FALLBACK_TZ),
   );
-  const [newOpen, setNewOpen] = useState(voiceParam);
+  const [newOpen, setNewOpen] = useState(voiceParam || openNewParam);
   const [prefillDoctorId, setPrefillDoctorId] = useState<string | undefined>(undefined);
   const [detail, setDetail] = useState<ScheduleAppointment | null>(null);
 
@@ -106,15 +107,6 @@ export default function SchedulePage() {
           />
         )}
       </div>
-
-      <button
-        type="button"
-        aria-label="New appointment"
-        onClick={() => setNewOpen(true)}
-        className="fixed bottom-24 right-5 z-20 flex size-14 items-center justify-center rounded-pill bg-lime text-ink shadow-[var(--shadow-lime)] active:scale-95"
-      >
-        <Plus className="size-6" />
-      </button>
 
       <NewAppointmentSheet
         open={newOpen}

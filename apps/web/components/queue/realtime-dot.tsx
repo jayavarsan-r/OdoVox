@@ -20,15 +20,3 @@ export function RealtimeDot({ className }: { className?: string }) {
     </span>
   );
 }
-
-/** Slides in under the top bar when the socket is reconnecting/offline. */
-export function OfflineBanner() {
-  const status = useQueueStore((s) => s.status);
-  const ind = statusIndicator(status);
-  if (!ind.showBanner) return null;
-  return (
-    <div className="bg-warning-soft px-5 py-1.5 text-center text-xs font-medium text-ink">
-      {ind.label}
-    </div>
-  );
-}

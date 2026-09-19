@@ -1,13 +1,16 @@
 'use client';
 
 import type { ScheduleAppointment } from '@odovox/types';
-import { cn } from '@/lib/utils';
 import { buildDayLayout, type ClinicHoursLite } from '@/lib/schedule/day-layout';
 import { appointmentsForDoctor, deriveDoctorColumns } from '@/lib/schedule/multi-doctor';
-import { toneClass } from '@/lib/schedule/format';
-import { formatLocalTime } from '@/lib/schedule/tz';
+import { AppointmentBlock, PX_PER_MIN } from './appointment-block';
 
-const PX_PER_MIN = 1.2;
+
+/** "Dr. Asha Menon" -> "AM". Skips the honorific, which every column shares. */
+function initials(name: string): string {
+  const words = name.replace(/^dr\.?\s+/i, '').trim().split(/\s+/).filter(Boolean);
+  return (words[0]?.[0] ?? '?').concat(words[1]?.[0] ?? '').toUpperCase();
+}
 
 export function MultiDoctorDay({
   dateISO,
@@ -55,29 +58,40 @@ export function MultiDoctorDay({
         const layout = buildDayLayout({ dateISO, clinicHours, appointments: appointmentsForDoctor(appointments, col.doctorId) });
         return (
           <div key={col.doctorId} className="min-w-[140px] flex-1">
-            <p className="mb-1 truncate text-center text-xs font-semibold">{col.name}</p>
+            {/* Initials beside the name, as frame 47 has them — two columns of similar
+                text are harder to tell apart at a glance than two marks. */}
+            <p className="mb-1 flex items-center justify-center gap-1.5 truncate text-xs font-semibold">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-pill border border-hair-2 text-3xs font-heavy text-pine-3">
+                {initials(col.name)}
+              </span>
+              <span className="truncate">{col.name}</span>
+            </p>
             <div className="relative rounded-lg border border-border bg-paper-warm" style={{ height: px(ref.totalMinutes) }}>
               {ref.hourMarks.map((h) => (
-                <div key={h.label} className="absolute left-0 right-0 h-px bg-border" style={{ top: px(h.minutesFromOpen) }} />
+                <div key={h.label} className="absolute left-0 right-0 z-0 h-px bg-border" style={{ top: px(h.minutesFromOpen) }} />
               ))}
               {layout.lunch && layout.lunch.heightMinutes > 0 ? (
                 <div className="absolute left-0 right-0 bg-ink/[0.04]" style={{ top: px(layout.lunch.topMinutes), height: px(layout.lunch.heightMinutes) }} />
               ) : null}
               <button type="button" aria-label={`Book with ${col.name}`} onClick={() => onTapEmpty(col.doctorId)} className="absolute inset-0" />
+              {/* The SAME block the single-doctor view draws. It was a separate, tinted
+                  copy — which meant the gridline-through-the-subtitle bug had to be found
+                  and fixed twice, and the two columns disagreed about what an appointment
+                  looks like. `dense` narrows it for a shared column. */}
               {layout.blocks.map((b) => (
-                <button
+                <AppointmentBlock
                   key={b.id}
-                  type="button"
-                  onClick={() => onSelect(b.appt)}
-                  className={cn('absolute left-0.5 right-0.5 overflow-hidden rounded-md border px-1.5 py-1 text-left', toneClass(b.tone), b.appt.status === 'COMPLETED' && 'opacity-60')}
-                  style={{ top: px(b.topMinutes), height: px(b.heightMinutes) }}
-                >
-                  <p className="truncate text-[11px] font-semibold">{formatLocalTime(new Date(b.appt.startsAt), tz)}</p>
-                  <p className="truncate text-[10px] text-ink/70">{b.appt.patientName}</p>
-                </button>
+                  block={b}
+                  tz={tz}
+                  top={px(b.topMinutes)}
+                  height={px(b.heightMinutes)}
+                  onSelect={onSelect}
+                  dense={columns.length > 1}
+                  inset="left-0.5 right-0.5"
+                />
               ))}
               {layout.nowLineMinutes != null ? (
-                <div className="absolute left-0 right-0 z-10 h-px bg-destructive" style={{ top: px(layout.nowLineMinutes) }} />
+                <div className="pointer-events-none absolute left-0 right-0 z-20 h-[2px] rounded-full bg-lime" style={{ top: px(layout.nowLineMinutes) }} />
               ) : null}
             </div>
           </div>

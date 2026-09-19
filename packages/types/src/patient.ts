@@ -51,6 +51,12 @@ export const PatientListItem = z.object({
   age: z.number().int(),
   gender: Gender,
   status: PatientStatus,
+  /**
+   * Where this patient is RIGHT NOW, derived from their open visit and lab cases — not
+   * from `status`, which is a lifecycle column nothing updates on a queue transition.
+   * Frame 32's avatar ring and trailing dot read this.
+   */
+  liveState: z.enum(['IN_CHAIR', 'LAB_PENDING']).nullable(),
   chiefComplaint: z.string().nullable(),
   medicalFlags: z.array(z.string()),
   outstandingPaise: z.number().int(),

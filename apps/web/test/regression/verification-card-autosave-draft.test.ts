@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import { verificationSource } from './verification-sources';
 
 /**
  * Phase 9.6 Issue 16: partial edits must never be lost. Every card edit PATCHes the draft to
@@ -11,7 +12,7 @@ import { dirname, join, resolve } from 'node:path';
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const store = readFileSync(join(webRoot, 'lib', 'consult', 'store.ts'), 'utf8');
-const card = readFileSync(join(webRoot, 'components', 'voice', 'verification-card.tsx'), 'utf8');
+const card = verificationSource();
 
 describe('verification card — draft autosave', () => {
   it('the store PATCHes the consultation on every edit', () => {

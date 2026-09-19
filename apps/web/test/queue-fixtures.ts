@@ -28,6 +28,9 @@ export function makeVisit(over: Partial<VisitWithPatient> = {}): VisitWithPatien
     },
     consultationId: null,
     consultationStatus: null,
+    // Most visits carry no treatment plan — that is the realistic default, and it
+    // keeps every existing test exercising the hero's no-plan fallback.
+    activePlan: null,
     recording: false,
     billTotalPaise: null,
     billDuePaise: null,

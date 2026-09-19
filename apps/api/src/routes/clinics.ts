@@ -8,6 +8,7 @@ import { encryptField } from '../lib/encryption.js';
 import { createWithUniqueJoinCode } from '../lib/join-code.js';
 import { toClinicResponse, toMemberResponse } from '../lib/serialize.js';
 import { getContext, runAsSystem } from '../lib/request-context.js';
+import { requireRole } from '../lib/rbac.js';
 
 const LookupQuery = z.object({
   joinCode: z.string().trim().min(4, 'Enter a join code').max(12),
@@ -204,6 +205,57 @@ export async function clinicRoutes(fastify: FastifyInstance): Promise<void> {
         clinic: toClinicResponse(clinic),
         membership: toMemberResponse(membership),
         accessToken,
+      });
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // GET /clinics/members — who works here.
+  //
+  // Frame 70's More hub states "2 doctors" under Availability and "1 request" on Team &
+  // join code, and there was no route to read either: /clinics had only create, lookup and
+  // join. Both chips were shipped bare rather than filled with a number no query stood
+  // behind, and recorded as the one failing criterion on that frame.
+  //
+  // Colleagues are not confidential — a receptionist books for the doctors by name — so the
+  // ACTIVE roster is readable by any clinic role. PENDING requests are different: a name
+  // attached to "wants to join" is a request to act on, and acting on it is an admin
+  // capability. So everyone sees the pending COUNT (the chip needs it, and a count discloses
+  // nothing about who) while the pending NAMES are admin-only.
+  //
+  // Deliberately read-only. Approving or rejecting a request is an RBAC decision about who
+  // may admit someone to a clinic, and that belongs to the owner and Task 31 — not to this
+  // endpoint.
+  // ---------------------------------------------------------------------------
+  fastify.get(
+    '/clinics/members',
+    { preHandler: [fastify.authenticate, requireRole('DOCTOR', 'RECEPTIONIST', 'ADMIN')] },
+    async (req) => {
+      const rows = await prisma.clinicMember.findMany({
+        where: { clinicId: req.clinicId, deletedAt: null },
+        include: { user: { select: { name: true } } },
+        orderBy: [{ status: 'asc' }, { joinedAt: 'asc' }],
+      });
+
+      const isAdmin = req.role === 'ADMIN';
+      const active = rows.filter((m) => m.status === 'ACTIVE');
+      const pending = rows.filter((m) => m.status === 'PENDING');
+
+      return ok({
+        members: rows
+          // A pending requester's identity is withheld from non-admins; the row still
+          // appears so the client can render "1 request" without a second call.
+          .filter((m) => m.status === 'ACTIVE' || isAdmin)
+          .map((m) => ({
+            ...toMemberResponse(m),
+            name: m.user.name,
+          })),
+        counts: {
+          doctors: active.filter((m) => m.role === 'DOCTOR').length,
+          receptionists: active.filter((m) => m.role === 'RECEPTIONIST').length,
+          admins: active.filter((m) => m.isAdmin).length,
+          pending: pending.length,
+        },
       });
     },
   );

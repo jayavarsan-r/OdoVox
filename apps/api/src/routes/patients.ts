@@ -7,12 +7,15 @@ import {
   type ToothHistoryEntry,
 } from '@odovox/types';
 import type { Prisma } from '@odovox/db';
+import type { HistoryEntry } from '@odovox/types';
 import { NotFoundError } from '../lib/errors.js';
 import { ok, parse } from '../lib/http.js';
-import { encryptField } from '../lib/encryption.js';
+import { encryptField, decryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
 import { createWithUniquePatientCode } from '../lib/patient-code.js';
 import { toPatientListItem, toPatientResponse } from '../lib/serialize.js';
+import { isClinicalRole } from '../lib/clinical-role.js';
+import { billDescription, paymentContext } from '../lib/billing/bill-context.js';
 
 const startOfToday = () => {
   const d = new Date();
@@ -44,7 +47,9 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     let orderBy: Prisma.PatientOrderByWithRelationInput = { createdAt: 'desc' };
-    if (q.filter === 'in_chair') where.status = 'IN_CHAIR';
+    // Queue state lives on the VISIT. `where.status = 'IN_CHAIR'` matched nothing, ever,
+    // because no code path writes that value to the patient row.
+    if (q.filter === 'in_chair') where.visits = { some: { status: 'IN_CHAIR' } };
     else if (q.filter === 'recent') {
       where.lastVisitAt = { gte: new Date(Date.now() - 30 * 864e5) };
       orderBy = { lastVisitAt: 'desc' };
@@ -59,9 +64,23 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
       orderBy,
       take: q.limit + 1,
       ...(q.cursor ? { cursor: { id: q.cursor }, skip: 1 } : {}),
+      // Narrow includes: existence only. `take: 1` and a scalar select keep this from
+      // becoming a second patient-record endpoint, and no PHI is pulled in.
+      include: {
+        visits: { where: { status: 'IN_CHAIR' }, select: { id: true }, take: 1 },
+        labCases: {
+          where: { status: { notIn: ['COMPLETED', 'CANCELLED'] } },
+          select: { id: true },
+          take: 1,
+        },
+      },
     });
     const hasMore = rows.length > q.limit;
-    const items = rows.slice(0, q.limit).map(toPatientListItem);
+    const items = rows.slice(0, q.limit).map((p) =>
+      // In the chair outranks a pending lab case: it is where the patient physically is,
+      // and only one ring can be drawn.
+      toPatientListItem(p, p.visits.length ? 'IN_CHAIR' : p.labCases.length ? 'LAB_PENDING' : null),
+    );
     return ok({ items, nextCursor: hasMore ? items[items.length - 1]!.id : null });
   });
 
@@ -99,7 +118,9 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
     const { id } = req.params as { id: string };
     const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });
     if (!patient) throw new NotFoundError('Patient not found');
-    return ok(toPatientResponse(patient));
+    // Reception keeps the record — they book, bill and phone from it — without the
+    // clinical half of it (ruling B1).
+    return ok(toPatientResponse(patient, isClinicalRole(req.role)));
   });
 
   // ---- update ---------------------------------------------------------------
@@ -126,7 +147,7 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
 
     const updated = await prisma.patient.update({ where: { id }, data });
     await fastify.audit('PATIENT_UPDATED', 'Patient', id, { changedFields: Object.keys(input) });
-    return ok(toPatientResponse(updated));
+    return ok(toPatientResponse(updated, isClinicalRole(req.role)));
   });
 
   // ---- soft delete (doctor/admin only) --------------------------------------
@@ -200,23 +221,121 @@ export async function patientRoutes(fastify: FastifyInstance): Promise<void> {
   });
 
   // ---- billing rollup -------------------------------------------------------
+  /**
+   * Frame 42 — the patient's timeline.
+   *
+   * Assembled from records that already exist rather than a new table: visits carry the
+   * date and doctor, their consultation says whether a clinical record was actually
+   * confirmed, bills carry what was charged, and prescriptions count against the visit.
+   *
+   * The clinical boundary applies here too (rulings B1/B4). A recorded allergy is a
+   * medical fact, so it is only assembled for clinical roles — a receptionist gets the
+   * operational timeline, which is what they book and bill from, and no medical facts.
+   */
+  fastify.get('/patients/:id/history', anyRole, async (req) => {
+    const { id } = req.params as { id: string };
+    const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });
+    if (!patient) throw new NotFoundError('Patient not found');
+
+    const visits = await prisma.visit.findMany({
+      where: { patientId: id, deletedAt: null, status: { in: ['COMPLETED', 'CHECKOUT'] } },
+      orderBy: [{ startedAt: 'desc' }, { createdAt: 'desc' }],
+      take: 100,
+      include: {
+        doctor: { select: { name: true } },
+        consultation: { select: { status: true, structuredData: true } },
+        bills: { select: { totalPaise: true } },
+        prescriptions: { select: { id: true } },
+      },
+    });
+
+    const entries: HistoryEntry[] = visits.map((v): HistoryEntry => {
+      const data = (v.consultation?.structuredData ?? {}) as {
+        procedure?: string | null;
+        teeth?: number[];
+        sittingCurrent?: number | null;
+      };
+      const sitting = data.sittingCurrent != null ? ` · Sitting ${data.sittingCurrent}` : '';
+      return {
+        id: v.id,
+        kind: 'visit' as const,
+        at: v.startedAt ?? v.completedAt ?? v.createdAt,
+        title: `${data.procedure ?? v.chiefComplaint ?? 'Visit'}${sitting}`,
+        teeth: Array.isArray(data.teeth) ? data.teeth : [],
+        feePaise: v.bills.length ? v.bills.reduce((n, b) => n + b.totalPaise, 0) : null,
+        doctorName: v.doctor?.name ?? null,
+        confirmed: v.consultation?.status === 'CONFIRMED',
+        prescriptionCount: v.prescriptions.length,
+        detail: null,
+      };
+    });
+
+    // The permanent facts. Only for roles entitled to clinical detail — this is the same
+    // allergy information withheld from reception everywhere else, and a timeline is not a
+    // loophole in that boundary.
+    if (isClinicalRole(req.role)) {
+      // Decrypt only here, inside the clinical-role branch — reception's request never
+      // reaches this line, so the plaintext is never even materialised for them.
+      const allergies = patient.allergiesEnc ? decryptField(patient.allergiesEnc) : null;
+      if (allergies && allergies.trim() && !/^none/i.test(allergies.trim())) {
+        entries.push({
+          id: `fact-allergy-${patient.id}`,
+          kind: 'fact' as const,
+          // No recorded date exists for an allergy — the column is free text with no
+          // timestamp — so it is null rather than a guessed year (see deviations).
+          at: null,
+          title: `${allergies.trim()} allergy recorded`,
+          teeth: [],
+          feePaise: null,
+          doctorName: null,
+          confirmed: false,
+          prescriptionCount: 0,
+          detail: 'applies to every Rx',
+        });
+      }
+    }
+
+    return ok({ entries });
+  });
+
   fastify.get('/patients/:id/billing', anyRole, async (req) => {
     const { id } = req.params as { id: string };
     const patient = await prisma.patient.findFirst({ where: { id, deletedAt: null } });
     if (!patient) throw new NotFoundError('Patient not found');
-    const bills = await prisma.bill.findMany({ where: { patientId: id }, orderBy: { createdAt: 'desc' } });
+    // Additive read model for frame 41: what each bill was FOR, and when/how it was paid.
+    // Both derive from records that already exist — BillItem.description and Payment — so
+    // there is no second billing source of truth and nothing new is stored. Narrow selects:
+    // only the columns the derivation reads.
+    const bills = await prisma.bill.findMany({
+      where: { patientId: id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        items: { select: { description: true, subtotalPaise: true } },
+        payments: {
+          select: { method: true, status: true, receivedAt: true, createdAt: true },
+        },
+      },
+    });
     const totalBilled = bills.reduce((s, b) => s + b.totalPaise, 0);
     const totalPaid = bills.reduce((s, b) => s + b.paidPaise, 0);
     return ok({
       summary: { totalBilledPaise: totalBilled, totalPaidPaise: totalPaid, outstandingPaise: patient.outstandingPaise },
-      bills: bills.map((b) => ({
-        id: b.id,
-        visitId: b.visitId,
-        totalPaise: b.totalPaise,
-        paidPaise: b.paidPaise,
-        status: b.status,
-        createdAt: b.createdAt,
-      })),
+      bills: bills.map((b) => {
+        const payment = paymentContext(b.payments);
+        return {
+          id: b.id,
+          visitId: b.visitId,
+          billNumber: b.billNumber,
+          totalPaise: b.totalPaise,
+          paidPaise: b.paidPaise,
+          balancePaise: b.balancePaise,
+          status: b.status,
+          createdAt: b.createdAt,
+          // Null rather than a guess wherever the records cannot answer.
+          description: billDescription(b.items),
+          payment,
+        };
+      }),
     });
   });
 }

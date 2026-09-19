@@ -1,36 +1,37 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2 } from 'lucide-react';
-import { ClinicJoinInput } from '@odovox/types';
-import type { ClinicMemberResponse } from '@odovox/types';
-import { MobileShell } from '@/components/mobile-shell';
-import { BackHeader } from '@/components/onboarding/back-header';
-import { EditorialHeading, HeroCard } from '@/components/ds';
-import { MascotMoment } from '@/components/illustrations';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { FormField } from '@/components/forms/FormField';
-import { ChipMultiSelect } from '@/components/forms/ChipMultiSelect';
-import { api } from '@/lib/api-client';
-import { landingRoute, type Role } from '@/lib/rbac';
-import { useToast } from '@/lib/toast';
-import { useAuth } from '@/lib/auth';
-import { useOnboarding } from '@/lib/onboarding-store';
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ClinicJoinInput } from "@odovox/types";
+import type { ClinicMemberResponse } from "@odovox/types";
+import { MobileShell } from "@/components/mobile-shell";
+import { Card } from "@/components/ui/card";
+import { Mini } from "@/components/ui/badge";
+import { InitialsAvatar } from "@/components/ui/avatar";
+import { IconCircle } from "@/components/ds";
+import { Check, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/forms/FormField";
+import { ChipMultiSelect } from "@/components/forms/ChipMultiSelect";
+import { api } from "@/lib/api-client";
+import { landingRoute, type Role } from "@/lib/rbac";
+import { useToast } from "@/lib/toast";
+import { useAuth } from "@/lib/auth";
+import { useOnboarding } from "@/lib/onboarding-store";
 
 const SPECIALIZATIONS = [
-  'General',
-  'Endodontics',
-  'Orthodontics',
-  'Prosthodontics',
-  'Periodontics',
-  'Oral Surgery',
-  'Pediatric Dentistry',
-  'Oral Pathology',
-  'Public Health',
+  "General",
+  "Endodontics",
+  "Orthodontics",
+  "Prosthodontics",
+  "Periodontics",
+  "Oral Surgery",
+  "Pediatric Dentistry",
+  "Oral Pathology",
+  "Public Health",
 ].map((s) => ({ label: s, value: s }));
 
 type FormValues = ClinicJoinInput;
@@ -49,59 +50,93 @@ export default function ClinicJoinPage() {
   const resetOnboarding = useOnboarding((s) => s.reset);
 
   const [lookup, setLookup] = useState<LookupResult | null>(null);
-  const [joining, setJoining] = useState(false);
+  const [lookupFailed, setLookupFailed] = useState(false);
   // Set on a successful join, BEFORE resetOnboarding() clears `role` — otherwise the effect below
   // re-fires on the reset and bounces the just-joined user back to /role (the P0.4 loop).
   const joinedRef = useRef(false);
 
   useEffect(() => {
-    if (!role && !joinedRef.current) router.replace('/role');
+    if (!role && !joinedRef.current) router.replace("/role");
   }, [role, router]);
 
-  const isDoctor = role === 'DOCTOR';
+  const isDoctor = role === "DOCTOR";
 
   const {
     register,
     handleSubmit,
     control,
     getValues,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(ClinicJoinInput),
-    mode: 'onTouched',
+    mode: "onTouched",
     defaultValues: {
-      joinCode: '',
-      name: '',
-      role: role ?? 'RECEPTIONIST',
-      qualification: '',
-      registrationNumber: '',
+      joinCode: "",
+      name: "",
+      role: role ?? "RECEPTIONIST",
+      qualification: "",
+      registrationNumber: "",
       specialization: [],
     },
   });
 
-  // Step 1: validate, then look up the clinic to confirm before joining.
-  const findClinic = handleSubmit(async (values) => {
-    try {
-      const data = await api.get<LookupResult>(
-        `/clinics/lookup?joinCode=${encodeURIComponent(values.joinCode)}`,
-        { skipAuth: true },
-      );
-      setLookup(data);
-    } catch (err) {
-      toast.apiError(err);
+  /**
+   * Look the clinic up AS THE CODE IS TYPED, not behind a "Find clinic" button.
+   *
+   * Frame 09 shows the clinic the moment the code is valid — a tick on the field and a card
+   * naming it — because the question this screen answers is "is this the right place", and
+   * making someone press a button to find out turns one decision into two.
+   *
+   * Debounced, and every in-flight lookup is superseded by the next keystroke: a slow
+   * response for "SMILE" must not arrive after "SMILE7" and replace the right clinic with a
+   * stale one. The code is also never sent until it is long enough to be one.
+   */
+  const joinCode = watch("joinCode");
+  const lookupSeq = useRef(0);
+  useEffect(() => {
+    const code = (joinCode ?? "").trim();
+    if (code.length < 4) {
+      setLookup(null);
+      setLookupFailed(false);
+      return;
     }
+    const seq = ++lookupSeq.current;
+    const timer = setTimeout(() => {
+      void api
+        .get<LookupResult>(
+          `/clinics/lookup?joinCode=${encodeURIComponent(code)}`,
+          { skipAuth: true },
+        )
+        .then((data) => {
+          if (seq !== lookupSeq.current) return;
+          setLookup(data);
+          setLookupFailed(false);
+        })
+        .catch(() => {
+          if (seq !== lookupSeq.current) return;
+          // A code that matches nothing is the ordinary state of a half-typed one, so it is
+          // not an error toast — the field simply does not confirm a clinic.
+          setLookup(null);
+          setLookupFailed(true);
+        });
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [joinCode]);
+
+  /** The form's submit: the code has already found the clinic, so this asks to join it. */
+  const requestToJoin = handleSubmit(async () => {
+    await confirmJoin();
   });
 
-  // Step 2: actually join.
   const confirmJoin = async () => {
-    setJoining(true);
     try {
       const values = getValues();
       const data = await api.post<{
         clinic: { id: string; name: string; city: string; state: string };
         membership: ClinicMemberResponse;
         accessToken: string;
-      }>('/clinics/join', values);
+      }>("/clinics/join", values);
       joinedRef.current = true;
       // Adopt the clinic-scoped token first: the pre-join token carries no clinicId claim, so
       // every clinic-scoped request (the entire app) would 403 until the next refresh.
@@ -117,58 +152,95 @@ export default function ClinicJoinPage() {
     } catch (err) {
       toast.apiError(err);
     } finally {
-      setJoining(false);
     }
   };
 
   return (
     <MobileShell className="bg-paper">
-      <BackHeader title="Join a clinic" />
-      <div className="flex flex-1 flex-col px-5 pt-2">
-        <EditorialHeading
-          title="Join a clinic"
-          subtitle="Ask your clinic admin for the join code."
-          trailing={<MascotMoment pose="thinking" size="sm" animation="float" />}
-        />
+      {/* Frame 09 opens on a bare white `.icirc` chevron — no title beside it — and has
+          no mascot. Both were additions. (MUST-FIX #28) */}
+      <div className="flex px-gutter-onboarding pt-0.5">
+        <IconCircle size="md" aria-label="Back" onClick={() => router.back()}>
+          <ChevronLeft />
+        </IconCircle>
+      </div>
+      <div className="flex flex-1 flex-col px-gutter-onboarding pt-2">
+        <div className="mt-6">
+          <h1 className="text-question font-heavy leading-[1.15] tracking-question text-pine">
+            Got a join code?
+          </h1>
+          <p className="mt-2 text-sm leading-[1.5] text-pine-2">
+            Ask your doctor to share it from Team &amp; join code.
+          </p>
+        </div>
 
-        {lookup ? (
-          <div className="mt-8 space-y-4">
-            <HeroCard
-              variant="light"
-              size="lg"
-              glow="lime"
-              icon={<Building2 />}
-              title={lookup.name}
-              subtitle={`${lookup.city}, ${lookup.state}`}
-            />
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => setLookup(null)} disabled={joining}>
-                Back
-              </Button>
-              <Button className="flex-1" onClick={confirmJoin} loading={joining}>
-                Confirm
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={findClinic} className="mt-8 space-y-4">
-            <FormField label="Your name" htmlFor="name" required error={errors.name?.message}>
-              <Input id="name" placeholder="Ravi Kumar" {...register('name')} />
+          <form onSubmit={requestToJoin} className="mt-8 space-y-4">
+            <FormField
+              label="Your name"
+              htmlFor="name"
+              required
+              error={errors.name?.message}
+            >
+              <Input id="name" placeholder="Ravi Kumar" {...register("name")} />
             </FormField>
-            <FormField label="Join code" htmlFor="joinCode" required error={errors.joinCode?.message}>
-              <Input
-                id="joinCode"
-                placeholder="SMILE7"
-                maxLength={12}
-                className="uppercase tracking-widest"
-                {...register('joinCode')}
-              />
+            <FormField
+              label="Join code"
+              htmlFor="joinCode"
+              required
+              error={errors.joinCode?.message}
+            >
+              <span className="relative block">
+                <Input
+                  id="joinCode"
+                  placeholder="SMILE7"
+                  maxLength={12}
+                  className="uppercase tracking-widest"
+                  {...register("joinCode")}
+                />
+                {/* The frame's tick. It confirms the code found a clinic — the card below
+                    says WHICH — so the field itself answers the question it asked. */}
+                {lookup ? (
+                  <Check className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-live" />
+                ) : null}
+              </span>
+              {lookupFailed ? (
+                <p className="mt-1.5 text-3xs font-bold text-pine-3">
+                  No clinic with that code yet — check it with your doctor.
+                </p>
+              ) : null}
             </FormField>
+
+            {/*
+              The clinic, named, the moment the code finds one — frame 09's card. It used to
+              REPLACE this form behind a Find/Confirm two-step, so you could not see the code
+              you had typed and the clinic it matched at the same time.
+            */}
+            {lookup ? (
+              <Card className="flex items-center gap-[13px] p-[15px]">
+                <InitialsAvatar name={lookup.name} ring="lime" size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-row font-heavy text-pine">{lookup.name}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    <Mini tone="neutral">{lookup.city}</Mini>
+                    <Mini tone="neutral">{lookup.state}</Mini>
+                  </div>
+                </div>
+              </Card>
+            ) : null}
 
             {isDoctor ? (
               <>
-                <FormField label="Qualification" htmlFor="qualification" required error={errors.qualification?.message}>
-                  <Input id="qualification" placeholder="BDS, MDS" {...register('qualification')} />
+                <FormField
+                  label="Qualification"
+                  htmlFor="qualification"
+                  required
+                  error={errors.qualification?.message}
+                >
+                  <Input
+                    id="qualification"
+                    placeholder="BDS, MDS"
+                    {...register("qualification")}
+                  />
                 </FormField>
                 <FormField
                   label="Registration number"
@@ -177,7 +249,11 @@ export default function ClinicJoinPage() {
                   error={errors.registrationNumber?.message}
                   hint="Encrypted and stored securely."
                 >
-                  <Input id="registrationNumber" placeholder="KA-DENT-12345" {...register('registrationNumber')} />
+                  <Input
+                    id="registrationNumber"
+                    placeholder="KA-DENT-12345"
+                    {...register("registrationNumber")}
+                  />
                 </FormField>
                 <FormField label="Specialization" hint="Optional.">
                   <Controller
@@ -195,11 +271,19 @@ export default function ClinicJoinPage() {
               </>
             ) : null}
 
-            <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
-              Find clinic
+            {/* "Request to join", as the frame has it — the code already found the clinic, so
+                the only thing left to do is ask. Disabled until one is actually found, because
+                there is nothing to join before that. */}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={!lookup}
+              loading={isSubmitting}
+            >
+              Request to join
             </Button>
           </form>
-        )}
       </div>
     </MobileShell>
   );

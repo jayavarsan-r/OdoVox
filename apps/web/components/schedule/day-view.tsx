@@ -2,12 +2,9 @@
 
 import type { ScheduleAppointment } from '@odovox/types';
 import { CalendarOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { buildDayLayout, type ClinicHoursLite } from '@/lib/schedule/day-layout';
-import { toneClass, durationLabel, appointmentSubtitle } from '@/lib/schedule/format';
-import { formatLocalTime } from '@/lib/schedule/tz';
+import { AppointmentBlock, PX_PER_MIN } from './appointment-block';
 
-const PX_PER_MIN = 1.2; // 30 min → 36px
 
 export function DayView({
   dateISO,
@@ -41,7 +38,7 @@ export function DayView({
     <div className="relative" style={{ height: px(layout.totalMinutes) }}>
       {/* Hour grid lines + labels */}
       {layout.hourMarks.map((h) => (
-        <div key={h.label} className="absolute left-0 right-0 flex items-start" style={{ top: px(h.minutesFromOpen) }}>
+        <div key={h.label} className="absolute left-0 right-0 z-0 flex items-start" style={{ top: px(h.minutesFromOpen) }}>
           <span className="-mt-2 w-12 shrink-0 text-right text-[11px] font-medium tabular-nums text-text-subtle">{h.label}</span>
           <div className="ml-2 mt-[1px] h-px flex-1 bg-border" />
         </div>
@@ -64,30 +61,27 @@ export function DayView({
 
       {/* Appointment blocks */}
       {layout.blocks.map((b) => (
-        <button
+        <AppointmentBlock
           key={b.id}
-          type="button"
-          onClick={() => onSelect(b.appt)}
-          className={cn(
-            'absolute left-14 right-0 overflow-hidden rounded-lg border px-3 py-1.5 text-left shadow-elev-1 transition-transform active:scale-[0.99]',
-            toneClass(b.tone),
-            b.appt.status === 'COMPLETED' && 'opacity-60',
-          )}
-          style={{ top: px(b.topMinutes), height: px(b.heightMinutes) }}
-        >
-          <p className="truncate text-xs font-semibold">
-            {formatLocalTime(new Date(b.appt.startsAt), tz)} · {durationLabel(b.appt.durationMinutes)} · {b.appt.patientName}
-          </p>
-          {appointmentSubtitle(b.appt) ? <p className="truncate text-[11px] text-ink/70">{appointmentSubtitle(b.appt)}</p> : null}
-          {b.appt.roomName ? <p className="truncate text-[11px] text-ink/60">{b.appt.roomName}</p> : null}
-        </button>
+          block={b}
+          tz={tz}
+          top={px(b.topMinutes)}
+          height={px(b.heightMinutes)}
+          onSelect={onSelect}
+        />
       ))}
 
       {/* Now line */}
       {layout.nowLineMinutes != null ? (
-        <div className="absolute left-12 right-0 z-10 flex items-center" style={{ top: px(layout.nowLineMinutes) }}>
-          <span className="size-2 rounded-full bg-destructive" />
-          <div className="h-px flex-1 bg-destructive" />
+        /* Lime, not red. Red in this app means a problem — a cancelled case, an allergy
+           conflict, a no-show — and "it is currently 10:34" is not a problem. Frame 46 draws
+           it in lime, the colour this product uses for "here, now". */
+        <div
+          className="pointer-events-none absolute left-12 right-0 z-20 flex items-center"
+          style={{ top: px(layout.nowLineMinutes) }}
+        >
+          <span className="size-2 shrink-0 rounded-full bg-lime ring-2 ring-paper" />
+          <div className="h-[2px] flex-1 rounded-full bg-lime" />
         </div>
       ) : null}
     </div>

@@ -9,6 +9,8 @@ import {
 import { z } from 'zod';
 import type { Patient, Prisma } from '@odovox/db';
 import { AppError, ForbiddenError, NotFoundError } from '../lib/errors.js';
+import { isClinicalRole } from '../lib/clinical-role.js';
+import { planPaidPaise } from '../lib/billing/plan-paid.js';
 import { ok, parse } from '../lib/http.js';
 import { decryptField } from '../lib/encryption.js';
 import { requireRole } from '../lib/rbac.js';
@@ -115,10 +117,11 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     return ok({ ...plan, progress: planProgress(plan.procedures) });
   });
 
-  // Detail: full nested structure — procedures → sittings (visit date + decrypted notes), plus
-  // prescriptions and x-rays across the plan's sitting visits.
+  // Detail: full nested structure — procedures → sittings (visit date, and notes for
+  // clinical roles only), plus prescriptions and x-rays across the plan's sitting visits.
   fastify.get('/plans/:id', anyRole, async (req) => {
     const { id } = req.params as { id: string };
+    const clinical = isClinicalRole(req.role);
     const plan = await prisma.treatmentPlan.findUnique({
       where: { id },
       include: {
@@ -146,8 +149,24 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
     ]);
 
     const { patient: _patient, procedures, ...rest } = plan;
+
+    // Frame 39's FEES tile: "₹5,500 / 8,000" — what has actually been paid against THIS
+    // plan, over its estimate. Derived, not stored: BillItem rows carry sourceType
+    // 'procedure' and sourceId pointing at a Procedure, and a Procedure belongs to a plan.
+    // Only money on a bill that has actually been paid counts, so the tile can never claim
+    // a draft bill as revenue.
+    const procedureIds = procedures.map((p) => p.id);
+    const planItems = procedureIds.length
+      ? await prisma.billItem.findMany({
+          where: { sourceType: 'procedure', sourceId: { in: procedureIds } },
+          select: { subtotalPaise: true, bill: { select: { totalPaise: true, paidPaise: true } } },
+        })
+      : [];
+    const paidPaise = planPaidPaise(planItems);
+
     return ok({
       ...rest,
+      paidPaise,
       progress: planProgress(procedures),
       procedures: procedures.map((p) => ({
         id: p.id,
@@ -156,12 +175,17 @@ export async function clinicalRoutes(fastify: FastifyInstance): Promise<void> {
         totalSittings: p.totalSittings,
         completedSittings: p.completedSittings,
         status: p.status,
+        // The journey stays visible to reception — date, number, completion, which visit —
+        // because that is operational. The NOTES are encrypted clinical prose ("extirpation,
+        // dressing") and are decrypted only for clinical roles (ruling B4). Withheld here
+        // rather than filtered in React: notesEnc must not reach a client that may not read
+        // it, and `decryptField` is not even called for those roles.
         sittings: p.sittings.map((s) => ({
           id: s.id,
           sittingNumber: s.sittingNumber,
           date: s.visit?.startedAt ?? s.completedAt ?? s.createdAt,
           completed: s.completedAt != null,
-          notes: s.notesEnc ? decryptField(s.notesEnc) : null,
+          notes: clinical && s.notesEnc ? decryptField(s.notesEnc) : null,
           visitId: s.visitId,
         })),
       })),

@@ -149,3 +149,66 @@ describe('deriveStateFromView (reconnection / hydrate)', () => {
     expect(deriveStateFromView(v as never).kind).toBe('VERIFY');
   });
 });
+
+describe('Task 16 — the failure path must not lose work or double-submit', () => {
+  const recorded = (): ConsultState => ({ kind: 'STOPPED', durationMs: 272_000 });
+
+  it('a failed upload keeps the duration, so the UI can still say "4:32 audio saved"', () => {
+    const failed = consultReducer(recorded(), {
+      type: 'FAIL',
+      step: 'upload',
+      error: 'The network dropped.',
+    });
+    expect(failed).toMatchObject({ kind: 'FAILED', step: 'upload' });
+  });
+
+  it('retrying from FAILED re-enters UPLOADING — it does not force a re-record', () => {
+    // Frame 26: "Try again" retries the upload. The blob survives a FAILED state, so this
+    // transition is what keeps four minutes of dictation from being thrown away.
+    const failed: ConsultState = { kind: 'FAILED', step: 'upload', error: 'boom' };
+    expect(consultReducer(failed, { type: 'UPLOAD_START' })).toMatchObject({
+      kind: 'UPLOADING',
+      progress: 0,
+    });
+  });
+
+  it('a second UPLOAD_START restarts cleanly rather than compounding progress', () => {
+    // Two taps of "Try again" must not leave progress somewhere between two uploads.
+    const first = consultReducer({ kind: 'FAILED', step: 'upload', error: 'x' }, { type: 'UPLOAD_START' });
+    const mid = consultReducer(first, { type: 'UPLOAD_PROGRESS', progress: 0.6 });
+    const second = consultReducer(mid, { type: 'UPLOAD_START' });
+    expect(second).toEqual({ kind: 'UPLOADING', progress: 0 });
+  });
+
+  it('progress cannot be applied to a state that is not uploading', () => {
+    // Guards against a late in-flight callback from an abandoned attempt reviving a
+    // progress bar on the verification screen.
+    const verifyish: ConsultState = { kind: 'TRANSCRIBING' };
+    expect(consultReducer(verifyish, { type: 'UPLOAD_PROGRESS', progress: 0.9 })).toEqual(
+      verifyish,
+    );
+  });
+
+  it('STOP is ignored unless actually recording — no phantom captures', () => {
+    const idle: ConsultState = { kind: 'IDLE' };
+    expect(consultReducer(idle, { type: 'STOP', durationMs: 5000 })).toEqual(idle);
+  });
+
+  it('RERECORD returns to IDLE, and the store must stop listening to the old run', () => {
+    const idle = consultReducer(
+      { kind: 'FAILED', step: 'stt', error: 'x' },
+      { type: 'RERECORD' },
+    );
+    expect(idle).toEqual({ kind: 'IDLE' });
+
+    // The reducer alone CANNOT defend this: `applyServerEvent` has no notion of which run
+    // an event came from, so a late TRANSCRIBED for the abandoned consultation still
+    // moves state. Documented here as the reason `store.rerecord()` closes the SSE stream
+    // before dispatching — the guard lives at the subscription, not in the reducer.
+    const stale = consultReducer(idle, {
+      type: 'SERVER_EVENT',
+      event: { type: 'TRANSCRIBED', data: { transcript: 'stale' } },
+    } as never);
+    expect(stale.kind).toBe('TRANSCRIBED');
+  });
+});

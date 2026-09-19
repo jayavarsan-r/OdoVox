@@ -160,8 +160,20 @@ export type TransitionLabCaseInput = z.infer<typeof TransitionLabCaseInput>;
 
 // --- Query ------------------------------------------------------------------
 
+/** Frame 56's stat pills. Definitions live in apps/api/src/lib/lab/buckets.ts. */
+export const LabBucket = z.enum(['active', 'overdue', 'ready']);
+export type LabBucket = z.infer<typeof LabBucket>;
+
+export const LabCaseStats = z.object({
+  active: z.number().int(),
+  overdue: z.number().int(),
+  ready: z.number().int(),
+});
+export type LabCaseStats = z.infer<typeof LabCaseStats>;
+
 export const ListLabCasesQuery = z.object({
   status: LabCaseStatus.optional(),
+  bucket: LabBucket.optional(),
   vendorId: z.string().optional(),
   patientId: z.string().optional(),
   search: z.string().max(120).optional(),
@@ -213,6 +225,12 @@ export const LabCaseSummary = z.object({
   status: LabCaseStatus,
   expectedReturnAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
+  /**
+   * The plan this case belongs to, when it was raised from one. On the SUMMARY (not just
+   * the detail) so a case-detail screen can find its own lab work from the patient's list
+   * without fetching every case individually.
+   */
+  treatmentPlanId: z.string().nullable(),
 });
 export type LabCaseSummary = z.infer<typeof LabCaseSummary>;
 

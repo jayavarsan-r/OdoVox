@@ -25,6 +25,28 @@ export const VISIT_QUEUE_INCLUDE = {
   room: { select: { id: true, name: true, number: true } },
   consultation: { select: { id: true, status: true } },
   bills: { where: { deletedAt: null }, select: { totalPaise: true, paidPaise: true } },
+  /**
+   * The sitting this visit advances, for the Flow hero's clinical line (frame 13).
+   * Narrow on purpose: sittingNumber plus four procedure scalars. `notesEnc` is
+   * deliberately NOT selected — it is encrypted PHI and the queue is read by
+   * receptionists. `take: 1` because a visit advances one sitting; more would be a
+   * data problem, not something to render.
+   */
+  sittings: {
+    take: 1,
+    orderBy: { sittingNumber: 'asc' },
+    select: {
+      sittingNumber: true,
+      procedure: {
+        select: {
+          name: true,
+          toothNumbers: true,
+          totalSittings: true,
+          deletedAt: true,
+        },
+      },
+    },
+  },
 } satisfies Prisma.VisitInclude;
 
 type QueueVisitRow = Prisma.VisitGetPayload<{ include: typeof VISIT_QUEUE_INCLUDE }>;
@@ -40,6 +62,21 @@ export function serializeQueueVisit(v: QueueVisitRow, recording = false): VisitW
   const billDuePaise = v.bills.length
     ? v.bills.reduce((s, b) => s + (b.totalPaise - b.paidPaise), 0)
     : null;
+  // One sitting, one procedure, or nothing. A soft-deleted procedure yields null rather
+  // than a half-populated line — a hero that says "RCT 36" for a deleted plan is worse
+  // than one that says nothing.
+  const sitting = v.sittings[0];
+  const proc = sitting?.procedure;
+  const activePlan =
+    sitting && proc && !proc.deletedAt
+      ? {
+          procedure: proc.name,
+          teeth: proc.toothNumbers,
+          sitting: sitting.sittingNumber,
+          totalSittings: proc.totalSittings,
+        }
+      : null;
+
   return {
     id: v.id,
     clinicId: v.clinicId,
@@ -64,6 +101,7 @@ export function serializeQueueVisit(v: QueueVisitRow, recording = false): VisitW
     consultationId: v.consultation?.id ?? null,
     consultationStatus: v.consultation?.status ?? null,
     recording,
+    activePlan,
     billTotalPaise,
     billDuePaise,
     checkedInAt: v.checkedInAt ?? null,

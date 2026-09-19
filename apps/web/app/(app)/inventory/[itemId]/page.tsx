@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Minus, Plus, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, RotateCcw } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { Button } from '@/components/ui/button';
 import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { useInventoryItem, useInventoryMovement } from '@/lib/inventory-queries';
-import { adjustError, consumeError, movementKindLabel, signedQuantity, validatePurchase } from '@/lib/inventory-ui';
+import { adjustError, consumeError, expiryWarning, movementKindLabel, signedQuantity, validatePurchase } from '@/lib/inventory-ui';
 import { rupees } from '@/lib/patient-ui';
 import { cn } from '@/lib/utils';
 
@@ -92,56 +92,142 @@ export default function InventoryItemPage() {
         <h1 className="truncate text-lg font-semibold">{item.name}</h1>
       </div>
 
-      {/* STOCK CARD */}
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface p-5 shadow-elev-1">
-        <span className="text-4xl font-bold">{item.currentStock}</span>
-        <span className="text-xs text-text-subtle">{item.unitOfMeasure}</span>
-        {item.isLowStock ? <span className="text-xs font-medium text-danger">Below reorder: {item.reorderLevel}</span> : null}
-        <div className="mt-2 flex flex-wrap justify-center gap-2">
-          <Button size="sm" onClick={() => openSheet('purchase')}>
-            <Plus className="size-4" /> Purchase
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => openSheet('consume')}>
-            <Minus className="size-4" /> Consume
-          </Button>
-          {isAdmin ? (
-            <Button size="sm" variant="ghost" onClick={() => openSheet('adjust')}>
-              <SlidersHorizontal className="size-4" /> Adjust
-            </Button>
+      {/*
+        Frame 68's head: two tiles side by side, then the actions in one row.
+
+        This was a centred stock number over a DETAILS list of five key/value rows — Category,
+        SKU, Vendor, Last purchase, Batch/Expiry — most of them reading "—" on a real item.
+        Five rows of nothing is worse than four rows of something: it makes an item look
+        unrecorded when it is merely uncomplicated.
+
+        So the facts that exist get a tile, and the ones that do not are simply absent.
+      */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <div
+          className={cn(
+            'rounded-2xl p-4',
+            item.isLowStock ? 'bg-warn-soft' : 'bg-white shadow-elev-1',
+          )}
+        >
+          <p
+            className={cn(
+              'text-2xs font-heavy tracking-[0.06em]',
+              item.isLowStock ? 'text-warn' : 'text-pine-3',
+            )}
+          >
+            IN STOCK
+          </p>
+          <p
+            className={cn(
+              'mt-1 text-[26px] font-black leading-none tabular-nums',
+              item.isLowStock ? 'text-warn' : 'text-pine',
+            )}
+          >
+            {item.currentStock}
+            <span className="ml-1.5 text-xs font-bold text-pine-3">{item.unitOfMeasure}</span>
+          </p>
+          {item.reorderLevel > 0 ? (
+            <p
+              className={cn(
+                'mt-1.5 text-3xs font-heavy',
+                item.isLowStock ? 'text-warn' : 'text-pine-3',
+              )}
+            >
+              reorder @ {item.reorderLevel}
+            </p>
           ) : null}
         </div>
+
+        {/* Price / vendor / expiry. Rendered only when the item carries any of them. */}
+        {item.lastPurchasePricePaise != null || item.vendorName || item.expiryDate ? (
+          <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+            <p className="truncate text-2xs font-heavy tracking-[0.06em] text-pine-3">
+              {[item.lastPurchasePricePaise != null ? '₹' : null, item.unitOfMeasure.toUpperCase(), item.vendorName ? 'VENDOR' : null]
+                .filter(Boolean)
+                .join(' / ')}
+            </p>
+            <p className="mt-1 truncate text-[15px] font-heavy text-pine">
+              {[
+                item.lastPurchasePricePaise != null ? rupees(item.lastPurchasePricePaise) : null,
+                item.vendorName,
+              ]
+                .filter(Boolean)
+                .join(' · ') || '—'}
+            </p>
+            {item.expiryDate ? (
+              <p
+                className={cn(
+                  'mt-1.5 text-3xs font-heavy',
+                  expiryWarning(item.expiryDate)?.expired ? 'text-crit' : 'text-pine-3',
+                )}
+              >
+                Exp {fmt(item.expiryDate)}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+            <p className="text-2xs font-heavy tracking-[0.06em] text-pine-3">CATEGORY</p>
+            <p className="mt-1 truncate text-[15px] font-heavy text-pine">
+              {item.categoryName ?? '—'}
+            </p>
+          </div>
+        )}
       </div>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-subtle">Details</h2>
-        <dl className="grid grid-cols-2 gap-y-1 text-sm">
-          <dt className="text-text-subtle">Category</dt>
-          <dd>{item.categoryName ?? '—'}</dd>
-          <dt className="text-text-subtle">SKU</dt>
-          <dd>{item.sku ?? '—'}</dd>
-          <dt className="text-text-subtle">Vendor</dt>
-          <dd>{item.vendorName ?? '—'}</dd>
-          <dt className="text-text-subtle">Last purchase</dt>
-          <dd>{item.lastPurchaseDate ? `${fmt(item.lastPurchaseDate)} · ${item.lastPurchasePricePaise != null ? rupees(item.lastPurchasePricePaise) : '—'}` : '—'}</dd>
-          <dt className="text-text-subtle">Batch / Expiry</dt>
-          <dd>{item.batchNumber ?? '—'}{item.expiryDate ? ` · ${fmt(item.expiryDate)}` : ''}</dd>
-        </dl>
-      </section>
+      {/*
+        SKU and batch, only when the item carries them. The old DETAILS list showed a row for
+        each whether or not there was anything in it; dropping the list entirely would have
+        taken these with it, which for an item that HAS a SKU is losing a fact, not tidying
+        one away. So they render here as one quiet line, and nothing renders when there is
+        nothing to say.
+      */}
+      {item.sku || item.batchNumber ? (
+        <p className="px-1 text-xs font-semibold text-pine-3">
+          {[item.sku ? `SKU ${item.sku}` : null, item.batchNumber ? `Batch ${item.batchNumber}` : null]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      ) : null}
+
+      {/* Purchase, Consume, and — for an admin — the stock-count reset, as the frame's small
+          circle rather than a third full-width button competing with the two real verbs. */}
+      <div className="flex items-center gap-2.5">
+        <Button className="flex-1" onClick={() => openSheet('purchase')}>
+          <Plus className="size-4" /> Purchase
+        </Button>
+        <Button className="flex-1" variant="outline" onClick={() => openSheet('consume')}>
+          <Minus className="size-4" /> Consume
+        </Button>
+        {isAdmin ? (
+          <button
+            type="button"
+            aria-label="Adjust by stock count"
+            onClick={() => openSheet('adjust')}
+            className="flex size-11 shrink-0 items-center justify-center rounded-pill border border-hair-2 bg-white text-pine active:bg-[rgba(31,42,35,0.03)]"
+          >
+            <RotateCcw className="size-4" />
+          </button>
+        ) : null}
+      </div>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-text-subtle">Recent movements</h2>
         {item.recentMovements && item.recentMovements.length > 0 ? (
           <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
             {item.recentMovements.map((m) => (
-              <div key={m.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                <span className="flex items-center gap-2">
-                  <span className={cn('font-semibold', m.quantity >= 0 ? 'text-sage-deep' : 'text-danger')}>{signedQuantity(m.quantity)}</span>
-                  <span className="text-text-subtle">{movementKindLabel[m.kind]}</span>
-                  {m.procedureName ? <span className="text-xs text-muted-foreground">· {m.procedureName}</span> : null}
+              <div key={m.id} className="flex items-center justify-between gap-3 px-[15px] py-3 text-sm">
+                {/* What happened on the left, what it did to the count on the right — the
+                    column you scan down when you are asking "where did it all go". */}
+                <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-pine-3">
+                  {movementKindLabel[m.kind]}
+                  {m.procedureName ? ` · ${m.procedureName}` : ''}
                 </span>
-                <span className="text-xs text-text-subtle">
-                  {fmt(m.createdAt)}
-                  {m.totalPricePaise != null ? ` · ${rupees(m.totalPricePaise)}` : ''}
+                <span className="shrink-0 text-[13px] font-heavy tabular-nums">
+                  <span className={cn(m.quantity >= 0 ? 'text-live' : 'text-crit')}>
+                    {signedQuantity(m.quantity)}
+                  </span>
+                  <span className="text-pine-3"> · {fmt(m.createdAt)}</span>
                 </span>
               </div>
             ))}
