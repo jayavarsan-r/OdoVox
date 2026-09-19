@@ -3,6 +3,7 @@ import { collectionStatTiles, rupeesCompact } from './format';
 import type { DailyCollectionResponse } from '@odovox/types';
 
 const collection: DailyCollectionResponse = {
+  recent: [],
   date: '2026-06-23', totalCollectedPaise: 1450000,
   byMethod: { CASH: 520000, UPI_MANUAL: 600000, RAZORPAY: 330000 } as DailyCollectionResponse['byMethod'],
   byDoctor: [], transactionCount: 6, refundsCount: 0, totalRefundedPaise: 0,

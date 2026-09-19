@@ -1630,6 +1630,38 @@
       "reason": "The two views had separate copies of the appointment card and separate copies of the grid scale — 1.6 px/minute in one, 1.2 in the other, already drifted apart.\n\nThat is why the gridline-through-the-subtitle bug had to be found twice, and why the multi-doctor cards clipped their second line: a card sized in minutes by one file and positioned in minutes by another, disagreeing about how long a minute is. It reads as a rendering fault and is arithmetic.\n\nOne block component, one exported PX_PER_MIN. The parent owns horizontal placement — the single-doctor grid reserves 56px for hour labels, a shared column has its own gutter — because tying that to the density flag made a one-doctor column inherit the wrong gutter and overflow.\n\nThe frame's '+ free' gap affordance and its red 'OFF FROM 14:00' band are NOT built: neither has a source. Free gaps would need the layout to compute negative space, and a mid-day off needs a partial-day day-off the schema does not model.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 141,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-54"
+      ],
+      "summary": "FIXED: the billing screen asked for one day and was answered about another",
+      "reason": "`useDailyCollection(date === todayISO() ? undefined : date)` omitted the date whenever the selection matched the BROWSER's today — and the API then fell back to the SERVER's today. The one case that should always work was the only one that broke.\n\nIt affects any client whose clock differs from the server's: a different timezone, a device with a wrong clock, and the capture harness, which pins the browser to a fixed date. The failure is silent — ₹0 collected, which on a billing screen reads as a quiet day rather than a bug, and would have a receptionist closing a drawer against a total that was never about their day.\n\nThe page now always sends the date. The API keeps its default for callers that genuinely have no opinion.",
+      "status": "fixed"
+    },
+    {
+      "id": 142,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-54"
+      ],
+      "summary": "The day's total leads at hero size; the method split moves under it",
+      "reason": "The screen showed three equal grey tiles — collected, cash, online — in the same voice, as if the three were equally interesting. Only one of them is the number a receptionist closing the day actually wants.\n\nFrame 54 leads with it, and that is right: the total at hero size on lime, the cash/online split beneath as secondary tiles, the payment count and any refunds as chips. The date picker sits inside the hero, with the money it describes, rather than floating above the screen as a bare input.\n\nThe frame's five-bar sparkline is NOT built: /reports/daily-collection answers about one day, and a trend needs a multi-day series the endpoint does not return. Drawing five bars from one number would be decoration.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 143,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-54"
+      ],
+      "summary": "The Latest feed now exists, and it shows refunds the total deliberately excludes",
+      "reason": "The screen totalled the day without ever showing what happened in it. A figure that looked wrong could not be checked without leaving for the bills list.\n\n/reports/daily-collection now returns the day's payments, newest first, capped at 20 — it already loaded those rows to compute the totals. The list renders patient, time, method and a SIGNED amount.\n\nThe important asymmetry: the TOTAL counts money the clinic kept, so it stays SUCCEEDED-only; the FEED includes refunds, because a day where ₹300 went back out is not the same day as one where it did not. `isRefund` is stated by the server rather than inferred client-side from a status string, so the sign cannot drift from the money.\n\nThe frame's crit DUES banner is not added — this screen already links to Outstanding dues, and two routes to the same list on one screen is the duplicate-control problem frame 47 had.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 42 |
+| APPROVED-DEVIATION | 43 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 5 |
+| MISMATCHED | 4 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -97,7 +97,7 @@ _None. Every task closed its own decisions._
 | `v9-51` | Walk-in sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-52` | Checkout sheet | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
-| `v9-54` | Billing — densified | 27 | MISMATCHED | 7.2% | criterion "layout" unreviewed |
+| `v9-54` | Billing — densified | 27 | APPROVED-DEVIATION | 7.8% | NOT-BUILT #130: ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned |
 | `v9-55` | Outstanding dues | 27 | MISMATCHED | 5.6% | criterion "layout" unreviewed |
 | `v9-56` | Lab list — stat pills, not tiles | 28 | APPROVED-DEVIATION | 9.8% | — |
 | `v9-57` | Lab ＋ — its own dial | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
@@ -889,17 +889,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.8%
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 - `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
 
-### `v9-54` — Billing — densified · MISMATCHED
+### `v9-54` — Billing — densified · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 7.8%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -908,6 +908,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 - `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
+- `MUST-FIX` #141 (fixed): FIXED: the billing screen asked for one day and was answered about another
+- `APPROVED-DEVIATION` #142 (approved): The day's total leads at hero size; the method split moves under it
+- `APPROVED-DEVIATION` #143 (approved): The Latest feed now exists, and it shows refunds the total deliberately excludes
 
 ### `v9-55` — Outstanding dues · MISMATCHED
 

@@ -12,6 +12,30 @@ loadEnv({ path: path.resolve(__dirname, '../../../.env') });
 const prisma = new PrismaClient();
 
 /**
+ * The seed's notion of "now".
+ *
+ * Everything relative — a payment five days ago, a lab case due next week, an appointment
+ * this morning — is measured from HERE, not from the wall clock. The capture harness pins the
+ * browser to a fixed date for determinism, and `SEED_TODAY` tells the seed to fill that same
+ * day. Without a shared clock only HALF the seed moved: appointments landed on 13 July while
+ * every payment, bill and lab date stayed on the real today, so the billing screen read ₹0 on
+ * a day with six appointments.
+ *
+ * Noon, not midnight: a 09:00 appointment and a "two days ago" payment both stay on the days
+ * they are meant to be on, whatever the machine's timezone.
+ */
+const SEED_NOW = process.env.SEED_TODAY
+  ? new Date(`${process.env.SEED_TODAY}T12:00:00`)
+  : new Date();
+if (Number.isNaN(SEED_NOW.getTime())) {
+  throw new Error(`SEED_TODAY must be an ISO date (YYYY-MM-DD), got "${process.env.SEED_TODAY}"`);
+}
+/** Milliseconds since the epoch at the seed's "now" — the drop-in for Date.now(). */
+const NOW = (): number => SEED_NOW.getTime();
+
+
+
+/**
  * Mirror of apps/api/src/lib/encryption.ts:encryptField.
  * Format: base64( [1B version][12B iv][ciphertext][16B tag] ).
  * Kept in sync intentionally so seeded PHI is readable by the API's decryptField.
@@ -145,7 +169,7 @@ async function main() {
   // shows neither. Dated relative to the seed run so they never fall into the past and
   // quietly vanish from a list that only shows what is ahead.
   const inDays = (n: number) => {
-    const d = new Date();
+    const d = new Date(NOW());
     d.setDate(d.getDate() + n);
     d.setHours(0, 0, 0, 0);
     return d;
@@ -315,7 +339,7 @@ async function main() {
     where: { clinicId: clinic.id },
   });
   if (labCaseCount === 0) {
-    const now = Date.now();
+    const now = NOW();
     // 1) DRAFT — impression just taken, not sent.
     await prisma.labCase.create({
       data: {
@@ -509,7 +533,7 @@ async function main() {
     where: { clinicId: clinic.id },
   });
   if (movementCount === 0) {
-    const now = Date.now();
+    const now = NOW();
     await prisma.inventoryMovement.createMany({
       data: [
         {
@@ -611,11 +635,11 @@ async function main() {
       assignedDoctorId: doctor.id,
       status: 'CHECKOUT',
       tokenNumber: 1,
-      checkedInAt: new Date(Date.now() - 75 * 60 * 1000),
-      calledInAt: new Date(Date.now() - 60 * 60 * 1000),
-      checkoutStartedAt: new Date(Date.now() - 30 * 60 * 1000),
-      startedAt: new Date(Date.now() - 60 * 60 * 1000),
-      endedAt: new Date(Date.now() - 30 * 60 * 1000),
+      checkedInAt: new Date(NOW() - 75 * 60 * 1000),
+      calledInAt: new Date(NOW() - 60 * 60 * 1000),
+      checkoutStartedAt: new Date(NOW() - 30 * 60 * 1000),
+      startedAt: new Date(NOW() - 60 * 60 * 1000),
+      endedAt: new Date(NOW() - 30 * 60 * 1000),
       chiefComplaint: 'Ongoing root canal, upper left',
     },
   });
@@ -645,8 +669,8 @@ async function main() {
       paidPaise: 350000,
       balancePaise: 0,
       status: 'PAID',
-      finalizedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      paidInFullAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      finalizedAt: new Date(NOW() - 5 * 24 * 60 * 60 * 1000),
+      paidInFullAt: new Date(NOW() - 5 * 24 * 60 * 60 * 1000),
       createdById: doctor.id,
       items: {
         create: [
@@ -678,7 +702,7 @@ async function main() {
       status: 'SUCCEEDED',
       idempotencyKey: `seed-${clinic.id}-cash1`,
       receivedById: doctor.id,
-      receivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      receivedAt: new Date(NOW() - 5 * 24 * 60 * 60 * 1000),
     },
   });
   await prisma.payment.upsert({
@@ -697,7 +721,7 @@ async function main() {
       upiTxnRef: '418723004511',
       idempotencyKey: `seed-${clinic.id}-upi1`,
       receivedById: doctor.id,
-      receivedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      receivedAt: new Date(NOW() - 5 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -719,7 +743,7 @@ async function main() {
       refundedPaise: 200000,
       balancePaise: 700000, // 1,500,000 - 1,000,000 + 200,000
       status: 'PARTIAL',
-      finalizedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      finalizedAt: new Date(NOW() - 2 * 24 * 60 * 60 * 1000),
       notes: 'Patient on a 2-installment plan',
       createdById: doctor.id,
       items: {
@@ -761,7 +785,7 @@ async function main() {
       status: 'SUCCEEDED',
       idempotencyKey: `seed-${clinic.id}-cash2`,
       receivedById: doctor.id,
-      receivedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      receivedAt: new Date(NOW() - 2 * 24 * 60 * 60 * 1000),
     },
   });
   const payRzp = await prisma.payment.upsert({
@@ -782,7 +806,7 @@ async function main() {
       refundedAmountPaise: 200000,
       idempotencyKey: `seed-${clinic.id}-rzp1`,
       receivedById: doctor.id,
-      receivedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      receivedAt: new Date(NOW() - 1 * 24 * 60 * 60 * 1000),
     },
   });
 
@@ -803,7 +827,7 @@ async function main() {
       razorpayStatus: 'processed',
       status: 'SUCCEEDED',
       processedById: doctor.id,
-      processedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+      processedAt: new Date(NOW() - 12 * 60 * 60 * 1000),
     },
   });
 
@@ -878,7 +902,7 @@ async function main() {
       safetyWarnings: [],
       status: 'CONFIRMED',
       confirmedById: doctor.id,
-      confirmedAt: new Date(Date.now() - 30 * 60 * 1000),
+      confirmedAt: new Date(NOW() - 30 * 60 * 1000),
     },
   });
 
@@ -894,7 +918,7 @@ async function main() {
     update: {
       status: 'IN_CHAIR',
       roomId: room1.id,
-      calledInAt: new Date(Date.now() - 5 * 60 * 1000),
+      calledInAt: new Date(NOW() - 5 * 60 * 1000),
       startedAt: new Date(),
       endedAt: null,
     },
@@ -907,8 +931,8 @@ async function main() {
       roomId: room1.id,
       status: 'IN_CHAIR',
       tokenNumber: 2,
-      checkedInAt: new Date(Date.now() - 20 * 60 * 1000),
-      calledInAt: new Date(Date.now() - 5 * 60 * 1000),
+      checkedInAt: new Date(NOW() - 20 * 60 * 1000),
+      calledInAt: new Date(NOW() - 5 * 60 * 1000),
       startedAt: new Date(),
       chiefComplaint: 'Sensitivity, lower right',
     },
@@ -972,7 +996,7 @@ async function main() {
     update: {
       status: 'WAITING',
       roomId: null,
-      checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
+      checkedInAt: new Date(NOW() - 8 * 60 * 1000),
       calledInAt: null,
       startedAt: null,
       endedAt: null,
@@ -985,7 +1009,7 @@ async function main() {
       assignedDoctorId: doctor.id,
       status: 'WAITING',
       tokenNumber: 3,
-      checkedInAt: new Date(Date.now() - 8 * 60 * 1000),
+      checkedInAt: new Date(NOW() - 8 * 60 * 1000),
       chiefComplaint: 'Routine cleaning',
     },
   });
@@ -1005,7 +1029,7 @@ async function main() {
     update: {
       status: 'WAITING',
       roomId: null,
-      checkedInAt: new Date(Date.now() - 4 * 60 * 1000),
+      checkedInAt: new Date(NOW() - 4 * 60 * 1000),
       calledInAt: null,
       startedAt: null,
       endedAt: null,
@@ -1018,7 +1042,7 @@ async function main() {
       assignedDoctorId: doctor.id,
       status: 'WAITING',
       tokenNumber: 4,
-      checkedInAt: new Date(Date.now() - 4 * 60 * 1000),
+      checkedInAt: new Date(NOW() - 4 * 60 * 1000),
       chiefComplaint: 'Pain, lower left',
     },
   });
@@ -1036,7 +1060,7 @@ async function main() {
           patientId: arjun.id,
           type: 'CHECKED_IN',
           byUserId: receptionist.id,
-          createdAt: new Date(Date.now() - 8 * 60 * 1000),
+          createdAt: new Date(NOW() - 8 * 60 * 1000),
         },
         {
           clinicId: clinic.id,
@@ -1045,7 +1069,7 @@ async function main() {
           type: 'CALLED_IN',
           byUserId: doctor.id,
           metadata: { roomId: room1.id },
-          createdAt: new Date(Date.now() - 5 * 60 * 1000),
+          createdAt: new Date(NOW() - 5 * 60 * 1000),
         },
         {
           clinicId: clinic.id,
@@ -1053,7 +1077,7 @@ async function main() {
           patientId: akhilesh.id,
           type: 'CHECKOUT_STARTED',
           byUserId: doctor.id,
-          createdAt: new Date(Date.now() - 30 * 60 * 1000),
+          createdAt: new Date(NOW() - 30 * 60 * 1000),
         },
       ],
     });
@@ -1078,7 +1102,7 @@ async function main() {
   }
 
   // --- Phase 9: WhatsApp templates, consent, sample messages ---------------
-  const now = Date.now();
+  const now = NOW();
   const WHATSAPP_TEMPLATES = [
     {
       templateKey: 'appointment_reminder_24h',
@@ -1278,16 +1302,59 @@ async function main() {
     where: { clinicId: clinic.id, patientCode: 'PT-0003' },
   });
 
+  // --- Today's collection (frames 54, 55) ----------------------------------
+  //
+  // Every seeded payment was dated one, two or five days BEFORE now, so the billing screen —
+  // whose whole subject is "collected today" — read ₹0 on a day with six appointments. These
+  // sit on the current day so the collection hero, the by-method split and the Latest list
+  // have something true to show.
+  //
+  // A deliberate mix: cash and online so the split is not a single bar, and one REFUND, which
+  // is the row most likely to be rendered wrong (it must read as money leaving, not arriving).
+  const todaysCollection: {
+    suffix: string;
+    patientId: string;
+    amountPaise: number;
+    method: 'CASH' | 'UPI_MANUAL' | 'CARD_MANUAL';
+    status: 'SUCCEEDED' | 'REFUNDED';
+    minutesAgo: number;
+  }[] = [
+    { suffix: 't1', patientId: meera.id, amountPaise: 80000, method: 'UPI_MANUAL', status: 'SUCCEEDED', minutesAgo: 70 },
+    { suffix: 't2', patientId: akhilesh.id, amountPaise: 300000, method: 'CASH', status: 'SUCCEEDED', minutesAgo: 84 },
+    { suffix: 't3', patientId: fatima.id, amountPaise: 200000, method: 'CARD_MANUAL', status: 'SUCCEEDED', minutesAgo: 121 },
+    { suffix: 't4', patientId: arjun.id, amountPaise: 30000, method: 'UPI_MANUAL', status: 'REFUNDED', minutesAgo: 112 },
+  ];
+  let payNo = 10;
+  for (const t of todaysCollection) {
+    payNo += 1;
+    await prisma.payment.upsert({
+      where: { id: `seed-pay-${clinic.id}-${t.suffix}` },
+      update: { receivedAt: new Date(NOW() - t.minutesAgo * 60_000) },
+      create: {
+        id: `seed-pay-${clinic.id}-${t.suffix}`,
+        clinicId: clinic.id,
+        billId: billPaid.id,
+        patientId: t.patientId,
+        paymentNumber: `PAY-${billPrefix}0000${payNo}`,
+        amountPaise: t.amountPaise,
+        method: t.method,
+        status: t.status,
+        refundedAmountPaise: t.status === 'REFUNDED' ? t.amountPaise : 0,
+        idempotencyKey: `seed-${clinic.id}-${t.suffix}`,
+        receivedById: receptionist.id,
+        receivedAt: new Date(NOW() - t.minutesAgo * 60_000),
+      },
+    });
+  }
+
+
   // Which day to hang them on. Defaults to today, so a human opening the demo sees their
   // own day. The screenshot harness pins the browser clock to a fixed date for
   // determinism, so a capture run seeds with SEED_TODAY set to that same date — otherwise
   // the app asks for a day the seed never filled and Home renders an empty schedule.
-  const dayStart = process.env.SEED_TODAY
-    ? new Date(`${process.env.SEED_TODAY}T00:00:00`)
-    : new Date();
-  if (Number.isNaN(dayStart.getTime())) {
-    throw new Error(`SEED_TODAY must be an ISO date (YYYY-MM-DD), got "${process.env.SEED_TODAY}"`);
-  }
+  // One clock for the whole seed (SEED_NOW at the top). This used to parse SEED_TODAY a
+  // second time, which is how appointments and payments ended up on different days.
+  const dayStart = new Date(NOW());
   dayStart.setHours(0, 0, 0, 0);
   const at = (h: number, m: number) => new Date(dayStart.getTime() + (h * 60 + m) * 60_000);
 

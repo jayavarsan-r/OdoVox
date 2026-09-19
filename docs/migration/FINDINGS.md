@@ -12,8 +12,8 @@ end to end.
 
 |                                                |             |
 | ---------------------------------------------- | ----------- |
-| **Complete**                                   | **42 / 81** |
-| Mismatched (captured, design work outstanding) | 5           |
+| **Complete**                                   | **43 / 81** |
+| Mismatched (captured, design work outstanding) | 4           |
 | Not built                                      | 29          |
 | Cross-cutting behaviours (not screens)         | 3           |
 | Not capturable                                 | 1           |
@@ -94,6 +94,18 @@ card sized in minutes by one file and positioned in minutes by another, disagree
 long a minute is. It clipped the second line of every appointment in the multi-doctor view and
 read as a rendering fault. Both grids now draw the same block at one exported scale, which is
 also why the gridline bug only had to be fixed once.
+
+### The billing screen asked for one day and was answered about another
+`useDailyCollection` omitted the date whenever the selection matched the **browser's** today —
+and the API then fell back to the **server's** today. The one case that should always work was
+the only one that broke, for any client whose clock differs from the server's. It failed
+silently as ₹0 collected, which on a billing screen reads as a quiet day rather than a bug.
+
+### Half the seed moved and half did not
+The capture harness pins the browser to a fixed date and `SEED_TODAY` tells the seed to fill
+that day — but only appointments honoured it. Every payment, bill and lab date still measured
+from the wall clock, so billing read ₹0 on a day with six appointments. The seed now has one
+notion of "now" that everything relative is measured from.
 
 ### Four red errors on an untouched form
 
