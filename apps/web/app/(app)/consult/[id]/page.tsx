@@ -16,6 +16,7 @@ import { VerificationCard } from '@/components/voice/verification-card';
 import { PatientContextCard } from '@/components/consult/patient-context-card';
 import { ComplaintStrip } from '@/components/consult/complaint-strip';
 import { useConsultStore } from '@/lib/consult/store';
+import { retryActionFor } from '@/lib/consult/retry';
 import { failureMessage } from '@/lib/consult/failure-copy';
 import { NextUpHint } from '@/components/queue/next-up-hint';
 import { SavedScreen } from '@/components/voice/verification/saved-screen';
@@ -285,7 +286,29 @@ export default function ConsultDetailPage() {
             <div className="mt-2 flex w-full flex-col gap-2.5">
               <Button
                 block
-                onClick={() => void useConsultStore.getState().sendForReview()}
+                onClick={() => {
+                  // Which retry depends on how far it got. `upload` means the device holds
+                  // the only copy, so re-send it. A SERVER stage means the audio is already
+                  // stored, and re-uploading four minutes over the same bad signal is the
+                  // slowest possible recovery — the server has cheaper ones and nothing
+                  // called them until now. See lib/consult/retry.ts.
+                  const action = retryActionFor(state.kind === 'FAILED' ? state.step : undefined);
+                  if (action === 'reupload') {
+                    void useConsultStore.getState().sendForReview();
+                    return;
+                  }
+                  void (async () => {
+                    try {
+                      await api.post(`/consultations/${id}/${action}`, {});
+                      // The pipeline re-runs and the existing SSE stream reports it, so the
+                      // screen leaves FAILED the same way it entered it.
+                      useConsultStore.getState().dispatch({ type: 'PROCESS_STARTED' });
+                    } catch {
+                      // The cheap path failed too — fall back to the one that always works.
+                      void useConsultStore.getState().sendForReview();
+                    }
+                  })();
+                }}
               >
                 Try again
               </Button>
