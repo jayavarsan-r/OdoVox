@@ -2,19 +2,9 @@
 
 import type { ScheduleAppointment } from '@odovox/types';
 import { CalendarOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { buildDayLayout, type ClinicHoursLite } from '@/lib/schedule/day-layout';
-import { durationLabel, appointmentSubtitle, appointmentChip } from '@/lib/schedule/format';
-import { formatLocalTime } from '@/lib/schedule/tz';
+import { AppointmentBlock, PX_PER_MIN } from './appointment-block';
 
-/**
- * 30 min → 48px, matching frame 46's rail spacing.
- *
- * It was 1.2 (36px), which is shorter than two lines of text — so a card showed the patient
- * and clipped the line telling you what they were coming in for. A denser grid that hides
- * half of every row is not denser, it is just smaller.
- */
-const PX_PER_MIN = 1.6;
 
 export function DayView({
   dateISO,
@@ -95,92 +85,5 @@ export function DayView({
         </div>
       ) : null}
     </div>
-  );
-}
-
-/** The tone spine — a 3px bar, not a tinted fill. */
-const SPINE: Record<string, string> = {
-  sage: 'bg-sage',
-  sky: 'bg-sky',
-  peach: 'bg-peach',
-  lavender: 'bg-lavender',
-};
-
-const CHIP_TONE: Record<string, string> = {
-  live: 'bg-live-soft text-live',
-  sky: 'bg-sky-soft text-sky',
-  neutral: 'bg-[rgba(31,42,35,0.06)] text-pine-3',
-  crit: 'bg-crit-soft text-crit',
-};
-
-/**
- * One appointment on the day grid.
- *
- * White, with a coloured SPINE, as frame 46 draws it — not a tinted fill. The fill was
- * translucent, so the hour gridline behind it showed straight through the subtitle and every
- * row read as struck through. In this app struck-through text means cancelled, so a full day
- * of ordinary appointments looked like a full day of cancellations.
- *
- * The PATIENT leads. The time is already the row's position on the grid — printing it again
- * as the first thing you read spends the strongest position on the one fact the layout has
- * already told you.
- */
-function AppointmentBlock({
-  block: b,
-  tz,
-  top,
-  height,
-  onSelect,
-}: {
-  block: { id: string; tone: string; appt: ScheduleAppointment };
-  tz: string;
-  top: string;
-  height: string;
-  onSelect: (a: ScheduleAppointment) => void;
-}) {
-  const chip = appointmentChip(b.appt.status);
-  const subtitle = appointmentSubtitle(b.appt);
-  const cancelled = b.appt.status === 'CANCELLED';
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(b.appt)}
-      className={cn(
-        'absolute left-14 right-0 z-10 flex overflow-hidden rounded-lg bg-white text-left shadow-elev-1',
-        'transition-transform active:scale-[0.99]',
-        b.appt.status === 'COMPLETED' && 'opacity-70',
-      )}
-      style={{ top, height }}
-    >
-      <span className={cn('w-[3px] shrink-0', SPINE[b.tone] ?? 'bg-sage')} />
-      <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-2.5 py-1.5">
-        <span className="flex items-center gap-2">
-          <span
-            className={cn(
-              'min-w-0 flex-1 truncate text-[13px] font-heavy text-pine',
-              cancelled && 'line-through',
-            )}
-          >
-            {b.appt.patientName}
-          </span>
-          {chip ? (
-            <span
-              className={cn(
-                'shrink-0 rounded-2xs px-1.5 py-0.5 text-3xs font-heavy',
-                CHIP_TONE[chip.tone],
-              )}
-            >
-              {chip.label}
-            </span>
-          ) : null}
-        </span>
-        <span className="truncate text-3xs font-semibold text-pine-3">
-          {formatLocalTime(new Date(b.appt.startsAt), tz)} · {durationLabel(b.appt.durationMinutes)}
-          {subtitle ? ` · ${subtitle}` : ''}
-          {b.appt.roomName ? ` · ${b.appt.roomName}` : ''}
-        </span>
-      </span>
-    </button>
   );
 }

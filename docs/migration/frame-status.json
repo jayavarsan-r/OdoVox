@@ -411,7 +411,7 @@
     "frame": "v9-46",
     "name": "Schedule — doctor day",
     "status": "APPROVED-DEVIATION",
-    "changedPct": 8.445419445419446,
+    "changedPct": 7.6286416286416285,
     "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
@@ -419,9 +419,9 @@
   {
     "frame": "v9-47",
     "name": "Schedule — reception multi-doctor",
-    "status": "MISMATCHED",
-    "changedPct": 5.040716040716041,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.532818532818532,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

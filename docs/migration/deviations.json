@@ -1596,6 +1596,40 @@
       "reason": "Three changes, each with a reason beyond matching the frame.\n\nThe cards were a TINTED FILL, and the tint was translucent — so the hour gridline behind showed straight through the subtitle and every row read as struck through. In this app struck-through text means cancelled, so an ordinary day looked like a day of cancellations. White cards with a 3px tone spine, as the frame draws them, fix the bleed and keep the procedure colour.\n\nThe PATIENT now leads. The row used to open with the time — which is the one fact the card's position on the grid has already told you — spending the strongest position on nothing.\n\nThe now-line was RED. Red in this product means a problem: a cancelled case, an allergy conflict, a no-show. \"It is currently 10:34\" is not a problem. It is lime, with a dot, as frame 46 has it.\n\nThe grid also went from 1.2px to 1.6px per minute, because 36px is shorter than two lines of text and a 30-minute card was clipping the line that says what the patient is coming in for.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 138,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-47"
+      ],
+      "summary": "The duplicate + is gone — reception's dock orb books the appointment",
+      "reason": "The screen rendered its own floating lime + sixty pixels from the dock's lime +. Two identical buttons doing different things: the page's opened the new-appointment sheet, the dock's navigated to /today.\n\nFrame 47 draws ONE + and puts it in the dock. So reception's orb now routes to /schedule?new=1 on this screen and the page opens the sheet from that parameter, which also makes booking deep-linkable. The floating button is removed.\n\nA doctor's orb is unchanged — it is a microphone, because on the schedule a doctor's next action is still to record.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 139,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-47"
+      ],
+      "summary": "One doctor gets a full-width column; the frame shows two",
+      "reason": "Frame 47 draws two columns, Dr. Priya and Dr. Arjun, each half width. The seeded clinic has one dentist, so the column takes the full width and shows the complete subtitle — time, duration, procedure, sitting, room.\n\nThe narrow variant exists and engages the moment a clinic has a second doctor: it drops to the patient and the start time, because half a column cannot hold the rest without clipping it. Which of the two renders is decided by the column count, not by a flag someone has to remember to set.\n\nDoctor names carry initials, as the frame has them — two columns of similar text are harder to tell apart at a glance than two marks.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 140,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-46",
+        "v9-47"
+      ],
+      "summary": "Both schedule grids now draw the SAME appointment block, at one shared scale",
+      "reason": "The two views had separate copies of the appointment card and separate copies of the grid scale — 1.6 px/minute in one, 1.2 in the other, already drifted apart.\n\nThat is why the gridline-through-the-subtitle bug had to be found twice, and why the multi-doctor cards clipped their second line: a card sized in minutes by one file and positioned in minutes by another, disagreeing about how long a minute is. It reads as a rendering fault and is arithmetic.\n\nOne block component, one exported PX_PER_MIN. The parent owns horizontal placement — the single-doctor grid reserves 56px for hour labels, a shared column has its own gutter — because tying that to the density flag made a one-doctor column inherit the wrong gutter and overflow.\n\nThe frame's '+ free' gap affordance and its red 'OFF FROM 14:00' band are NOT built: neither has a source. Free gaps would need the layout to compute negative space, and a mid-day off needs a partial-day day-off the schema does not model.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

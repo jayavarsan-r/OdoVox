@@ -23,6 +23,18 @@ export interface OrbAction {
 
 export function orbAction(role: Role, pathname: string): OrbAction {
   if (role === "RECEPTIONIST") {
+    // On the schedule, the thing to create is an appointment — and the screen used to render
+    // its OWN lime + sixty pixels from this one, two identical buttons doing different
+    // things. Frame 47 draws a single + in the dock. `?new=1` lets the orb open the sheet
+    // that lives on the page, and makes the action deep-linkable besides.
+    if (pathname === "/schedule" || pathname.startsWith("/schedule?")) {
+      return {
+        icon: "plus",
+        href: "/schedule?new=1",
+        label: "Book an appointment",
+        highlighted: false,
+      };
+    }
     return {
       icon: "plus",
       href: "/today",
