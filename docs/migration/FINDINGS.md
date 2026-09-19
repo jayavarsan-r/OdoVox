@@ -259,6 +259,24 @@ remaining frames inherit it:
   twenty elements doing avoidable work, and it turns any class change into a surprise
   transition.
 
+### The date picker was the operating system's
+
+`<input type="date">` on the day-off screen handed the whole surface over to a system dialog —
+system blue, system typeface, nothing like the screen around it — and then asked a
+receptionist to hit a 24px number one-handed.
+
+Replaced with `DateStrip`: two chips for the common answer (a clinic closes *today* or
+*tomorrow* — someone is ill, the water is off), then a horizontally scrolling strip of 56×72
+day cards for everything else.
+
+Deliberately **not** a hand-rolled pointer-drag carousel. Every property that makes a strip
+feel right already lives in the platform's scroller — 1:1 tracking, momentum projected from
+release velocity, grab-it-mid-flight interruption, rubber-banding at the ends — all tuned per
+device. Reimplementing that with pointer events means rebuilding physics the browser has
+already got right, and losing keyboard, trackpad and screen-reader scrolling on the way. So
+the scroller is the browser's, `scroll-snap` picks the resting day, and the only thing written
+is what a day *looks* like.
+
 **Where motion is deliberately withheld:** confirming a consultation, an allergy conflict
 appearing, and payment recorded. A doctor overriding a safety warning should feel weight, not
 reward — a celebratory flourish on a clinical act teaches people to tap through it. Duolingo

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarOff, ChevronLeft, User, X } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
-import { EditorialHeading } from '@/components/ds';
+import { DateQuickChips, DateStrip, EditorialHeading } from '@/components/ds';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mini } from '@/components/ui/badge';
@@ -121,20 +121,26 @@ export default function DayOffPage() {
             ))}
           </div>
 
-          {/* Date and reason share a row, as the frame has them: one line, one decision. */}
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="date"
-              aria-label="Date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-            <Input
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Reason"
-            />
-          </div>
+          {/*
+            The date is CHOSEN HERE, not in the operating system's calendar.
+
+            This was `<input type="date">`, which on a phone hands the screen over to a
+            system dialog — system blue, system typeface, nothing like the surface around it
+            — and then asks a receptionist to hit a 24px number while holding a phone in the
+            other hand.
+
+            Two chips cover the common answer (a clinic closes today or tomorrow: someone is
+            ill, the water is off) and the strip covers everything else, with the platform's
+            own momentum and snapping doing the scrolling.
+          */}
+          <DateQuickChips value={date} onChange={setDate} />
+          <DateStrip value={date} onChange={setDate} />
+
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Reason"
+          />
 
           <Button block onClick={add} loading={create.isPending} disabled={!date}>
             Add day off

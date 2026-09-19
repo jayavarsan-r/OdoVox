@@ -96,3 +96,4 @@ export {
 export * from "./motion";
 export { AnimatedNumber } from "./animated-number";
 export { ProgressSteps, type ProgressStep } from "./progress-steps";
+export { DateStrip, DateQuickChips } from "./date-strip";
