@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 38 |
+| APPROVED-DEVIATION | 40 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 9 |
+| MISMATCHED | 7 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -101,8 +101,8 @@ _None. Every task closed its own decisions._
 | `v9-55` | Outstanding dues | 27 | MISMATCHED | 5.6% | criterion "layout" unreviewed |
 | `v9-56` | Lab list — stat pills, not tiles | 28 | APPROVED-DEVIATION | 9.8% | — |
 | `v9-57` | Lab ＋ — its own dial | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
-| `v9-58` | Lab — case detail | 28 | MISMATCHED | 14.7% | criterion "layout" unreviewed |
-| `v9-59` | The ＋ — quick New-case sheet | 28 | MISMATCHED | 39.7% | criterion "layout" unreviewed |
+| `v9-58` | Lab — case detail | 28 | APPROVED-DEVIATION | 18.5% | — |
+| `v9-59` | The ＋ — quick New-case sheet | 28 | APPROVED-DEVIATION | 39.5% | — |
 | `v9-60` | WhatsApp consent gate | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
 | `v9-61` | Lab vendors | 28 | APPROVED-DEVIATION | 7.0% | — |
 | `v9-62` | Patient inbox | 29 | MISMATCHED | 10.1% | criterion "layout" unreviewed |
@@ -833,6 +833,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 6.4%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 - `MUST-FIX` #110 (fixed): DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct
+- `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
 
 ### `v9-47` — Schedule — reception multi-doctor · MISMATCHED
 
@@ -853,6 +854,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.0%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 - `MUST-FIX` #110 (fixed): DoctorAvailability's unique constraint never fires — nullable effectiveFrom makes every always-row distinct
+- `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
 
 ### `v9-50` — Reception Today · APPROVED-DEVIATION
 
@@ -878,6 +880,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.8%
 - `NOT-BUILT` #75 (open): The free-room footer says which rooms are free but not when they next fill
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
 
 ### `v9-54` — Billing — densified · MISMATCHED
 
@@ -897,6 +900,7 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.2%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `NOT-BUILT` #130 (open): ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned
 
 ### `v9-55` — Outstanding dues · MISMATCHED
 
@@ -939,17 +943,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.8%
 - `APPROVED-DEVIATION` #125 (approved): Rows keep their status spine, vendor line and due countdown; the frame shows a stage word
 - `APPROVED-DEVIATION` #126 (approved): Search and the five status chips stay alongside the stat pills
 
-### `v9-58` — Lab — case detail · MISMATCHED
+### `v9-58` — Lab — case detail · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 14.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 18.5%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -957,18 +961,20 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 14.7%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #131 (approved): Cancel moves off the case screen into Edit; the screen offers one step forward and two escapes
+- `APPROVED-DEVIATION` #132 (approved): The right-hand tile falls back to the due date when a case has no costs recorded
 
-### `v9-59` — The ＋ — quick New-case sheet · MISMATCHED
+### `v9-59` — The ＋ — quick New-case sheet · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 39.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 39.5%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -977,6 +983,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 39.7%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #133 (approved): New case stays a full page where the frame draws a quick sheet
+- `APPROVED-DEVIATION` #134 (approved): Required-field errors wait for a save attempt instead of greeting an empty form
 
 ### `v9-61` — Lab vendors · APPROVED-DEVIATION
 

@@ -267,6 +267,30 @@ async function capture(
   }
 }
 
+/**
+ * Save the session cookies the APP now holds back into the cache.
+ *
+ * The refresh token rotates on every /auth/refresh, so the value we logged in with is spent
+ * the moment the app uses it. Caching the original and never updating it meant every run
+ * started with a dead token, bounced to /welcome, and burned one of the five OTPs an hour
+ * the app allows — which is how a capture session ends up unable to capture anything.
+ *
+ * Writing the rotated cookie back makes the cache self-renewing: one OTP ever, then the
+ * harness refreshes its way forward like a real browser.
+ */
+async function persistSession(role: string, ctx: BrowserContext): Promise<void> {
+  const cookies = (await ctx.cookies()).filter((c) => c.name.startsWith('odovox_'));
+  if (cookies.length === 0) return;
+  let onDisk: Record<string, Cookies> = {};
+  try {
+    onDisk = JSON.parse(await readFile(SESSION_CACHE, 'utf8'));
+  } catch {
+    /* first run */
+  }
+  onDisk[role] = cookies as Cookies;
+  await writeFile(SESSION_CACHE, JSON.stringify(onDisk, null, 2));
+}
+
 async function main() {
   const outDir = join(OUT_ROOT, mode === "fidelity" ? "impl" : mode);
   await mkdir(outDir, { recursive: true });
@@ -310,7 +334,22 @@ async function main() {
       baseURL: WEB,
     });
     await stabilise(ctx);
-    if (role !== "anon") await ctx.addCookies(await login(role));
+    if (role !== "anon") {
+      await ctx.addCookies(await login(role));
+      // Deep-linking to /lab gives the app no chance to exchange the refresh cookie for an
+      // access token — the silent refresh lives on the splash, which a deep link skips. So
+      // land on "/" once first, exactly as a returning user does, and keep whatever the
+      // refresh rotated to.
+      const warm = await ctx.newPage();
+      try {
+        await warm.goto(`${WEB}/`, { waitUntil: 'networkidle', timeout: 30_000 });
+        await persistSession(role, ctx);
+      } catch {
+        /* the per-shot heal below still covers a failed warm-up */
+      } finally {
+        await warm.close();
+      }
+    }
 
     let reloggedIn = false;
 
@@ -339,6 +378,7 @@ async function main() {
         await ctx.clearCookies();
         await ctx.addCookies(await login(role, 0, true));
         r = await capture(ctx, shot, outDir, css);
+        await persistSession(role, ctx);
       }
 
       // The API allows 100 req/min per IP (plugins/rate-limit.ts) and each page load

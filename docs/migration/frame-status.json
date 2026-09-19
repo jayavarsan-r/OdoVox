@@ -518,18 +518,18 @@
   {
     "frame": "v9-58",
     "name": "Lab — case detail",
-    "status": "MISMATCHED",
-    "changedPct": 14.652509652509652,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 18.545454545454547,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
   {
     "frame": "v9-59",
     "name": "The ＋ — quick New-case sheet",
-    "status": "MISMATCHED",
-    "changedPct": 39.725517725517726,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 39.53983853983854,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [
       "#9: /lab/new kept as a page; the frame shows a sheet"
     ],

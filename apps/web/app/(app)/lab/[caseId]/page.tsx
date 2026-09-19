@@ -20,7 +20,9 @@ import {
   useUploadLabPhoto,
 } from '@/lib/lab-queries';
 import { useUndoLabEvent } from '@/lib/lab-inbox-queries';
-import { expectedReturnInfo, labCaseTypeLabel, labNextStatuses, labStatusStyle, labTriggerLabel, maskPhone } from '@/lib/lab-ui';
+import { expectedReturnInfo, labCaseTypeLabel, labStatusStyle, labTriggerLabel, maskPhone } from '@/lib/lab-ui';
+import { canRaiseIssue, labJourney, labNextAction } from '@/lib/lab/case-journey';
+import { Mini } from '@/components/ui/badge';
 import { rupees } from '@/lib/patient-ui';
 import { cn } from '@/lib/utils';
 
@@ -88,10 +90,8 @@ export default function LabCaseDetailPage() {
       </AnimatedPage>
     );
   }
-
-  const s = labStatusStyle(c.status);
   const due = expectedReturnInfo(c.expectedReturnAt);
-  const nextStatuses = labNextStatuses(c.status);
+  const next = labNextAction(c.status);
   const canEdit = c.status === 'DRAFT' || c.status === 'SENT';
   const margin = c.costPaise != null && c.patientChargePaise != null ? c.patientChargePaise - c.costPaise : null;
 
@@ -145,9 +145,8 @@ export default function LabCaseDetailPage() {
         <button type="button" onClick={() => router.back()} aria-label="Back" className="flex size-9 items-center justify-center rounded-pill hover:bg-muted">
           <ChevronLeft className="size-5" />
         </button>
-        <h1 className="font-mono text-sm font-semibold">
+        <h1 className="flex-1 text-center font-mono text-sm font-semibold">
           {c.caseCode ?? c.caseNumber}
-          {c.caseCode ? <span className="ml-2 text-xs font-normal text-text-subtle">{c.caseNumber}</span> : null}
         </h1>
         {canEdit ? (
           <button type="button" aria-label="Edit case" onClick={() => router.push(`/lab/${caseId}/edit`)} className="ml-auto flex size-9 items-center justify-center rounded-pill hover:bg-muted">
@@ -156,33 +155,127 @@ export default function LabCaseDetailPage() {
         ) : null}
       </div>
 
-      {/* STATUS CARD — manual tracker buttons (works with zero WhatsApp parsing, §2.15) */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-elev-1">
-        <div className="flex items-center gap-2">
-          <span className={cn('size-2.5 rounded-pill', s.bar)} />
-          <span className={cn('text-sm font-semibold', s.strikethrough && 'line-through')}>{s.label}</span>
+      {/*
+        Frame 58's head: what the case IS, then who it involves, then where it has got to.
+
+        The screen opened on a case NUMBER and a status card holding five equal-sized
+        buttons — Lab confirmed, In progress, Mark ready, Raise issue and a red Cancel, all
+        offered at once. That asks the doctor to know the lifecycle instead of telling them
+        where the case is, and puts Cancel the same size as the thing they came to do.
+      */}
+      <div>
+        <h2 className="text-[22px] font-black leading-tight tracking-tight text-pine">
+          {[c.material, labCaseTypeLabel(c.type).toLowerCase()].filter(Boolean).join(' ')}
+          {c.teeth.length ? ` · ${c.teeth.join(', ')}` : ''}
+        </h2>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={() => router.push(`/patients/${c.patientId}`)}>
+            <Mini tone="neutral">{c.patientName}</Mini>
+          </button>
+          {c.vendorName ? <Mini tone="neutral">{c.vendorName}</Mini> : null}
+          {due && due.tone !== 'normal' ? (
+            <Mini tone={due.tone === 'overdue' ? 'crit' : 'warn'}>{due.label}</Mini>
+          ) : null}
         </div>
-        <p className="text-xs text-text-subtle">
-          {c.sentAt ? `Sent ${fmt(c.sentAt)}` : 'Not yet sent'}
-          {c.expectedReturnAt ? ` · Expected ${fmt(c.expectedReturnAt)}` : ''}
-          {due ? ` · ${due.label}` : ''}
-        </p>
-        {nextStatuses.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {nextStatuses.map((to) => (
-              <Button
-                key={to}
-                size="sm"
-                variant={to === 'CANCELLED' ? 'destructive' : to === 'ISSUE_RAISED' || to === 'RETURNED_FOR_REWORK' ? 'outline' : 'primary'}
-                disabled={transition.isPending}
-                onClick={() => runAction(to)}
-              >
-                {TO_LABEL[to] ?? to}
-              </Button>
-            ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-elev-1">
+        {/* The journey, and where this case sits on it. Statuses that are DEPARTURES from
+            the line — an issue, a rework — hold their place at Prod rather than walking
+            the stepper backwards; the issue itself is stated below in crit. */}
+        <ol className="flex items-start justify-between">
+          {labJourney(c.status).map((step, i, all) => (
+            <li key={step.label} className="flex flex-1 flex-col items-center gap-1.5">
+              <span className="flex w-full items-center">
+                <span className={cn('h-0.5 flex-1', i === 0 ? 'opacity-0' : step.state === 'ahead' ? 'bg-hair-2' : 'bg-live')} />
+                <span
+                  className={cn(
+                    'flex size-[26px] shrink-0 items-center justify-center rounded-pill text-3xs font-heavy',
+                    step.state === 'done' && 'bg-live text-white',
+                    step.state === 'now' && 'bg-lime text-pine',
+                    step.state === 'ahead' && 'border border-hair-2 text-pine-3',
+                  )}
+                >
+                  {step.state === 'done' ? '✓' : i + 1}
+                </span>
+                <span className={cn('h-0.5 flex-1', i === all.length - 1 ? 'opacity-0' : step.state === 'done' ? 'bg-live' : 'bg-hair-2')} />
+              </span>
+              <span className={cn('text-3xs font-heavy', step.state === 'ahead' ? 'text-pine-3' : 'text-pine')}>
+                {step.label}
+              </span>
+            </li>
+          ))}
+        </ol>
+
+        {c.status === 'ISSUE_RAISED' ? (
+          <p className="text-xs font-heavy text-crit">An issue is open with the lab.</p>
+        ) : null}
+
+        {/* ONE step forward. A case in production has exactly one useful next move, and
+            offering "Lab confirmed" beside it invites walking the case backwards. */}
+        {next ? (
+          <Button block disabled={transition.isPending} onClick={() => runAction(next.to)}>
+            {next.label}
+          </Button>
+        ) : (
+          <p className="text-center text-xs font-semibold text-pine-3">
+            This case is closed.
+          </p>
+        )}
+
+        {/* The escapes: quieter, and text rather than buttons, so neither competes with
+            the step above. Cancel is no longer a red button beside the primary action —
+            it lives in Edit, which is where destroying a case belongs. */}
+        <div className="flex items-center justify-center gap-5">
+          {c.vendorId ? (
+            <button
+              type="button"
+              onClick={() => router.push('/messages/lab')}
+              className="text-xs font-heavy text-pine-3 hover:text-pine"
+            >
+              Message lab
+            </button>
+          ) : null}
+          {canRaiseIssue(c.status) ? (
+            <button
+              type="button"
+              onClick={() => runAction('ISSUE_RAISED')}
+              className="text-xs font-heavy text-crit"
+            >
+              Raise issue
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {/* MATERIAL · SHADE and MARGIN, as the frame pairs them. Rendered only where there is
+          something to say — the old CASE DETAILS list printed a row of "—" for every field
+          an ordinary case simply does not carry. */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+          <p className="text-2xs font-heavy tracking-[0.06em] text-pine-3">MATERIAL · SHADE</p>
+          <p className="mt-1 truncate text-[15px] font-heavy text-pine">
+            {[c.material, c.shade].filter(Boolean).join(' · ') || labCaseTypeLabel(c.type)}
+          </p>
+        </div>
+        {margin !== null ? (
+          <div className="rounded-2xl bg-live-soft p-4">
+            <p className="text-2xs font-heavy tracking-[0.06em] text-live">MARGIN</p>
+            <p className="mt-1 text-[15px] font-black text-live">
+              {margin >= 0 ? '+' : ''}
+              {rupees(margin)}
+            </p>
+            <p className="mt-0.5 text-3xs font-heavy text-live/70">
+              {rupees(c.costPaise!)} → {rupees(c.patientChargePaise!)}
+            </p>
           </div>
         ) : (
-          <p className="text-xs text-text-subtle">No actions — this case is closed.</p>
+          <div className="rounded-2xl bg-white p-4 shadow-elev-1">
+            <p className="text-2xs font-heavy tracking-[0.06em] text-pine-3">DUE</p>
+            <p className="mt-1 truncate text-[15px] font-heavy text-pine">
+              {c.expectedReturnAt ? fmt(c.expectedReturnAt) : 'Not set'}
+            </p>
+          </div>
         )}
       </div>
 
@@ -196,17 +289,10 @@ export default function LabCaseDetailPage() {
         </button>
       </Section>
 
+      {/* Type, material, shade and teeth are the TITLE and the tile above; repeating them
+          as four rows here said nothing twice, and two of the four were "—". What is left
+          is the clinical brief, which has nowhere else to live. */}
       <Section title="Case details">
-        <dl className="grid grid-cols-2 gap-y-1 text-sm">
-          <dt className="text-text-subtle">Type</dt>
-          <dd>{labCaseTypeLabel(c.type)}</dd>
-          <dt className="text-text-subtle">Material</dt>
-          <dd>{c.material ?? '—'}</dd>
-          <dt className="text-text-subtle">Shade</dt>
-          <dd>{c.shade ?? '—'}</dd>
-          <dt className="text-text-subtle">Teeth</dt>
-          <dd>{c.teeth.length ? c.teeth.join(', ') : '—'}</dd>
-        </dl>
         {c.description ? <p className="text-sm text-muted-foreground">{c.description}</p> : null}
       </Section>
 

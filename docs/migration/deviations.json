@@ -1509,13 +1509,61 @@
     },
     {
       "id": 130,
-      "class": "MUST-FIX",
+      "class": "NOT-BUILT",
       "frames": [
-        "*"
+        "v9-46",
+        "v9-47",
+        "v9-50",
+        "v9-52",
+        "v9-54"
       ],
       "summary": "ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned",
-      "reason": "An endpoint nobody reaches is the server-side twin of a dead button: still maintained, still attack surface, still reasoned about on every schema change, earning none of it. This migration produced one itself — a vendor-performance route duplicating analytics that already existed — which prompted a sweep of all 196.\n\n`pnpm audit:endpoints` now reports them. It matches how callers WRITE paths (`/bills/${id}/pdf`), because the first version compared literal fragments and was wrong about four of twelve; an audit that cries wolf is one people stop reading, which is the failure it exists to prevent.\n\nTWO FIXED IMMEDIATELY. /consultations/:id/retranscribe and /reextract were the correct recovery for a failure the UI was brute-forcing: frame 26's 'Try again' re-uploaded the whole recording even when the upload had SUCCEEDED and the server-side pipeline was what failed — four minutes of audio over the same bad signal that may have caused the fault. It now picks the recovery from the failure's step (lib/consult/retry.ts, 6 tests).\n\nSIX AWAIT A FRAME NOT YET BUILT. These are not orphans and must not be deleted:\n  GET/POST /bills/:id/pdf        -> frames 52, 54 (checkout, billing)\n  POST /appointments/:id/no-show -> frames 46, 47, 50 (schedule, Today)\n  POST /payments/:id/cancel      -> frame 54 (billing)\n  GET /refunds/:id               -> frame 54 (billing)\n  POST /lab/cases/:id/complete   -> reachable via the generic action path; tests cover it\nEach should be wired by the task that owns its frame, and this audit reaches zero as those land.\n\nFIVE ARE GENUINELY ORPHANED — no caller, no test, and no v9 frame describes them:\n  GET /inventory/expiring\n  GET /inventory/movements/recent\n  GET /lab/messages/thread/:vendorId\n  GET /whatsapp-consent/audit\n  POST /whatsapp/bulk-reminder\n\nThey are NOT deleted here. Removing existing functionality is owner-ruled and outside the standing authority of #94, and two of them are plausibly wanted rather than dead: an expiring-stock list is a real clinic need the frames simply never drew, and /whatsapp-consent/audit is compliance evidence for who consented to being messaged — which is exactly the sort of thing to regret deleting.\n\nRecommendation: delete /whatsapp/bulk-reminder and /inventory/movements/recent (both duplicated by existing filtered list endpoints), keep /whatsapp-consent/audit as a compliance record, and decide /inventory/expiring and /lab/messages/thread against whether those features are wanted. Owner's call.",
+      "reason": "FILED WRONG FIRST TIME: recorded as MUST-FIX against frames ['*'], which blocks a frame on any open MUST-FIX — so one repo-level finding knocked all 36 completed frames back to MISMATCHED. It is not a defect in every frame; it is unbuilt wiring in the few that will own it, which is what it is scoped to now.\n\nAn endpoint nobody reaches is the server-side twin of a dead button: still maintained, still attack surface, still reasoned about on every schema change, earning none of it. This migration produced one itself — a vendor-performance route duplicating analytics that already existed — which prompted a sweep of all 196.\n\n`pnpm audit:endpoints` now reports them. It matches how callers WRITE paths (`/bills/${id}/pdf`), because the first version compared literal fragments and was wrong about four of twelve; an audit that cries wolf is one people stop reading, which is the failure it exists to prevent.\n\nTWO FIXED IMMEDIATELY. /consultations/:id/retranscribe and /reextract were the correct recovery for a failure the UI was brute-forcing: frame 26's 'Try again' re-uploaded the whole recording even when the upload had SUCCEEDED and the server-side pipeline was what failed — four minutes of audio over the same bad signal that may have caused the fault. It now picks the recovery from the failure's step (lib/consult/retry.ts, 6 tests).\n\nSIX AWAIT A FRAME NOT YET BUILT. These are not orphans and must not be deleted:\n  GET/POST /bills/:id/pdf        -> frames 52, 54 (checkout, billing)\n  POST /appointments/:id/no-show -> frames 46, 47, 50 (schedule, Today)\n  POST /payments/:id/cancel      -> frame 54 (billing)\n  GET /refunds/:id               -> frame 54 (billing)\n  POST /lab/cases/:id/complete   -> reachable via the generic action path; tests cover it\nEach should be wired by the task that owns its frame, and this audit reaches zero as those land.\n\nFIVE ARE GENUINELY ORPHANED — no caller, no test, and no v9 frame describes them:\n  GET /inventory/expiring\n  GET /inventory/movements/recent\n  GET /lab/messages/thread/:vendorId\n  GET /whatsapp-consent/audit\n  POST /whatsapp/bulk-reminder\n\nThey are NOT deleted here. Removing existing functionality is owner-ruled and outside the standing authority of #94, and two of them are plausibly wanted rather than dead: an expiring-stock list is a real clinic need the frames simply never drew, and /whatsapp-consent/audit is compliance evidence for who consented to being messaged — which is exactly the sort of thing to regret deleting.\n\nRecommendation: delete /whatsapp/bulk-reminder and /inventory/movements/recent (both duplicated by existing filtered list endpoints), keep /whatsapp-consent/audit as a compliance record, and decide /inventory/expiring and /lab/messages/thread against whether those features are wanted. Owner's call.",
       "status": "open"
+    },
+    {
+      "id": 131,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-58"
+      ],
+      "summary": "Cancel moves off the case screen into Edit; the screen offers one step forward and two escapes",
+      "reason": "The status card held FIVE buttons at once — Lab confirmed, In progress, Mark ready, Raise issue and a red Cancel — every legal transition at equal weight. That asks the doctor to know the lifecycle rather than telling them where the case is, and puts destroying the case the same size as the thing they came to do.\n\nFrame 58's answer is a six-step stepper plus ONE primary action and two quiet escapes, and that is what this now is (lib/lab/case-journey.ts, 12 tests). A case in production offers 'Mark ready' and nothing else, because offering 'Lab confirmed' beside it invites walking the case backwards.\n\nCancel is not removed — it moves to the Edit screen, where destroying a record belongs. Nothing else on this screen can lose work, so nothing else needs a red button.\n\nISSUE_RAISED and RETURNED_FOR_REWORK hold their place at Prod on the stepper rather than walking it backwards: that is where the work actually is. The issue is stated separately in crit, where it cannot be mistaken for progress.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 132,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-58"
+      ],
+      "summary": "The right-hand tile falls back to the due date when a case has no costs recorded",
+      "reason": "Frame 58 pairs MATERIAL · SHADE with a MARGIN tile reading '+₹2,700 · ₹1,800 → ₹4,500'. Margin needs both a lab cost and a patient charge, and a case created without them has neither.\n\nRather than a tile of dashes, it shows the due date — the other fact every case on this screen has, and the one the person reading it is most likely to want next. The margin tile returns the moment both figures exist.\n\nThe CASE DETAILS list that used to sit below is gone: type, material, shade and teeth are now the title and this tile, and repeating them as four rows said nothing twice while two of the four read '—'. The clinical description survives, because it has nowhere else to live.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 133,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-59"
+      ],
+      "summary": "New case stays a full page where the frame draws a quick sheet",
+      "reason": "Frame 59 is a sheet over the lab list — a quick create with six decisions. The implementation keeps a full page, because the form carries fields the frame's sheet does not: material, shade, a clinical description, lab cost and patient charge. Those are not padding; the margin tile on frame 58 depends on the last two.\n\nCramming them into a sheet means either a sheet that scrolls like a page, or hiding fields that a case genuinely needs. The quick path the frame is actually optimising for is now served on the page itself — 'Speak the case' at the top, vendor as chips, and due presets — so creating a routine crown is a handful of taps without losing the fields a complicated one requires.\n\nThe two footer actions also stay: draft and send are a real distinction the API makes, where the frame shows a single 'Create case'.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 134,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-59"
+      ],
+      "summary": "Required-field errors wait for a save attempt instead of greeting an empty form",
+      "reason": "The form rendered four errors the moment it opened — 'Select a patient', 'Select a vendor', 'Pick a case type', 'Select at least one tooth' — in red, on a screen nobody had touched. That tells a receptionist they have done something wrong before they have done anything, and it trains them to ignore red, which is the colour this app uses for allergy conflicts.\n\nErrors now appear after someone presses a save button. The buttons stay ENABLED rather than disabled-until-valid: pressing one is how you find out what is missing, and a disabled button that will not say why is worse than an error that waits its turn.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
