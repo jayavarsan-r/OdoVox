@@ -136,7 +136,8 @@ export default function WhatsAppSettingsPage() {
                   >
                     <span
                       className={cn(
-                        'absolute top-0.5 size-5 rounded-full bg-white shadow-elev-1 transition-all',
+                        // The switch thumb slides; only its position should animate.
+                        'absolute top-0.5 size-5 rounded-full bg-white shadow-elev-1 transition-[left] duration-state ease-out',
                         g.enabled ? 'left-[22px]' : 'left-0.5',
                       )}
                     />

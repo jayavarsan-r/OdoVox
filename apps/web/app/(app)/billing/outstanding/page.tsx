@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
-import { EditorialHeading, EmptyState } from '@/components/ds';
+import { AnimatedNumber, EditorialHeading, EmptyState } from '@/components/ds';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { useOutstanding } from '@/lib/billing/api';
 import { ageLabel, isStale, rupees, sortOutstanding } from '@/lib/billing/format';
@@ -55,9 +55,11 @@ export default function OutstandingPage() {
             */}
             <section className="rounded-2xl bg-crit-soft p-4">
               <p className="text-2xs font-heavy tracking-[0.06em] text-crit">TOTAL OUTSTANDING</p>
-              <p className="mt-1 text-[34px] font-black leading-none tabular-nums text-crit">
-                {rupees(data.totalOutstandingPaise)}
-              </p>
+              <AnimatedNumber
+                value={data.totalOutstandingPaise}
+                format={(n) => rupees(Math.round(n))}
+                className="mt-1 block text-[34px] font-black leading-none text-crit"
+              />
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded-pill bg-white/80 px-2.5 py-1 text-3xs font-heavy text-pine">
                   {patients.length} patient{patients.length === 1 ? '' : 's'}

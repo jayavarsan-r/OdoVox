@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * Tinted variants drop the shadow — they read as a glyph chip, not a raised control.
  */
 const iconCircle = cva(
-  "flex shrink-0 items-center justify-center rounded-pill transition-all duration-press active:scale-[0.94]",
+  "flex shrink-0 items-center justify-center rounded-pill transition-[transform,background-color] duration-press active:scale-[0.94]",
   {
     variants: {
       tone: {

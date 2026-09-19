@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 const quickTile = cva(
   [
     "relative flex w-full items-center gap-[11px] text-left",
-    "transition-all duration-press active:scale-[0.98]",
+    "transition-[transform,background-color] duration-press active:scale-[0.98]",
     "focus-visible:outline-none focus-visible:shadow-[var(--ring-lime)]",
   ].join(" "),
   {

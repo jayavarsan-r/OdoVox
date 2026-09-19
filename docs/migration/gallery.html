@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OdoVox v9 → v10 — every frame</title>
+<style>
+  :root { --ink:#1F2A23; --mute:rgba(31,42,35,.55); --line:rgba(31,42,35,.12); --bg:#F6F7F2; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header.top { padding:32px 24px 20px; border-bottom:1px solid var(--line); }
+  h1 { margin:0 0 6px; font-size:26px; letter-spacing:-.02em; }
+  .sub { color:var(--mute); font-size:14px; }
+  .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .counts span { background:#fff; border:1px solid var(--line); border-radius:999px;
+                 padding:5px 12px; font-size:12px; font-weight:700; }
+  h2 { margin:32px 24px 4px; font-size:13px; letter-spacing:.06em; color:var(--mute); }
+  .grid { display:grid; gap:20px; padding:16px 24px 40px;
+          grid-template-columns:repeat(auto-fill,minmax(440px,1fr)); }
+  .frame { background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .frame header { display:flex; align-items:center; gap:10px; padding:12px 14px;
+                  border-bottom:1px solid var(--line); }
+  .frame h3 { margin:0; font-size:14px; font-weight:800; flex:1; }
+  .nm { font-weight:500; color:var(--mute); margin-left:6px; }
+  .tag { font-size:10px; font-weight:800; letter-spacing:.05em; padding:3px 8px;
+         border-radius:999px; white-space:nowrap; }
+  .tag.ok { background:#E8F2E4; color:#2E6B43; }
+  .tag.todo { background:rgba(31,42,35,.06); color:var(--mute); }
+  .frame img { display:block; width:100%; height:auto; background:var(--bg); }
+  .none { margin:0; padding:26px 14px; color:var(--mute); font-size:13px; text-align:center; }
+  .devs { margin:0; padding:10px 14px 12px 30px; font-size:12.5px; color:var(--mute); }
+  .devs li { margin:3px 0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --ink:#E9EDE6; --mute:rgba(233,237,230,.6); --line:rgba(233,237,230,.14); --bg:#141815; }
+    .frame, .counts span { background:#1B201C; }
+    .tag.ok { background:#1E3A28; color:#9BD8AE; }
+  }
+</style></head><body>
+<header class="top">
+  <h1>OdoVox — v9 → v10</h1>
+  <p class="sub">Each image is the v9 design on the left and what the app renders on the right.</p>
+  <div class="counts">
+    <span>47 / 81 complete</span>
+    <span>APPROVED-DEVIATION 47</span><span>NOT-BUILT 29</span><span>CROSS-CUTTING 3</span><span>OUT-OF-SCOPE 1</span><span>NOT-CAPTURED 1</span>
+  </div>
+</header>
+
+<h2>COMPLETE — 47</h2>
+<div class="grid"><article class="frame" id="v9-01">
+  <header>
+    <h3>v9-01 <span class="nm">Splash</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-01-sbs.png" alt="v9-01 — design beside implementation">
+  
+</article><article class="frame" id="v9-02">
+  <header>
+    <h3>v9-02 <span class="nm">Welcome</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-02-sbs.png" alt="v9-02 — design beside implementation">
+  
+</article><article class="frame" id="v9-03">
+  <header>
+    <h3>v9-03 <span class="nm">Phone</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-03-sbs.png" alt="v9-03 — design beside implementation">
+  <ul class="devs"><li><b>#20</b> A lime focus ring on the .field; the frame's focused field has none</li><li><b>#21</b> A &quot;By continuing you agree to our terms.&quot; line; frame 03 has none</li><li><b>#22</b> No .mic-a affordance on /phone</li></ul>
+</article><article class="frame" id="v9-04">
+  <header>
+    <h3>v9-04 <span class="nm">OTP — auto-read</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-04-sbs.png" alt="v9-04 — design beside implementation">
+  <ul class="devs"><li><b>#13</b> Phone number masked to &quot;+91 ••••• 0001&quot;; frame 04 shows it in full</li><li><b>#14</b> An explicit &quot;Verify&quot; button; frames 04/05 auto-submit on the sixth digit</li></ul>
+</article><article class="frame" id="v9-05">
+  <header>
+    <h3>v9-05 <span class="nm">OTP — wrong code</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-05-sbs.png" alt="v9-05 — design beside implementation">
+  <ul class="devs"><li><b>#13</b> Phone number masked to &quot;+91 ••••• 0001&quot;; frame 04 shows it in full</li><li><b>#14</b> An explicit &quot;Verify&quot; button; frames 04/05 auto-submit on the sixth digit</li><li><b>#23</b> A &quot;Wrong code. N attempts left.&quot; toast on top of the frame's inline message</li><li><b>#24</b> WITHDRAWN — false finding. Resend already unlocks immediately on a wrong code.</li></ul>
+</article><article class="frame" id="v9-07">
+  <header>
+    <h3>v9-07 <span class="nm">Role</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-07-sbs.png" alt="v9-07 — design beside implementation">
+  <ul class="devs"><li><b>#11</b> Mascot rendered on /role; frame 07 has none</li><li><b>#12</b> /role used tap→navigate; frame 07 is select→sticky CTA &quot;Continue as doctor&quot;</li></ul>
+</article><article class="frame" id="v9-08">
+  <header>
+    <h3>v9-08 <span class="nm">Create clinic — conversational</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-08-sbs.png" alt="v9-08 — design beside implementation">
+  
+</article><article class="frame" id="v9-09">
+  <header>
+    <h3>v9-09 <span class="nm">Join by code + preview</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-09-sbs.png" alt="v9-09 — design beside implementation">
+  <ul class="devs"><li><b>#17</b> /clinic-join is a two-field form + explicit &quot;Find clinic&quot;; frame 09 is one hero code field with a live check and a clinic preview</li><li><b>#152</b> The clinic confirms itself as the code is typed, replacing a Find/Confirm two-step</li><li><b>#153</b> The name field stays, and the preview shows city/state rather than a doctor count</li></ul>
+</article><article class="frame" id="v9-13">
+  <header>
+    <h3>v9-13 <span class="nm">Home — calm, glanceable, habit-forming</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-13-sbs.png" alt="v9-13 — design beside implementation">
+  <ul class="devs"><li><b>#29</b> A voice search field on /home; frame 13 has none</li><li><b>#30</b> The VoiceCommandHero on /home; frame 13 has none</li><li><b>#31</b> Five quick tiles where frame 13 has three (Lab, Schedule, Block time)</li><li><b>#32</b> A 'Recent' section on /home; frame 13 has none</li><li><b>#66</b> The captured river is shorter than frame 13's, because the harness pins the clock to a past date</li></ul>
+</article><article class="frame" id="v9-21">
+  <header>
+    <h3>v9-21 <span class="nm">Consult — live queue</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-21-sbs.png" alt="v9-21 — design beside implementation">
+  <ul class="devs"><li><b>#35</b> A back chevron in the /consult header; frame 21 has none</li><li><b>#36</b> A ProfileButton in the /consult header; frame 21 has none</li><li><b>#37</b> The in-chair card shows an elapsed timer; frame 21 does not</li><li><b>#68</b> The Consult header keeps a back control that frame 21 does not draw</li><li><b>#70</b> Frames say &quot;CHAIR 1&quot;; the app says &quot;Room 1&quot; because that is what the model calls it</li></ul>
+</article><article class="frame" id="v9-23">
+  <header>
+    <h3>v9-23 <span class="nm">Recording</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-23-sbs.png" alt="v9-23 — design beside implementation">
+  <ul class="devs"><li><b>#44</b> Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven</li><li><b>#48</b> The recording strip shows age but not the sitting number (&quot;36 · S2&quot;)</li></ul>
+</article><article class="frame" id="v9-24">
+  <header>
+    <h3>v9-24 <span class="nm">Recording — paused (call)</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-24-sbs.png" alt="v9-24 — design beside implementation">
+  <ul class="devs"><li><b>#44</b> Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven</li><li><b>#48</b> The recording strip shows age but not the sitting number (&quot;36 · S2&quot;)</li><li><b>#49</b> Auto-pause on interruption — frame 24's &quot;Paused automatically for a phone call&quot;</li></ul>
+</article><article class="frame" id="v9-25">
+  <header>
+    <h3>v9-25 <span class="nm">Processing — one state + bar</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-25-sbs.png" alt="v9-25 — design beside implementation">
+  <ul class="devs"><li><b>#44</b> Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven</li></ul>
+</article><article class="frame" id="v9-26">
+  <header>
+    <h3>v9-26 <span class="nm">Processing — failed</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-26-sbs.png" alt="v9-26 — design beside implementation">
+  <ul class="devs"><li><b>#42</b> Frame 26's second action, &quot;Keep audio · review later&quot;, does not exist</li><li><b>#44</b> Frames 23-26: 23 and 24 now captured; 25 and 26 still not driven</li></ul>
+</article><article class="frame" id="v9-27">
+  <header>
+    <h3>v9-27 <span class="nm">Verification — conflict, clinical red</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-27-sbs.png" alt="v9-27 — design beside implementation">
+  <ul class="devs"><li><b>#50</b> Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule</li><li><b>#51</b> Frame 27's &quot;Swap → Azithro 500&quot; — no drug-substitution knowledge base exists</li><li><b>#52</b> The FINDINGS and PROCEDURE prose sections have no extraction fields behind them</li><li><b>#53</b> Confirm stays available over an allergy conflict; the dentist decides and the override is audited</li><li><b>#55</b> The conflict, resolved and seven-medicine states need clinical data no seeded recording produces</li><li><b>#96</b> The conflict line states the allergy and the class; it cannot state when it was recorded or the reaction</li><li><b>#98</b> NEXT SITTING shows the date; the frame also shows a time and the procedure</li><li><b>#99</b> The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw</li><li><b>#100</b> The prose region is empty, leaving vertical space the frames fill with FINDINGS and PROCEDURE</li><li><b>#101</b> GATE C FIX: the medicine row was a &lt;button&gt; containing the Remove and Undo buttons</li></ul>
+</article><article class="frame" id="v9-28">
+  <header>
+    <h3>v9-28 <span class="nm">Verification — resolved inline</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-28-sbs.png" alt="v9-28 — design beside implementation">
+  <ul class="devs"><li><b>#50</b> Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule</li><li><b>#51</b> Frame 27's &quot;Swap → Azithro 500&quot; — no drug-substitution knowledge base exists</li><li><b>#52</b> The FINDINGS and PROCEDURE prose sections have no extraction fields behind them</li><li><b>#55</b> The conflict, resolved and seven-medicine states need clinical data no seeded recording produces</li><li><b>#97</b> The resolved warning lands in the SAFETY banner, not inline on a swapped row</li><li><b>#98</b> NEXT SITTING shows the date; the frame also shows a time and the procedure</li><li><b>#99</b> The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw</li><li><b>#100</b> The prose region is empty, leaving vertical space the frames fill with FINDINGS and PROCEDURE</li><li><b>#101</b> GATE C FIX: the medicine row was a &lt;button&gt; containing the Remove and Undo buttons</li></ul>
+</article><article class="frame" id="v9-30">
+  <header>
+    <h3>v9-30 <span class="nm">Verification — clean day, readable prose</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-30-sbs.png" alt="v9-30 — design beside implementation">
+  <ul class="devs"><li><b>#50</b> Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule</li><li><b>#52</b> The FINDINGS and PROCEDURE prose sections have no extraction fields behind them</li><li><b>#54</b> Frame 30 packs medicines into a half-width tile beside NEXT; one composition ships for all four states</li></ul>
+</article><article class="frame" id="v9-31">
+  <header>
+    <h3>v9-31 <span class="nm">Confirmed — saved</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-31-sbs.png" alt="v9-31 — design beside implementation">
+  <ul class="devs"><li><b>#50</b> Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule</li></ul>
+</article><article class="frame" id="v9-32">
+  <header>
+    <h3>v9-32 <span class="nm">Patients — glyph rows</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-32-sbs.png" alt="v9-32 — design beside implementation">
+  <ul class="devs"><li><b>#38</b> No &quot;₹ Due&quot; filter chip; frame 32 has one</li><li><b>#39</b> Two filter chips the frame does not show — Lab and Recent</li><li><b>#40</b> An &quot;All patients · N&quot; section header above the list; frame 32 goes straight to the card</li><li><b>#76</b> Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist</li></ul>
+</article><article class="frame" id="v9-33">
+  <header>
+    <h3>v9-33 <span class="nm">Patients — search active</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-33-sbs.png" alt="v9-33 — design beside implementation">
+  <ul class="devs"><li><b>#76</b> Treatment-progress glyphs on patient rows need a per-row active-plan join that does not exist</li></ul>
+</article><article class="frame" id="v9-34">
+  <header>
+    <h3>v9-34 <span class="nm">Patients — no match</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-34-sbs.png" alt="v9-34 — design beside implementation">
+  
+</article><article class="frame" id="v9-35">
+  <header>
+    <h3>v9-35 <span class="nm">New patient — blank</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-35-sbs.png" alt="v9-35 — design beside implementation">
+  <ul class="devs"><li><b>#56</b> The disabled-CTA line names what is actually missing instead of frame 35's static copy</li><li><b>#57</b> Optional fields move behind a 'More details' disclosure rather than being dropped</li></ul>
+</article><article class="frame" id="v9-36">
+  <header>
+    <h3>v9-36 <span class="nm">New patient — voice intake</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-36-sbs.png" alt="v9-36 — design beside implementation">
+  <ul class="devs"><li><b>#57</b> Optional fields move behind a 'More details' disclosure rather than being dropped</li><li><b>#58</b> The voice-filled intake form cannot be captured - the mock extractor returns nothing from fake audio</li><li><b>#104</b> The patient code is generated and shown in the title, not as a short 'P-0413' chip</li><li><b>#105</b> The dictation card carries a full-width CTA where the frame has a mic circle</li><li><b>#106</b> AGE and GENDER keep their own labels where the frame uses one 'AGE &amp; GENDER'</li><li><b>#107</b> FLAGS is a full picker; the frame shows only the flags that are set plus a '+'</li></ul>
+</article><article class="frame" id="v9-37">
+  <header>
+    <h3>v9-37 <span class="nm">Patient — Overview</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-37-sbs.png" alt="v9-37 — design beside implementation">
+  <ul class="devs"><li><b>#5</b> Patient tab renamed &quot;Tooth Map&quot; → &quot;Teeth&quot;</li><li><b>#10</b> Patient detail keeps 5 tabs (Media has no frame)</li><li><b>#60</b> Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts</li><li><b>#80</b> The full identity block stays on every tab; v9 shows a compact header on 38/40/41</li></ul>
+</article><article class="frame" id="v9-38">
+  <header>
+    <h3>v9-38 <span class="nm">Patient — Cases journey</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-38-sbs.png" alt="v9-38 — design beside implementation">
+  <ul class="devs"><li><b>#5</b> Patient tab renamed &quot;Tooth Map&quot; → &quot;Teeth&quot;</li><li><b>#10</b> Patient detail keeps 5 tabs (Media has no frame)</li><li><b>#60</b> Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts</li><li><b>#80</b> The full identity block stays on every tab; v9 shows a compact header on 38/40/41</li><li><b>#82</b> Journey steps are titled by procedure; v9 titles them by clinical step name</li></ul>
+</article><article class="frame" id="v9-39">
+  <header>
+    <h3>v9-39 <span class="nm">Case — procedure detail</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-39-sbs.png" alt="v9-39 — design beside implementation">
+  <ul class="devs"><li><b>#83</b> Sitting rows show no per-sitting fee — Sitting has no cost field</li><li><b>#85</b> FEES and NEXT read empty in the capture because the fixture has no billed or booked work</li></ul>
+</article><article class="frame" id="v9-40">
+  <header>
+    <h3>v9-40 <span class="nm">Tooth map — FDI odontogram</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-40-sbs.png" alt="v9-40 — design beside implementation">
+  <ul class="devs"><li><b>#5</b> Patient tab renamed &quot;Tooth Map&quot; → &quot;Teeth&quot;</li><li><b>#10</b> Patient detail keeps 5 tabs (Media has no frame)</li><li><b>#60</b> Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts</li><li><b>#80</b> The full identity block stays on every tab; v9 shows a compact header on 38/40/41</li></ul>
+</article><article class="frame" id="v9-41">
+  <header>
+    <h3>v9-41 <span class="nm">Patient — Billing tab</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-41-sbs.png" alt="v9-41 — design beside implementation">
+  <ul class="devs"><li><b>#5</b> Patient tab renamed &quot;Tooth Map&quot; → &quot;Teeth&quot;</li><li><b>#10</b> Patient detail keeps 5 tabs (Media has no frame)</li><li><b>#60</b> Patient query hooks stay in lib/queries.ts rather than moving to lib/patients/queries.ts</li><li><b>#77</b> Frame 41's &quot;Remind&quot; needs a payment-reminder WhatsApp template that does not exist</li><li><b>#78</b> The billing headline drops gross 'Billed' for the frame's OUTSTANDING / PAID pair</li><li><b>#80</b> The full identity block stays on every tab; v9 shows a compact header on 38/40/41</li></ul>
+</article><article class="frame" id="v9-42">
+  <header>
+    <h3>v9-42 <span class="nm">Patient history — Odo timeline</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-42-sbs.png" alt="v9-42 — design beside implementation">
+  <ul class="devs"><li><b>#86</b> History is a route reached from the overflow menu, not a sixth tab</li><li><b>#87</b> A recorded allergy has no date — frame 42 shows one ('2019')</li></ul>
+</article><article class="frame" id="v9-46">
+  <header>
+    <h3>v9-46 <span class="nm">Schedule — doctor day</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-46-sbs.png" alt="v9-46 — design beside implementation">
+  <ul class="devs"><li><b>#130</b> ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned</li><li><b>#135</b> The Day / Week / Mo switch is absent — no frame describes Week or Month</li><li><b>#136</b> No-shows now appear on the grid; cancelled and rescheduled slots still do not</li><li><b>#137</b> Cards are white with a tone spine, lead with the patient, and the now-line is lime</li><li><b>#140</b> Both schedule grids now draw the SAME appointment block, at one shared scale</li></ul>
+</article><article class="frame" id="v9-47">
+  <header>
+    <h3>v9-47 <span class="nm">Schedule — reception multi-doctor</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-47-sbs.png" alt="v9-47 — design beside implementation">
+  <ul class="devs"><li><b>#130</b> ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned</li><li><b>#138</b> The duplicate + is gone — reception's dock orb books the appointment</li><li><b>#139</b> One doctor gets a full-width column; the frame shows two</li><li><b>#140</b> Both schedule grids now draw the SAME appointment block, at one shared scale</li></ul>
+</article><article class="frame" id="v9-50">
+  <header>
+    <h3>v9-50 <span class="nm">Reception Today</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-50-sbs.png" alt="v9-50 — design beside implementation">
+  <ul class="devs"><li><b>#70</b> Frames say &quot;CHAIR 1&quot;; the app says &quot;Room 1&quot; because that is what the model calls it</li><li><b>#75</b> The free-room footer says which rooms are free but not when they next fill</li><li><b>#130</b> ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned</li></ul>
+</article><article class="frame" id="v9-54">
+  <header>
+    <h3>v9-54 <span class="nm">Billing — densified</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-54-sbs.png" alt="v9-54 — design beside implementation">
+  <ul class="devs"><li><b>#130</b> ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned</li><li><b>#142</b> The day's total leads at hero size; the method split moves under it</li><li><b>#143</b> The Latest feed now exists, and it shows refunds the total deliberately excludes</li></ul>
+</article><article class="frame" id="v9-55">
+  <header>
+    <h3>v9-55 <span class="nm">Outstanding dues</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-55-sbs.png" alt="v9-55 — design beside implementation">
+  <ul class="devs"><li><b>#144</b> The total leads in crit; debt age reads in words, and stale debt is ringed</li><li><b>#145</b> One outstanding patient where the frame shows three</li></ul>
+</article><article class="frame" id="v9-56">
+  <header>
+    <h3>v9-56 <span class="nm">Lab list — stat pills, not tiles</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-56-sbs.png" alt="v9-56 — design beside implementation">
+  <ul class="devs"><li><b>#124</b> Stat pills render as three equal tiles rather than a scrolling pill row</li><li><b>#125</b> Rows keep their status spine, vendor line and due countdown; the frame shows a stage word</li><li><b>#126</b> Search and the five status chips stay alongside the stat pills</li></ul>
+</article><article class="frame" id="v9-58">
+  <header>
+    <h3>v9-58 <span class="nm">Lab — case detail</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-58-sbs.png" alt="v9-58 — design beside implementation">
+  <ul class="devs"><li><b>#131</b> Cancel moves off the case screen into Edit; the screen offers one step forward and two escapes</li><li><b>#132</b> The right-hand tile falls back to the due date when a case has no costs recorded</li></ul>
+</article><article class="frame" id="v9-59">
+  <header>
+    <h3>v9-59 <span class="nm">The ＋ — quick New-case sheet</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-59-sbs.png" alt="v9-59 — design beside implementation">
+  <ul class="devs"><li><b>#9</b> /lab/new kept as a page; the frame shows a sheet</li><li><b>#133</b> New case stays a full page where the frame draws a quick sheet</li><li><b>#134</b> Required-field errors wait for a save attempt instead of greeting an empty form</li></ul>
+</article><article class="frame" id="v9-61">
+  <header>
+    <h3>v9-61 <span class="nm">Lab vendors</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-61-sbs.png" alt="v9-61 — design beside implementation">
+  <ul class="devs"><li><b>#127</b> The performance panel carries an overdue callout the frame does not have</li><li><b>#128</b> Median reply renders in minutes below the hour, and the panel shows the selected vendor</li><li><b>#129</b> A vendor with no completed history shows its configured target instead of an average</li></ul>
+</article><article class="frame" id="v9-62">
+  <header>
+    <h3>v9-62 <span class="nm">Patient inbox</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-62-sbs.png" alt="v9-62 — design beside implementation">
+  <ul class="devs"><li><b>#146</b> The lab inbox moves below the conversations, and gains a real backlog count</li><li><b>#147</b> Category becomes a dot beside the time; the third line is gone</li><li><b>#148</b> New message moves into the header as the frame's + circle</li></ul>
+</article><article class="frame" id="v9-65">
+  <header>
+    <h3>v9-65 <span class="nm">Lab inbox — quiet verdicts</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-65-sbs.png" alt="v9-65 — design beside implementation">
+  <ul class="devs"><li><b>#150</b> Verdict is carried by the action row rather than a chip; Reply is not offered here</li><li><b>#151</b> The inbox had no seeded messages at all, so the screen could not be judged</li></ul>
+</article><article class="frame" id="v9-67">
+  <header>
+    <h3>v9-67 <span class="nm">Inventory — stock</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-67-sbs.png" alt="v9-67 — design beside implementation">
+  <ul class="devs"><li><b>#119</b> Add stays a floating FAB where the frame puts a + in the header</li><li><b>#120</b> 'Reorder all' has no supplier-ordering concept behind it</li><li><b>#121</b> Rows keep their stock-tone spine and the screen keeps search and category filters</li></ul>
+</article><article class="frame" id="v9-68">
+  <header>
+    <h3>v9-68 <span class="nm">Inventory — item detail</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-68-sbs.png" alt="v9-68 — design beside implementation">
+  <ul class="devs"><li><b>#122</b> The second tile falls back to the category when an item has no price, vendor or expiry</li><li><b>#123</b> SKU and batch survive the removed DETAILS list as one conditional line</li></ul>
+</article><article class="frame" id="v9-70">
+  <header>
+    <h3>v9-70 <span class="nm">More — module hub</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-70-sbs.png" alt="v9-70 — design beside implementation">
+  <ul class="devs"><li><b>#3</b> 5 tabs → 4 tabs + /more hub</li><li><b>#8</b> /more shows 3 module tiles for a doctor, not 4</li><li><b>#25</b> Availability's &quot;2 doctors&quot; and Team's &quot;1 request&quot; values are absent</li><li><b>#108</b> A doctor's More hub shows three module tiles; the frame draws four, including Billing</li><li><b>#109</b> Hub values are absent rather than zero while their query is loading or failed</li></ul>
+</article><article class="frame" id="v9-72">
+  <header>
+    <h3>v9-72 <span class="nm">WhatsApp settings</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-72-sbs.png" alt="v9-72 — design beside implementation">
+  <ul class="devs"><li><b>#114</b> The switches name intents; the API's Meta template keys are grouped behind them</li><li><b>#115</b> PRIVACY: the business number is masked and the provider name is gone</li><li><b>#116</b> Monthly spend shows ₹0 against the frame's ₹620 of ₹1,000, and the cap footnote is omitted</li></ul>
+</article><article class="frame" id="v9-73">
+  <header>
+    <h3>v9-73 <span class="nm">Availability — weekly hours</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-73-sbs.png" alt="v9-73 — design beside implementation">
+  <ul class="devs"><li><b>#111</b> The doctor switcher appears only when there is more than one doctor</li></ul>
+</article><article class="frame" id="v9-74">
+  <header>
+    <h3>v9-74 <span class="nm">Days off</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-74-sbs.png" alt="v9-74 — design beside implementation">
+  <ul class="devs"><li><b>#112</b> The booking-conflict note says what the app does, which is less than the frame promises</li><li><b>#113</b> The scope selector names the doctors instead of offering a generic 'A doctor'</li></ul>
+</article><article class="frame" id="v9-75">
+  <header>
+    <h3>v9-75 <span class="nm">Prescription templates</span></h3>
+    <span class="tag ok">APPROVED-DEVIATION</span>
+  </header>
+  <img loading="lazy" src="screenshots/fidelity/v9-75-sbs.png" alt="v9-75 — design beside implementation">
+  <ul class="devs"><li><b>#117</b> Archive moved from a per-row icon into the template editor</li><li><b>#118</b> Chips read the clinic's own tags where the frame shows a curated set</li></ul>
+</article></div>
+
+<h2>REMAINING — 34</h2>
+<div class="grid"><article class="frame" id="v9-06">
+  <header>
+    <h3>v9-06 <span class="nm">Returning user — instant unlock</span></h3>
+    <span class="tag todo">OUT-OF-SCOPE</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-06.png" alt="v9-06 — design beside implementation">
+  <ul class="devs"><li><b>#4</b> WebAuthn descoped pre-launch; frame 06 out of scope</li></ul>
+</article><article class="frame" id="v9-10">
+  <header>
+    <h3>v9-10 <span class="nm">Pending approval</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-10.png" alt="v9-10 — design beside implementation">
+  
+</article><article class="frame" id="v9-11">
+  <header>
+    <h3>v9-11 <span class="nm">Done — Odo celebrates</span></h3>
+    <span class="tag todo">NOT-CAPTURED</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-11.png" alt="v9-11 — design beside implementation">
+  
+</article><article class="frame" id="v9-12">
+  <header>
+    <h3>v9-12 <span class="nm">First day — setup checklist</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-12.png" alt="v9-12 — design beside implementation">
+  
+</article><article class="frame" id="v9-14">
+  <header>
+    <h3>v9-14 <span class="nm">Flow — chair free (same anatomy)</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-14.png" alt="v9-14 — design beside implementation">
+  
+</article><article class="frame" id="v9-15">
+  <header>
+    <h3>v9-15 <span class="nm">Home — quiet morning, same bones</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-15.png" alt="v9-15 — design beside implementation">
+  
+</article><article class="frame" id="v9-16">
+  <header>
+    <h3>v9-16 <span class="nm">Flow — day done</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-16.png" alt="v9-16 — design beside implementation">
+  
+</article><article class="frame" id="v9-17">
+  <header>
+    <h3>v9-17 <span class="nm">Flow — offline</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-17.png" alt="v9-17 — design beside implementation">
+  
+</article><article class="frame" id="v9-18">
+  <header>
+    <h3>v9-18 <span class="nm">Home ＋ — speed dial open</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-18.png" alt="v9-18 — design beside implementation">
+  
+</article><article class="frame" id="v9-19">
+  <header>
+    <h3>v9-19 <span class="nm">Day off — quick sheet</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-19.png" alt="v9-19 — design beside implementation">
+  
+</article><article class="frame" id="v9-20">
+  <header>
+    <h3>v9-20 <span class="nm">Week in review — the Monday habit</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-20.png" alt="v9-20 — design beside implementation">
+  
+</article><article class="frame" id="v9-22">
+  <header>
+    <h3>v9-22 <span class="nm">Consult — empty</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-22.png" alt="v9-22 — design beside implementation">
+  <ul class="devs"><li><b>#35</b> A back chevron in the /consult header; frame 21 has none</li><li><b>#36</b> A ProfileButton in the /consult header; frame 21 has none</li></ul>
+</article><article class="frame" id="v9-29">
+  <header>
+    <h3>v9-29 <span class="nm">Verification — seven medicines</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-29.png" alt="v9-29 — design beside implementation">
+  <ul class="devs"><li><b>#50</b> Task 17's own file list and its zero-pixel rule contradicted each other; resolved in favour of the rule</li><li><b>#52</b> The FINDINGS and PROCEDURE prose sections have no extraction fields behind them</li><li><b>#55</b> The conflict, resolved and seven-medicine states need clinical data no seeded recording produces</li><li><b>#99</b> The card keeps an '+ Add medicine' affordance and a procedure sub-label the frames do not draw</li><li><b>#101</b> GATE C FIX: the medicine row was a &lt;button&gt; containing the Remove and Undo buttons</li></ul>
+</article><article class="frame" id="v9-43">
+  <header>
+    <h3>v9-43 <span class="nm">Visit record — read-only sheet</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-43.png" alt="v9-43 — design beside implementation">
+  <ul class="devs"><li><b>#90</b> The visit-record sheet needs FINDINGS and PROCEDURE prose that is not extracted</li></ul>
+</article><article class="frame" id="v9-44">
+  <header>
+    <h3>v9-44 <span class="nm">Prescription sheet — dose dots</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-44.png" alt="v9-44 — design beside implementation">
+  <ul class="devs"><li><b>#93</b> Conflicts are shown only where the SERVER flagged them, never computed on the client</li></ul>
+</article><article class="frame" id="v9-45">
+  <header>
+    <h3>v9-45 <span class="nm">Prescription — conflict caught</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-45.png" alt="v9-45 — design beside implementation">
+  <ul class="devs"><li><b>#91</b> CLINICAL: frame 45 LOCKS 'Share Rx PDF' while an allergy conflict is unresolved</li><li><b>#92</b> Frame 45's 'Swap' chip is an automatic drug substitution — forbidden by rule 6</li><li><b>#93</b> Conflicts are shown only where the SERVER flagged them, never computed on the client</li></ul>
+</article><article class="frame" id="v9-48">
+  <header>
+    <h3>v9-48 <span class="nm">New appointment sheet</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-48.png" alt="v9-48 — design beside implementation">
+  
+</article><article class="frame" id="v9-49">
+  <header>
+    <h3>v9-49 <span class="nm">Schedule — drag to reschedule</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-49.png" alt="v9-49 — design beside implementation">
+  
+</article><article class="frame" id="v9-51">
+  <header>
+    <h3>v9-51 <span class="nm">Walk-in sheet</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-51.png" alt="v9-51 — design beside implementation">
+  
+</article><article class="frame" id="v9-52">
+  <header>
+    <h3>v9-52 <span class="nm">Checkout sheet</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-52.png" alt="v9-52 — design beside implementation">
+  <ul class="devs"><li><b>#130</b> ENDPOINT AUDIT: 11 API routes nothing calls — 6 await their frame, 5 are orphaned</li></ul>
+</article><article class="frame" id="v9-53">
+  <header>
+    <h3>v9-53 <span class="nm">Payment received — toast</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-53.png" alt="v9-53 — design beside implementation">
+  
+</article><article class="frame" id="v9-57">
+  <header>
+    <h3>v9-57 <span class="nm">Lab ＋ — its own dial</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-57.png" alt="v9-57 — design beside implementation">
+  
+</article><article class="frame" id="v9-60">
+  <header>
+    <h3>v9-60 <span class="nm">WhatsApp consent gate</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-60.png" alt="v9-60 — design beside implementation">
+  
+</article><article class="frame" id="v9-63">
+  <header>
+    <h3>v9-63 <span class="nm">Conversation thread</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-63.png" alt="v9-63 — design beside implementation">
+  
+</article><article class="frame" id="v9-64">
+  <header>
+    <h3>v9-64 <span class="nm">Thread — window closed</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-64.png" alt="v9-64 — design beside implementation">
+  
+</article><article class="frame" id="v9-66">
+  <header>
+    <h3>v9-66 <span class="nm">Follow-ups — call list</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-66.png" alt="v9-66 — design beside implementation">
+  
+</article><article class="frame" id="v9-69">
+  <header>
+    <h3>v9-69 <span class="nm">Voice entry — confirm</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-69.png" alt="v9-69 — design beside implementation">
+  
+</article><article class="frame" id="v9-71">
+  <header>
+    <h3>v9-71 <span class="nm">Team &amp; join code</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-71.png" alt="v9-71 — design beside implementation">
+  
+</article><article class="frame" id="v9-76">
+  <header>
+    <h3>v9-76 <span class="nm">Account</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-76.png" alt="v9-76 — design beside implementation">
+  
+</article><article class="frame" id="v9-77">
+  <header>
+    <h3>v9-77 <span class="nm">Switch role — confirm</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-77.png" alt="v9-77 — design beside implementation">
+  
+</article><article class="frame" id="v9-78">
+  <header>
+    <h3>v9-78 <span class="nm">The orb — tap records, hold speaks</span></h3>
+    <span class="tag todo">CROSS-CUTTING</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-78.png" alt="v9-78 — design beside implementation">
+  
+</article><article class="frame" id="v9-79">
+  <header>
+    <h3>v9-79 <span class="nm">Toasts — the three voices</span></h3>
+    <span class="tag todo">CROSS-CUTTING</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-79.png" alt="v9-79 — design beside implementation">
+  
+</article><article class="frame" id="v9-80">
+  <header>
+    <h3>v9-80 <span class="nm">Notifications — every row lands</span></h3>
+    <span class="tag todo">NOT-BUILT</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-80.png" alt="v9-80 — design beside implementation">
+  
+</article><article class="frame" id="v9-81">
+  <header>
+    <h3>v9-81 <span class="nm">The tap contract</span></h3>
+    <span class="tag todo">CROSS-CUTTING</span>
+  </header>
+  <img loading="lazy" src="screenshots/v9-reference/v9-81.png" alt="v9-81 — design beside implementation">
+  
+</article></div>
+</body></html>

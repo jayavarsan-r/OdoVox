@@ -50,7 +50,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               "flex h-[34px] flex-1 items-center justify-center rounded-pill text-xs",
-              "transition-all duration-state ease-out",
+              "transition-[background-color,color,box-shadow] duration-state ease-out",
               "focus-visible:outline-none focus-visible:shadow-[var(--ring-lime)]",
               selected
                 ? "bg-white font-heavy text-pine shadow-[0_2px_8px_rgba(31,42,35,0.12)]"

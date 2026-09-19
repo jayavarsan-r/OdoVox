@@ -22,6 +22,7 @@ import {
 import { useUndoLabEvent } from '@/lib/lab-inbox-queries';
 import { expectedReturnInfo, labCaseTypeLabel, labStatusStyle, labTriggerLabel, maskPhone } from '@/lib/lab-ui';
 import { canRaiseIssue, labJourney, labNextAction } from '@/lib/lab/case-journey';
+import { ProgressSteps } from '@/components/ds';
 import { Mini } from '@/components/ui/badge';
 import { rupees } from '@/lib/patient-ui';
 import { cn } from '@/lib/utils';
@@ -183,29 +184,7 @@ export default function LabCaseDetailPage() {
         {/* The journey, and where this case sits on it. Statuses that are DEPARTURES from
             the line — an issue, a rework — hold their place at Prod rather than walking
             the stepper backwards; the issue itself is stated below in crit. */}
-        <ol className="flex items-start justify-between">
-          {labJourney(c.status).map((step, i, all) => (
-            <li key={step.label} className="flex flex-1 flex-col items-center gap-1.5">
-              <span className="flex w-full items-center">
-                <span className={cn('h-0.5 flex-1', i === 0 ? 'opacity-0' : step.state === 'ahead' ? 'bg-hair-2' : 'bg-live')} />
-                <span
-                  className={cn(
-                    'flex size-[26px] shrink-0 items-center justify-center rounded-pill text-3xs font-heavy',
-                    step.state === 'done' && 'bg-live text-white',
-                    step.state === 'now' && 'bg-lime text-pine',
-                    step.state === 'ahead' && 'border border-hair-2 text-pine-3',
-                  )}
-                >
-                  {step.state === 'done' ? '✓' : i + 1}
-                </span>
-                <span className={cn('h-0.5 flex-1', i === all.length - 1 ? 'opacity-0' : step.state === 'done' ? 'bg-live' : 'bg-hair-2')} />
-              </span>
-              <span className={cn('text-3xs font-heavy', step.state === 'ahead' ? 'text-pine-3' : 'text-pine')}>
-                {step.label}
-              </span>
-            </li>
-          ))}
-        </ol>
+        <ProgressSteps steps={labJourney(c.status)} />
 
         {c.status === 'ISSUE_RAISED' ? (
           <p className="text-xs font-heavy text-crit">An issue is open with the lab.</p>

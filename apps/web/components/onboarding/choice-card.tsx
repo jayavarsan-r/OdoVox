@@ -38,7 +38,7 @@ export function ChoiceCard({
       aria-pressed={selected}
       className={cn(
         "flex w-full items-center gap-3.5 rounded-2xl bg-white p-[18px] text-left shadow-elev-2",
-        "transition-all duration-press active:scale-[0.99]",
+        "transition-[transform,background-color,border-color] duration-press active:scale-[0.99]",
         "focus-visible:outline-none focus-visible:shadow-[var(--ring-lime)]",
         selected && "outline outline-[2.5px] -outline-offset-1 outline-pine",
       )}

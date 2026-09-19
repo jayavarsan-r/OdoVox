@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
-import { EditorialHeading, EmptyState } from '@/components/ds';
+import { AnimatedNumber, EditorialHeading, EmptyState } from '@/components/ds';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { Mini } from '@/components/ui/badge';
 import { formatLocalTime } from '@/lib/schedule/tz';
@@ -71,9 +71,13 @@ export default function BillingPage() {
                   <p className="text-2xs font-heavy tracking-[0.06em] text-[#5c7013]">
                     COLLECTED {date === todayISO() ? 'TODAY' : ''}
                   </p>
-                  <p className="mt-1 text-[34px] font-black leading-none tabular-nums text-pine">
-                    {rupees(data.totalCollectedPaise)}
-                  </p>
+                  {/* Ticks when the day's takings change — a figure that swaps makes you
+                      re-read it to work out whether it moved. */}
+                  <AnimatedNumber
+                    value={data.totalCollectedPaise}
+                    format={(n) => rupees(Math.round(n))}
+                    className="mt-1 block text-[34px] font-black leading-none text-pine"
+                  />
                 </div>
                 <span className="flex items-center gap-2">
                   <input

@@ -48,7 +48,8 @@ export function Toggle({
       <span
         className={cn(
           "absolute top-[3px] size-[22px] rounded-[11px] bg-white",
-          "shadow-[0_2px_5px_rgba(31,42,35,0.2)] transition-all duration-state ease-out",
+          // The thumb TRAVELS, so transform; the track tints, so colors. Nothing else moves.
+          "shadow-[0_2px_5px_rgba(31,42,35,0.2)] transition-[transform,background-color] duration-state ease-out",
           checked ? "left-[21px]" : "left-[3px]",
         )}
       />

@@ -94,3 +94,5 @@ export {
 } from "./segmented";
 
 export * from "./motion";
+export { AnimatedNumber } from "./animated-number";
+export { ProgressSteps, type ProgressStep } from "./progress-steps";

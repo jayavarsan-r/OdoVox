@@ -231,3 +231,35 @@ alternative is building the behaviour.
 | 135     | Day / Week / Month schedule views — no frame describes them                   |
 | 120     | "Reorder all" — what does reordering mean? There is no supplier-order concept |
 | 52 / 90 | `findings` / `procedureNarrative` extraction fields — deferred, not refused   |
+
+---
+
+## Motion
+
+Audited against Emil Kowalski's bar. **The foundations were already right** — a shared
+`components/ds/motion.tsx`, a real token scale (`--duration-press` 100ms / `--duration-state`
+200ms / `--duration-base` 240ms), proper curves (`--ease-spring` overshoot,
+`--ease-spring-soft` expo-out), and `MotionConfig reducedMotion="user"` globally. No
+`ease-in`, no `scale(0)`, no bare `transition: all`.
+
+So the work was additive, and it went into DS **primitives** rather than into screens, so the
+remaining frames inherit it:
+
+- **`ProgressSteps`** — a journey advancing. The lab stepper re-rendered silently; the single
+  most satisfying moment the app has, work moving forward, passed unacknowledged. Connectors
+  now fill from the left on a transform (never width — that is a reflow per frame), the
+  finished step flips to a tick, and only the step that just became current gets a small
+  overshoot. That overshoot is the app's only bounce, and it is deliberate.
+- **`AnimatedNumber`** — figures that change now tick. A number that swaps makes you re-read
+  it to learn whether it moved. Understated on purpose: 600ms ease-out, no overshoot, no
+  colour change, because every number on these screens is money, a patient count or a stock
+  level. It never rolls on first paint, and it lands on the truth if interrupted.
+- **`transition-all` → the properties that actually move** across ten components. `all`
+  animates shadow, border, colour *and* layout properties; on a twenty-row list that is
+  twenty elements doing avoidable work, and it turns any class change into a surprise
+  transition.
+
+**Where motion is deliberately withheld:** confirming a consultation, an allergy conflict
+appearing, and payment recorded. A doctor overriding a safety warning should feel weight, not
+reward — a celebratory flourish on a clinical act teaches people to tap through it. Duolingo
+can afford delight on every interaction because being wrong there costs nothing.

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Plus, Truck } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
-import { EditorialHeading, EmptyState, FAB } from '@/components/ds';
+import { AnimatedNumber, EditorialHeading, EmptyState, FAB } from '@/components/ds';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { useLabCases, useLabStats, type LabCaseFilters } from '@/lib/lab-queries';
 import { expectedReturnInfo, labCaseTypeLabel, labStatusStyle } from '@/lib/lab-ui';
@@ -148,9 +148,15 @@ export default function LabPage() {
                 on ? 'ring-2 ring-pine/15' : null,
               )}
             >
-              <span className="block text-[19px] font-black leading-none tabular-nums">
-                {p.n ?? '—'}
-              </span>
+              {/* The counts move when a case is sent, marked ready or falls overdue. */}
+              {p.n == null ? (
+                <span className="block text-[19px] font-black leading-none">—</span>
+              ) : (
+                <AnimatedNumber
+                  value={p.n}
+                  className="block text-[19px] font-black leading-none"
+                />
+              )}
               <span className="mt-1 block text-3xs font-heavy tracking-[0.06em] opacity-70">
                 {p.label}
               </span>

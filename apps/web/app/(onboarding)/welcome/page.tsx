@@ -186,7 +186,8 @@ export default function WelcomePage() {
             aria-label={`Go to slide ${i + 1}`}
             onClick={() => embla?.scrollTo(i)}
             className={cn(
-              "h-1.5 rounded-sm transition-all duration-state",
+              // A progress dot grows and tints — width and colour, not everything.
+              "h-1.5 rounded-sm transition-[width,background-color] duration-state",
               index === i ? "w-[18px] bg-pine" : "w-1.5 bg-hair-2",
             )}
           />

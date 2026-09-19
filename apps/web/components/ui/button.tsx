@@ -17,7 +17,10 @@ import { cn } from "@/lib/utils";
 const buttonVariants = cva(
   [
     "inline-flex items-center justify-center gap-[9px] whitespace-nowrap rounded-pill",
-    "transition-all duration-press ease-out active:scale-[0.98]",
+    // transform + colors, not `all`: `all` animates shadow, border and layout properties
+    // too, which on a list of twenty buttons is twenty elements doing avoidable work — and
+    // it makes any class change a surprise transition.
+    "transition-[transform,background-color,color] duration-press ease-out active:scale-[0.98]",
     "focus-visible:outline-none focus-visible:shadow-[var(--ring-lime)]",
     "disabled:pointer-events-none [&_svg]:shrink-0",
   ].join(" "),
