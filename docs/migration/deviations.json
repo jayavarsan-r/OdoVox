@@ -1662,6 +1662,27 @@
       "reason": "The screen totalled the day without ever showing what happened in it. A figure that looked wrong could not be checked without leaving for the bills list.\n\n/reports/daily-collection now returns the day's payments, newest first, capped at 20 — it already loaded those rows to compute the totals. The list renders patient, time, method and a SIGNED amount.\n\nThe important asymmetry: the TOTAL counts money the clinic kept, so it stays SUCCEEDED-only; the FEED includes refunds, because a day where ₹300 went back out is not the same day as one where it did not. `isRefund` is stated by the server rather than inferred client-side from a status string, so the sign cannot drift from the money.\n\nThe frame's crit DUES banner is not added — this screen already links to Outstanding dues, and two routes to the same list on one screen is the duplicate-control problem frame 47 had.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 144,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-55"
+      ],
+      "summary": "The total leads in crit; debt age reads in words, and stale debt is ringed",
+      "reason": "The amount owed was a grey subtitle beneath the page title — '₹7,000 across 1' — the same weight the screen gives its own name. Money the clinic is owed is the reason anyone opens this, so it leads at hero size, in crit, carrying the two facts that decide whether to act: how many people, and how old the oldest debt is.\n\nAGE NOW READS AS A PERSON WOULD SAY IT. The screen rendered `daysSince` raw: 'oldest 0 days ago' for a bill raised this morning, 'oldest 1 days ago' for yesterday's. Both are the kind of wrong that makes software look unattended, on a screen you use to chase people for money. `ageLabel` says today, yesterday, '3 days', '3 weeks', '2 months' — precision falls away as it stops mattering, because nobody chasing a debt needs '23 days'.\n\nA patient whose oldest bill has passed a fortnight gets a crit ring on their initials, which is frame 55's own treatment: past two weeks it has stopped being an oversight.\n\nRemind is a PILL beside the row rather than a full-width bar beneath it. There are two things to do from this row — open the record or chase it — and the chase should not outweigh the record.\n\nThe patient's name WRAPS rather than truncating: 'Akhilesh G…' on this screen is worse than two lines, and the frame wraps 'Anand Kumar' for the same reason.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 145,
+      "class": "NOT-CAPTURED",
+      "frames": [
+        "v9-55"
+      ],
+      "summary": "One outstanding patient where the frame shows three",
+      "reason": "The seed leaves a single partially-paid bill, so the list has one row and the hero reads '1 patient · oldest today'. The frame shows three, including one 19 days old that demonstrates the stale ring and the warn chip.\n\nThe stale treatment is therefore built and unit-tested (`isStale` turns at 14 days, `ageLabel` covers days/weeks/months) but not visible in the capture. Seeding two more overdue bills would show it; that is seed work rather than UI work, and the layout it would exercise is the same row repeated.",
+      "status": "open"
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

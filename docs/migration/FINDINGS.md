@@ -12,8 +12,8 @@ end to end.
 
 |                                                |             |
 | ---------------------------------------------- | ----------- |
-| **Complete**                                   | **43 / 81** |
-| Mismatched (captured, design work outstanding) | 4           |
+| **Complete**                                   | **44 / 81** |
+| Mismatched (captured, design work outstanding) | 3           |
 | Not built                                      | 29          |
 | Cross-cutting behaviours (not screens)         | 3           |
 | Not capturable                                 | 1           |
@@ -106,6 +106,13 @@ The capture harness pins the browser to a fixed date and `SEED_TODAY` tells the 
 that day — but only appointments honoured it. Every payment, bill and lab date still measured
 from the wall clock, so billing read ₹0 on a day with six appointments. The seed now has one
 notion of "now" that everything relative is measured from.
+
+### "oldest 0 days ago"
+The outstanding-dues screen rendered `daysSince` raw, so a bill raised this morning read
+"oldest 0 days ago" and yesterday's read "oldest 1 days ago". The kind of wrong that makes
+software look unattended, on the screen you use to chase people for money. Age now reads as a
+person says it — today, yesterday, 3 days, 3 weeks, 2 months — with precision falling away as
+it stops mattering.
 
 ### Four red errors on an untouched form
 

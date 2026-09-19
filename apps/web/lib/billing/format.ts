@@ -128,3 +128,29 @@ export function collectionCsv(rows: { time: string; patient: string; amountPaise
 function escapeCsv(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
+
+/**
+ * How old a debt is, as a person would say it.
+ *
+ * `daysSince` returns a number, and the screen rendered it raw: "oldest 0 days ago" for a bill
+ * raised this morning, and "oldest 1 days ago" for yesterday's. Both are the kind of wrong
+ * that makes software look unattended, on a screen whose job is to be taken seriously enough
+ * to chase money with.
+ */
+export function ageLabel(date: Date | string, now: Date = new Date()): string {
+  const days = daysSince(date, now);
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days`;
+  if (days < 30) {
+    const w = Math.floor(days / 7);
+    return w === 1 ? '1 week' : `${w} weeks`;
+  }
+  const m = Math.floor(days / 30);
+  return m === 1 ? '1 month' : `${m} months`;
+}
+
+/** Debt older than a fortnight has stopped being an oversight. */
+export function isStale(date: Date | string, now: Date = new Date()): boolean {
+  return daysSince(date, now) >= 14;
+}

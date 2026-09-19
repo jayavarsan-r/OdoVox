@@ -491,9 +491,9 @@
   {
     "frame": "v9-55",
     "name": "Outstanding dues",
-    "status": "MISMATCHED",
-    "changedPct": 5.641628641628642,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 6.004212004212004,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },
