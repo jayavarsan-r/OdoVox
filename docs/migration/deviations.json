@@ -1683,6 +1683,39 @@
       "summary": "One outstanding patient where the frame shows three",
       "reason": "The seed leaves a single partially-paid bill, so the list has one row and the hero reads '1 patient · oldest today'. The frame shows three, including one 19 days old that demonstrates the stale ring and the warn chip.\n\nThe stale treatment is therefore built and unit-tested (`isStale` turns at 14 days, `ageLabel` covers days/weeks/months) but not visible in the capture. Seeding two more overdue bills would show it; that is seed work rather than UI work, and the layout it would exercise is the same row repeated.",
       "status": "open"
+    },
+    {
+      "id": 146,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-62"
+      ],
+      "summary": "The lab inbox moves below the conversations, and gains a real backlog count",
+      "reason": "It sat ABOVE the list: the first thing on a screen called Messages was a door out of it. Patient replies are this screen's subject; the lab is a different lifecycle behind its own door, which is why frame 62 puts it beneath them.\n\nIt now also carries '2 need action' when there is a backlog. That is not decoration — the lab inbox already has a `needs_action` filter, so the chip counts the same set the door opens onto. Absent at zero, so it never becomes furniture.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 147,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-62"
+      ],
+      "summary": "Category becomes a dot beside the time; the third line is gone",
+      "reason": "Each row spelled out 'RESCHEDULE · OPEN' on a third line — restating the filter chips sitting directly above it, in the space the message preview needed. A preview that gets truncated so the row can repeat a filter is the wrong trade.\n\nFrame 62 carries the category as a coloured DOT beside the timestamp, and so does this now, with the same colour vocabulary the rest of the app uses. An unread conversation gets a second lime dot rather than a count badge.\n\nA RESOLVED conversation says so, in a chip, because that is the one status that changes whether you act on the row. Everything else is open — which is what an inbox is, and does not need saying on every line.\n\nThe implementation keeps a fifth filter chip, Resolved, that the frame does not draw: without it a resolved conversation cannot be found again, since the other four all show open ones.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 148,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-62"
+      ],
+      "summary": "New message moves into the header as the frame's + circle",
+      "reason": "It was a labelled 'New message' pill floating at the bottom right. For a receptionist that sits beside the dock's own lime + — the duplicate-control problem frame 47 had, two identical-looking buttons doing different things.\n\nIt is the frame's + circle in the header now, which is also where the lab and vendors screens put theirs, so the four list screens agree on where creating something lives.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

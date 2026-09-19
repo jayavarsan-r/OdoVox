@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, MessageCircle, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FlaskConical, MessageCircle, Plus } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
-import { EditorialHeading, EmptyState, FAB } from '@/components/ds';
+import { EditorialHeading, EmptyState } from '@/components/ds';
+import { Mini } from '@/components/ui/badge';
+import { useLabMessages } from '@/lib/lab-inbox-queries';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { useConversations, type InboxStatusFilter } from '@/lib/whatsapp-queries';
-import { categoryMeta, conversationStatusLabel } from '@/lib/whatsapp-ui';
+import { categoryMeta } from '@/lib/whatsapp-ui';
 import type { ConversationCategory, ConversationListItem } from '@odovox/types';
 import { cn } from '@/lib/utils';
 import { ComposeSheet } from './compose-sheet';
@@ -57,22 +59,30 @@ function ConversationRow({ c, onClick }: { c: ConversationListItem; onClick: () 
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex items-center justify-between gap-2">
           <span className={cn('truncate text-sm', unread ? 'font-bold text-ink' : 'font-semibold')}>{c.patientName}</span>
-          <span className="shrink-0 text-xs text-text-subtle">{relativeTime(c.lastMessageAt)}</span>
+          {/*
+            Frame 62 carries the category as a DOT beside the time, not a caption. The row used
+            to spell out "RESCHEDULE · OPEN" on a third line — restating the filter chips
+            directly above it, in the space the message preview needed.
+
+            A resolved conversation says so, because that is the one status that changes
+            whether you act. Everything else is simply open, which is what an inbox is.
+          */}
+          <span className="flex shrink-0 items-center gap-1.5">
+            {c.status === 'RESOLVED' ? (
+              <Mini tone="live">Resolved</Mini>
+            ) : (
+              <>
+                <span className="text-xs text-text-subtle">{relativeTime(c.lastMessageAt)}</span>
+                <span className={cn('size-1.5 rounded-full', cat.dot)} title={cat.label} />
+                {unread ? <span className="size-1.5 rounded-full bg-lime" /> : null}
+              </>
+            )}
+          </span>
         </span>
         <span className={cn('truncate text-xs', unread ? 'font-medium text-text-subtle' : 'text-muted-foreground')}>
           {c.lastMessagePreview ?? '—'}
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className={cn('size-1.5 rounded-full', cat.dot)} />
-          <span className="text-[11px] font-medium uppercase tracking-wide text-text-subtle">
-            {cat.label} · {conversationStatusLabel(c.status)}
-          </span>
-          {unread ? (
-            <span className="ml-auto flex min-w-5 items-center justify-center rounded-full bg-lime px-1.5 text-[11px] font-bold text-ink">
-              {c.unreadCount}
-            </span>
-          ) : null}
-        </span>
+
       </span>
       <ChevronRight className="size-4 shrink-0 text-text-subtle" />
     </button>
@@ -86,20 +96,42 @@ export default function MessagesPage() {
   const filter = FILTERS[active]!;
   const query = useConversations({ status: filter.status, category: filter.category });
   const conversations = query.data ?? [];
+  // The lab inbox's own "needs action" filter, counted — the chip states a real backlog
+  // rather than decorating the row. Frame 62 shows "2 need action".
+  const labNeedsAction = useLabMessages('needs_action').data?.items.length ?? 0;
 
   return (
     <AnimatedPage className="flex flex-1 flex-col gap-4 px-5 pt-6 pb-28">
-      <EditorialHeading title="Messages" trailing={<ProfileButton />} />
-
-      {/* Lab conversations live in their own inbox (Phase 9.7 §2.12) — different lifecycle. */}
-      <button
-        type="button"
-        onClick={() => router.push('/messages/lab')}
-        className="flex items-center justify-between rounded-xl border border-border bg-lavender-soft/50 px-4 py-3 text-left shadow-elev-1"
-      >
-        <span className="text-sm font-semibold text-ink">Lab conversations</span>
-        <ChevronRight className="size-4 text-text-subtle" />
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={() => router.push('/more')}
+          className="flex size-9 shrink-0 items-center justify-center rounded-pill hover:bg-muted"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+        <EditorialHeading
+          className="flex-1"
+          title="Messages"
+          trailing={
+            <span className="flex items-center gap-2">
+              {/* Frame 62's lime + circle. It replaces a labelled "New message" pill floating
+                  at the bottom right — which, for a receptionist, sat beside the dock's own
+                  lime +, the duplicate-control problem frame 47 had. */}
+              <button
+                type="button"
+                aria-label="New message"
+                onClick={() => setComposeOpen(true)}
+                className="flex size-9 items-center justify-center rounded-pill bg-lime text-pine shadow-cta"
+              >
+                <Plus className="size-[18px]" />
+              </button>
+              <ProfileButton />
+            </span>
+          }
+        />
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f, i) => (
@@ -134,7 +166,26 @@ export default function MessagesPage() {
         </div>
       )}
 
-      <FAB icon={<Plus className="size-5" />} label="New message" onClick={() => setComposeOpen(true)} />
+      {/*
+        The lab inbox sits BELOW the conversations, as frame 62 has it. It was above them —
+        the first thing on a screen called Messages was a door out of it. Patient replies are
+        the subject here; the lab is a different lifecycle behind its own door.
+      */}
+      <button
+        type="button"
+        onClick={() => router.push('/messages/lab')}
+        className="flex items-center gap-3 rounded-2xl bg-white px-[15px] py-3 text-left shadow-elev-1"
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-pill bg-lav-soft text-lav">
+          <FlaskConical className="size-[18px]" />
+        </span>
+        <span className="flex-1 text-[14.5px] font-heavy text-pine">Lab inbox</span>
+        {labNeedsAction > 0 ? (
+          <Mini tone="warn">{labNeedsAction} need action</Mini>
+        ) : null}
+        <ChevronRight className="size-[15px] shrink-0 text-pine-3" />
+      </button>
+
       {composeOpen ? <ComposeSheet onClose={() => setComposeOpen(false)} /> : null}
     </AnimatedPage>
   );

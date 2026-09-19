@@ -556,9 +556,9 @@
   {
     "frame": "v9-62",
     "name": "Patient inbox",
-    "status": "MISMATCHED",
-    "changedPct": 10.137241137241137,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 7.143559143559143,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

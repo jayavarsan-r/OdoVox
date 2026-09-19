@@ -12,8 +12,8 @@ end to end.
 
 |                                                |             |
 | ---------------------------------------------- | ----------- |
-| **Complete**                                   | **44 / 81** |
-| Mismatched (captured, design work outstanding) | 3           |
+| **Complete**                                   | **45 / 81** |
+| Mismatched (captured, design work outstanding) | 2           |
 | Not built                                      | 29          |
 | Cross-cutting behaviours (not screens)         | 3           |
 | Not capturable                                 | 1           |
@@ -33,6 +33,8 @@ missing code**. It is working code that nobody can reach, or that presents itsel
 - Inventory's three voice actions were built, tested and wired — sitting two taps down a FAB
   menu on a voice-first product, _underneath_ the typed paths.
 - The lab Vendors route existed with nothing linking to it. You had to know the URL.
+- The lab inbox sat ABOVE the patient conversations, so the first thing on a screen called
+  Messages was a door out of it.
 - Vendor analytics were computed and locked inside a per-vendor sheet, so comparing two labs
   meant opening one, memorising it, and opening the other.
 - `expectedReturnAt` has always been accepted by the API; the new-case form never offered it,
