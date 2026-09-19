@@ -350,7 +350,12 @@ export const SHOTS: Shot[] = [
         .getByRole("button", { name: /continue as front desk/i })
         .click();
       await page.waitForURL(/\/clinic-join$/, { timeout: 8000 });
-      await page.waitForTimeout(400);
+      // Frame 09's subject is a code that has FOUND a clinic — the tick on the field and the
+      // card naming it. An empty form shows none of that, so type the seeded clinic's real
+      // code and let the live lookup answer, exactly as a receptionist would.
+      await page.getByLabel(/join code/i).fill("SMILE7");
+      await page.getByText("Smile Dental Care").waitFor({ timeout: 10_000 });
+      await page.waitForTimeout(300);
     },
   },
   {

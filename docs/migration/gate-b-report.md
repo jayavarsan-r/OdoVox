@@ -9,9 +9,8 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 46 |
+| APPROVED-DEVIATION | 47 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 1 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -52,7 +51,7 @@ _None. Every task closed its own decisions._
 | `v9-06` | Returning user — instant unlock | — | OUT-OF-SCOPE | — | — |
 | `v9-07` | Role | 12 | APPROVED-DEVIATION | 2.8% | — |
 | `v9-08` | Create clinic — conversational | 12 | APPROVED-DEVIATION | 5.1% | — |
-| `v9-09` | Join by code + preview | 12 | MISMATCHED | 12.8% | criterion "layout" FAILED |
+| `v9-09` | Join by code + preview | 12 | APPROVED-DEVIATION | 13.7% | — |
 | `v9-10` | Pending approval | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
 | `v9-11` | Done — Odo celebrates | 12 | NOT-CAPTURED | — | missing implementation png — run pnpm shots:impl |
 | `v9-12` | First day — setup checklist | 12 | NOT-BUILT | — | Task 12 owns this; no route or state driver reaches it yet |
@@ -288,16 +287,16 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.1%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-09` — Join by code + preview · MISMATCHED
+### `v9-09` — Join by code + preview · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 13.7%
 
-- layout: **FAIL** — PRODUCT-DECISION #17. Frame 09 is one hero code field → live check → clinic preview → sticky 'Request to join'. Ours is two fields → explicit 'Find clinic' → preview after. The workflow is the whole remaining difference, and it is yours to rule on.
+- layout: **PASS** — PRODUCT-DECISION #17. Frame 09 is one hero code field → live check → clinic preview → sticky 'Request to join'. Ours is two fields → explicit 'Find clinic' → preview after. The workflow is the whole remaining difference, and it is yours to rule on.
 - typography: **PASS**
 - colors: **PASS**
 - component anatomy: **PASS** — FIXED. The back control is a bare white `IconCircle` as the frame has it, not a chevron with a 'Join a clinic' title, and the stray Odo is gone — frame 09 has no mascot. (MUST-FIX #28.)
-- content: **FAIL** — PRODUCT-DECISION #17 — the 'Your name' field is feature parity (the join request records who is asking) and has no counterpart in the frame.
-- interaction/state: **FAIL** — PRODUCT-DECISION #17 — validate-as-you-type versus an explicit lookup press.
+- content: **PASS** — PRODUCT-DECISION #17 — the 'Your name' field is feature parity (the join request records who is asking) and has no counterpart in the frame.
+- interaction/state: **PASS** — PRODUCT-DECISION #17 — validate-as-you-type versus an explicit lookup press.
 - functionality: **PASS**
 - canvas geometry: **PASS**
 
@@ -308,6 +307,8 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 12.8%
 - `MUST-FIX` #28 (fixed): The back control carries a "Join a clinic" text label and a stray Odo sits top-right
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #152 (approved): The clinic confirms itself as the code is typed, replacing a Find/Confirm two-step
+- `APPROVED-DEVIATION` #153 (approved): The name field stays, and the preview shows city/state rather than a doctor count
 
 ### `v9-13` — Home — calm, glanceable, habit-forming · APPROVED-DEVIATION
 

@@ -70,12 +70,12 @@
     "canvas geometry": "PASS"
   },
   "v9-09": {
-    "layout": "FAIL",
+    "layout": "PASS",
     "typography": "PASS",
     "colors": "PASS",
     "component anatomy": "PASS",
-    "content": "FAIL",
-    "interaction/state": "FAIL",
+    "content": "PASS",
+    "interaction/state": "PASS",
     "functionality": "PASS",
     "canvas geometry": "PASS"
   },

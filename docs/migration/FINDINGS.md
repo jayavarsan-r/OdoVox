@@ -12,12 +12,15 @@ end to end.
 
 |                                                |             |
 | ---------------------------------------------- | ----------- |
-| **Complete**                                   | **46 / 81** |
-| Mismatched (captured, design work outstanding) | 1           |
+| **Complete**                                   | **47 / 81** |
+| Mismatched (captured, design work outstanding) | 0           |
 | Not built                                      | 29          |
 | Cross-cutting behaviours (not screens)         | 3           |
 | Not capturable                                 | 1           |
 | Out of scope                                   | 1           |
+
+**Every frame that has been captured is now reviewed and closed.** What remains is 34 frames
+whose surfaces are not built, plus the behaviours and the one state that cannot be reached.
 
 A frame is complete only when it passes **Gate A** (nothing lost), **Gate B** (matches the
 design, judged by eye — never by a pixel-diff percentage) and **Gate C** (the screen actually

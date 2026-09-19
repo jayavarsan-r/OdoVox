@@ -77,9 +77,9 @@
   {
     "frame": "v9-09",
     "name": "Join by code + preview",
-    "status": "MISMATCHED",
-    "changedPct": 12.797121797121797,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 13.724815724815725,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

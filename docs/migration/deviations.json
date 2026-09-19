@@ -1748,6 +1748,28 @@
       "reason": "Nothing ever seeded an INBOUND lab message, so the screen whose entire subject is 'what did the labs say' rendered an empty state and no row design could be reviewed.\n\nThree are seeded now, one per verdict, because each draws differently and each carries a different amount of trust: a reply the parser understood and ACTED on, one it can only SUGGEST (with a real confidence), and one from a number nobody recognises. The third matters most — an unknown sender is how a WhatsApp inbox actually behaves, and it is the case that exposed the unmasked number above.\n\nThe seeded suggestion had to match `LabInboxSuggestion` exactly: the card reads `newStatus`, and a first attempt wrote `status`, which rendered as 'Needs manual handling' — the AI tier silently invisible.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 152,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-09"
+      ],
+      "summary": "The clinic confirms itself as the code is typed, replacing a Find/Confirm two-step",
+      "reason": "The screen asked for a code, then made you press 'Find clinic', then REPLACED the whole form with a preview carrying Back and Confirm. Three steps and, at the middle one, you could no longer see the code you had typed beside the clinic it had matched.\n\nFrame 09 shows one screen: the code with a tick on it, the clinic named beneath, and a single 'Request to join'. That is what this is now — a debounced lookup fires as the code is typed, the field confirms itself, and the card appears inline.\n\nThe debounce discards superseded responses: a slow answer for 'SMILE' must not arrive after 'SMILE7' and replace the right clinic with a stale one. A code too short to be one is never sent, and a code matching nothing is not an error toast — that is the ordinary state of a half-typed code, so the field simply does not confirm a clinic and says so quietly.\n\nThe CTA is disabled until a clinic is found, because there is nothing to join before that.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 153,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-09"
+      ],
+      "summary": "The name field stays, and the preview shows city/state rather than a doctor count",
+      "reason": "Frame 09 shows no name field. `ClinicJoinInput` requires one — the join creates the membership and the user's name with it — so removing it would break the flow it is drawn on. It stays above the code.\n\nThe preview's second chip is the clinic's STATE where the frame shows '2 doctors'. GET /clinics/lookup is UNAUTHENTICATED (it must be — you have no membership yet) and returns name, city and state. Adding a staff count to it would widen what an unauthenticated endpoint discloses about a clinic, and that is a privacy decision rather than a layout one, so it is not taken here.\n\nCity and state come from the same response and answer the same question the chip exists for: is this the right place. If the owner wants the doctor count, the endpoint change is small — it is the disclosure that needs deciding.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
