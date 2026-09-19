@@ -6,6 +6,8 @@ import type {
   CreateLabCaseInput,
   CreateLabVendorInput,
   LabCaseResponse,
+  LabBucket,
+  LabCaseStats,
   LabCaseStatus,
   LabCaseSummary,
   LabVendorResponse,
@@ -21,6 +23,8 @@ export interface LabCaseFilters {
   vendorId?: string;
   patientId?: string;
   search?: string;
+  /** Frame 56's stat pills. Defined server-side in lib/lab/buckets.ts. */
+  bucket?: LabBucket;
 }
 
 export function useLabCases(filters: LabCaseFilters) {
@@ -33,6 +37,7 @@ export function useLabCases(filters: LabCaseFilters) {
       if (filters.vendorId) params.set('vendorId', filters.vendorId);
       if (filters.patientId) params.set('patientId', filters.patientId);
       if (filters.search) params.set('search', filters.search);
+      if (filters.bucket) params.set('bucket', filters.bucket);
       if (pageParam) params.set('cursor', pageParam);
       return api.get<Paginated<LabCaseSummary>>(`/lab/cases?${params.toString()}`);
     },
@@ -189,5 +194,19 @@ export function useLabVendorDetail(vendorId: string | null) {
     queryKey: ['lab-vendor', vendorId],
     queryFn: () => api.get<LabVendorResponse>(`/lab/vendors/${vendorId}`),
     enabled: !!vendorId,
+  });
+}
+
+/**
+ * The three counts above the lab list (frame 56).
+ *
+ * Counted server-side across the whole clinic rather than derived from the loaded page — the
+ * list is paginated, so counting what has arrived would report "6 ACTIVE" because six rows
+ * fit on screen.
+ */
+export function useLabStats() {
+  return useQuery({
+    queryKey: ['lab-stats'],
+    queryFn: () => api.get<LabCaseStats>('/lab/cases/stats'),
   });
 }

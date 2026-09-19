@@ -500,9 +500,9 @@
   {
     "frame": "v9-56",
     "name": "Lab list — stat pills, not tiles",
-    "status": "MISMATCHED",
-    "changedPct": 9.732888732888732,
-    "gateB": "MISMATCHED",
+    "status": "APPROVED-DEVIATION",
+    "changedPct": 9.79045279045279,
+    "gateB": "APPROVED-DEVIATION",
     "openMustFix": [],
     "openDecisions": []
   },

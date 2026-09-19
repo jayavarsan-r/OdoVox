@@ -160,8 +160,20 @@ export type TransitionLabCaseInput = z.infer<typeof TransitionLabCaseInput>;
 
 // --- Query ------------------------------------------------------------------
 
+/** Frame 56's stat pills. Definitions live in apps/api/src/lib/lab/buckets.ts. */
+export const LabBucket = z.enum(['active', 'overdue', 'ready']);
+export type LabBucket = z.infer<typeof LabBucket>;
+
+export const LabCaseStats = z.object({
+  active: z.number().int(),
+  overdue: z.number().int(),
+  ready: z.number().int(),
+});
+export type LabCaseStats = z.infer<typeof LabCaseStats>;
+
 export const ListLabCasesQuery = z.object({
   status: LabCaseStatus.optional(),
+  bucket: LabBucket.optional(),
   vendorId: z.string().optional(),
   patientId: z.string().optional(),
   search: z.string().max(120).optional(),

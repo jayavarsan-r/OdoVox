@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 36 |
+| APPROVED-DEVIATION | 37 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 11 |
+| MISMATCHED | 10 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -99,7 +99,7 @@ _None. Every task closed its own decisions._
 | `v9-53` | Payment received — toast | 26 | NOT-BUILT | — | Task 26 owns this; no route or state driver reaches it yet |
 | `v9-54` | Billing — densified | 27 | MISMATCHED | 7.2% | criterion "layout" unreviewed |
 | `v9-55` | Outstanding dues | 27 | MISMATCHED | 5.6% | criterion "layout" unreviewed |
-| `v9-56` | Lab list — stat pills, not tiles | 28 | MISMATCHED | 9.7% | criterion "layout" unreviewed |
+| `v9-56` | Lab list — stat pills, not tiles | 28 | APPROVED-DEVIATION | 9.8% | — |
 | `v9-57` | Lab ＋ — its own dial | 28 | NOT-BUILT | — | Task 28 owns this; no route or state driver reaches it yet |
 | `v9-58` | Lab — case detail | 28 | MISMATCHED | 14.7% | criterion "layout" unreviewed |
 | `v9-59` | The ＋ — quick New-case sheet | 28 | MISMATCHED | 39.7% | criterion "layout" unreviewed |
@@ -917,17 +917,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 5.6%
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
 
-### `v9-56` — Lab list — stat pills, not tiles · MISMATCHED
+### `v9-56` — Lab list — stat pills, not tiles · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 9.8%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -935,6 +935,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 9.7%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `APPROVED-DEVIATION` #124 (approved): Stat pills render as three equal tiles rather than a scrolling pill row
+- `APPROVED-DEVIATION` #125 (approved): Rows keep their status spine, vendor line and due countdown; the frame shows a stage word
+- `APPROVED-DEVIATION` #126 (approved): Search and the five status chips stay alongside the stat pills
 
 ### `v9-58` — Lab — case detail · MISMATCHED
 

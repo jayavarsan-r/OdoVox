@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, Plus, Truck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Truck } from 'lucide-react';
 import { AnimatedPage } from '@/components/animated-page';
 import { ProfileButton } from '@/components/app-shell/profile-button';
 import { EditorialHeading, EmptyState, FAB } from '@/components/ds';
 import { ListSkeleton } from '@/components/ui/skeleton';
-import { useLabCases, type LabCaseFilters } from '@/lib/lab-queries';
+import { useLabCases, useLabStats, type LabCaseFilters } from '@/lib/lab-queries';
 import { expectedReturnInfo, labCaseTypeLabel, labStatusStyle } from '@/lib/lab-ui';
-import type { LabCaseStatus, LabCaseSummary } from '@odovox/types';
+import type { LabBucket, LabCaseStatus, LabCaseSummary } from '@odovox/types';
 import { cn } from '@/lib/utils';
 
 const FILTERS: { value?: LabCaseStatus; label: string }[] = [
@@ -37,13 +37,25 @@ function CaseCard({ c, onClick }: { c: LabCaseSummary; onClick: () => void }) {
     >
       <span className={cn('w-1 shrink-0', s.bar)} />
       <span className="flex flex-1 flex-col gap-0.5 p-3">
-        <span className="flex items-center justify-between gap-2">
-          <span className={cn('truncate font-mono text-xs font-semibold', s.strikethrough && 'line-through')}>
-            {c.caseNumber}
+        {/*
+          The PATIENT leads, with the case number beside it in a quieter weight — frame 56's
+          ordering, and the right one: a receptionist scans this list for a person, not for
+          LC-SM0003CC. The code led before, so every row opened with eight characters nobody
+          reads until they already know which case they want.
+        */}
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="min-w-0 truncate">
+            <span className={cn('text-sm font-heavy text-pine', s.strikethrough && 'line-through')}>
+              {c.patientName}
+            </span>
+            <span className="ml-1.5 font-mono text-xs font-semibold text-pine-3">
+              {c.caseNumber}
+            </span>
           </span>
-          <span className={cn('rounded-pill px-2 py-0.5 text-xs font-medium', s.pill)}>{s.label}</span>
+          <span className={cn('shrink-0 rounded-pill px-2 py-0.5 text-xs font-medium', s.pill)}>
+            {s.label}
+          </span>
         </span>
-        <span className="truncate text-sm font-semibold">{c.patientName}</span>
         <span className="block truncate text-xs text-muted-foreground">
           {labCaseTypeLabel(c.type)}
           {c.teeth.length > 0 ? ` · Tooth ${c.teeth.join(', ')}` : ''}
@@ -65,14 +77,87 @@ function CaseCard({ c, onClick }: { c: LabCaseSummary; onClick: () => void }) {
 export default function LabPage() {
   const router = useRouter();
   const [status, setStatus] = useState<LabCaseStatus | undefined>(undefined);
+  const [bucket, setBucket] = useState<LabBucket | undefined>(undefined);
   const [search, setSearch] = useState('');
-  const filters: LabCaseFilters = { status, search: search || undefined };
+  const filters: LabCaseFilters = { status, bucket, search: search || undefined };
   const query = useLabCases(filters);
+  const stats = useLabStats();
   const cases = query.data?.pages.flatMap((p) => p.items) ?? [];
 
   return (
     <AnimatedPage className="flex flex-1 flex-col gap-4 px-5 pt-6 pb-28">
-      <EditorialHeading title="Lab cases" trailing={<ProfileButton />} />
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={() => router.push('/more')}
+          className="flex size-9 shrink-0 items-center justify-center rounded-pill hover:bg-muted"
+        >
+          <ChevronLeft className="size-5" />
+        </button>
+        <EditorialHeading
+          className="flex-1"
+          title="Lab"
+          trailing={
+            <span className="flex items-center gap-2">
+              {/* The frame's Vendors pill. The route existed and nothing on this screen
+                  reached it — you had to know the URL. */}
+              <button
+                type="button"
+                onClick={() => router.push('/lab/vendors')}
+                className="rounded-pill bg-[rgba(31,42,35,0.05)] px-[13px] py-2 text-xs font-heavy text-pine"
+              >
+                Vendors
+              </button>
+              <ProfileButton />
+            </span>
+          }
+        />
+      </div>
+
+      {/*
+        Frame 56's name is the instruction: "stat pills, not tiles". Three numbers that say
+        what the clinic is waiting on, and each one FILTERS — a stat you cannot act on is
+        decoration.
+
+        The counts and the filters read the same server-side definitions
+        (apps/api/src/lib/lab/buckets.ts), so tapping "1 OVERDUE" cannot open onto a
+        different number of rows than the pill promised. That is asserted in
+        apps/api/test/lab-buckets.test.ts.
+      */}
+      <div className="grid grid-cols-3 gap-2">
+        {([
+          { id: undefined, label: 'ACTIVE', n: stats.data?.active, tone: 'bg-white text-pine shadow-elev-1' },
+          { id: 'overdue' as const, label: 'OVERDUE', n: stats.data?.overdue, tone: 'bg-crit-soft text-crit' },
+          { id: 'ready' as const, label: 'READY', n: stats.data?.ready, tone: 'bg-live-soft text-live' },
+        ]).map((p) => {
+          // "ACTIVE" is the unfiltered view of work in flight, so it doubles as Clear.
+          const target = p.id ?? 'active';
+          const on = bucket === target || (p.id === undefined && bucket === undefined);
+          return (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => {
+                setStatus(undefined);
+                setBucket(p.id === undefined && bucket === undefined ? 'active' : p.id);
+              }}
+              className={cn(
+                'rounded-2xl px-3 py-2.5 text-left transition-shadow',
+                p.tone,
+                on ? 'ring-2 ring-pine/15' : null,
+              )}
+            >
+              <span className="block text-[19px] font-black leading-none tabular-nums">
+                {p.n ?? '—'}
+              </span>
+              <span className="mt-1 block text-3xs font-heavy tracking-[0.06em] opacity-70">
+                {p.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       <input
         type="search"
@@ -87,7 +172,10 @@ export default function LabPage() {
           <button
             key={f.label}
             type="button"
-            onClick={() => setStatus(f.value)}
+            onClick={() => {
+              setBucket(undefined);
+              setStatus(f.value);
+            }}
             className={cn(
               'rounded-pill px-3 py-1.5 text-xs font-medium transition-colors',
               status === f.value ? 'bg-ink text-paper' : 'bg-paper-warm text-text-subtle',

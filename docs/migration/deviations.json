@@ -1440,6 +1440,39 @@
       "reason": "Frame 68 shows neither. The DETAILS list this replaced showed both, so dropping the list wholesale would have taken them with it — for an item that actually HAS a SKU that is losing a fact, not tidying one away, and Gate A does not allow it.\n\nThey now render as a single quiet line under the tiles, and only when present. Absent on the seeded items, which is why the capture does not show it.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 124,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-56"
+      ],
+      "summary": "Stat pills render as three equal tiles rather than a scrolling pill row",
+      "reason": "Frame 56 draws ACTIVE, OVERDUE and READY as three rounded pills sized to their content. The implementation uses a three-column grid so the numbers line up under each other and the row cannot reflow when a count goes from 9 to 10.\n\nSame three facts, same tones, same tap targets — the difference is that a fixed grid keeps the OVERDUE pill in the same place every time you open the screen, which matters for something you are meant to notice at a glance.\n\nThe substance is that the pills are now REAL: each one filters the list, and the count and the filter read the same server-side definitions (apps/api/src/lib/lab/buckets.ts), so a pill cannot promise a number the list does not deliver. apps/api/test/lab-buckets.test.ts asserts exactly that for all three.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 125,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-56"
+      ],
+      "summary": "Rows keep their status spine, vendor line and due countdown; the frame shows a stage word",
+      "reason": "The frame's right column carries a status badge with the stage beneath it ('Production', 'Sent', 'Collect'). The implementation keeps the badge and shows the DUE COUNTDOWN there instead — '23 days left', or an overdue figure in crit — with the vendor on the line below.\n\nThe stage is already the badge; repeating it underneath spends the row's most valuable corner on the same fact twice. What the badge cannot say is whether the case is running late, and that is the question the OVERDUE pill above is counting.\n\nRows also keep a coloured left spine for status and are separate cards rather than flat inside one, which is this list's existing idiom and matches the inventory list beside it.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 126,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-56"
+      ],
+      "summary": "Search and the five status chips stay alongside the stat pills",
+      "reason": "The frame has four status chips (All / Sent / Production / Ready) and no search. The implementation keeps its five (adding Delivered) and the search field, and the two filter systems clear each other so they can never disagree about what is on screen.\n\nSearch is how you find LC-SM0003CC when a vendor phones about it, which is the actual reason anyone opens this screen mid-day. Removing a working control for pixel fidelity is what Gate A forbids.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",
