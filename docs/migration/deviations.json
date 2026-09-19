@@ -1716,6 +1716,38 @@
       "reason": "It was a labelled 'New message' pill floating at the bottom right. For a receptionist that sits beside the dock's own lime + — the duplicate-control problem frame 47 had, two identical-looking buttons doing different things.\n\nIt is the frame's + circle in the header now, which is also where the lab and vendors screens put theirs, so the four list screens agree on where creating something lives.",
       "status": "approved",
       "decidedUnder": 94
+    },
+    {
+      "id": 149,
+      "class": "MUST-FIX",
+      "frames": [
+        "v9-65"
+      ],
+      "summary": "FIXED — PRIVACY: an unrecognised lab sender's phone number rendered in full",
+      "reason": "When a message arrives from a number the clinic has no vendor for, the API falls back to the raw phone, and the inbox printed it complete: '+919800000031'.\n\nMasked now, for the same reason the WhatsApp settings card masks the clinic's own number (#115): this screen is readable by any clinic role and is routinely on display, and the question the row asks is 'who is this and which case is it about' — which '+91 98····0031' answers just as well. It reads 'Unknown · +91 98····0031', which is also frame 65's own treatment.\n\nThe mask is applied to whatever LOOKS like a number rather than to a field that is always one, because `vendorName` carries either a lab's name or a phone depending on whether the sender is known.",
+      "status": "fixed"
+    },
+    {
+      "id": 150,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-65"
+      ],
+      "summary": "Verdict is carried by the action row rather than a chip; Reply is not offered here",
+      "reason": "Frame 65 puts a verdict chip at the top right of each card — '✓ Applied', 'Suggested', 'Link' — and pairs each with its own actions.\n\nThe implementation states the verdict through the actions themselves: a parsed-and-applied message shows the case it moved and an Undo; a suggestion shows the proposed status with its confidence and Apply / Ignore; an unrecognised one shows 'Needs manual handling' with Link to case / Handled. The chip would restate what the buttons beneath it already say, which is the third-line problem frame 62 had.\n\n'Reply' is NOT offered from this list. Replying to a lab is a conversation, and conversations live in the lab thread; a reply box on a triage screen invites a message sent without the case in front of you.\n\nThe frame's applied card does not appear under 'Needs action' because it has been handled — that filter is doing its job, and the row is there under All.",
+      "status": "approved",
+      "decidedUnder": 94
+    },
+    {
+      "id": 151,
+      "class": "APPROVED-DEVIATION",
+      "frames": [
+        "v9-65"
+      ],
+      "summary": "The inbox had no seeded messages at all, so the screen could not be judged",
+      "reason": "Nothing ever seeded an INBOUND lab message, so the screen whose entire subject is 'what did the labs say' rendered an empty state and no row design could be reviewed.\n\nThree are seeded now, one per verdict, because each draws differently and each carries a different amount of trust: a reply the parser understood and ACTED on, one it can only SUGGEST (with a real confidence), and one from a number nobody recognises. The third matters most — an unknown sender is how a WhatsApp inbox actually behaves, and it is the case that exposed the unmasked number above.\n\nThe seeded suggestion had to match `LabInboxSuggestion` exactly: the card reads `newStatus`, and a first attempt wrote `status`, which rendered as 'Needs manual handling' — the AI tier silently invisible.",
+      "status": "approved",
+      "decidedUnder": 94
     }
   ],
   "generalRule": "Functionality, security, RBAC, accessibility and legal requirements are never removed for pixel-level fidelity. Where a deviation is approved, preserve the functionality and reproduce the v9 visual language around it. No additional deviation is created without asking first.",

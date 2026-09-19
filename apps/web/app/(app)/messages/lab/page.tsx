@@ -10,6 +10,7 @@ import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { EmptyState } from '@/components/ds';
 import { ListSkeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/lib/toast';
+import { maskPhone } from '@/lib/whatsapp/template-groups';
 import {
   useLabMessageCandidates,
   useLabMessages,
@@ -41,6 +42,20 @@ function relativeTime(iso: string): string {
 }
 
 /** One inbox card — §2.12: message + the parser's verdict + one-tap resolutions. */
+/**
+ * A vendor's name, or an unknown sender's number with its middle removed.
+ *
+ * The API returns `vendor?.name ?? fromPhone ?? 'Unknown sender'`, so this only has a number
+ * to work with when the lab is not one we know — which is exactly the case where printing it
+ * in full serves nobody on screen.
+ */
+function senderLabel(vendorName: string): string {
+  const digits = vendorName.replace(/[^\d]/g, '');
+  const looksLikeAPhone = /^\+?[\d\s-]+$/.test(vendorName) && digits.length >= 10;
+  if (!looksLikeAPhone) return vendorName;
+  return `Unknown · ${maskPhone(vendorName) ?? vendorName}`;
+}
+
 function MessageCard({ item, onLink }: { item: LabInboxItem; onLink: (item: LabInboxItem) => void }) {
   const router = useRouter();
   const toast = useToast();
@@ -61,7 +76,19 @@ function MessageCard({ item, onLink }: { item: LabInboxItem; onLink: (item: LabI
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-2">
           <FlaskConical className="size-4 shrink-0 text-tool-lab" />
-          <span className="truncate text-sm font-semibold text-ink">{item.vendorName}</span>
+          {/*
+            An UNRECOGNISED sender arrives as a raw phone number, and the inbox printed it in
+            full. It is masked here for the same reason the WhatsApp settings card masks the
+            clinic's own number (#115): this screen is readable by any clinic role and is
+            routinely on display, and the question the row asks is "who is this and which case
+            is it about", which a masked number answers just as well.
+
+            `vendorName` falls back to the phone server-side, so the mask is applied to
+            whatever looks like a number rather than to a field that is always one.
+          */}
+          <span className="truncate text-sm font-semibold text-ink">
+            {senderLabel(item.vendorName)}
+          </span>
         </span>
         <span className="shrink-0 text-xs text-text-subtle">{relativeTime(item.createdAt)}</span>
       </div>
@@ -240,7 +267,7 @@ export default function LabInboxPage() {
         <button type="button" onClick={() => router.push('/messages')} aria-label="Back" className="flex size-9 items-center justify-center rounded-pill hover:bg-muted">
           <ChevronLeft className="size-5" />
         </button>
-        <h1 className="text-lg font-semibold">Lab conversations</h1>
+        <h1 className="text-lg font-semibold">Lab inbox</h1>
       </div>
 
       <div className="flex flex-wrap gap-2">

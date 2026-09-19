@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { config as loadEnv } from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { STARTER_TEMPLATES } from '../src/starter-templates.js';
 
 // Load the repo-root .env so the seed has DATABASE_URL + PHI_ENCRYPTION_KEY.
@@ -406,6 +406,107 @@ async function main() {
       },
     });
   }
+
+  // --- Lab inbox (frame 65) — the three verdicts a reply can carry ----------
+  //
+  // The inbox rendered an empty state because nothing ever seeded an INBOUND lab message, so
+  // the screen whose whole subject is "what did the labs say" could not be judged at all.
+  //
+  // One of each kind, because each draws differently and each is a different amount of
+  // trust: a reply the parser understood and ACTED on, one it can only SUGGEST, and one from
+  // a number nobody recognises. The third is the one worth having — an unknown sender is how
+  // a real WhatsApp inbox behaves, and the screen has to say so rather than guess.
+  const inboxSeed: {
+    suffix: string;
+    vendorId: string | null;
+    caseNumber: string | null;
+    body: string;
+    parseTier: string | null;
+    resolved: boolean;
+    llmSuggestion: unknown;
+    fromPhone: string | null;
+    minutesAgo: number;
+  }[] = [
+    {
+      suffix: 'applied',
+      vendorId: labVendor.id,
+      caseNumber: 'LC-SM0003CC',
+      body: 'Crown 14 ready for dispatch tomorrow',
+      parseTier: 'case_code',
+      resolved: true,
+      llmSuggestion: null,
+      fromPhone: null,
+      minutesAgo: 95,
+    },
+    {
+      suffix: 'suggested',
+      vendorId: labVendor.id,
+      caseNumber: 'LC-SM0002BB',
+      body: 'Post and core will take 2 more days',
+      parseTier: 'llm',
+      resolved: false,
+      // Shape must match LabInboxSuggestion — the card reads `newStatus`, not `status`.
+      llmSuggestion: {
+        caseCode: 'LC-SM0002BB',
+        newStatus: 'IN_PROGRESS',
+        confidence: 0.92,
+        issueRaised: null,
+      },
+      fromPhone: null,
+      minutesAgo: 140,
+    },
+    {
+      // No vendor, no case: the inbox must show it and ask a human to link it.
+      suffix: 'unknown',
+      vendorId: null,
+      caseNumber: null,
+      body: 'Shade photo attached',
+      parseTier: null,
+      resolved: false,
+      llmSuggestion: null,
+      fromPhone: '+919800000031',
+      minutesAgo: 210,
+    },
+  ];
+  for (const m of inboxSeed) {
+    const linked = m.caseNumber
+      ? await prisma.labCase.findFirst({
+          where: { clinicId: clinic.id, caseNumber: m.caseNumber },
+          select: { id: true },
+        })
+      : null;
+    const suggestion =
+      m.llmSuggestion === null
+        ? Prisma.DbNull
+        : ({ ...(m.llmSuggestion as object), caseId: linked?.id ?? null } as Prisma.InputJsonValue);
+    await prisma.labMessage.upsert({
+      where: { waMessageId: `seed-wa-${clinic.id}-${m.suffix}` },
+      // The UPDATE branch has to carry everything mutable, not just the timestamp: a row
+      // seeded earlier with a different shape would otherwise keep it forever, and a re-seed
+      // that silently preserves stale data is the bug this file has already had twice.
+      update: {
+        body: m.body,
+        parseTier: m.parseTier,
+        resolved: m.resolved,
+        llmSuggestion: suggestion,
+        createdAt: new Date(NOW() - m.minutesAgo * 60_000),
+      },
+      create: {
+        clinicId: clinic.id,
+        labVendorId: m.vendorId,
+        labCaseId: linked?.id ?? null,
+        direction: 'INBOUND',
+        waMessageId: `seed-wa-${clinic.id}-${m.suffix}`,
+        body: m.body,
+        parseTier: m.parseTier,
+        resolved: m.resolved,
+        llmSuggestion: suggestion,
+        fromPhone: m.fromPhone,
+        createdAt: new Date(NOW() - m.minutesAgo * 60_000),
+      },
+    });
+  }
+
 
   // --- Inventory categories + items + movements (Phase 7) ------------------
   const catDefs = [

@@ -9,9 +9,9 @@ ACCOUNTED FOR (86), never in routes shipped.
 
 | Verdict | Count |
 | --- | --- |
-| APPROVED-DEVIATION | 45 |
+| APPROVED-DEVIATION | 46 |
 | OUT-OF-SCOPE | 1 |
-| MISMATCHED | 2 |
+| MISMATCHED | 1 |
 | NOT-BUILT | 34 |
 | NOT-CAPTURED | 1 |
 | CROSS-CUTTING | 3 |
@@ -108,7 +108,7 @@ _None. Every task closed its own decisions._
 | `v9-62` | Patient inbox | 29 | APPROVED-DEVIATION | 7.1% | — |
 | `v9-63` | Conversation thread | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
 | `v9-64` | Thread — window closed | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
-| `v9-65` | Lab inbox — quiet verdicts | 29 | MISMATCHED | 7.7% | criterion "layout" unreviewed |
+| `v9-65` | Lab inbox — quiet verdicts | 29 | APPROVED-DEVIATION | 8.6% | — |
 | `v9-66` | Follow-ups — call list | 29 | NOT-BUILT | — | Task 29 owns this; no route or state driver reaches it yet |
 | `v9-67` | Inventory — stock | 29 | APPROVED-DEVIATION | 10.2% | NOT-BUILT #120: 'Reorder all' has no supplier-ordering concept behind it |
 | `v9-68` | Inventory — item detail | 29 | APPROVED-DEVIATION | 8.4% | — |
@@ -1042,17 +1042,17 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.1%
 - `APPROVED-DEVIATION` #147 (approved): Category becomes a dot beside the time; the third line is gone
 - `APPROVED-DEVIATION` #148 (approved): New message moves into the header as the frame's + circle
 
-### `v9-65` — Lab inbox — quiet verdicts · MISMATCHED
+### `v9-65` — Lab inbox — quiet verdicts · APPROVED-DEVIATION
 
-geometry: ref 370x824 · impl 370x824 · pixel Δ 7.7%
+geometry: ref 370x824 · impl 370x824 · pixel Δ 8.6%
 
-- layout: **UNREVIEWED**
-- typography: **UNREVIEWED**
-- colors: **UNREVIEWED**
-- component anatomy: **UNREVIEWED**
-- content: **UNREVIEWED**
-- interaction/state: **UNREVIEWED**
-- functionality: **UNREVIEWED**
+- layout: **PASS**
+- typography: **PASS**
+- colors: **PASS**
+- component anatomy: **PASS**
+- content: **PASS**
+- interaction/state: **PASS**
+- functionality: **PASS**
 - canvas geometry: **PASS**
 
 - `APPROVED-DEVIATION` #1 (approved): Geist Sans/Mono retained instead of the spec's system font stack
@@ -1060,6 +1060,9 @@ geometry: ref 370x824 · impl 370x824 · pixel Δ 7.7%
 - `MUST-FIX` #18 (fixed): The Odo mascot artwork was not the spec's #odo-body symbol
 - `APPROVED-DEVIATION` #94 (approved): GOVERNANCE: standing authority to rule non-clinical product decisions, with a reversible log
 - `APPROVED-DEVIATION` #95 (approved): GATE C: a frame does not close until its screen actually works
+- `MUST-FIX` #149 (fixed): FIXED — PRIVACY: an unrecognised lab sender's phone number rendered in full
+- `APPROVED-DEVIATION` #150 (approved): Verdict is carried by the action row rather than a chip; Reply is not offered here
+- `APPROVED-DEVIATION` #151 (approved): The inbox had no seeded messages at all, so the screen could not be judged
 
 ### `v9-67` — Inventory — stock · APPROVED-DEVIATION
 

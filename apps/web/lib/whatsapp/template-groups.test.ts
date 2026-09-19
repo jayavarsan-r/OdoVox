@@ -135,3 +135,11 @@ describe('lastSixMonths', () => {
     expect(out.every((c) => c.totalCostPaise === 0)).toBe(true);
   });
 });
+
+describe('maskPhone on an unknown lab sender', () => {
+  it('keeps the country code and last four, hides the middle', () => {
+    // The lab inbox printed an unrecognised sender's number in full. This is the same mask
+    // the WhatsApp settings card uses for the clinic's own number.
+    expect(maskPhone('+919800000031')).toBe('+91 98····0031');
+  });
+});

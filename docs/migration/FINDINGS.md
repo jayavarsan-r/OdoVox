@@ -12,8 +12,8 @@ end to end.
 
 |                                                |             |
 | ---------------------------------------------- | ----------- |
-| **Complete**                                   | **45 / 81** |
-| Mismatched (captured, design work outstanding) | 2           |
+| **Complete**                                   | **46 / 81** |
+| Mismatched (captured, design work outstanding) | 1           |
 | Not built                                      | 29          |
 | Cross-cutting behaviours (not screens)         | 3           |
 | Not capturable                                 | 1           |
@@ -154,6 +154,8 @@ from a frame.
   consistent with #53: the warning is advisory, the dentist decides, the override is audited.
 - **`findings` / `procedureNarrative` extraction fields are deferred** out of this migration
   (#52 / #90). Render the sections that have data; never generate prose to fill the rest.
+- **An unrecognised lab sender's phone number is masked** in the lab inbox, the same way and
+  for the same reason as the clinic's own number below.
 - **The WhatsApp business number is masked** and the provider name removed. The card's question
   is "are we connected", not "what is the number", and it is routinely on screen when someone
   is being shown around.
